@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 841d5c3d391b46641a652a2cf3b4ea5c, type: 3}
+  m_Name: Tuning
+  m_EditorClassIdentifier: Assembly-CSharp::DontLate.TuningConfigSO
+  moveSpeed: 4
+  depthSpeedRatio: 0.7
+  carrySpeedPenalty: 0.75
+  jumpHeight: 1.1
+  gravity: -22
+  turnSpeed: 720
+  staminaMax: 100
+  staminaDrainPerSecond: 2.5
+  staminaDrainCarryMultiplier: 2
+  staminaRecoverPerSecond: 6
+  energyDrinkRecover: 40
+  gameMinutesPerRealSecond: 2
+  morningStartHour: 6
+  dayStartHour: 10
+  eveningStartHour: 17
+  nightStartHour: 20
+  deadlineWarnMinutes: 30
+  interactRadius: 1.6

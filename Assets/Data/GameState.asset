@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69da21dde442b254d84abbbf4e98a028, type: 3}
+  m_Name: GameState
+  m_EditorClassIdentifier: Assembly-CSharp::DontLate.GameStateSO
+  day: 1
+  minuteOfDay: 480
+  money: 0
+  debt: 10000
+  cargo:
+  - {fileID: 11400000, guid: 37b18a19191eadb42825965e3942eb8b, type: 2}
+  completedCount: 0
+  lateCount: 0
+  currentScene: 0
+  startDay: 1
+  startMinuteOfDay: 480
+  startMoney: 0
+  startDebt: 10000
