@@ -55,3 +55,15 @@ unity-cli screenshot --view game      # 결과 눈으로 확인
 - 에디터 전용 코드는 반드시 `Editor/` 폴더 안 (밖에 두면 빌드 깨짐).
 - `IInteractable` 시그니처는 동결 — 변경 필요하면 구현하지 말고 사람에게 묻는다.
 - YAGNI: 발주서에 없는 기능·추상화·방어코드를 덧붙이지 않는다.
+
+## 세션 분기 (킷 v1.9 편입 — 2026-07-20)
+
+- **공장 세션 (정수 · 구현)**: 위 내용이 전부다. 아래 킷 문서는 신경 쓰지 않아도 된다.
+- **디렉터 세션 (남규 · 관제)**: 사람이 "관제 시작" 또는 "PRETASK 모드"를 선언하면 —
+  `PRETASK.md`(모드 헌장·이정표 M0~M6) → `PROCESS.md`(상태기계) → `HARNESS.md` → `CONNECTIONS.md` 로드,
+  `.claude/agents/orchestrator.md` 역할로 가동. 상태는 `planning/STATUS.md`, 발주는 `planning/TASKS.md`
+  (첫 관제 세션이 생성). 시뮬 기록은 `_sim/`(드라이런 — 실산출물 아님).
+- **기획 규격 (디렉터 관리 · 동결 문서)**: `docs/INTENT.md`(의도) · `docs/SCOPE.md`(범위) ·
+  `docs/STYLE.md`(아트 규격) · `docs/TECH_SPEC.md`(기술 규격) · `docs/JUICE.md`(연출 명세).
+  설계 3종(.claude/rules/)과 충돌 시 **INTENT > SCOPE > architecture** 순서가 이긴다.
+- 단일 소스: 설계 3종은 `.claude/rules/`가 정본 (docs/에 중복 두지 않는다).
