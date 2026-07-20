@@ -1,5 +1,7 @@
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
 namespace DontLate.EditorTools
 {
@@ -13,7 +15,8 @@ namespace DontLate.EditorTools
         private const string PREFIX = "__gb_";
         private const string DATA_ROOT = "Assets/Data";
         private const string GREYBOX_ROOT = "Assets/Data/Greybox";
-        private const string LAMP_PREFAB_PATH = "Assets/Prefabs/Hand/StreetLampLight.prefab";
+        private const string LAMP_PREFAB_PATH = "Assets/Prefabs/Hand/StreetLamp.prefab";
+        private const string LAMP_LIGHT_PREFAB_PATH = "Assets/Prefabs/Hand/StreetLampLight.prefab";
 
         [MenuItem("DontLate/Build Greybox Stage", priority = 0)]
         public static void Build()
@@ -56,11 +59,15 @@ namespace DontLate.EditorTools
 
             BuildGround(ground, lane);
             BuildWalkableVolume();
+            BuildStarField();
+            BuildMoon();
             BuildPickupBox(order, box, highlight);
             BuildDoorVisual(door);
+            BuildSignGlow();
             BuildBeacon(order, beacon, highlight);
             BuildPlayer(gameState, tuning, body, nose);
             BuildStreetLamps();
+            BuildPostVolume();
             ConfigureCamera();
         }
 
@@ -120,25 +127,76 @@ namespace DontLate.EditorTools
             return sun;
         }
 
-        // 가로등 2개: X=-2·X=10, Z=-2. 4u 폴 대용 빈 GO에 프리팹 라이트를 자식으로.
+        // StreetLamp.prefab을 길목 좌우 2열로 배치(프리팹 링크 유지 — Visual 교체가 전 인스턴스에 전파).
+        // 앞줄 Z=-2.4 (yaw 0, Head가 +Z 길중앙 향함) · 뒷줄 Z=+2.4 (yaw 180, Head가 -Z 길중앙 향함).
         private static void BuildStreetLamps()
         {
             GameObject prefab = GetOrCreateLampPrefab();
-            CreateLamp(prefab, new Vector3(-2f, 0f, -2f));
-            CreateLamp(prefab, new Vector3(10f, 0f, -2f));
+            int index = 1;
+            float[] front = { -16f, -8f, 0f, 8f, 16f };
+            float[] back = { -12f, -4f, 12f };
+            foreach (float x in front) PlaceLamp(prefab, new Vector3(x, 0f, -2.4f), 0f, ref index);
+            foreach (float x in back) PlaceLamp(prefab, new Vector3(x, 0f, 2.4f), 180f, ref index);
         }
 
-        private static void CreateLamp(GameObject prefab, Vector3 poleBase)
+        private static void PlaceLamp(GameObject prefab, Vector3 position, float yaw, ref int index)
         {
-            GameObject pole = CreateEmpty("LampPole", poleBase);
             GameObject lamp = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
-            lamp.transform.SetParent(pole.transform, false);
-            lamp.transform.localPosition = new Vector3(0f, 4f, 0f);
+            lamp.name = PREFIX + "StreetLamp_" + index.ToString("00");
+            lamp.transform.SetPositionAndRotation(position, Quaternion.Euler(0f, yaw, 0f));
+            Undo.RegisterCreatedObjectUndo(lamp, "Build Greybox Stage");
+            index++;
         }
 
+        // 아트 스왑 계약: 루트 StreetLamp / Visual(교체 대상: Pole·Head) / Light(StreetLampLight 프리팹 인스턴스).
         private static GameObject GetOrCreateLampPrefab()
         {
             GameObject existing = AssetDatabase.LoadAssetAtPath<GameObject>(LAMP_PREFAB_PATH);
+            if (existing != null) return existing;
+
+            EnsureFolder("Assets/Prefabs");
+            EnsureFolder("Assets/Prefabs/Hand");
+
+            GameObject lightPrefab = GetOrCreateLampLightPrefab();
+            Material lampMaterial = GetOrCreateMaterial("Lamp", new Color(0.30f, 0.30f, 0.32f), false);
+
+            GameObject root = new GameObject("StreetLamp");
+
+            GameObject visual = new GameObject("Visual");
+            visual.transform.SetParent(root.transform, false);
+
+            // Pole: Cylinder r0.08 h4.0, 원점 바닥. 기본 실린더(r0.5 h2) → scale(0.16,2,0.16), center y=2.
+            GameObject pole = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            pole.name = "Pole";
+            Object.DestroyImmediate(pole.GetComponent<Collider>());
+            pole.transform.SetParent(visual.transform, false);
+            pole.transform.localPosition = new Vector3(0f, 2f, 0f);
+            pole.transform.localScale = new Vector3(0.16f, 2f, 0.16f);
+            pole.GetComponent<Renderer>().sharedMaterial = lampMaterial;
+
+            // Head: Cube 0.5×0.15×0.25, 폴 상단(y=4)에서 길쪽(+Z)으로 돌출.
+            GameObject head = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            head.name = "Head";
+            Object.DestroyImmediate(head.GetComponent<Collider>());
+            head.transform.SetParent(visual.transform, false);
+            head.transform.localPosition = new Vector3(0f, 4f, 0.2f);
+            head.transform.localScale = new Vector3(0.5f, 0.15f, 0.25f);
+            head.GetComponent<Renderer>().sharedMaterial = lampMaterial;
+
+            // Light: 기존 StreetLampLight.prefab 인스턴스를 Head 위치에. 프리팹의 45° 조사각 유지.
+            GameObject light = (GameObject)PrefabUtility.InstantiatePrefab(lightPrefab);
+            light.name = "Light";
+            light.transform.SetParent(root.transform, false);
+            light.transform.localPosition = new Vector3(0f, 4f, 0.2f);
+
+            GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, LAMP_PREFAB_PATH);
+            Object.DestroyImmediate(root);
+            return prefab;
+        }
+
+        private static GameObject GetOrCreateLampLightPrefab()
+        {
+            GameObject existing = AssetDatabase.LoadAssetAtPath<GameObject>(LAMP_LIGHT_PREFAB_PATH);
             if (existing != null) return existing;
 
             EnsureFolder("Assets/Prefabs");
@@ -157,7 +215,7 @@ namespace DontLate.EditorTools
             StreetLampLight lamp = temp.AddComponent<StreetLampLight>();
             SetReference(lamp, "_light", light);
 
-            GameObject prefab = PrefabUtility.SaveAsPrefabAsset(temp, LAMP_PREFAB_PATH);
+            GameObject prefab = PrefabUtility.SaveAsPrefabAsset(temp, LAMP_LIGHT_PREFAB_PATH);
             Object.DestroyImmediate(temp);
             return prefab;
         }
@@ -195,6 +253,270 @@ namespace DontLate.EditorTools
             go.transform.localScale = new Vector3(1f, 2f, 0.2f);
             Object.DestroyImmediate(go.GetComponent<BoxCollider>());
             go.GetComponent<Renderer>().sharedMaterial = material;
+        }
+
+        // 문(__gb_Door, x=6·top y=2·front z=2.5) 위쪽에 가게 간판 발광판 1개.
+        // 밤 전용 additive 쿼드 — SignGlowPlate가 DayPhaseChanged로 점멸.
+        private static void BuildSignGlow()
+        {
+            Material glow = GetOrCreateSignGlowMaterial();
+
+            GameObject go = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            go.name = PREFIX + "SignGlow";
+            Object.DestroyImmediate(go.GetComponent<Collider>());
+            go.transform.position = new Vector3(6f, 2.35f, 2.45f); // 문 상단 위 · z 살짝 앞(카메라 쪽)
+            go.transform.localScale = new Vector3(0.9f, 0.4f, 1f);
+            Undo.RegisterCreatedObjectUndo(go, "Build Greybox Stage");
+
+            Renderer renderer = go.GetComponent<Renderer>();
+            renderer.sharedMaterial = glow;
+
+            SignGlowPlate plate = go.AddComponent<SignGlowPlate>();
+            SetReference(plate, "_renderer", renderer);
+        }
+
+        private static Material GetOrCreateSignGlowMaterial()
+        {
+            string path = GREYBOX_ROOT + "/GB_SignGlow.mat";
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material != null) return material;
+
+            EnsureFolder(DATA_ROOT);
+            EnsureFolder(GREYBOX_ROOT);
+
+            material = new Material(Shader.Find("DontLate/SignGlow"));
+            material.SetColor("_Color", ParseColor("#35e0c8"));
+            material.SetFloat("_Intensity", 1f);
+            AssetDatabase.CreateAsset(material, path);
+            AssetDatabase.SaveAssets();
+            return material;
+        }
+
+        // 밤하늘 배경 별밭 쿼드. 지평선 위 하늘 영역(z=70 원경)에 절차적 사각 별.
+        // 카메라(0,8.1,-40.4)가 +Z를 보므로 무회전 쿼드가 -Z(카메라)를 향한다(SignGlow와 동일).
+        // 지면(z≤40, 불투명)이 지평선 아래 별을 뎁스 오클루전한다.
+        private static void BuildStarField()
+        {
+            Material stars = GetOrCreateStarFieldMaterial();
+
+            GameObject go = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            go.name = PREFIX + "StarField";
+            Object.DestroyImmediate(go.GetComponent<Collider>());
+            go.transform.position = new Vector3(0f, 28f, 70f);
+            go.transform.localScale = new Vector3(200f, 70f, 1f);
+            Undo.RegisterCreatedObjectUndo(go, "Build Greybox Stage");
+
+            // 쿼드 가로/세로 비를 셰이더에 주입해 별 셀을 정사각화(_Aspect 보정).
+            // 캐시된 머티리얼 대비 팔레트 틴트를 흰색으로 고정(별색은 셰이더 팔레트 소유).
+            stars.SetFloat("_Aspect", go.transform.localScale.x / go.transform.localScale.y);
+            stars.SetColor("_Color", Color.white);
+            // 별 크기 한 단계 축소(v3) + HDR 강도 주입(블룸 임계 돌파) — 캐시 머티리얼에도 매 빌드 갱신.
+            stars.SetFloat("_StarSizeMin", 0.02f);
+            stars.SetFloat("_StarSizeMax", 0.12f);
+            stars.SetFloat("_Intensity", 1.3f);
+
+            Renderer renderer = go.GetComponent<Renderer>();
+            renderer.sharedMaterial = stars;
+
+            StarField field = go.AddComponent<StarField>();
+            SetReference(field, "_renderer", renderer);
+        }
+
+        private static Material GetOrCreateStarFieldMaterial()
+        {
+            string path = GREYBOX_ROOT + "/GB_StarField.mat";
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material != null) return material;
+
+            EnsureFolder(DATA_ROOT);
+            EnsureFolder(GREYBOX_ROOT);
+
+            material = new Material(Shader.Find("DontLate/StarField"));
+            material.SetColor("_Color", Color.white); // 팔레트가 별색을 정한다 — 틴트는 흰색
+            material.SetFloat("_GlobalAlpha", 0f);
+            AssetDatabase.CreateAsset(material, path);
+            AssetDatabase.SaveAssets();
+            return material;
+        }
+
+        // 밤 전용 달 쿼드. 별밭(z=70)보다 카메라 쪽(z=69) · 하늘 좌상. StarField.cs 재부착해 밤 페이드 재사용
+        // (_GlobalAlpha 프로퍼티명 일치). 정사각 쿼드라 셰이더 원판 마스크가 원형을 유지한다.
+        private static void BuildMoon()
+        {
+            Texture2D moonTex = GetOrCreateMoonTexture();
+            Material moonMat = GetOrCreateMoonMaterial();
+            moonMat.SetTexture("_MainTex", moonTex);   // 재실행 시에도 텍스처 연결 보장(멱등)
+            moonMat.SetColor("_Color", Color.white);   // 틴트 없음 — 텍스처 색 그대로 × _Intensity
+            EditorUtility.SetDirty(moonMat);
+
+            GameObject go = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            go.name = PREFIX + "Moon";
+            Object.DestroyImmediate(go.GetComponent<Collider>());
+            // 좌상 하늘. 카메라(0,8.1,-40.4)/FOV22/10°다운에서 z=69의 화면 상단은 대략 world y≈10 —
+            // 봉투 예시 y=33은 화면 위로 벗어나므로 가시 상단(y≈4)으로 내려 배치(별밭 z=70보다 카메라 쪽).
+            go.transform.position = new Vector3(-15f, 4f, 69f);
+            go.transform.localScale = new Vector3(4.5f, 4.5f, 1f);
+            Undo.RegisterCreatedObjectUndo(go, "Build Greybox Stage");
+
+            Renderer renderer = go.GetComponent<Renderer>();
+            renderer.sharedMaterial = moonMat;
+
+            StarField field = go.AddComponent<StarField>();
+            SetReference(field, "_renderer", renderer);
+        }
+
+        private static Material GetOrCreateMoonMaterial()
+        {
+            string path = GREYBOX_ROOT + "/GB_Moon.mat";
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material != null) return material;
+
+            EnsureFolder(DATA_ROOT);
+            EnsureFolder(GREYBOX_ROOT);
+
+            material = new Material(Shader.Find("DontLate/Moon"));
+            material.SetColor("_Color", Color.white);   // 틴트 없음 — 텍스처가 색을 정한다
+            material.SetFloat("_Intensity", 1.4f);
+            material.SetFloat("_GlobalAlpha", 0f);
+            AssetDatabase.CreateAsset(material, path);
+            AssetDatabase.SaveAssets();
+            return material;
+        }
+
+        // 32×32 픽셀아트 달 텍스처를 코드로 그려 png 저장. 계약 경로(Art/Backgrounds)라 임포터가
+        // Point·무압축을 자동 적용한다. 이미 있으면 재생성하지 않는다 — 사람이 직접 그린 png로
+        // 교체 가능하다는 계약(덮어쓰기 금지). 각진 픽셀 원 + 얼룩(2톤) + 달 토끼 실루엣.
+        private const string MOON_TEX_PATH = "Assets/Art/Backgrounds/moon_pixel.png";
+
+        private static Texture2D GetOrCreateMoonTexture()
+        {
+            Texture2D existing = AssetDatabase.LoadAssetAtPath<Texture2D>(MOON_TEX_PATH);
+            if (existing != null) return existing;
+
+            EnsureFolder("Assets/Art");
+            EnsureFolder("Assets/Art/Backgrounds");
+
+            const int N = 32;
+            var tex = new Texture2D(N, N, TextureFormat.RGBA32, false);
+            tex.SetPixels32(GenerateMoonPixels(N));
+            tex.Apply();
+            byte[] png = tex.EncodeToPNG();
+            Object.DestroyImmediate(tex);
+
+            string abs = Application.dataPath + MOON_TEX_PATH.Substring("Assets".Length);
+            System.IO.File.WriteAllBytes(abs, png);
+            AssetDatabase.ImportAsset(MOON_TEX_PATH, ImportAssetOptions.ForceSynchronousImport);
+
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(MOON_TEX_PATH);
+        }
+
+        // 달 픽셀맵을 생성한다. y=0이 하단(Texture2D 규약). 본체 밖은 alpha 0.
+        private static Color32[] GenerateMoonPixels(int n)
+        {
+            Color32 clear = new Color32(0, 0, 0, 0);
+            Color32 baseCream = new Color32(255, 244, 214, 255);   // #fff4d6 바탕
+            Color32 crater1 = new Color32(234, 221, 180, 255);     // 얼룩 톤1 (옅은 그림자)
+            Color32 crater2 = new Color32(212, 194, 144, 255);     // 얼룩 톤2 (짙은 마리아)
+            Color32 rabbit = new Color32(156, 136, 80, 255);       // 달 토끼 (가장 어두운 톤)
+
+            float cx = (n - 1) * 0.5f, cy = (n - 1) * 0.5f, r = n * 0.5f - 1f; // 반지름 15 (32px)
+
+            var px = new Color32[n * n];
+            for (int y = 0; y < n; y++)
+                for (int x = 0; x < n; x++)
+                {
+                    float dx = x - cx, dy = y - cy;
+                    // 안티앨리어싱 없는 정수 원 테스트 → 계단형(각진) 실루엣
+                    px[y * n + x] = (dx * dx + dy * dy <= r * r) ? baseCream : clear;
+                }
+
+            // 얼룩(크레이터) — 달 본체 안에서만 칠한다. 좌/하단에 배치(우측 토끼와 분리)
+            PaintDisc(px, n, cx, cy, r, 10f, 20f, 4.2f, crater1);  // 좌상 큰 마리아
+            PaintDisc(px, n, cx, cy, r, 9f, 9f, 3.3f, crater2);    // 좌하
+            PaintDisc(px, n, cx, cy, r, 21f, 24f, 2.6f, crater1);  // 상단 작은 얼룩
+            PaintDisc(px, n, cx, cy, r, 6f, 14f, 2.2f, crater2);   // 좌측 가장자리 점
+
+            // 달 토끼 실루엣 (위→아래 행). 측면 포즈 — 귀 2개(2px 간격, 블룸에도 분리 유지) +
+            // 코 왼쪽 머리 + 둥근 몸통 + 뒷발. 달 우측에 배치.
+            string[] rows =
+            {
+                "..XX..XX..",
+                "..XX..XX..",
+                "..XX..XX..",
+                "..XXXXXX..",
+                ".XXXXXXX..",
+                "XXXXXXXX..",
+                "XXXXXXXXX.",
+                "XXXXXXXXXX",
+                "XXXXXXXXXX",
+                ".XXXXXXXX.",
+                "..XX..XX..",
+                ".XX...XX..",
+            };
+            int startX = 15;               // 토끼 좌측 열(텍스처 x) — 중앙 우측
+            int topY = n - 11;             // 첫 행의 텍스처 y (아래로 갈수록 y 감소)
+            for (int row = 0; row < rows.Length; row++)
+                for (int col = 0; col < rows[row].Length; col++)
+                {
+                    if (rows[row][col] != 'X') continue;
+                    int tx = startX + col;
+                    int ty = topY - row;
+                    if (tx < 0 || tx >= n || ty < 0 || ty >= n) continue;
+                    float dx = tx - cx, dy = ty - cy;
+                    if (dx * dx + dy * dy > r * r) continue;   // 본체 안에서만
+                    px[ty * n + tx] = rabbit;
+                }
+
+            return px;
+        }
+
+        // (ccx,ccy) 반경 rad 원반을 col로 칠하되 달 본체(cx,cy,r) 안쪽만.
+        private static void PaintDisc(Color32[] px, int n, float cx, float cy, float r,
+                                      float ccx, float ccy, float rad, Color32 col)
+        {
+            for (int y = 0; y < n; y++)
+                for (int x = 0; x < n; x++)
+                {
+                    float dx = x - ccx, dy = y - ccy;
+                    if (dx * dx + dy * dy > rad * rad) continue;
+                    float mdx = x - cx, mdy = y - cy;
+                    if (mdx * mdx + mdy * mdy > r * r) continue;
+                    px[y * n + x] = col;
+                }
+        }
+
+        // 공용 무대 글로벌 블룸(약). 간판(HDR)·별·달·가로등이 블룸을 받는다. threshold~0.9 · intensity 0.35.
+        private static void BuildPostVolume()
+        {
+            VolumeProfile profile = GetOrCreatePostProfile();
+
+            GameObject go = CreateEmpty("PostVolume", Vector3.zero);
+            Volume volume = go.AddComponent<Volume>();
+            volume.isGlobal = true;
+            volume.priority = 1f;
+            volume.sharedProfile = profile;
+        }
+
+        private static VolumeProfile GetOrCreatePostProfile()
+        {
+            string path = GREYBOX_ROOT + "/GB_PostVolume.asset";
+            VolumeProfile profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(path);
+            if (profile != null) return profile;
+
+            EnsureFolder(DATA_ROOT);
+            EnsureFolder(GREYBOX_ROOT);
+
+            profile = ScriptableObject.CreateInstance<VolumeProfile>();
+            AssetDatabase.CreateAsset(profile, path);
+
+            Bloom bloom = profile.Add<Bloom>(true); // overrides=true → 하위 파라미터 오버라이드 활성
+            bloom.threshold.value = 0.9f;   // 밝은 광원(HDR)만 번지게
+            bloom.intensity.value = 0.35f;  // 약 — 과하지 않게(STYLE: 블룸 약)
+            // scatter는 기본(0.7) 유지
+            AssetDatabase.AddObjectToAsset(bloom, profile);
+
+            AssetDatabase.SaveAssets();
+            return profile;
         }
 
         // 문 앞 보도(Z 중앙) 발광 패드. DeliveryPoint를 얹고, 감지 트리거는 패드보다 크게.
@@ -327,8 +649,13 @@ namespace DontLate.EditorTools
             Undo.RecordObject(camera.transform, "Greybox Camera");
             camera.orthographic = false;
             camera.fieldOfView = 22f;
+            camera.allowHDR = true; // 블룸(HDR 광원 번짐)이 동작하려면 HDR 버퍼 필요
             camera.transform.position = new Vector3(0f, 8.1f, -40.4f);
             camera.transform.rotation = Quaternion.Euler(10f, 0f, 0f);
+
+            // URP 볼륨 포스트프로세싱 활성 — 이게 꺼져 있으면 블룸이 렌더되지 않는다.
+            var camData = camera.GetUniversalAdditionalCameraData();
+            if (camData != null) camData.renderPostProcessing = true;
         }
 
         // ── 데이터 ───────────────────────────────────────────
