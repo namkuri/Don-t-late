@@ -8,4 +8,7 @@ namespace DontLate
         void Interact(PlayerContext ctx);
         void SetHighlight(bool on);
     }
+
+    /// <summary>포커스 조건을 추가 제한하려는 상호작용물이 선택 구현. 센서가 후보 선별 시 검문한다.</summary>
+    public interface IFocusGate { bool AllowsFocus(UnityEngine.Vector3 playerPosition); }
 }

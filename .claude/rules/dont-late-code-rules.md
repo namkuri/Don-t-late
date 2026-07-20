@@ -109,6 +109,16 @@ public interface IInteractable {
 }
 ```
 
+- 실수→규칙 (2026-07-20, scn_core 발주): 에디터 빌더에서 **새로 AddComponent한 컴포넌트에
+  SerializedObject로 에셋 참조를 주입하고 SaveScene 하면 `{fileID: 0}`으로 유실**될 수 있다
+  (enum 등 값 타입은 살고 오브젝트 참조만 죽음). 씬을 저장하는 빌더는 리플렉션 직접 주입을 쓰고,
+  저장된 씬 YAML에서 guid 존재를 검증한다.
+
+- 실수→규칙 (2026-07-20, 임포터 발주): ① 백그라운드/HTTP 구동 에디터에선 `EditorApplication.delayCall`이
+  발화하지 않을 수 있다 — 임포트 후처리는 `OnPostprocessAllAssets`에서 직접 처리 (생성물이 계약경로 밖이면
+  재귀 임포트 없음). ② 팩토리 프리팹을 `PrefabUtility.InstantiatePrefab`로 만들면 소스의 **Variant**로 결합되어
+  소스 삭제 시 Missing parent 에러 — 독립 프리팹은 `Object.Instantiate` 클론으로 만든다.
+
 ## 7. 과잉 방지 (YAGNI)
 
 - 발주서에 없는 기능·옵션·추상화·예외처리를 **덧붙이지 않는다.**

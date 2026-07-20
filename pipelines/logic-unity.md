@@ -30,3 +30,5 @@
 - [시드] 요청 밖 예외처리 추가로 리뷰 반려 → 시스템 경계에서만 검증, 내부 방어코드 금지
 - [시드] 기대값 하드코딩으로 검증 통과 위장 → 구현 불가면 위장 말고 에스컬레이션
 - [시드] 통과 안 되니 검증 조건을 완화 → 조건 변경은 사람 게이트
+- Unity6.5에서 Object.GetInstanceID() 사용 시 CS0619(obsolete) 컴파일 에러 → RNG 시드는 Guid.NewGuid().GetHashCode()나 위치 해시로. GetInstanceID/GetEntityId 지양
+- 실시간 코루틴(플리커 등)을 timeScale=0으로 얼리면 WaitForSeconds가 안 돌아 관측 불가, timeScale=1로 두면 게임시계가 phase를 넘겨버림 → 실시간 연출 샘플링은 tuning의 게임분속도를 0으로 동결(코루틴은 실시간이라 계속 진행)

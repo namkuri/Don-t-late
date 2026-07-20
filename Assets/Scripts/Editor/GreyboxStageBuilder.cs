@@ -13,18 +13,38 @@ namespace DontLate.EditorTools
         private const string PREFIX = "__gb_";
         private const string DATA_ROOT = "Assets/Data";
         private const string GREYBOX_ROOT = "Assets/Data/Greybox";
+        private const string LAMP_PREFAB_PATH = "Assets/Prefabs/Hand/StreetLampLight.prefab";
 
         [MenuItem("DontLate/Build Greybox Stage", priority = 0)]
         public static void Build()
         {
             Clear();
 
+            var (gameState, tuning, order) = GetOrCreateStageData();
+            ResetSession(gameState, order);
+
+            BuildManagers(gameState, tuning);
+            BuildStageContent(gameState, tuning, order);
+
+            Debug.Log("[Greybox] 무대 조립 완료 — Play를 누르면 WASD 이동 / E 상호작용. "
+                    + "적재 1건(#" + order.orderId + ") 마감 " + (order.deadlineMinuteOfDay / 60f).ToString("0.0") + "시.");
+        }
+
+        /// <summary>무대 데이터 SO 3종을 확보한다(없으면 생성). 세션 리셋은 하지 않는다.</summary>
+        public static (GameStateSO gameState, TuningConfigSO tuning, DeliveryOrderSO order) GetOrCreateStageData()
+        {
             GameStateSO gameState = GetOrCreate<GameStateSO>(DATA_ROOT + "/GameState.asset", ConfigureGameState);
             TuningConfigSO tuning = GetOrCreate<TuningConfigSO>(DATA_ROOT + "/Tuning.asset", ConfigureTuning);
             DeliveryOrderSO order = GetOrCreate<DeliveryOrderSO>(DATA_ROOT + "/Order_HappyVilla.asset", ConfigureOrder);
+            return (gameState, tuning, order);
+        }
 
-            ResetSession(gameState, order);
-
+        /// <summary>
+        /// 월드 무대(지면·레인·WalkableVolume·상자·문·비콘·플레이어·카메라)를 현재 씬에 조립한다.
+        /// 매니저·세션 리셋은 포함하지 않는다 — Core 상주 씬(District)에서 무대만 재사용하기 위함.
+        /// </summary>
+        public static void BuildStageContent(GameStateSO gameState, TuningConfigSO tuning, DeliveryOrderSO order)
+        {
             Material ground = GetOrCreateMaterial("Ground", new Color(0.24f, 0.24f, 0.26f), false);
             Material lane = GetOrCreateMaterial("Lane", new Color(0.34f, 0.33f, 0.30f), false);
             Material body = GetOrCreateMaterial("Player", new Color(0.88f, 0.88f, 0.90f), false);
@@ -32,17 +52,16 @@ namespace DontLate.EditorTools
             Material box = GetOrCreateMaterial("Box", ParseColor("#ff9f45"), false);
             Material door = GetOrCreateMaterial("Door", new Color(0.45f, 0.38f, 0.32f), false);
             Material highlight = GetOrCreateMaterial("Highlight", ParseColor("#35e0c8"), true);
+            Material beacon = GetOrCreateMaterial("Beacon", new Color(0.13f, 0.55f, 0.49f), false);
 
             BuildGround(ground, lane);
-            BuildManagers(gameState, tuning);
             BuildWalkableVolume();
             BuildPickupBox(order, box, highlight);
-            BuildDeliveryPoint(order, door, highlight);
+            BuildDoorVisual(door);
+            BuildBeacon(order, beacon, highlight);
             BuildPlayer(gameState, tuning, body, nose);
+            BuildStreetLamps();
             ConfigureCamera();
-
-            Debug.Log("[Greybox] 무대 조립 완료 — Play를 누르면 WASD 이동 / E 상호작용. "
-                    + "적재 1건(#" + order.orderId + ") 마감 " + (order.deadlineMinuteOfDay / 60f).ToString("0.0") + "시.");
         }
 
         [MenuItem("DontLate/Clear Greybox Stage", priority = 1)]
@@ -84,6 +103,63 @@ namespace DontLate.EditorTools
             WorldDayNightManager dayNight = managers.AddComponent<WorldDayNightManager>();
             SetReference(dayNight, "_gameState", gameState);
             SetReference(dayNight, "_tuning", tuning);
+            SetReference(dayNight, "_sun", EnsureSun());
+            SetReference(dayNight, "_backgroundCamera", Camera.main);
+        }
+
+        /// <summary>씬의 Directional Light를 찾아 재사용(없으면 생성). DayNight의 _sun에 배선.</summary>
+        private static Light EnsureSun()
+        {
+            foreach (Light light in Object.FindObjectsByType<Light>(FindObjectsInactive.Include))
+                if (light.type == LightType.Directional) return light;
+
+            GameObject go = CreateEmpty("Sun", Vector3.zero);
+            Light sun = go.AddComponent<Light>();
+            sun.type = LightType.Directional;
+            sun.shadows = LightShadows.Soft;
+            return sun;
+        }
+
+        // 가로등 2개: X=-2·X=10, Z=-2. 4u 폴 대용 빈 GO에 프리팹 라이트를 자식으로.
+        private static void BuildStreetLamps()
+        {
+            GameObject prefab = GetOrCreateLampPrefab();
+            CreateLamp(prefab, new Vector3(-2f, 0f, -2f));
+            CreateLamp(prefab, new Vector3(10f, 0f, -2f));
+        }
+
+        private static void CreateLamp(GameObject prefab, Vector3 poleBase)
+        {
+            GameObject pole = CreateEmpty("LampPole", poleBase);
+            GameObject lamp = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+            lamp.transform.SetParent(pole.transform, false);
+            lamp.transform.localPosition = new Vector3(0f, 4f, 0f);
+        }
+
+        private static GameObject GetOrCreateLampPrefab()
+        {
+            GameObject existing = AssetDatabase.LoadAssetAtPath<GameObject>(LAMP_PREFAB_PATH);
+            if (existing != null) return existing;
+
+            EnsureFolder("Assets/Prefabs");
+            EnsureFolder("Assets/Prefabs/Hand");
+
+            GameObject temp = new GameObject("StreetLampLight");
+            temp.transform.localRotation = Quaternion.Euler(45f, 0f, 0f); // 아래 45° 조사
+            Light light = temp.AddComponent<Light>();
+            light.type = LightType.Spot;
+            light.range = 8f;
+            light.spotAngle = 60f;
+            light.color = ParseColor("#ff9f45");
+            light.intensity = 22f; // 4u 높이·range 8에서 지면에 앰버 풀이 또렷하게 보이는 값 (사람 튜닝 대상)
+            light.shadows = LightShadows.Soft;
+
+            StreetLampLight lamp = temp.AddComponent<StreetLampLight>();
+            SetReference(lamp, "_light", light);
+
+            GameObject prefab = PrefabUtility.SaveAsPrefabAsset(temp, LAMP_PREFAB_PATH);
+            Object.DestroyImmediate(temp);
+            return prefab;
         }
 
         private static void BuildWalkableVolume()
@@ -112,13 +188,36 @@ namespace DontLate.EditorTools
             SetReference(pickup, "_highlightMaterial", highlight);
         }
 
-        private static void BuildDeliveryPoint(DeliveryOrderSO order, Material normal, Material highlight)
+        // 문 큐브는 이제 시각물(배경)일 뿐 — 인증은 보도 위 비콘이 맡는다.
+        private static void BuildDoorVisual(Material material)
         {
             GameObject go = CreatePrimitive(PrimitiveType.Cube, "Door", new Vector3(6f, 1f, 2.6f));
             go.transform.localScale = new Vector3(1f, 2f, 0.2f);
-            go.GetComponent<BoxCollider>().isTrigger = true;
+            Object.DestroyImmediate(go.GetComponent<BoxCollider>());
+            go.GetComponent<Renderer>().sharedMaterial = material;
+        }
 
-            Renderer renderer = go.GetComponent<Renderer>();
+        // 문 앞 보도(Z 중앙) 발광 패드. DeliveryPoint를 얹고, 감지 트리거는 패드보다 크게.
+        private static void BuildBeacon(DeliveryOrderSO order, Material normal, Material highlight)
+        {
+            Vector2 padSize = new Vector2(1f, 1f);
+
+            GameObject go = CreateEmpty("Beacon", new Vector3(6f, 0f, 0f));
+
+            // 후보 감지는 넓게, 정밀 판정은 IFocusGate(_padSize)가 — 트리거는 현행 유지.
+            BoxCollider trigger = go.AddComponent<BoxCollider>();
+            trigger.isTrigger = true;
+            trigger.size = new Vector3(1.2f, 2f, 1.2f);
+            trigger.center = new Vector3(0f, 1f, 0f);
+
+            GameObject pad = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            pad.name = PREFIX + "BeaconPad";
+            Object.DestroyImmediate(pad.GetComponent<BoxCollider>());
+            pad.transform.SetParent(go.transform, false);
+            pad.transform.localPosition = new Vector3(0f, 0.03f, 0f);
+            pad.transform.localScale = new Vector3(padSize.x, 0.06f, padSize.y);
+
+            Renderer renderer = pad.GetComponent<Renderer>();
             renderer.sharedMaterial = normal;
 
             DeliveryPoint point = go.AddComponent<DeliveryPoint>();
@@ -126,6 +225,54 @@ namespace DontLate.EditorTools
             SetReference(point, "_renderer", renderer);
             SetReference(point, "_normalMaterial", normal);
             SetReference(point, "_highlightMaterial", highlight);
+            SetVector2(point, "_padSize", padSize);
+
+            // 테두리 4면 빛기둥 (높이 1.2u, _padSize 연동) — 부모 __gb_BeaconFx.
+            Material rise = GetOrCreateBeaconRiseMaterial();
+            GameObject fx = new GameObject(PREFIX + "BeaconFx");
+            fx.transform.SetParent(go.transform, false);
+            fx.transform.localPosition = Vector3.zero;
+
+            float hw = padSize.x * 0.5f;
+            float hd = padSize.y * 0.5f;
+            const float h = 1.2f;
+            CreateFxQuad(fx.transform, "BeaconFxPZ", new Vector3(0f, h * 0.5f, hd), new Vector3(padSize.x, h, 1f), Vector3.zero, rise);
+            CreateFxQuad(fx.transform, "BeaconFxNZ", new Vector3(0f, h * 0.5f, -hd), new Vector3(padSize.x, h, 1f), Vector3.zero, rise);
+            CreateFxQuad(fx.transform, "BeaconFxPX", new Vector3(hw, h * 0.5f, 0f), new Vector3(padSize.y, h, 1f), new Vector3(0f, 90f, 0f), rise);
+            CreateFxQuad(fx.transform, "BeaconFxNX", new Vector3(-hw, h * 0.5f, 0f), new Vector3(padSize.y, h, 1f), new Vector3(0f, 90f, 0f), rise);
+
+            SetReference(point, "_riseEffect", fx);
+        }
+
+        private static GameObject CreateFxQuad(Transform parent, string name, Vector3 localPos, Vector3 localScale, Vector3 euler, Material material)
+        {
+            GameObject quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            quad.name = PREFIX + name;
+            Object.DestroyImmediate(quad.GetComponent<Collider>());
+            quad.transform.SetParent(parent, false);
+            quad.transform.localPosition = localPos;
+            quad.transform.localScale = localScale;
+            quad.transform.localRotation = Quaternion.Euler(euler);
+            quad.GetComponent<Renderer>().sharedMaterial = material;
+            return quad;
+        }
+
+        private static Material GetOrCreateBeaconRiseMaterial()
+        {
+            string path = GREYBOX_ROOT + "/GB_BeaconRise.mat";
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material != null) return material;
+
+            EnsureFolder(DATA_ROOT);
+            EnsureFolder(GREYBOX_ROOT);
+
+            material = new Material(Shader.Find("DontLate/BeaconRise"));
+            material.SetColor("_Color", ParseColor("#3fe05a"));
+            material.SetFloat("_Alpha", 1f);
+            material.SetFloat("_ScrollSpeed", 0.5f);
+            AssetDatabase.CreateAsset(material, path);
+            AssetDatabase.SaveAssets();
+            return material;
         }
 
         private static void BuildPlayer(GameStateSO gameState, TuningConfigSO tuning, Material bodyMaterial, Material noseMaterial)
@@ -248,6 +395,14 @@ namespace DontLate.EditorTools
             SerializedObject serialized = new SerializedObject(target);
             SerializedProperty property = serialized.FindProperty(fieldName);
             property.objectReferenceValue = value;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void SetVector2(Object target, string fieldName, Vector2 value)
+        {
+            SerializedObject serialized = new SerializedObject(target);
+            SerializedProperty property = serialized.FindProperty(fieldName);
+            property.vector2Value = value;
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 

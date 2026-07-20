@@ -94,11 +94,19 @@ namespace DontLate
         public static event Action<bool> CarryStateChanged;
         /// <remarks>연속값이라 로그하지 않는다 (CODE_RULES §9.5).</remarks>
         public static event Action<float> StaminaChanged;
+        /// <summary>상호작용 포커스 획득/해제. 대상이 바뀔 때만 발행 — 프레임 데이터 아님.</summary>
+        public static event Action<bool> InteractionFocusChanged;
 
         public static void RaiseCarryStateChanged(bool isCarrying)
         {
             Log("CarryStateChanged → " + (isCarrying ? "들었다" : "내려놓았다"));
             CarryStateChanged?.Invoke(isCarrying);
+        }
+
+        public static void RaiseInteractionFocusChanged(bool focused)
+        {
+            Log("InteractionFocusChanged → 포커스 " + (focused ? "잡힘" : "해제"));
+            InteractionFocusChanged?.Invoke(focused);
         }
 
         public static void RaiseStaminaChanged(float normalized) => StaminaChanged?.Invoke(normalized);

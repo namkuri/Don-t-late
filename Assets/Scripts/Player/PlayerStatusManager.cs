@@ -62,19 +62,36 @@ namespace DontLate
             return true;
         }
 
-        public DeliveryOrderSO ReleaseCarry()
+        public DeliveryOrderSO ReleaseCarry(bool dropAsPhysics = false)
         {
             DeliveryOrderSO released = CarriedOrder;
             CarriedOrder = null;
 
             if (_carriedVisual != null)
             {
-                Destroy(_carriedVisual.gameObject);
+                if (dropAsPhysics) DropVisualAsPhysics(_carriedVisual);
+                else Destroy(_carriedVisual.gameObject);
                 _carriedVisual = null;
             }
 
             WorldEvents.RaiseCarryStateChanged(false);
             return released;
+        }
+
+        /// <summary>든 물건을 마지막 월드 위치·회전 그대로 손에서 놓아 물리로 떨어뜨린다(재픽업 불가).</summary>
+        private void DropVisualAsPhysics(Transform visual)
+        {
+            visual.SetParent(null, worldPositionStays: true);
+
+            if (visual.TryGetComponent(out PickupBox pickup)) Destroy(pickup);
+
+            if (visual.TryGetComponent(out Collider collider))
+            {
+                collider.enabled = true;
+                collider.isTrigger = false;
+            }
+
+            if (!visual.TryGetComponent(out Rigidbody _)) visual.gameObject.AddComponent<Rigidbody>();
         }
 
         /// <summary>든 물건의 겉모습을 캐리 앵커에 붙인다. 내려놓을 때 함께 사라진다.</summary>

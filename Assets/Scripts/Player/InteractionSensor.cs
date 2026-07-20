@@ -41,6 +41,7 @@ namespace DontLate
             for (int i = 0; i < count; i++)
             {
                 if (!_hits[i].TryGetComponent(out IInteractable candidate)) continue;
+                if (candidate is IFocusGate gate && !gate.AllowsFocus(transform.position)) continue;
 
                 float distance = (_hits[i].transform.position - transform.position).sqrMagnitude;
                 if (distance >= nearestDistance) continue;
@@ -54,6 +55,8 @@ namespace DontLate
             _current?.SetHighlight(false);
             _current = nearest;
             _current?.SetHighlight(true);
+
+            WorldEvents.RaiseInteractionFocusChanged(_current != null);
         }
 
         private void OnDrawGizmosSelected()

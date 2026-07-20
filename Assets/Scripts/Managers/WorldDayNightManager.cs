@@ -1,11 +1,13 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace DontLate
 {
     /// <summary>
     /// 게임 시계의 유일한 진행 주체. 시각 원본은 GameStateSO가 보관하고 여기서만 쓴다.
     /// 다른 매니저는 SO를 읽거나 ClockTicked를 구독한다 — 매니저 간 직접 참조는 없다.
-    /// 조명·LUT 구동은 P3에서 이 클래스에 추가된다.
+    /// 시각에 따른 하늘·태양광 구동을 담당한다. 구조만 코드에 있고 감각값(색·강도·노출)은
+    /// 전부 인스펙터에 노출되어 사람이 튜닝한다(D-027). 갱신은 매 프레임이 아니라 게임 분 틱.
     /// </summary>
     public class WorldDayNightManager : MonoBehaviour
     {
@@ -15,6 +17,33 @@ namespace DontLate
 
         [SerializeField] private GameStateSO _gameState;
         [SerializeField] private TuningConfigSO _tuning;
+
+        [Header("태양 (Directional) — 감각값은 인스펙터 튜닝")]
+        [SerializeField] private Light _sun;
+        [Tooltip("태양의 좌우 방위(Y). 하루 동안 고정, X(고도)만 시각으로 회전.")]
+        [SerializeField] private float _sunYaw = -30f;
+        [Tooltip("시각(0~24h 정규화) → 태양광 색.")]
+        [SerializeField] private Gradient _sunColor;
+        [Tooltip("시각(0~24h 정규화) → 태양광 강도. 밤은 0 근처.")]
+        [SerializeField] private AnimationCurve _sunIntensity;
+
+        [Header("주변광·하늘 — 감각값은 인스펙터 튜닝")]
+        [Tooltip("시각(0~24h 정규화) → 앰비언트 색.")]
+        [SerializeField] private Gradient _ambientColor;
+        [Tooltip("시각(0~24h 정규화) → 하늘 틴트(스카이박스 _SkyTint / 배경색 폴백).")]
+        [SerializeField] private Gradient _skyColor;
+        [Tooltip("시각(0~24h 정규화) → 스카이박스 노출.")]
+        [SerializeField] private AnimationCurve _skyExposure;
+        [Tooltip("스카이박스가 없을 때 배경색을 구동할 카메라(폴백).")]
+        [SerializeField] private Camera _backgroundCamera;
+
+        private static readonly int SkyTintId = Shader.PropertyToID("_SkyTint");
+        private static readonly int ExposureId = Shader.PropertyToID("_Exposure");
+
+        private Material _skyInstance;
+        private Material _originalSkybox;
+        private bool _driveSkyTint;
+        private bool _driveExposure;
 
         private int _lastTickedMinute = -1;
         private DayPhase _phase;
@@ -30,10 +59,26 @@ namespace DontLate
         private void OnDestroy()
         {
             if (Instance == this) Instance = null;
+
+            if (_skyInstance != null)
+            {
+                if (RenderSettings.skybox == _skyInstance) RenderSettings.skybox = _originalSkybox;
+                Destroy(_skyInstance);
+                _skyInstance = null;
+            }
+        }
+
+        private void Reset()
+        {
+            BuildVisualDefaults();
         }
 
         private void Start()
         {
+            EnsureVisualDefaults();
+            InitSky();
+            ApplyVisuals(_gameState.minuteOfDay);
+
             _phase = ResolvePhase(_gameState.minuteOfDay);
             WorldEvents.RaiseDayPhaseChanged(_phase);
         }
@@ -54,6 +99,7 @@ namespace DontLate
 
             _lastTickedMinute = minute;
             WorldEvents.RaiseClockTicked(BuildClock());
+            ApplyVisuals(_gameState.minuteOfDay);
 
             DayPhase phase = ResolvePhase(_gameState.minuteOfDay);
             if (phase == _phase) return;
@@ -78,6 +124,97 @@ namespace DontLate
                 Hour = total / 60,
                 Minute = total % 60
             };
+        }
+
+        // ── 비주얼 구동 ───────────────────────────────────────
+
+        /// <summary>스카이박스가 있으면 런타임 복제본을 만들어 구동(원본 에셋 보호).</summary>
+        private void InitSky()
+        {
+            RenderSettings.ambientMode = AmbientMode.Flat;
+
+            Material sky = RenderSettings.skybox;
+            if (sky != null && (sky.HasProperty(SkyTintId) || sky.HasProperty(ExposureId)))
+            {
+                _originalSkybox = sky;
+                _skyInstance = new Material(sky);
+                RenderSettings.skybox = _skyInstance;
+                _driveSkyTint = _skyInstance.HasProperty(SkyTintId);
+                _driveExposure = _skyInstance.HasProperty(ExposureId);
+                return;
+            }
+
+            // 폴백: 스카이박스 없음 → 카메라 배경색 그라디언트.
+            if (_backgroundCamera != null) _backgroundCamera.clearFlags = CameraClearFlags.SolidColor;
+        }
+
+        private void ApplyVisuals(float minuteOfDay)
+        {
+            float t = Mathf.Repeat(minuteOfDay, MINUTES_PER_DAY) / MINUTES_PER_DAY;
+
+            if (_sun != null)
+            {
+                _sun.color = _sunColor.Evaluate(t);
+                _sun.intensity = _sunIntensity.Evaluate(t);
+                // 아침 지평선 → 정오 머리 위 → 저녁 지평선 → 밤 지평선 아래.
+                _sun.transform.rotation = Quaternion.Euler(t * 360f - 90f, _sunYaw, 0f);
+            }
+
+            RenderSettings.ambientLight = _ambientColor.Evaluate(t);
+
+            if (_skyInstance != null)
+            {
+                if (_driveSkyTint) _skyInstance.SetColor(SkyTintId, _skyColor.Evaluate(t));
+                if (_driveExposure) _skyInstance.SetFloat(ExposureId, _skyExposure.Evaluate(t));
+            }
+            else if (_backgroundCamera != null)
+            {
+                _backgroundCamera.backgroundColor = _skyColor.Evaluate(t);
+            }
+        }
+
+        private void EnsureVisualDefaults()
+        {
+            if (_sunColor == null || _sunColor.colorKeys.Length < 2) BuildVisualDefaults();
+        }
+
+        /// <summary>인스펙터 튜닝의 출발점이 되는 기본 곡선·그라디언트. 사람이 덮어쓴다.</summary>
+        private void BuildVisualDefaults()
+        {
+            _sunColor = Gradient(
+                (0.00f, "#0a0d16"), (0.25f, "#ff9e6b"), (0.42f, "#fff4e0"),
+                (0.50f, "#ffffff"), (0.71f, "#ff9f45"), (0.83f, "#0a0d16"), (1.00f, "#0a0d16"));
+
+            _sunIntensity = new AnimationCurve(
+                new Keyframe(0.00f, 0.02f), new Keyframe(0.24f, 0.02f), new Keyframe(0.30f, 0.7f),
+                new Keyframe(0.42f, 1.0f), new Keyframe(0.50f, 1.3f), new Keyframe(0.71f, 0.7f),
+                new Keyframe(0.80f, 0.15f), new Keyframe(0.86f, 0.02f), new Keyframe(1.00f, 0.02f));
+
+            _ambientColor = Gradient(
+                (0.00f, "#0a0d16"), (0.25f, "#6b5a4a"), (0.42f, "#b8bcc4"),
+                (0.50f, "#ccd0d8"), (0.71f, "#8a6a4a"), (0.83f, "#12151f"), (1.00f, "#0a0d16"));
+
+            _skyColor = Gradient(
+                (0.00f, "#0a0d16"), (0.25f, "#e08a5a"), (0.42f, "#a8c8e8"),
+                (0.50f, "#9ec4e6"), (0.71f, "#ff9f45"), (0.83f, "#0a0d16"), (1.00f, "#0a0d16"));
+
+            _skyExposure = new AnimationCurve(
+                new Keyframe(0.00f, 0.15f), new Keyframe(0.25f, 0.5f), new Keyframe(0.42f, 1.0f),
+                new Keyframe(0.50f, 1.1f), new Keyframe(0.71f, 0.6f), new Keyframe(0.83f, 0.2f),
+                new Keyframe(1.00f, 0.15f));
+        }
+
+        private static Gradient Gradient(params (float t, string hex)[] stops)
+        {
+            var g = new Gradient();
+            var ck = new GradientColorKey[stops.Length];
+            for (int i = 0; i < stops.Length; i++)
+            {
+                ColorUtility.TryParseHtmlString(stops[i].hex, out Color c);
+                ck[i] = new GradientColorKey(c, stops[i].t);
+            }
+            g.SetKeys(ck, new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 1f) });
+            return g;
         }
 
         private DayPhase ResolvePhase(float minuteOfDay)
