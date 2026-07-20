@@ -30,7 +30,7 @@ namespace DontLate
             TuningConfigSO tuning = _hub.Tuning;
             Vector2 input = _hub.Input.MoveVector;
 
-            float speed = tuning.moveSpeed;
+            float speed = _hub.Input.RunHeld ? tuning.runSpeed : tuning.moveSpeed;
             if (_hub.Status.IsCarrying) speed *= tuning.carrySpeedPenalty;
 
             PlanarVelocity = new Vector3(input.x * speed, 0f, input.y * speed * tuning.depthSpeedRatio);

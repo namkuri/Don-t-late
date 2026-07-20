@@ -11,11 +11,14 @@ namespace DontLate
     public class PlayerInputHandler : MonoBehaviour
     {
         private InputAction _move;
+        private InputAction _run;
         private InputAction _jump;
         private InputAction _interact;
 
         /// <summary>x = 좌우(진행 방향), y = 깊이(Z).</summary>
         public Vector2 MoveVector => _move.ReadValue<Vector2>();
+        /// <summary>누르고 있는 동안 달린다.</summary>
+        public bool RunHeld => _run.IsPressed();
         public bool JumpPressed => _jump.WasPressedThisFrame();
         public bool InteractPressed => _interact.WasPressedThisFrame();
 
@@ -34,6 +37,11 @@ namespace DontLate
                 .With("Right", "<Keyboard>/rightArrow");
             _move.AddBinding("<Gamepad>/leftStick");
 
+            _run = new InputAction("Run", InputActionType.Button);
+            _run.AddBinding("<Keyboard>/leftShift");
+            _run.AddBinding("<Keyboard>/rightShift");
+            _run.AddBinding("<Gamepad>/leftStickPress");
+
             _jump = new InputAction("Jump", InputActionType.Button);
             _jump.AddBinding("<Keyboard>/space");
             _jump.AddBinding("<Gamepad>/buttonSouth");
@@ -46,6 +54,7 @@ namespace DontLate
         private void OnEnable()
         {
             _move.Enable();
+            _run.Enable();
             _jump.Enable();
             _interact.Enable();
         }
@@ -53,6 +62,7 @@ namespace DontLate
         private void OnDisable()
         {
             _move.Disable();
+            _run.Disable();
             _jump.Disable();
             _interact.Disable();
         }
@@ -60,6 +70,7 @@ namespace DontLate
         private void OnDestroy()
         {
             _move.Dispose();
+            _run.Dispose();
             _jump.Dispose();
             _interact.Dispose();
         }

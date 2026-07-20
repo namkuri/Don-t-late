@@ -46,6 +46,8 @@ void OnEnable()  { WorldEvents.DeliveryCompleted += OnDelivered; }
 void OnDisable() { WorldEvents.DeliveryCompleted -= OnDelivered; }
 ```
 
+- 실수→규칙 (2026-07-20): InputAction을 새로 추가하면 **생성·Enable·Disable·Dispose 4곳을 같은 편집에서** 맞춘다 — run 액션에서 Enable 누락 실제 발생 (컴파일은 통과하나 입력이 영원히 죽는 무증상 버그).
+
 ### 3.2 도메인 허브 — Player 내부
 ```csharp
 public class PlayerManager : MonoBehaviour {
@@ -127,6 +129,29 @@ public interface IInteractable {
   (프리팹 부착 필요사항 있으면 여기 명시)
 - 커밋 메시지: `[P2] PlayerLocomotionManager: Z레인 이동+캐리 페널티 (via ClaudeCode) [self-tested]`
 - 컴파일 실패·콘솔 에러 상태로 push 금지.
+
+## 9.5 이벤트 콘솔 로깅 (관측 규칙)
+
+> 목적: 코어루프가 "왜 안 도는지"를 콘솔만 보고 판정한다. 로그가 없으면 매번 exec로 상태를
+> 찍어봐야 하고, 그게 검증 시간의 대부분을 먹는다.
+
+- **로깅 지점은 `WorldEvents`의 `Raise*` 헬퍼 한 곳뿐.** 경계 이벤트는 전부 여기를 지나므로
+  단일 길목이다. 매니저·뷰에 개별 `Debug.Log`를 뿌리지 않는다(중복·누락·정리 지옥).
+- **에디터·개발빌드 전용**: `[Conditional("UNITY_EDITOR")]` + `[Conditional("DEVELOPMENT_BUILD")]`.
+  릴리스 빌드에는 호출 자체가 사라진다 — WebGL 용량·성능에 0 비용.
+- 형식: `[EVENT] <이벤트명> <핵심 필드>` · 접두어는 시안 `#35e0c8`(상호작용 색과 통일)로 컬러태그.
+  콘솔 검색창에 `[EVENT]`를 치면 코어루프 흐름만 걸러진다.
+
+### 로깅 대상 — 저빈도 "상태 변화 통지"만
+`OrderAccepted` · `PackagePickedUp` · `DeliveryCompleted` · `DeliveryFailed` · `DeadlineWarned` ·
+`CarryStateChanged` · `DayPhaseChanged` · `SceneTransitionStarted` · `SceneTransitionCompleted`
+
+### 로깅 금지 — 고빈도
+`ClockTicked`(게임 분마다 = 현 튜닝 초당 2회) · `StaminaChanged`(연속값, 5% 스텝이어도 잦다).
+**고빈도 이벤트를 로그에 올리면 콘솔이 쓰레기통이 되어 규칙 전체가 무력화된다.**
+이 둘의 상태가 필요하면 로그가 아니라 HUD나 `unity-cli exec`로 본다.
+
+- 새 이벤트를 `WorldEvents`에 추가할 땐 **저빈도면 로그를 함께 단다.** 고빈도면 위 금지 목록에 이름을 올린다.
 
 ## 10. 막히면
 

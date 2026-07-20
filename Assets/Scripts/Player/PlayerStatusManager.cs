@@ -11,8 +11,12 @@ namespace DontLate
         /// <summary>이 비율 이상 변했을 때만 경계 밖으로 알린다(프레임 데이터 방지).</summary>
         private const float STAMINA_NOTIFY_STEP = 0.05f;
 
+        [Tooltip("든 물건이 붙는 위치. 플레이어 자식 트랜스폼.")]
+        [SerializeField] private Transform _carryAnchor;
+
         private PlayerManager _hub;
         private float _lastNotifiedStamina = -1f;
+        private Transform _carriedVisual;
 
         public float Stamina { get; private set; }
         public float StaminaNormalized => Mathf.Clamp01(Stamina / _hub.Tuning.staminaMax);
@@ -20,6 +24,9 @@ namespace DontLate
         public bool IsCarrying => CarriedOrder != null;
 
         private void Awake() => _hub = GetComponent<PlayerManager>();
+
+        private void OnEnable() => WorldEvents.DeliveryFailed += OnDeliveryFailed;
+        private void OnDisable() => WorldEvents.DeliveryFailed -= OnDeliveryFailed;
 
         private void Start()
         {
@@ -59,8 +66,31 @@ namespace DontLate
         {
             DeliveryOrderSO released = CarriedOrder;
             CarriedOrder = null;
+
+            if (_carriedVisual != null)
+            {
+                Destroy(_carriedVisual.gameObject);
+                _carriedVisual = null;
+            }
+
             WorldEvents.RaiseCarryStateChanged(false);
             return released;
+        }
+
+        /// <summary>든 물건의 겉모습을 캐리 앵커에 붙인다. 내려놓을 때 함께 사라진다.</summary>
+        public void AttachCarried(Transform visual)
+        {
+            _carriedVisual = visual;
+            visual.SetParent(_carryAnchor, false);
+            visual.localPosition = Vector3.zero;
+            visual.localRotation = Quaternion.identity;
+        }
+
+        /// <summary>지각으로 실패한 건이 지금 든 것이면 손에서 내려놓는다.</summary>
+        private void OnDeliveryFailed(DeliveryData data)
+        {
+            if (CarriedOrder == null || CarriedOrder.orderId != data.OrderId) return;
+            ReleaseCarry();
         }
 
         public void RecoverStamina(float amount)

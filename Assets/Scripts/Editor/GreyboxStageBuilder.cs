@@ -159,6 +159,12 @@ namespace DontLate.EditorTools
             SetReference(hub, "_tuning", tuning);
             SetReference(hub, "_gameState", gameState);
 
+            // 든 상자가 붙는 자리 — 가슴 높이 앞쪽.
+            GameObject carryAnchor = new GameObject(PREFIX + "CarryAnchor");
+            carryAnchor.transform.SetParent(player.transform, false);
+            carryAnchor.transform.localPosition = new Vector3(0f, 1.05f, 0.45f);
+            SetReference(player.GetComponent<PlayerStatusManager>(), "_carryAnchor", carryAnchor.transform);
+
             GameObject sensor = new GameObject(PREFIX + "Sensor");
             sensor.transform.SetParent(player.transform, false);
             sensor.transform.localPosition = new Vector3(0f, 0.9f, 0f);

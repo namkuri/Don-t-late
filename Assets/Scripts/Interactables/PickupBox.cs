@@ -20,7 +20,10 @@ namespace DontLate
 
             WorldDeliveryManager.Instance.NotifyPickedUp(_order);
             SetHighlight(false);
-            gameObject.SetActive(false);
+
+            // 손에 든 동안은 센서에 다시 잡히면 안 된다.
+            GetComponent<Collider>().enabled = false;
+            ctx.Player.Status.AttachCarried(transform);
         }
 
         public void SetHighlight(bool on)

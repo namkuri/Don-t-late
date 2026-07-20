@@ -8,6 +8,8 @@ namespace DontLate
     {
         [Header("이동 (1u = 1m)")]
         public float moveSpeed = 4f;
+        /// <summary>Shift 달리기 속도. 애니메이션은 Speed 파라미터 임계값으로 걷기/달리기를 가른다.</summary>
+        public float runSpeed = 6f;
         /// <summary>Z(깊이) 이동 속도 배율. 대각 감을 위해 X보다 느리다.</summary>
         [Range(0f, 1f)] public float depthSpeedRatio = 0.7f;
         /// <summary>상자를 들었을 때 속도 배율.</summary>

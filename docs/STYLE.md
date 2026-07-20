@@ -1,24 +1,27 @@
-# STYLE.md — 아트 규격 v3 (2.5D · 동결됨 🔒)
-## 룩: "픽셀 월드 × 사실적 광원" — 2D 도트 에셋을 3D 무대에 세운다
+# STYLE.md — 아트 규격 v5 (3D×픽셀화 · 동결됨 🔒)
+## 룩: "3D 픽셀아트" — 일반 3D 모델을 셰이더·해상도로 픽셀화 (t3ssel8r 계열)
 
 ```yaml
+pipeline_levels:               # ⭐ 셰이더 토끼굴 방지 캡
+  L1_필수: "월드 카메라 → 저해상 렌더타겟(TECH_SPEC 참조) → 정수 업스케일 + 텍스처 Point 필터"
+  L2_목표: "팔레트 양자화/포스터라이즈 포스트 + 약한 디더"
+  L3_금지: "아웃라인 엣지검출·픽셀퍼펙트 스냅 — 하지 않는다 (Q3 재예산 통과 시에만 해제)"
 tier_rule:
-  P_dot_world:                 # 캐릭터(도트3D)·건물·소품·바닥 — 도트 에셋
-    density: "밀도 근사 — 주 플레이 레인(Z=0)에서 1아트픽셀 ≈ 3~4스크린픽셀"
-    note: "퍼스펙티브라 정수 스케일은 없다(포기 선언). 근/원경 밀도차=깊이감"
-    alpha: "컷아웃(hard edge) — 반투명 금지 (소팅 버그 원천 차단)"
-  H_hires:                     # UI·폰트·파티클·라이트·글로우·LUT
-    resolution: 자유
+  W_world: "3D 모델 전부 — 저해상 렌더 타겟 안 (픽셀화 대상)"
+  H_hires: "UI·폰트·대화창(박말순 초상 포함) — 풀해상 캔버스 오버레이 (선명 유지)"
+  particles: "기본 W(픽셀화) — 글로우·별빛만 H 허용"
 palette: {base_bg: "#0a0d16", dominant: "#ff9f45", accent: "#35e0c8", danger: "#ff4658"}
 color_meaning: {시안: 상호작용가능, 레드: 위험실패, 앰버: 목표보상, 네이비: 중립배경}
-character_3d:                  # 도트 스타일 3D (ARCHITECTURE §5.7)
-  texel_rule: "텍셀 크기 ≈ 주변 스프라이트 아트픽셀 (저해상 텍스처+Point)"
-  lighting: "월드와 동일 URP Lit(플랫)"  shadow: "블롭 섀도"
-signs: "간판=베이스+이미시브 2레이어 (밤 발광은 이미시브만 점등)"
+asset_rules:                   # AI 생성 전제 (Meshy 등)
+  texture: "256px · Point 필터 · PBR 없음 (베이스컬러만)"
+  poly: "prop <1500 · 캐릭터 <5000 · 건물 모듈 <3000 (초과 시 데시메이트 — 임포터 자동)"
+  silhouette: "픽셀화가 텍스처 결함은 가려도 실루엣은 못 가린다 — 검역은 실루엣 기준"
 lighting:
-  daynight: "Directional 커브 + LUT 2종(낮/밤) 블렌드 — 에셋 불변이 원칙"
+  shadow: "Directional 소프트 섀도 ON (저해상 렌더 안에서 자동 픽셀화 — 공짜 감성)"
+  daynight: "Directional 커브 + LUT 2종(낮/밤) — 에셋 불변 원칙"
   points: "가로등=앰버 · 상호작용·간판=시안 · 실패=레드"
-postprocess: "블룸(약, 광원·간판만) + 비네트(약). CRT·스캔라인은 문서 브랜드 전용(게임 미사용)"
-ai_process: "ComfyUI 등 고해상 생성 → 다운스케일 → 팔레트 양자화 → Art/ 폴더 투입(자동 임포트)"
+postprocess: "L2 양자화 + 블룸(약·H층) + 비네트. CRT·스캔라인=문서 브랜드 전용"
+ai_process: "Meshy/Trellis 3D 생성(클라우드) → 검역(실루엣·폴리·원점) → 임포터(데시메이트·Point)
+             → 픽셀화 파이프라인이 룩 통일. 후처리가 일관성을 산다 — PS1 철학의 귀환"
 readability: {interactable: "시안 미광/림", hierarchy: "목표 밝게·배경 어둡게"}
 ```

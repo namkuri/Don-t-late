@@ -5,8 +5,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 프로젝트
 
 **늦지마 (Don't Late)** — Unity 6.5 (6000.5.3f1) / URP 3D / 2.5D 배송 게임.
-현재 상태: **URP 3D 템플릿 그대로.** `Assets/`에는 `Scenes/SampleScene.unity`, `Settings/`(URP 에셋), `TutorialInfo/`(템플릿 Readme)뿐이고 게임 스크립트는 아직 0개다.
-즉 `.claude/rules/`의 설계 문서는 **앞으로 만들 것**을 기술한 것이지 현재 코드가 아니다. 문서에 나오는 파일을 찾지 말고, 만들 때 그 규격대로 만든다.
+현재 상태 (2026-07-20 갱신): **매니페스트 34종 중 25종 납품 완료** (커밋 f2ff808 + `WalkableVolume`·`GreyboxStageBuilder`).
+`Assets/Scripts/` 아래 Events·SO·Managers·Player·Interactables·UI·Utils 전부 실재한다 — **새로 만들기 전에 먼저 읽어라.**
+미착수는 P3·P4 12종 + 임포터 2종. 남은 작업·블로커는 `docs/plan/remaining-work.md`, 발주 상태는 `planning/TASKS.md`.
+Core 씬·플레이어 프리팹은 **아직 미조립**이라 그레이박스 루프는 완주되지 않았다.
 
 ## 설계 문서 (자동 로드됨 — 코딩 전 필독)
 
