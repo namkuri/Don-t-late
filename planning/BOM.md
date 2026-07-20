@@ -38,7 +38,7 @@
 | prop_box_parcel | 택배상자 | 1종/N | 0.4~0.75u · <1500tri · 원점=바닥중심 · **캐리 앵커 스케일 검증**(들었을 때 가슴 앞 0.45u에서 시야 안 가림) | generate | `__gb_Box` + 캐리 앵커 |
 | prop_streetlamp | 가로등 | 1종/10 | 4.0u · <500tri · **포인트 라이트 앵커 자식**(앰버 #ff9f45 — 밤 배당) | generate | `PropSlot` |
 | ~~prop_sign_*~~ | 간판 → **건물 통짜 편입** ([[decisions]] D-026) | — | 별도 간판 에셋 폐지. 가상 브랜드명 규칙(INTENT)은 건물 생성 프롬프트로 이동 | — | — |
-| fx_sign_glow | 간판 발광 데칼 | 머티리얼 1종/배치 12 | **URP 데칼 프로젝터**(이미시브) — 박스를 간판 영역에 씌우면 그 표면만 발광 · 밤 강도=DayNight 제어 · **PoC 대기** | build(CLI) | 건물별 데칼 박스 배치(에디터) |
+| fx_sign_glow | 간판 발광판 (B안 채택) | 셰이더1+스크립트1/배치 12 | SignGlow.shader(additive·HDR·소프트 폴오프) + SignGlowPlate.cs(저녁 자동 점등) — 간판 위 쿼드 배치. 데칼(A안) 승격은 선택 | build(CLI) | **review** ([[INBOX]] R11) · 배치=건물별 에디터 |
 | fx_beacon_rise | 비콘 빛기둥 이펙트 | 셰이더 1 + 쿼드 링 | 테두리 수직 그라디언트 상승 스크롤 · 상태 3단(기본→패드 위 반투명 0.3→배송 종결 시 소멸) — 전부 기존 훅(SetHighlight·OnDeliverySettled) · 색·알파 인스펙터 노출(기본 초록, 팔레트 시안 검토는 사람) | build(CLI) | `__gb_Beacon` 자식 · **발주 대기열** |
 | prop_street_* | 잡소품(화분·입간판·박스더미·쓰레기봉투 등) | 6~8종/~20 | <800tri · 풋프린트 콜라이더(팩토리 자동) | generate(pull) | `PropSlot` |
 | env_road_set | 도로·보도 모듈 | 3종/타일링 | 폭 규격: 보도=WalkableVolume Z폭과 일치(현 6u) | generate 또는 build(그레이박스 승격) | 씬 직배치 |
@@ -121,6 +121,9 @@
 | vfx_late_vignette | 실패 레드 비네트 펄스 | 1 | H층 포스트 |
 | vfx_pickup_pop | 픽업 아이템 팝 | 1 | W층 |
 | vfx_dust_run | 달리기 먼지 | 1 | P4 (PlayerEffectsManager 생성 전 금지) |
+| fx_starfield | 밤하늘 도트 별밭 | 셰이더1+쿼드1 | v3 완료: 정사각 8×8 실측·색 4계열·남보라 하늘·크기 0.02~0.12 | **review** ([[INBOX]] R13) |
+| pp_bloom | 글로벌 블룸(약) | Volume 1 | threshold 0.9 · intensity 0.35 — 픽셀화 뒤 적용, 낮 과노출 없음 실측 · Settings 에셋 무변경(프로파일+카메라 플래그만) | **review** |
+| fx_moon | 달 | 셰이더 쿼드 1 | 도트 원판+블룸 달무리 · 밤 페이드 · 위치 (−15, 4, 69)·scale 4.5 — **위치 확정은 사람** | **review** |
 
 ## 8. 오디오 (JUICE 도출 원칙 유지 — 목록 확장은 JUICE 개정안 J-1 승인 후 유효)
 

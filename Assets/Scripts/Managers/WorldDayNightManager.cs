@@ -194,14 +194,16 @@ namespace DontLate
                 (0.00f, "#0a0d16"), (0.25f, "#6b5a4a"), (0.42f, "#b8bcc4"),
                 (0.50f, "#ccd0d8"), (0.71f, "#8a6a4a"), (0.83f, "#12151f"), (1.00f, "#0a0d16"));
 
+            // 밤 하늘: 순검정 대신 어두운 남색~보라 톤(#0f0d1f). 별밭 쿼드의 상단 보라 그라디언트와 조화.
             _skyColor = Gradient(
-                (0.00f, "#0a0d16"), (0.25f, "#e08a5a"), (0.42f, "#a8c8e8"),
-                (0.50f, "#9ec4e6"), (0.71f, "#ff9f45"), (0.83f, "#0a0d16"), (1.00f, "#0a0d16"));
+                (0.00f, "#0f0d1f"), (0.25f, "#e08a5a"), (0.42f, "#a8c8e8"),
+                (0.50f, "#9ec4e6"), (0.71f, "#ff9f45"), (0.83f, "#0f0d1f"), (1.00f, "#0f0d1f"));
 
+            // 밤 구간 노출 소폭 상향(0.15→0.25) — 남보라가 검정으로 뭉개지지 않게.
             _skyExposure = new AnimationCurve(
-                new Keyframe(0.00f, 0.15f), new Keyframe(0.25f, 0.5f), new Keyframe(0.42f, 1.0f),
-                new Keyframe(0.50f, 1.1f), new Keyframe(0.71f, 0.6f), new Keyframe(0.83f, 0.2f),
-                new Keyframe(1.00f, 0.15f));
+                new Keyframe(0.00f, 0.25f), new Keyframe(0.25f, 0.5f), new Keyframe(0.42f, 1.0f),
+                new Keyframe(0.50f, 1.1f), new Keyframe(0.71f, 0.6f), new Keyframe(0.83f, 0.30f),
+                new Keyframe(1.00f, 0.25f));
         }
 
         private static Gradient Gradient(params (float t, string hex)[] stops)

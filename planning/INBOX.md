@@ -17,11 +17,16 @@
 
 | R10 | 폰트+HUD+태양 교정 | HUD 6요소 이벤트 반응 실측 · 한글 정상(Pretendard, OFL 기록: [[assets_manifest]]) · District 이중광원 0 · **Main(타이틀)에선 HUD 숨김으로 확정(관제 판단 — 뒤집으려면 한마디)** | [[BOM]] §6.5 · Screenshots/hud_*.png |
 
+| R12 | 가로등 8기 열 배치 (프리팹 링크·Visual/Light 분리) | 밤 8기 점등·아침 소등 실측 · **실루엣 판정 부탁** — 스왑은 [[swap-strategy]] 전략 A | Screenshots/lamp_rows_night.png |
+
+| R13 | 밤하늘 패키지 v3 (별밭+블룸+달) | 반려 2회 반영 완료: 정사각 실측·색 4계열·남보라 하늘·별 축소·블룸(낮 과노출 없음)·도트 달+달무리 · **달 위치(−15, 4)·크기 4.5 확정 요망** — 씬에서 `__gb_Moon` 옮기고 한마디 주면 빌더에 역반영 | Screenshots/night_v3.png |
+
 ## ② 결정 대기
 
 | # | 질문 | 권고 | 참조 |
 |---|---|---|---|
-| D-a | **간판 발광 구현 선택** — PoC 결과: 데칼이 박스 영역 마스킹은 완벽하나 **URP 기본 데칼 셰이더엔 발광(Emission)이 없음**. A) 님이 Shader Graph로 발광 데칼 15분 제작(표면 정합 최상, 가이드 제공) / B) **CLI가 발광 판때기(additive 쿼드) 제작** — 빛기둥 셰이더 기법 재사용, 오늘 가능 (권고: **B로 먼저, A는 여유 때 승격**) | 선택 대기 | [[BOM]] §2 fx_sign_glow · Screenshots/fx_sign_poc.png |
+| ~~D-a~~ | **B안(발광판) 구현 완료** — SignGlow.shader + SignGlowPlate.cs(저녁 자동 점등·HDR 색·소프트 폴오프). A안(발광 데칼 SG) 승격은 여유 때 선택 사항으로 격하 | **R11로 이동** | Screenshots/sign_glow_night.png |
+| R11 | 간판 발광판 (밤 컷 확인) | 저녁 점등·아침 소등 실측 · 밤 컷에 간판+가로등+빛기둥 공존 | [[BOM]] §2 fx_sign_glow |
 | R8 | 비콘 빛기둥 3단 상태 (기본→반투명→소멸) | 스크린샷 3장 + α 실측 1→0.3 — **색·알파·속도 인스펙터 노출됨** (초록 기본, 팔레트 시안 전환은 님 한 클릭) | [[BOM]] §7 fx_beacon_rise |
 | D-b | B-4 캐릭터 도구·리그 | **지금 할 일 아님** — RunPod 관통 후 | [[open-questions]] §B-4 |
 | D-c | **가로등 조사각**: 현재 45°(빛이 폴 앞쪽 지면에 맺힘 — 저녁 컷 참조) vs 정통 가로등처럼 바로 아래(90°) | 스크린샷 보고 취향 선택 | Screenshots/dn_evening.png |
@@ -29,6 +34,7 @@
 ## ③ 손 작업 대기 (CLI가 못 하는 것)
 
 | # | 작업 | 왜 | 참조 |
+| H5 | Greybox 씬의 떠돌이 `StreetLampLight` 오브젝트(위치 17.5, 1.1, 0.2 — 폴 없는 맨 스팟라이트) 삭제 여부 | 빌더 산물이 아니라 수동 배치물(아마 님 테스트 잔재) — `__gb_` 접두어가 없어 멱등 정리 대상 밖. 밤에 이것까지 켜져 광원 9개가 됨 | 씬=님 독점이라 관제가 안 지움 |
 |---|---|---|---|
 | H1 | `Assets/Art/Building`→`Buildings` · `Car`→`Props` 정리 | 임포터(R4·R5)가 **복수형 계약 경로만** 감지 | [[BOM]] §11 · [[decisions]] D-002 |
 | H2 | GS25 모델 → 가상 브랜드 교체 (제출 전 필수) | `docs/INTENT.md` 금지: 실상표 — 실격급 | [[BOM]] §9 data_brands |

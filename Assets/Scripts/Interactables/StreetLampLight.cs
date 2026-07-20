@@ -49,8 +49,9 @@ namespace DontLate
 
             if (first) { SetLit(IsLitPhase(phase)); return; } // 최초 상태는 즉시 반영
 
-            if (phase == _litPhase) StartFlicker();           // 저녁 진입 → 플리커 점등
-            else if (phase == DayPhase.Morning) SetLit(false); // 아침 진입 → 소등
+            if (phase == _litPhase) StartFlicker();                     // 저녁 진입 → 플리커 점등
+            else if (IsLitPhase(phase)) { if (!_light.enabled) StartFlicker(); } // 점등 시간대로 점프(예: 아침→밤 시각 조작) — 꺼져 있으면 점등
+            else SetLit(false);                                          // 그 외(아침·낮) 진입 → 소등
         }
 
         private bool IsLitPhase(DayPhase p) => p == _litPhase || p == DayPhase.Night;

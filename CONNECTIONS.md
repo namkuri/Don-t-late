@@ -10,7 +10,7 @@
 |---|---|---|---|---|---|---|
 | 1 | **unity-cli** (youngwoocho02) | 씬·컴파일·임포트·스왑·빌드 | logic-unity, build-deploy | ✅ | 완료 — CLI + 커넥터 0.3.22, 6000.5.3f1 ready (2026-07-20) | **없음 — 치명** |
 | 2 | **Meshy** (API/MCP) | 3D 소품·캐릭터 생성 | asset-3d, character-anim | ⬜ | API 키 발급 → MCP/스크립트 등록 | #3 Trellis |
-| 3 | **Trellis** | 3D 생성 대체 | asset-3d | ⬜ | 로컬/API 셋업 | #2 Meshy |
+| 3 | **Trellis** (RunPod) | 3D 생성 **1순위로 승격** | asset-3d | 🔄 셋업중(민지 · 2026-07-20~) | RunPod 인스턴스 → 생성 1회 관통 + 시간 실측 | #2 Meshy |
 | 4 | **Nano Banana** (이미지 생성) | 컨셉 원화 (방향 고정용 1장) | asset-3d §0 | ⬜ | API 키 또는 웹 UI | 🖐 사람이 웹에서 수동 생성 |
 | 5 | **Blender headless** (bpy CLI) | 후처리: 폴리 축소·원점 교정·익스포트 | asset-3d | ⬜ | blender 설치 + CLI 경로 확인 | 🖐 사람 수동 Blender |
 | 6 | **Mixamo** | 자동리깅·애니 리타깃 | character-anim | 🖐 | API 없음 — 웹 업로드/다운로드 절차서 준비 | 애니 세트 축소·정적 캐릭터 |

@@ -17,6 +17,8 @@
 | `__gb_Ground` | (0, 0, 0) | Plane 스케일 12×8 (=120×80u) | env_road_set | Art/Backgrounds/ |
 | `__gb_Lane` | (0, 0.02, 0) | 40×0.04×6 — 보도 띠 | env_road_set | 〃 |
 | `__gb_Walkable` | (0, 0, 0) | 트리거 40×4×6 center(0,2,0) — **Z 이동 허용 구간의 정의** | (규칙 볼륨 — 스왑 없음) | — |
+| `__gb_StreetLamp_01~05` | 앞줄 Z=−2.4 · X = −16/−8/0/8/16 | StreetLamp.prefab 인스턴스(링크 Connected) — 스왑=[[swap-strategy]] 전략 A | fx_streetlamp_light | Prefabs/Hand |
+| `__gb_StreetLamp_06~08` | 뒷줄 Z=+2.4 · X = −12/−4/12 (문 X=6 회피) · yaw 180° | 〃 | 〃 | 〃 |
 | Main Camera | (0, 8.1, −40.4) | FOV 22° · pitch 10° — [[TASKS]] M1-09 확정 전 잠정 | scn_camera_rig | — |
 | `__gb_Managers` | (0, 0, 0) | ⚠ Greybox 단독 테스트 전용 — District에는 없음(Core 상주) | — | — |
 
