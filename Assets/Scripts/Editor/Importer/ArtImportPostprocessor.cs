@@ -59,13 +59,54 @@ namespace DontLate.EditorTools
             importer.maxTextureSize = 256;
         }
 
+        // 애니메이션을 끄는 정적 카테고리 (소품·건물·배경 — 애니 불필요).
+        // Characters 는 제외 — Mixamo 클립 임포트가 필요하다.
+        private static readonly string[] NoAnimationCategories =
+        {
+            "Props", "Buildings", "Backgrounds"
+        };
+
         // ── 모델 (임포트 전) ─────────────────────────────────
         private void OnPreprocessModel()
         {
-            if (GetCategory(assetPath) == null) return;
+            string category = GetCategory(assetPath);
+            if (category == null) return;
 
             var importer = (ModelImporter)assetImporter;
             importer.isReadable = true; // 폴리·바운즈 검사를 위해
+
+            // 소품·건물·배경: 애니 임포트 자체를 끈다 (Tripo 빈 클립 경고 원천 차단).
+            if (System.Array.IndexOf(NoAnimationCategories, category) >= 0)
+            {
+                importer.animationType = ModelImporterAnimationType.None;
+                importer.importAnimation = false;
+            }
+        }
+
+        // ── 머티리얼 (임포트 후) — 비-URP 셰이더를 URP/Lit로 리맵 ──
+        // 계약 경로 모델의 임포트 머티리얼이 URP가 아니면(예: 표준/레거시 → 마젠타) URP/Lit로 교체.
+        // 베이스맵 텍스처·베이스컬러는 보존한다. (M1-07 완성)
+        private void OnPostprocessMaterial(Material material)
+        {
+            if (GetCategory(assetPath) == null) return;
+            if (material == null || material.shader == null) return;
+            if (material.shader.name.StartsWith("Universal Render Pipeline/")) return;
+
+            Shader urpLit = Shader.Find("Universal Render Pipeline/Lit");
+            if (urpLit == null) return;
+
+            // 표준/레거시 프로퍼티에서 베이스맵·색을 읽어 URP 프로퍼티로 이관.
+            Texture baseMap = material.HasProperty("_MainTex") ? material.GetTexture("_MainTex") : null;
+            Color baseColor = material.HasProperty("_Color") ? material.GetColor("_Color") : Color.white;
+
+            material.shader = urpLit;
+            if (baseMap != null && material.HasProperty("_BaseMap"))
+                material.SetTexture("_BaseMap", baseMap);
+            if (material.HasProperty("_BaseColor"))
+                material.SetColor("_BaseColor", baseColor);
+
+            Debug.Log($"[ArtImport] 머티리얼 URP 리맵: {material.name} " +
+                      $"({System.IO.Path.GetFileName(assetPath)})");
         }
 
         // ── 모델 (임포트 후) — 폴리·높이 검사 ────────────────

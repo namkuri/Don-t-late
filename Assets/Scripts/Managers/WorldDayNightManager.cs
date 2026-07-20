@@ -37,6 +37,12 @@ namespace DontLate
         [Tooltip("스카이박스가 없을 때 배경색을 구동할 카메라(폴백).")]
         [SerializeField] private Camera _backgroundCamera;
 
+        [Header("거리 안개 (Exponential Squared) — 감각값은 인스펙터 튜닝")]
+        [Tooltip("시각(0~24h 정규화) → 안개 색. 밤 짙은 남색·낮 옅은 회백.")]
+        [SerializeField] private Gradient _fogColor;
+        [Tooltip("시각(0~24h 정규화) → 안개 밀도. 밤 ~0.025·낮 ~0.004.")]
+        [SerializeField] private AnimationCurve _fogDensity;
+
         private static readonly int SkyTintId = Shader.PropertyToID("_SkyTint");
         private static readonly int ExposureId = Shader.PropertyToID("_Exposure");
 
@@ -132,6 +138,8 @@ namespace DontLate
         private void InitSky()
         {
             RenderSettings.ambientMode = AmbientMode.Flat;
+            RenderSettings.fog = true;
+            RenderSettings.fogMode = FogMode.ExponentialSquared;
 
             Material sky = RenderSettings.skybox;
             if (sky != null && (sky.HasProperty(SkyTintId) || sky.HasProperty(ExposureId)))
@@ -162,6 +170,9 @@ namespace DontLate
 
             RenderSettings.ambientLight = _ambientColor.Evaluate(t);
 
+            RenderSettings.fogColor = _fogColor.Evaluate(t);
+            RenderSettings.fogDensity = _fogDensity.Evaluate(t);
+
             if (_skyInstance != null)
             {
                 if (_driveSkyTint) _skyInstance.SetColor(SkyTintId, _skyColor.Evaluate(t));
@@ -176,6 +187,7 @@ namespace DontLate
         private void EnsureVisualDefaults()
         {
             if (_sunColor == null || _sunColor.colorKeys.Length < 2) BuildVisualDefaults();
+            if (_fogColor == null || _fogColor.colorKeys.Length < 2) BuildFogDefaults();
         }
 
         /// <summary>인스펙터 튜닝의 출발점이 되는 기본 곡선·그라디언트. 사람이 덮어쓴다.</summary>
@@ -204,6 +216,23 @@ namespace DontLate
                 new Keyframe(0.00f, 0.25f), new Keyframe(0.25f, 0.5f), new Keyframe(0.42f, 1.0f),
                 new Keyframe(0.50f, 1.1f), new Keyframe(0.71f, 0.6f), new Keyframe(0.83f, 0.30f),
                 new Keyframe(1.00f, 0.25f));
+
+            BuildFogDefaults();
+        }
+
+        /// <summary>거리 안개 기본값 — 밤 짙은 남색·고밀도, 낮 옅은 회백·저밀도. 사람이 덮어쓴다.</summary>
+        private void BuildFogDefaults()
+        {
+            // 밤 #0f0d1f(남보라) — 하늘·별밭 상단 톤과 조화. 낮은 옅은 회백으로 원경만 살짝.
+            _fogColor = Gradient(
+                (0.00f, "#0f0d1f"), (0.25f, "#5a5560"), (0.42f, "#c2c6cc"),
+                (0.50f, "#cdd1d7"), (0.71f, "#8a6a5a"), (0.83f, "#1a1626"), (1.00f, "#0f0d1f"));
+
+            // 밤 ~0.012 · 낮 ~0.004 (사람 피드백 2026-07-21 "너무 찐하다" → 절반). exp² 라 원경일수록 잠긴다.
+            _fogDensity = new AnimationCurve(
+                new Keyframe(0.00f, 0.012f), new Keyframe(0.25f, 0.007f), new Keyframe(0.33f, 0.004f),
+                new Keyframe(0.50f, 0.004f), new Keyframe(0.66f, 0.005f), new Keyframe(0.79f, 0.008f),
+                new Keyframe(0.86f, 0.012f), new Keyframe(1.00f, 0.012f));
         }
 
         private static Gradient Gradient(params (float t, string hex)[] stops)

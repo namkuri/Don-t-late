@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -50,8 +51,6 @@ namespace DontLate.EditorTools
         {
             Material ground = GetOrCreateMaterial("Ground", new Color(0.24f, 0.24f, 0.26f), false);
             Material lane = GetOrCreateMaterial("Lane", new Color(0.34f, 0.33f, 0.30f), false);
-            Material body = GetOrCreateMaterial("Player", new Color(0.88f, 0.88f, 0.90f), false);
-            Material nose = GetOrCreateMaterial("Facing", new Color(0.95f, 0.35f, 0.35f), false);
             Material box = GetOrCreateMaterial("Box", ParseColor("#ff9f45"), false);
             Material door = GetOrCreateMaterial("Door", new Color(0.45f, 0.38f, 0.32f), false);
             Material highlight = GetOrCreateMaterial("Highlight", ParseColor("#35e0c8"), true);
@@ -59,13 +58,14 @@ namespace DontLate.EditorTools
 
             BuildGround(ground, lane);
             BuildWalkableVolume();
+            BuildGroundMist();
             BuildStarField();
             BuildMoon();
             BuildPickupBox(order, box, highlight);
             BuildDoorVisual(door);
             BuildSignGlow();
             BuildBeacon(order, beacon, highlight);
-            BuildPlayer(gameState, tuning, body, nose);
+            BuildPlayer(gameState, tuning);
             BuildStreetLamps();
             BuildPostVolume();
             ConfigureCamera();
@@ -132,6 +132,7 @@ namespace DontLate.EditorTools
         private static void BuildStreetLamps()
         {
             GameObject prefab = GetOrCreateLampPrefab();
+            EnsureLampCone(); // StreetLampLight.prefab에 광추 Cone 보장(멱등) — 프리팹 링크로 전 인스턴스 전파
             int index = 1;
             float[] front = { -16f, -8f, 0f, 8f, 16f };
             float[] back = { -12f, -4f, 12f };
@@ -218,6 +219,158 @@ namespace DontLate.EditorTools
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(temp, LAMP_LIGHT_PREFAB_PATH);
             Object.DestroyImmediate(temp);
             return prefab;
+        }
+
+        // StreetLampLight.prefab에 광추(원뿔) Cone을 보장한다(멱등). Light(45° 아래로 기움)의
+        // 자식이므로 -45° 역회전해 콘을 수직으로 세운다. 프리팹 링크로 StreetLamp 전 인스턴스에 전파.
+        private static void EnsureLampCone()
+        {
+            GameObject root = PrefabUtility.LoadPrefabContents(LAMP_LIGHT_PREFAB_PATH);
+            try
+            {
+                Transform coneT = root.transform.Find("Cone");
+                GameObject cone;
+                if (coneT == null)
+                {
+                    cone = new GameObject("Cone");
+                    cone.transform.SetParent(root.transform, false);
+                    cone.AddComponent<MeshFilter>();
+                    cone.AddComponent<MeshRenderer>();
+                }
+                else cone = coneT.gameObject;
+
+                cone.transform.localPosition = Vector3.zero;
+                cone.transform.localRotation = Quaternion.Euler(-45f, 0f, 0f); // 부모 45° 상쇄 → 수직
+                cone.transform.localScale = Vector3.one;
+
+                cone.GetComponent<MeshFilter>().sharedMesh = GetOrCreateConeMesh();
+                MeshRenderer mr = cone.GetComponent<MeshRenderer>();
+                mr.sharedMaterial = GetOrCreateLightConeMaterial();
+                mr.shadowCastingMode = ShadowCastingMode.Off;
+                mr.receiveShadows = false;
+
+                StreetLampLight lamp = root.GetComponent<StreetLampLight>();
+                if (lamp != null) SetReference(lamp, "_coneRenderer", mr);
+
+                PrefabUtility.SaveAsPrefabAsset(root, LAMP_LIGHT_PREFAB_PATH);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
+        // 절두원뿔 측면 메시(캡 없음). 상단 y=0 반경 0.2 → 하단 y=-3.5 반경 1.4. 위→아래로 벌어진다.
+        // uv.y: 하단 0 · 상단 1(광원쪽). 법선은 반경 바깥 방향(프레넬 소프트 엣지용).
+        private static Mesh GetOrCreateConeMesh()
+        {
+            string path = GREYBOX_ROOT + "/GB_LightCone_mesh.asset";
+            Mesh existing = AssetDatabase.LoadAssetAtPath<Mesh>(path);
+            if (existing != null) return existing;
+
+            EnsureFolder(DATA_ROOT);
+            EnsureFolder(GREYBOX_ROOT);
+
+            const int seg = 24;
+            const float rTop = 0.2f, rBot = 1.4f, h = 3.5f;
+
+            var verts = new List<Vector3>();
+            var norms = new List<Vector3>();
+            var uvs = new List<Vector2>();
+            var tris = new List<int>();
+
+            for (int i = 0; i <= seg; i++)
+            {
+                float a = (float)i / seg * Mathf.PI * 2f;
+                float cx = Mathf.Cos(a), cz = Mathf.Sin(a);
+                verts.Add(new Vector3(cx * rTop, 0f, cz * rTop));    // 상단
+                verts.Add(new Vector3(cx * rBot, -h, cz * rBot));    // 하단
+                Vector3 n = new Vector3(cx, 0f, cz).normalized;
+                norms.Add(n); norms.Add(n);
+                float u = (float)i / seg;
+                uvs.Add(new Vector2(u, 1f));
+                uvs.Add(new Vector2(u, 0f));
+            }
+            for (int i = 0; i < seg; i++)
+            {
+                int t0 = i * 2, b0 = i * 2 + 1, t1 = (i + 1) * 2, b1 = (i + 1) * 2 + 1;
+                tris.Add(t0); tris.Add(b0); tris.Add(t1);
+                tris.Add(t1); tris.Add(b0); tris.Add(b1);
+            }
+
+            var mesh = new Mesh { name = "GB_LightCone_mesh" };
+            mesh.SetVertices(verts);
+            mesh.SetNormals(norms);
+            mesh.SetUVs(0, uvs);
+            mesh.SetTriangles(tris, 0);
+            mesh.RecalculateBounds();
+
+            AssetDatabase.CreateAsset(mesh, path);
+            AssetDatabase.SaveAssets();
+            return mesh;
+        }
+
+        private static Material GetOrCreateLightConeMaterial()
+        {
+            string path = GREYBOX_ROOT + "/GB_LightCone.mat";
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material != null) return material;
+
+            EnsureFolder(DATA_ROOT);
+            EnsureFolder(GREYBOX_ROOT);
+
+            material = new Material(Shader.Find("DontLate/LightCone"));
+            material.SetColor("_Color", ParseColor("#ff9f45") * 2f); // 앰버 HDR(블룸 임계 위)
+            material.SetFloat("_Alpha", 0.5f);
+            AssetDatabase.CreateAsset(material, path);
+            AssetDatabase.SaveAssets();
+            return material;
+        }
+
+        // 바닥 안개층 쿼드 2장. 수평(rot X=90°)으로 눕혀 레인(폭 X)을 덮는다. y·스케일 상이.
+        // GroundMist 셰이더 + StarField.cs(_GlobalAlpha 밤 페이드 재사용). 낮=소멸.
+        private static void BuildGroundMist()
+        {
+            Material mist = GetOrCreateGroundMistMaterial();
+            BuildMistQuad("GroundMist_Lo", new Vector3(0f, 0.30f, 0f), new Vector3(36f, 5f, 1f), mist);
+            BuildMistQuad("GroundMist_Hi", new Vector3(1.5f, 0.55f, 0.4f), new Vector3(30f, 4f, 1f), mist);
+        }
+
+        private static void BuildMistQuad(string name, Vector3 position, Vector3 scale, Material material)
+        {
+            GameObject go = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            go.name = PREFIX + name;
+            Object.DestroyImmediate(go.GetComponent<Collider>());
+            go.transform.position = position;
+            go.transform.rotation = Quaternion.Euler(90f, 0f, 0f); // 수평으로 눕힘
+            go.transform.localScale = scale;
+            Undo.RegisterCreatedObjectUndo(go, "Build Greybox Stage");
+
+            Renderer renderer = go.GetComponent<Renderer>();
+            renderer.sharedMaterial = material;
+
+            StarField fade = go.AddComponent<StarField>();
+            SetReference(fade, "_renderer", renderer);
+        }
+
+        private static Material GetOrCreateGroundMistMaterial()
+        {
+            string path = GREYBOX_ROOT + "/GB_GroundMist.mat";
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material != null) return material;
+
+            EnsureFolder(DATA_ROOT);
+            EnsureFolder(GREYBOX_ROOT);
+
+            material = new Material(Shader.Find("DontLate/GroundMist"));
+            material.SetColor("_Color", new Color(0.60f, 0.62f, 0.72f, 1f));
+            material.SetFloat("_ScrollSpeed", 0.03f);
+            material.SetFloat("_NoiseScale", 4f);
+            material.SetFloat("_Coverage", 0.55f);
+            material.SetFloat("_GlobalAlpha", 0f);
+            AssetDatabase.CreateAsset(material, path);
+            AssetDatabase.SaveAssets();
+            return material;
         }
 
         private static void BuildWalkableVolume()
@@ -436,29 +589,31 @@ namespace DontLate.EditorTools
             PaintDisc(px, n, cx, cy, r, 21f, 24f, 2.6f, crater1);  // 상단 작은 얼룩
             PaintDisc(px, n, cx, cy, r, 6f, 14f, 2.2f, crater2);   // 좌측 가장자리 점
 
-            // 달 토끼 실루엣 (위→아래 행). 측면 포즈 — 귀 2개(2px 간격, 블룸에도 분리 유지) +
-            // 코 왼쪽 머리 + 둥근 몸통 + 뒷발. 달 우측에 배치.
+            // 달 토끼 실루엣 (위→아래 행) — 민지 원화 구도 참조(planning/reference/moon_minji_original.png):
+            // 왼쪽을 보고 앉아 앞발(P열=공이)을 잡고 절구(좌하단 그릇)를 찧는 자세.
+            // 귀 2개(틈 3px) + 둥근 등 + 뒷발. '.' 외 모든 문자가 토끼 톤.
             string[] rows =
             {
-                "..XX..XX..",
-                "..XX..XX..",
-                "..XX..XX..",
-                "..XXXXXX..",
-                ".XXXXXXX..",
-                "XXXXXXXX..",
-                "XXXXXXXXX.",
-                "XXXXXXXXXX",
-                "XXXXXXXXXX",
-                ".XXXXXXXX.",
-                "..XX..XX..",
-                ".XX...XX..",
+                ".....X...X....",
+                ".....X...X....",
+                ".....XX..XX...",
+                ".....XXXXXX...",
+                "....XXXXXXX...",
+                "....XXXXXXXX..",
+                ".P..XXXXXXXXX.",
+                ".PXXXXXXXXXXX.",
+                ".P.XXXXXXXXXX.",
+                ".P..XXXXXXXXX.",
+                "XXXX..XXXXXXX.",
+                "XXXX...XXXXX..",
+                ".XX.....XX.XX.",
             };
-            int startX = 15;               // 토끼 좌측 열(텍스처 x) — 중앙 우측
-            int topY = n - 11;             // 첫 행의 텍스처 y (아래로 갈수록 y 감소)
+            int startX = 14;               // 실루엣 좌측 열(텍스처 x) — 중앙 우측
+            int topY = n - 10;             // 첫 행의 텍스처 y (아래로 갈수록 y 감소)
             for (int row = 0; row < rows.Length; row++)
                 for (int col = 0; col < rows[row].Length; col++)
                 {
-                    if (rows[row][col] != 'X') continue;
+                    if (rows[row][col] == '.') continue;
                     int tx = startX + col;
                     int ty = topY - row;
                     if (tx < 0 || tx >= n || ty < 0 || ty >= n) continue;
@@ -597,7 +752,10 @@ namespace DontLate.EditorTools
             return material;
         }
 
-        private static void BuildPlayer(GameStateSO gameState, TuningConfigSO tuning, Material bodyMaterial, Material noseMaterial)
+        private const string COURIER_FBX_PATH = "Assets/Art/Characters/chr_courier.fbx";
+        private const string COURIER_AC_PATH = "Assets/Art/Characters/AC_chr_courier.controller";
+
+        private static void BuildPlayer(GameStateSO gameState, TuningConfigSO tuning)
         {
             GameObject player = CreateEmpty("Player", new Vector3(0f, 0.1f, 0f));
             player.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
@@ -607,26 +765,13 @@ namespace DontLate.EditorTools
             controller.radius = 0.35f;
             controller.center = new Vector3(0f, 0.9f, 0f);
 
-            GameObject body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            body.name = PREFIX + "Body";
-            Object.DestroyImmediate(body.GetComponent<CapsuleCollider>());
-            body.transform.SetParent(player.transform, false);
-            body.transform.localPosition = new Vector3(0f, 0.9f, 0f);
-            body.transform.localScale = new Vector3(0.7f, 0.9f, 0.7f);
-            body.GetComponent<Renderer>().sharedMaterial = bodyMaterial;
-
-            GameObject nose = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            nose.name = PREFIX + "Facing";
-            Object.DestroyImmediate(nose.GetComponent<BoxCollider>());
-            nose.transform.SetParent(player.transform, false);
-            nose.transform.localPosition = new Vector3(0f, 1.25f, 0.42f);
-            nose.transform.localScale = new Vector3(0.18f, 0.18f, 0.45f);
-            nose.GetComponent<Renderer>().sharedMaterial = noseMaterial;
+            Animator animator = BuildCourierVisual(player);
 
             PlayerManager hub = player.AddComponent<PlayerManager>();
-            player.AddComponent<PlayerAnimationManager>();
+            PlayerAnimationManager anim = player.AddComponent<PlayerAnimationManager>();
             SetReference(hub, "_tuning", tuning);
             SetReference(hub, "_gameState", gameState);
+            if (animator != null) SetReference(anim, "_animator", animator);
 
             // 든 상자가 붙는 자리 — 가슴 높이 앞쪽.
             GameObject carryAnchor = new GameObject(PREFIX + "CarryAnchor");
@@ -638,6 +783,58 @@ namespace DontLate.EditorTools
             sensor.transform.SetParent(player.transform, false);
             sensor.transform.localPosition = new Vector3(0f, 0.9f, 0f);
             sensor.AddComponent<InteractionSensor>();
+        }
+
+        // chr_courier(Tripo·Mixamo 리그) 인스턴스를 플레이어 밑에 붙인다.
+        // 렌더 바운즈 높이를 1.8u로 정규화하고 발을 지면(y=0)에 맞춘 뒤 Animator(AC+아바타)를 배선한다.
+        // 캡슐/코 비주얼 대체 — CharacterController 치수는 BuildPlayer가 그대로 유지한다.
+        private static Animator BuildCourierVisual(GameObject player)
+        {
+            GameObject fbx = AssetDatabase.LoadAssetAtPath<GameObject>(COURIER_FBX_PATH);
+            if (fbx == null)
+            {
+                Debug.LogWarning("[Greybox] chr_courier.fbx 미발견 — 비주얼 스킵.");
+                return null;
+            }
+
+            GameObject visual = (GameObject)PrefabUtility.InstantiatePrefab(fbx);
+            visual.name = PREFIX + "CourierVisual";
+            visual.transform.SetParent(player.transform, false);
+            visual.transform.localPosition = Vector3.zero;
+            visual.transform.localRotation = Quaternion.identity;
+            visual.transform.localScale = Vector3.one;
+
+            // 렌더 바운즈 높이 → 1.8u 정규화
+            Bounds bounds = ComputeRenderBounds(visual);
+            if (bounds.size.y > 0.001f)
+                visual.transform.localScale = Vector3.one * (1.8f / bounds.size.y);
+
+            // 발끝을 지면(world y=0)에 정렬
+            bounds = ComputeRenderBounds(visual);
+            visual.transform.position += Vector3.up * (0f - bounds.min.y);
+
+            Animator animator = visual.GetComponentInChildren<Animator>();
+            if (animator == null) animator = visual.AddComponent<Animator>();
+            animator.runtimeAnimatorController =
+                AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(COURIER_AC_PATH);
+            animator.applyRootMotion = false;
+
+            foreach (Object asset in AssetDatabase.LoadAllAssetsAtPath(COURIER_FBX_PATH))
+                if (asset is Avatar avatar) { animator.avatar = avatar; break; }
+
+            return animator;
+        }
+
+        private static Bounds ComputeRenderBounds(GameObject root)
+        {
+            Bounds bounds = new Bounds(root.transform.position, Vector3.zero);
+            bool initialized = false;
+            foreach (Renderer renderer in root.GetComponentsInChildren<Renderer>(true))
+            {
+                if (!initialized) { bounds = renderer.bounds; initialized = true; }
+                else bounds.Encapsulate(renderer.bounds);
+            }
+            return bounds;
         }
 
         private static void ConfigureCamera()

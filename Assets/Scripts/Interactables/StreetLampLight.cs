@@ -11,6 +11,8 @@ namespace DontLate
     public class StreetLampLight : MonoBehaviour
     {
         [SerializeField] private Light _light;
+        [Tooltip("가로등 광추(안개 속 원뿔) 렌더러. 점등/소등에 함께 켜고 끈다.")]
+        [SerializeField] private Renderer _coneRenderer;
         [SerializeField] private Color _color = new Color(1f, 0.624f, 0.271f); // #ff9f45
         [SerializeField] private float _flickerDuration = 1.5f;
         [SerializeField] private float _flickerDelayMax = 0.5f;
@@ -29,6 +31,7 @@ namespace DontLate
             _light.color = _color;
             _rng = new System.Random(System.Guid.NewGuid().GetHashCode()); // 등마다 상이한 시드
             _light.enabled = false;
+            SetConeVisible(false);
         }
 
         private void OnEnable()
@@ -61,6 +64,12 @@ namespace DontLate
             if (_flicker != null) { StopCoroutine(_flicker); _flicker = null; }
             _light.enabled = on;
             _light.intensity = _baseIntensity;
+            SetConeVisible(on);
+        }
+
+        private void SetConeVisible(bool on)
+        {
+            if (_coneRenderer != null) _coneRenderer.enabled = on;
         }
 
         private void StartFlicker()
@@ -74,6 +83,7 @@ namespace DontLate
             yield return new WaitForSeconds((float)_rng.NextDouble() * _flickerDelayMax);
 
             _light.enabled = true;
+            SetConeVisible(true);
             float elapsed = 0f;
             while (elapsed < _flickerDuration)
             {

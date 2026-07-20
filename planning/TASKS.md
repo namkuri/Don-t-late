@@ -17,7 +17,7 @@
 | M1-17 | **캐리 비주얼 부재** — 상자를 들면 화면에서 그냥 사라진다 | 미정 | core | ? | todo | 매니페스트에 항목 없음 → **설계 공백, 사람 판단 필요** |
 | M1-09 | 카메라 리그 확정 (1920×1080 · 480×270 RT · 정수 4× 업스케일) | 관제 | core | 45 | todo | D-003. 현재 프레이밍 과망원 — 피사체가 작다 |
 | M1-11 | CoreBootstrap 자가 Additive 로드 (씬 단독 Play 시 NullRef 방지) | 정수 | core | 30 | todo | Main.unity에서 실제 발생 확인됨 |
-| M1-03 | Animator 컨트롤러 + 파라미터 3종 | 남규 | core | 30 | hold(B-4) | 리그 방식 미정 |
+| M1-03 | Animator 컨트롤러 + 파라미터 3종 | **CLI**(D-017 이관) | core | 30 | **review** | AC_chr_courier — Speed 1D 블렌드(Walk 2.5/Run 4.5) · 계약 파라미터 3종 · idle 미납품이라 0구간=Walk 대행 · [[INBOX]] D-b |
 | M1-04 | FadeScreen UI (CanvasGroup + "늦지마!" 컷인) | 남규 | peripheral | 25 | todo | 코드 있음 |
 | M1-05 | 씬 5종 빌드세팅 등록 | 남규 | core | 10 | todo | — |
 | M1-07 | ArtImportPostprocessor (폴더 경로 트리거) | **CLI**(D-017 이관) | core | 90→실측 ~11분 | **review** | .obj 관통 테스트 통과 · 상세 [[BOM]] §11 |

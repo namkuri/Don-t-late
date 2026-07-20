@@ -122,6 +122,7 @@
 | vfx_pickup_pop | 픽업 아이템 팝 | 1 | W층 |
 | vfx_dust_run | 달리기 먼지 | 1 | P4 (PlayerEffectsManager 생성 전 금지) |
 | fx_starfield | 밤하늘 도트 별밭 | 셰이더1+쿼드1 | v3 완료: 정사각 8×8 실측·색 4계열·남보라 하늘·크기 0.02~0.12 | **review** ([[INBOX]] R13) |
+| fx_night_fog | 심야 안개 3종 | 셰이더2+DayNight 확장 | 거리안개(시각 연동)+가로등 광추(볼류메트릭 인상)+바닥 안개층(흐름) — 진짜 볼류메트릭은 URP/WebGL 불가라 인상 3종 조합 · 감각값 전부 노출 | **doing** 🔄 |
 | pp_bloom | 글로벌 블룸(약) | Volume 1 | threshold 0.9 · intensity 0.35 — 픽셀화 뒤 적용, 낮 과노출 없음 실측 · Settings 에셋 무변경(프로파일+카메라 플래그만) | **review** |
 | fx_moon | 달 | 셰이더 쿼드 1 | 도트 원판+블룸 달무리 · 밤 페이드 · 위치 (−15, 4, 69)·scale 4.5 — **위치 확정은 사람** | **review** |
 
