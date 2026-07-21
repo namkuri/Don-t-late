@@ -156,3 +156,9 @@
 수용기준: ① 컴파일 통과 ② 콘솔 0 ③ Play에서 저녁 진입 시 간판 면 자체가 시안 발광(가리는 판 없음)·아침 소등, 스크린샷 확보.
 
 실패시: [BLOCKED] 보고. ⚠ 발주 시점 에디터 미가동 — 검증 3종은 에디터 기동 후 수행(그 전 push 금지).
+
+### 결과 · 2026-07-22 01:23 (리드 22분)
+- SignGlowPlate → `SignGlow` 개명(git mv, GUID 보존): 간판 렌더러 자체 머티리얼의 `_EmissionColor`를 phase로 구동. 별도 발광판 소멸.
+- 빌더: `__gb_Sign` 쿼드 = 간판 그 자체(URP Lit `GB_Sign.mat`). `_EMISSION` 키워드는 **CreateAsset 후**에 켜야 저장됨(실측 — 생성 과정이 키워드 리셋). 고아 에셋 4종 삭제(SignGlow.shader·데칼 잔재 2·GB_SignGlow.mat).
+- 부수 적발·수리: **Core 씬 카메라 소실**(화면 전체 무렌더) — 빌더가 카메라를 "설정만" 하고 생성하지 않던 구멍. 없으면 생성하도록 보강(AudioListener는 D-041대로 미부착).
+- 검증: 컴파일 ○ · 콘솔 0 ○ · Play에서 19:00 진입 시 간판 면 시안 발광(emission 0.42/1.76/1.57×2) → 09:00 소등(검정) 확인 ○. 증거: `Screenshots/s004_sign_night.png`.

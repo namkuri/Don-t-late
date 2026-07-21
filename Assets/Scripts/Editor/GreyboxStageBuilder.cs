@@ -417,39 +417,44 @@ namespace DontLate.EditorTools
             go.GetComponent<Renderer>().sharedMaterial = material;
         }
 
-        // 문(__gb_Door, x=6·top y=2·front z=2.5) 위쪽에 가게 간판 발광판 1개.
-        // 밤 전용 additive 쿼드 — SignGlowPlate가 DayPhaseChanged로 점멸.
+        // 문(__gb_Door, x=6·top y=2·front z=2.5) 위쪽에 가게 간판 1개 — 쿼드가 간판 그 자체.
+        // 저녁·밤엔 SignGlow가 이 면의 이미시브를 켠다 (D-051: 간판을 덮는 별도 발광판 폐지).
         private static void BuildSignGlow()
         {
-            Material glow = GetOrCreateSignGlowMaterial();
+            Material sign = GetOrCreateSignMaterial();
 
             GameObject go = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            go.name = PREFIX + "SignGlow";
+            go.name = PREFIX + "Sign";
             Object.DestroyImmediate(go.GetComponent<Collider>());
             go.transform.position = new Vector3(6f, 2.35f, 2.45f); // 문 상단 위 · z 살짝 앞(카메라 쪽)
             go.transform.localScale = new Vector3(0.9f, 0.4f, 1f);
             Undo.RegisterCreatedObjectUndo(go, "Build Greybox Stage");
 
             Renderer renderer = go.GetComponent<Renderer>();
-            renderer.sharedMaterial = glow;
+            renderer.sharedMaterial = sign;
 
-            SignGlowPlate plate = go.AddComponent<SignGlowPlate>();
-            SetReference(plate, "_renderer", renderer);
+            SignGlow glow = go.AddComponent<SignGlow>();
+            SetReference(glow, "_signRenderer", renderer);
         }
 
-        private static Material GetOrCreateSignGlowMaterial()
+        private static Material GetOrCreateSignMaterial()
         {
-            string path = GREYBOX_ROOT + "/GB_SignGlow.mat";
+            string path = GREYBOX_ROOT + "/GB_Sign.mat";
             Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (material != null) return material;
 
             EnsureFolder(DATA_ROOT);
             EnsureFolder(GREYBOX_ROOT);
 
-            material = new Material(Shader.Find("DontLate/SignGlow"));
-            material.SetColor("_Color", ParseColor("#35e0c8"));
-            material.SetFloat("_Intensity", 1f);
+            material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            material.SetColor("_BaseColor", ParseColor("#1a2233")); // 소등 시 어두운 간판 베이스
+            material.SetColor("_EmissionColor", Color.black);
             AssetDatabase.CreateAsset(material, path);
+            // 키워드를 에셋에 켜둬야 WebGL 빌드에서 이미시브 배리언트가 스트리핑되지 않는다.
+            // CreateAsset 과정(URP 머티리얼 초기화)이 키워드를 리셋하므로 생성 "후"에 켠다 — 실측 2026-07-22.
+            material.EnableKeyword("_EMISSION");
+            material.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
+            EditorUtility.SetDirty(material);
             AssetDatabase.SaveAssets();
             return material;
         }
@@ -849,7 +854,16 @@ namespace DontLate.EditorTools
         private static void ConfigureCamera()
         {
             Camera camera = Camera.main;
-            if (camera == null) return;
+            if (camera == null)
+            {
+                // 씬에 카메라가 없으면 생성 — "빌더가 정본"인데 카메라만 씬 잔존에 의존하면
+                // 유실 시 복구 불가(실사례 2026-07-22: Core 카메라 소실로 화면 전체 무렌더).
+                GameObject go = new GameObject("Main Camera");
+                go.tag = "MainCamera";
+                camera = go.AddComponent<Camera>();
+                // AudioListener는 붙이지 않는다 — Core 소유 별도 오브젝트가 이미 존재(D-041).
+                Undo.RegisterCreatedObjectUndo(go, "Build Greybox Stage");
+            }
 
             Undo.RecordObject(camera, "Greybox Camera");
             Undo.RecordObject(camera.transform, "Greybox Camera");
