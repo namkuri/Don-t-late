@@ -1,6 +1,9 @@
 # orders/audio.md — 오디오 발주 대장 (append-only)
 
 > 형식: [guides/distributed-workflow.md](../guides/distributed-workflow.md) §3. 발주·결과 시각은 파일 안에 명시.
+> **반입 경로 (2026-07-21 사람 확정)**: 오디오 산출물은 `Assets/_intake/ElevenLabs/{BGM,SFX}/`에 착지
+> → 관제가 검역(라이선스 기록·규격)·컷 판정 절차 후 `Assets/Audio/{BGM,SFX}/`로 이동+bom_id 리네임.
+> (AU-001의 직행 반입은 개통 특례 — 이후는 이 경로가 표준. CREDITS/manifest 기록은 여전히 입장권)
 > 공통 규격: [[BOM]] §8 (정정본은 D-040 반영) · 라이선스 기록 = 반입 입장권(교정 불가 게이트) ·
 > 총 오디오 예산 ≤ 10MB (SFX 포함).
 
