@@ -11,7 +11,10 @@
 
 ## ② 결정 대기
 
-**현재 없음** — B-1~B-4 전량 해소. 다음 결정은 **Q1 동결 선언**(관제가 STYLE 개정안 준비 후 요청 예정)과 Q2(BOM 동결)에서 발생.
+| # | 결정 | 배경 | 참조 |
+|---|---|---|---|
+| B-5 | **씬 공백 채움 발주 묶음 승인** — 정수: S-005(Camp 레인 = LoadingZone+WorldDebtManager+정산 UI) · S-006(Travel 레인 = TravelMapView 노드 선택) / 관제: S-007(Camp·Travel 그레이박스 무대) | 씬 감사(2026-07-22): Home·Camp·Travel이 전환 버튼만 있는 빈 껍데기. 필요 스크립트가 전부 P3 미납분 | [dont-late-scripts-manifest](../.claude/rules/dont-late-scripts-manifest.md) P3 |
+| B-6 | **Home(집) 씬 존치 여부** — SCOPE sacrifice 후보 ②(집 씬→인트로 흡수)가 미확정. 흡수면 무대 제작 불요, 존치면 S-007에 포함 | [SCOPE](../docs/SCOPE.md) §sacrifice 🔶 | [open-questions.md](open-questions.md) |
 
 ## ③ 손 작업·외부 대기
 
