@@ -66,6 +66,7 @@ namespace DontLate.EditorTools
             BuildFadeCanvas();
             BuildHUDCanvas(gameState);
             BuildDialogueCanvas();
+            BuildMinigameCanvas();
             BuildEventSystem();
 
             EditorSceneManager.SaveScene(scene, CORE_PATH);
@@ -101,6 +102,13 @@ namespace DontLate.EditorTools
             SetField(dayNight, "_tuning", tuning);
 
             managers.AddComponent<WorldDialogueManager>(); // 라인 인덱스만 관리 — 외부 참조 없음
+
+            WorldDebtManager debt = managers.AddComponent<WorldDebtManager>(); // S-005
+            SetField(debt, "_gameState", gameState);
+            SetField(debt, "_tuning", tuning);
+
+            WorldMinigameManager minigame = managers.AddComponent<WorldMinigameManager>(); // S-007
+            SetField(minigame, "_tuning", tuning);
 
             WorldAudioManager audio = managers.AddComponent<WorldAudioManager>();
             SetField(audio, "_library", GetOrCreateBgmLibrary());
@@ -392,6 +400,63 @@ namespace DontLate.EditorTools
             AnchorCorner(arrow.rectTransform, new Vector2(1f, 0f), new Vector2(-30f, 18f), new Vector2(60f, 60f));
             arrow.gameObject.SetActive(false);
             SetField(view, "_arrow", arrow.gameObject);
+        }
+
+        // 진상 전화 리듬 오버레이 (S-007). 대화 캔버스보다 위(sortOrder 95) — 평소 패널 숨김.
+        private static void BuildMinigameCanvas()
+        {
+            TMP_FontAsset font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FONT_PATH);
+            TuningConfigSO tuning = AssetDatabase.LoadAssetAtPath<TuningConfigSO>(DATA_ROOT + "/Tuning.asset");
+
+            GameObject canvasGo = new GameObject("MinigameCanvas");
+            Canvas canvas = canvasGo.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 95;
+            CanvasScaler scaler = canvasGo.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = 0.5f;
+
+            MinigameRhythmView view = canvasGo.AddComponent<MinigameRhythmView>();
+            SetField(view, "_tuning", tuning);
+
+            // 중앙 상단 패널 — 시안 테두리 + 네이비 내부.
+            GameObject panel = CreateImage(canvasGo.transform, "Panel", CYAN).gameObject;
+            RectTransform panelRect = panel.GetComponent<RectTransform>();
+            panelRect.anchorMin = panelRect.anchorMax = new Vector2(0.5f, 1f);
+            panelRect.pivot = new Vector2(0.5f, 1f);
+            panelRect.anchoredPosition = new Vector2(0f, -120f);
+            panelRect.sizeDelta = new Vector2(760f, 220f);
+            SetField(view, "_panel", panel);
+
+            Image inner = CreateImage(panel.transform, "Inner", NAVY);
+            RectTransform innerRect = inner.rectTransform;
+            innerRect.anchorMin = Vector2.zero;
+            innerRect.anchorMax = Vector2.one;
+            innerRect.offsetMin = new Vector2(3f, 3f);
+            innerRect.offsetMax = new Vector2(-3f, -3f);
+
+            TMP_Text title = CreateText(inner.transform, "Title", "진상 전화!", font,
+                34f, AMBER, TextAlignmentOptions.Top);
+            RectTransform titleRect = title.rectTransform;
+            titleRect.anchorMin = new Vector2(0f, 1f);
+            titleRect.anchorMax = new Vector2(1f, 1f);
+            titleRect.pivot = new Vector2(0.5f, 1f);
+            titleRect.anchoredPosition = new Vector2(0f, -20f);
+            titleRect.sizeDelta = new Vector2(0f, 46f);
+            SetField(view, "_titleLabel", title);
+
+            TMP_Text seq = CreateText(inner.transform, "Sequence", string.Empty, font,
+                64f, Color.white, TextAlignmentOptions.Center);
+            RectTransform seqRect = seq.rectTransform;
+            seqRect.anchorMin = Vector2.zero;
+            seqRect.anchorMax = Vector2.one;
+            seqRect.offsetMin = new Vector2(20f, 16f);
+            seqRect.offsetMax = new Vector2(-20f, -70f);
+            SetField(view, "_sequenceLabel", seq);
+
+            panel.SetActive(false);
         }
 
         // ── 블립 합성 (없을 때만 — 진짜 SFX 스왑 계약) ───────

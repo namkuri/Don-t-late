@@ -54,6 +54,17 @@ namespace DontLate
         }
     }
 
+    /// <summary>Camp 복귀 정산 요약. 원본 갱신은 WorldDebtManager가 수행한 뒤 결과만 흘린다.</summary>
+    public struct DebtSettlement
+    {
+        /// <summary>이번 정산에서 빚 상환에 들어간 금액.</summary>
+        public int Repaid;
+        /// <summary>지각·미니게임 실패 벌금 합계.</summary>
+        public int Penalty;
+        public int Money;
+        public int Debt;
+    }
+
     /// <summary>박말순 전화. 시나리오 본문은 WorldDialogueManager가 id로 찾는다.</summary>
     public struct PhoneCall
     {

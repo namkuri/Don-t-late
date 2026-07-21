@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Tuning
   m_EditorClassIdentifier: Assembly-CSharp::DontLate.TuningConfigSO
   moveSpeed: 4
+  runSpeed: 6
   depthSpeedRatio: 0.7
   carrySpeedPenalty: 0.75
   jumpHeight: 1.1

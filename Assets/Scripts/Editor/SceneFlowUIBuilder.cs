@@ -33,8 +33,8 @@ namespace DontLate.EditorTools
 
             BuildMain(font);
             BuildLabeledAction("Home", "집 — 아침", "하루 시작 → 물류캠프", GameScene.Camp, font);
-            BuildLabeledAction("Camp", "물류캠프", "짐 싣고 출발 (임시)", GameScene.Travel, font);
-            BuildLabeledAction("Travel", "이동 — 노드 선택(임시)", "행복빌라 구역으로", GameScene.District, font);
+            BuildLabeledAction("Camp", "물류캠프 — 패드에서 E로 적재", "짐 다 실었다 — 출발", GameScene.Travel, font);
+            BuildTravel(font);
             BuildDistrict(font);
 
             Debug.Log("[SceneFlowUIBuilder] 씬 흐름 UI 조립 완료 — Main·Home·Camp·Travel·District 5씬.");
@@ -81,6 +81,58 @@ namespace DontLate.EditorTools
                 new Vector2(0.5f, 0f), new Vector2(0f, 150f), new Vector2(600f, 104f), 40f);
 
             EditorSceneManager.SaveScene(scene, SCENES_ROOT + "/" + sceneName + ".unity");
+        }
+
+        // Travel = 미니맵 노드 선택(S-006). 노드 버튼엔 SceneAdvanceButton 대신 TravelMapView —
+        // 선택이 시간 소모(근거리/원거리 상이)를 시계에 가산한 뒤 District로 전이한다.
+        private static void BuildTravel(TMP_FontAsset font)
+        {
+            TuningConfigSO tuning = AssetDatabase.LoadAssetAtPath<TuningConfigSO>("Assets/Data/Tuning.asset");
+
+            Scene scene = EditorSceneManager.OpenScene(SCENES_ROOT + "/Travel.unity", OpenSceneMode.Single);
+            Transform root = CreateFlowCanvas().transform;
+
+            TMP_Text label = CreateText(root, "Label", "이동 — 배송 구역을 골라라 (멀수록 시간을 먹는다)", font,
+                46f, Color.white, TextAlignmentOptions.TopLeft, FontStyles.Normal);
+            AnchorCorner(label.rectTransform, new Vector2(0f, 1f), new Vector2(48f, -44f), new Vector2(1400f, 72f));
+
+            CreateTravelNode(root, "NodeNear", "행복빌라 구역 (가까움)", false, tuning, font,
+                new Vector2(-360f, 40f));
+            CreateTravelNode(root, "NodeFar", "달빛맨션 구역 (멀다)", true, tuning, font,
+                new Vector2(360f, -60f));
+
+            CreateButton(root, "AdvanceButton", "캠프로 돌아간다", GameScene.Camp, font, AMBER,
+                new Vector2(0.5f, 0f), new Vector2(0f, 90f), new Vector2(420f, 74f), 30f);
+
+            EditorSceneManager.SaveScene(scene, SCENES_ROOT + "/Travel.unity");
+        }
+
+        private static void CreateTravelNode(Transform parent, string name, string label, bool isFar,
+            TuningConfigSO tuning, TMP_FontAsset font, Vector2 anchoredPos)
+        {
+            GameObject go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+
+            Image img = go.AddComponent<Image>();
+            img.color = CYAN;
+
+            RectTransform rect = (RectTransform)go.transform;
+            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.sizeDelta = new Vector2(560f, 130f);
+            rect.anchoredPosition = anchoredPos;
+
+            Button button = go.AddComponent<Button>();
+            button.targetGraphic = img;
+
+            TravelMapView node = go.AddComponent<TravelMapView>();
+            SetField(node, "_tuning", tuning);
+            SetField(node, "_isFarNode", isFar);
+            EditorUtility.SetDirty(node);
+
+            float minutes = isFar ? tuning.travelFarMinutes : tuning.travelNearMinutes;
+            TMP_Text text = CreateText(go.transform, "Label", label + "\n<size=60%>이동 " + minutes + "분</size>",
+                font, 38f, NAVY, TextAlignmentOptions.Center, FontStyles.Bold);
+            StretchFull(text.rectTransform);
         }
 
         // District = 우상 작은 "하루 끝" 버튼만. 무대는 기존 DistrictSceneBuilder 산출물 유지.

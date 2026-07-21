@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 프로젝트
 
 **늦지마 (Don't Late)** — Unity 6.5 (6000.5.3f1) / URP 3D / 2.5D 배송 게임.
-현재 상태 (2026-07-20 갱신): **매니페스트 34종 중 25종 납품 완료** (커밋 f2ff808 + `WalkableVolume`·`GreyboxStageBuilder`).
+현재 상태 (2026-07-22 갱신): **매니페스트 34종 중 31종 납품 완료** (S-005~007로 Debt·Minigame·LoadingZone·드링크·TravelMapView·리듬뷰 추가 — 잔여는 P4 3종: Audio 완료 제외 Juice·PlayerEffects + ArtAuditReport).
 `Assets/Scripts/` 아래 Events·SO·Managers·Player·Interactables·UI·Utils 전부 실재한다 — **새로 만들기 전에 먼저 읽어라.**
 미착수는 P3·P4 12종 + 임포터 2종. 남은 작업·블로커는 `docs/plan/remaining-work.md`, 발주 상태는 `planning/TASKS.md`.
 Core 씬·플레이어 프리팹은 **아직 미조립**이라 그레이박스 루프는 완주되지 않았다.
@@ -28,6 +28,7 @@ Unity 에디터가 **열려 있어야** 동작한다 (`com.youngwoocho02.unity-c
 unity-cli status                      # 에디터 상태 (ready / compiling)
 unity-cli editor refresh --compile    # 스크립트 재컴파일 후 완료까지 대기  ← 코드 수정 후 필수
 unity-cli console --type error,warning        # 콘솔 에러/워닝 읽기 (셀프검증 ②)
+unity-cli console --clear             # ⚠ 장시간 Play 관측 전 필수 — 버퍼 상한 차면 최신 로그가 조회 누락(거짓 음성, 2026-07-22 실측)
 unity-cli console --lines 20 --stacktrace full
 unity-cli editor play --wait          # 플레이모드 진입 후 대기 (셀프검증 ③)
 unity-cli editor stop

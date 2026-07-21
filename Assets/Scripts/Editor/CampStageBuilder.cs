@@ -31,12 +31,16 @@ namespace DontLate.EditorTools
             Material truck = GreyboxStageBuilder.GetOrCreateMaterial("Truck", new Color(0.30f, 0.42f, 0.55f), false);
             Material pad = GreyboxStageBuilder.GetOrCreateMaterial("LoadPad", new Color(0.13f, 0.55f, 0.49f), false);
 
+            Material highlight = GreyboxStageBuilder.GetOrCreateMaterial("Highlight", GreyboxStageBuilder.ParseColor("#35e0c8"), true);
+            Material drink = GreyboxStageBuilder.GetOrCreateMaterial("Drink", GreyboxStageBuilder.ParseColor("#e04a35"), false);
+
             GreyboxStageBuilder.BuildGround(ground, lane);
             GreyboxStageBuilder.BuildWalkableVolume();
             GreyboxStageBuilder.BuildGroundMist();
             BuildTruck(truck);
-            BuildLoadZonePads(pad);
+            BuildLoadZonePads(pad, highlight);
             BuildBoxPile(box);
+            BuildDrink(drink, highlight);
             GreyboxStageBuilder.BuildPlayer(gameState, tuning);
             GreyboxStageBuilder.BuildPostVolume();
             GreyboxStageBuilder.ConfigureCamera();
@@ -68,8 +72,8 @@ namespace DontLate.EditorTools
             part.GetComponent<Renderer>().sharedMaterial = material;
         }
 
-        // 적재존 패드 — LoadingZone(S-005) 부착 지점. 보도 위 평평한 판, 밟고 E로 적재하는 그림.
-        private static void BuildLoadZonePads(Material material)
+        // 적재존 패드 — 패드당 주문 1건, E로 적재(LoadingZone — S-005).
+        private static void BuildLoadZonePads(Material material, Material highlight)
         {
             for (int i = 0; i < LOAD_ZONE_COUNT; i++)
             {
@@ -78,7 +82,51 @@ namespace DontLate.EditorTools
                     new Vector3(-2f + i * 2f, 0.05f, 0f));
                 padGo.transform.localScale = new Vector3(1.2f, 0.06f, 1.2f);
                 padGo.GetComponent<BoxCollider>().isTrigger = true;
+                padGo.GetComponent<Renderer>().sharedMaterial = material;
+
+                LoadingZone zone = padGo.AddComponent<LoadingZone>();
+                GreyboxStageBuilder.SetReference(zone, "_order", GetOrCreateCampOrder(i));
+                GreyboxStageBuilder.SetReference(zone, "_renderer", padGo.GetComponent<Renderer>());
+                GreyboxStageBuilder.SetReference(zone, "_normalMaterial", material);
+                GreyboxStageBuilder.SetReference(zone, "_highlightMaterial", highlight);
             }
+        }
+
+        // 패드별 배송 건. 1번은 그레이박스 기존 건(행복빌라)을 재사용해 District 무대와 이어진다.
+        private static DeliveryOrderSO GetOrCreateCampOrder(int index)
+        {
+            if (index == 0)
+                return AssetDatabase.LoadAssetAtPath<DeliveryOrderSO>("Assets/Data/Order_HappyVilla.asset");
+
+            string path = "Assets/Data/Order_Camp" + (index + 1).ToString("00") + ".asset";
+            DeliveryOrderSO order = AssetDatabase.LoadAssetAtPath<DeliveryOrderSO>(path);
+            if (order != null) return order;
+
+            order = ScriptableObject.CreateInstance<DeliveryOrderSO>();
+            order.orderId = 100 + index;
+            order.address = index == 1 ? "청운상가 2층" : "달빛맨션 502호";
+            order.floor = index == 1 ? 2 : 5;
+            order.deadlineMinuteOfDay = index == 1 ? 15f * 60f : 19f * 60f;
+            order.reward = index == 1 ? 900 : 1400;
+            AssetDatabase.CreateAsset(order, path);
+            AssetDatabase.SaveAssets();
+            return order;
+        }
+
+        // 에너지드링크 — E로 회복(EnergyDrinkPickup — S-005).
+        private static void BuildDrink(Material material, Material highlight)
+        {
+            GameObject go = GreyboxStageBuilder.CreatePrimitive(
+                PrimitiveType.Capsule, "Drink", new Vector3(4f, 0.25f, -1f));
+            go.transform.localScale = new Vector3(0.22f, 0.25f, 0.22f);
+            var collider = go.GetComponent<Collider>();
+            collider.isTrigger = true;
+            go.GetComponent<Renderer>().sharedMaterial = material;
+
+            EnergyDrinkPickup pickup = go.AddComponent<EnergyDrinkPickup>();
+            GreyboxStageBuilder.SetReference(pickup, "_renderer", go.GetComponent<Renderer>());
+            GreyboxStageBuilder.SetReference(pickup, "_normalMaterial", material);
+            GreyboxStageBuilder.SetReference(pickup, "_highlightMaterial", highlight);
         }
 
         // 대기 물량 더미 — 순수 배경(상호작용 없음. 적재는 LoadingZone 몫).

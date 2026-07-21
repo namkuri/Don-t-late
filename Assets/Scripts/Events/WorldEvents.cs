@@ -111,6 +111,40 @@ namespace DontLate
 
         public static void RaiseStaminaChanged(float normalized) => StaminaChanged?.Invoke(normalized);
 
+        // ── 정산 ──────────────────────────────────────────────
+        /// <summary>Camp 복귀 정산 완료. WorldDebtManager가 발행, HUD·연출이 구독.</summary>
+        public static event Action<DebtSettlement> DebtSettled;
+
+        public static void RaiseDebtSettled(DebtSettlement s)
+        {
+            Log("DebtSettled 상환 " + s.Repaid + " · 벌금 " + s.Penalty + " → 잔액 " + s.Money + " / 빚 " + s.Debt);
+            DebtSettled?.Invoke(s);
+        }
+
+        // ── 진상 전화 미니게임 ────────────────────────────────
+        public static event Action<PhoneCall> PhoneRang;
+        public static event Action MinigameRequested;
+        public static event Action<MinigameResult> MinigameEnded;
+
+        public static void RaisePhoneRang(PhoneCall call)
+        {
+            Log("PhoneRang ← " + call.CallerName);
+            PhoneRang?.Invoke(call);
+        }
+
+        public static void RaiseMinigameRequested()
+        {
+            Log("MinigameRequested");
+            MinigameRequested?.Invoke();
+        }
+
+        public static void RaiseMinigameEnded(MinigameResult result)
+        {
+            Log("MinigameEnded " + (result.Success ? "성공" : "실패")
+                + " (" + result.HitCount + "/" + result.TotalCount + ")");
+            MinigameEnded?.Invoke(result);
+        }
+
         // ── 대화 ──────────────────────────────────────────────
         // 시작/종료만 저빈도 경계 이벤트로 발행한다. 라인 단위 통지는 준-고빈도라
         // WorldDialogueManager의 C# 이벤트(LineChanged)로 UI에만 흘린다 (CODE_RULES §9.5).

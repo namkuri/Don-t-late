@@ -40,5 +40,27 @@ namespace DontLate
 
         [Header("상호작용")]
         public float interactRadius = 1.6f;
+
+        [Header("정산 (Camp)")]
+        /// <summary>지각 1건당 벌금.</summary>
+        public int latePenalty = 300;
+        /// <summary>미니게임(진상 전화) 실패 벌금.</summary>
+        public int minigamePenalty = 200;
+        /// <summary>한 번에 실을 수 있는 최대 적재 수.</summary>
+        public int maxCargo = 3;
+
+        [Header("이동맵 (Travel)")]
+        /// <summary>근거리 노드 이동에 소모되는 게임 분.</summary>
+        public float travelNearMinutes = 30f;
+        /// <summary>원거리 노드 이동에 소모되는 게임 분.</summary>
+        public float travelFarMinutes = 90f;
+
+        [Header("미니게임 (진상 전화)")]
+        /// <summary>District 도착 후 전화가 오기까지의 실초.</summary>
+        public float phoneCallDelaySeconds = 15f;
+        /// <summary>리듬 시퀀스 키 개수.</summary>
+        public int minigameKeyCount = 4;
+        /// <summary>키 하나당 입력 제한 실초.</summary>
+        public float minigameKeyStepSeconds = 1.2f;
     }
 }

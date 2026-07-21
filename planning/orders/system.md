@@ -185,6 +185,11 @@
 
 실패시: [BLOCKED] 보고. 씬·프리팹·Settings 커밋 금지(훅이 차단). feature/jjs → PR.
 
+### 결과 · 2026-07-22 02:03 — S-005 (수행: ClaudeCode 본 세션, D-053 수신자 변경 · 리드 24분)
+- `WorldDebtManager`(정산: 벌금 차감→잔액 상환→`DebtSettled`) · `LoadingZone`(패드 E 적재·상한 maxCargo·소비형) · `EnergyDrinkPickup`(+energyDrinkRecover 회복 후 자기 파괴) 납품. 신규 이벤트 `DebtSettled`+페이로드 `DebtSettlement`(§9.5 로그 동반).
+- Camp 빌더가 패드 3개에 주문 3건(행복빌라 재사용+청운상가·달빛맨션 신설 SO) 배선 + 드링크 배치.
+- 관찰: `[EVENT] OrderAccepted #101 청운상가` / `DebtSettled 상환 3900 · 벌금 1100 → 잔액 0 / 빚 6100` / 스태미나 50→90 회복 확인.
+
 ---
 
 ## S-006 · 발주 2026-07-22 01:39 → 정수 (Travel 레인: 미니맵 노드 선택)
@@ -203,6 +208,11 @@
 수용기준: ① 컴파일 ② 콘솔 0 ③ Play: Travel에서 원거리 노드 선택 시 시계가 더 많이 진행된 채 District 도착 확인(콘솔 SceneTransition 로그 + HUD 시계).
 
 실패시: [BLOCKED] 보고.
+
+### 결과 · 2026-07-22 02:03 — S-006 (수행: ClaudeCode 본 세션, D-053 · 리드 24분)
+- `TravelMapView`(노드 버튼 View — 시간 가산+전이 위임만) 납품. 시간 가산 API는 발주서의 "SceneFlow에 추가" 대신 **시계 소유자인 WorldDayNightManager.AdvanceMinutes**로 배치(소유권 원칙 — 편차 기록).
+- Travel 캔버스를 SceneFlowUIBuilder가 노드 2개(근거리/원거리·소모 분 표기)+캠프 복귀 버튼으로 재조립.
+- 관찰: 원거리 노드 클릭 시 시계 607.8→697.8(+90분 정확) 후 District 전이 완료.
 
 ---
 
@@ -224,6 +234,12 @@
 수용기준: ① 컴파일 ② 콘솔 0 ③ Play: District에서 전화 발화→방향키 입력→성공/실패에 따라 콘솔 `[EVENT] MinigameEnded` 결과 상이 확인.
 
 실패시: [BLOCKED] 보고. IInteractable·기존 이벤트 시그니처 변경 금지.
+
+### 결과 · 2026-07-22 02:03 — S-007 (수행: ClaudeCode 본 세션, D-053 · 리드 24분)
+- `WorldMinigameManager`(District 도착 후 phoneCallDelaySeconds 뒤 발화·방문당 1회) · `MinigameRhythmView`(방향키 시퀀스 표시·판정·성공/실패 2단) 납품. 신규 이벤트 3종 `PhoneRang`·`MinigameRequested`·`MinigameEnded`(로그 동반). PlayerInputHandler가 미니게임 중 이동·점프·상호작용 잠금.
+- Core에 MinigameCanvas(오버레이, sortOrder 95) — CoreSceneBuilder가 조립.
+- 관찰: `PhoneRang ← 박말순 → MinigameRequested`(패널 열림) → 무입력 4.8초 → `MinigameEnded 실패 (0/4)` → Debt 벌금 반영 확인.
+- 부수 적발 2건: ① **Core 씬 매니저 이중화**(정본 Managers + 그레이박스 __gb_Managers 공존 → 싱글톤 중복 파괴가 SceneFlow까지 삭제) — Core 정본 재조립으로 해소, 거리 무대는 District·Greybox 씬 소유로 정리. ② **커넥터 콘솔 버퍼 상한** — 장시간 Play 세션에서 최신 로그가 조회 누락(거짓 음성) → 관측 전 `console --clear` 규칙 추가.
 
 ---
 

@@ -16,11 +16,10 @@ MonoBehaviour:
   minuteOfDay: 480
   money: 0
   debt: 10000
-  cargo:
-  - {fileID: 11400000, guid: 37b18a19191eadb42825965e3942eb8b, type: 2}
+  cargo: []
   completedCount: 0
   lateCount: 0
-  currentScene: 0
+  currentScene: 2
   startDay: 1
   startMinuteOfDay: 480
   startMoney: 0

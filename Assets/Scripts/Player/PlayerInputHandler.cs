@@ -57,6 +57,8 @@ namespace DontLate
             _run.Enable();
             _jump.Enable();
             _interact.Enable();
+            WorldEvents.MinigameRequested += OnMinigameRequested;
+            WorldEvents.MinigameEnded += OnMinigameEnded;
         }
 
         private void OnDisable()
@@ -65,6 +67,23 @@ namespace DontLate
             _run.Disable();
             _jump.Disable();
             _interact.Disable();
+            WorldEvents.MinigameRequested -= OnMinigameRequested;
+            WorldEvents.MinigameEnded -= OnMinigameEnded;
+        }
+
+        // 미니게임(방향키 리듬) 동안 이동·상호작용이 오버레이 입력과 겹치지 않게 잠근다 — S-007.
+        private void OnMinigameRequested()
+        {
+            _move.Disable();
+            _jump.Disable();
+            _interact.Disable();
+        }
+
+        private void OnMinigameEnded(MinigameResult _)
+        {
+            _move.Enable();
+            _jump.Enable();
+            _interact.Enable();
         }
 
         private void OnDestroy()

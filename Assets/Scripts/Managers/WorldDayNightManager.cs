@@ -149,6 +149,13 @@ namespace DontLate
         }
 #endif
 
+        /// <summary>시각을 앞으로 흘린다(이동맵의 "노드 선택 = 시간 소모" — S-006). 시계 소유자는 여기뿐.</summary>
+        public void AdvanceMinutes(float minutes)
+        {
+            _gameState.minuteOfDay = Mathf.Repeat(_gameState.minuteOfDay + minutes, MINUTES_PER_DAY);
+            _lastTickedMinute = -1;
+        }
+
         /// <summary>시각을 특정 시:분으로 강제 이동(디버그·연출용).</summary>
         public void SetTime(int hour, int minute)
         {
