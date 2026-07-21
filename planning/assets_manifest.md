@@ -49,7 +49,7 @@
 
 ## ElevenLabs BGM INTAKE — 2026-07-21
 
-> 출처 = **Eleven Music (ElevenLabs)**, Director 개인 **유료 구독** 생성물.
+> 출처 = **Eleven Music (ElevenLabs)**, **정수 개인 Creator 플랜($22/월, 유료)** 생성물 (주체 D-048 정정 · 플랜 2026-07-22 확인).
 > 권리 = **상업적 사용 가능·기간 무제한**. 전 유료 플랜에 상업 라이선스 포함(Beta Services 제외).
 > Eleven Music은 레이블·퍼블리셔·아티스트 협업으로 제작돼 **게이밍 포함 거의 모든 상업 용도에 클리어**.
 > 표기 의무는 무료 플랜 한정이므로 **없음**. 근거: ElevenLabs Help Center "Can I publish the content

@@ -10,7 +10,7 @@
 | 항목 | 내용 |
 |---|---|
 | 생성 도구 | **Eleven Music** (ElevenLabs) |
-| 계정 | Director 개인 **유료 구독** |
+| 계정 | **정수 개인 계정 — Creator 플랜 ($22/월, 유료)** (당초 "Director 개인 구독" 표기는 오기 — D-048 주체 정정, 플랜은 2026-07-22 남규가 정수에게 직접 확인) |
 | 권리 | **상업적 사용 가능 · 기간 무제한.** 유료 구독 중 생성한 콘텐츠는 상업 이용 가능하며, 전 유료 플랜에 상업 라이선스가 포함된다 (Beta Services 사용 시 제외). Eleven Music은 레이블·퍼블리셔·아티스트 협업으로 제작돼 **게이밍을 포함한 거의 모든 상업 용도에 클리어**되어 있다 |
 | 표기 의무 | **없음** — "Eleven Music" 표기 의무는 무료 플랜 한정 |
 | 근거 | ElevenLabs Help Center "Can I publish the content I generate on the platform?" · ElevenLabs Docs "Eleven Music" (2026-07-21 확인) |
@@ -67,9 +67,9 @@ late-night introspective, hazy, instrumental, 88 BPM
 ### 폐기 이력
 
 - `afternoon-bgm-03`(60s, FLAC md5 `5a6990bb…`) · `night-bgm-03`(60s, `ba8b964b…`)
-  — WAV 대응본 부재, 재확보 포기 (2026-07-21 Director 결정). FLAC 원본은 삭제됨.
+  — WAV 대응본 부재, 재확보 포기 (2026-07-21 정수 결정 — 주체 D-048 정정). FLAC 원본은 삭제됨.
 - `Late_for_Work_8-Bit_Panic_2026-07-19T072529`(60s, PCM md5 `0c251eeedd11`)
-  — **8비트 사운드로 나머지 곡과 분위기 불일치** (2026-07-21 Director 청취 판정). 프로젝트·아카이브 양쪽에서 삭제.
+  — **8비트 사운드로 나머지 곡과 분위기 불일치** (2026-07-21 정수 청취 판정 — 위임 D-045 범위, 주체 D-048 정정). 프로젝트·아카이브 양쪽에서 삭제.
   유일한 Title 슬롯 곡이었으므로 **Title 슬롯은 현재 공백** — Unsorted 5곡 중에서 재지정 필요.
 - **미채택 4곡** (2026-07-21 청취 판정 — 최종 컷). 프로젝트에서 제거, 원본 아카이브(`Don-t-late-bgm/`)에는 보존:
   `Ironic_Stillness`(`6cd06cf4ba1a`) · `Pixel_Seoul_Breeze`(`3f398520c39c`) ·
