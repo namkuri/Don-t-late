@@ -1,5 +1,6 @@
 # TECH_SPEC.md — 기술 규격 v5 (3D×픽셀화 · 계약=동결 🔒 / 튜닝=유동)
 ```yaml
+frozen: true   # Q1 동결 2026-07-21 (D-037)
 # === 계약 (동결) ===
 engine: "Unity 6.5 (6000.5.3f1) · URP 3D"
 unit: "1u = 1m"  character_height: "1.8u"        # 3D 규격 회귀 — u가 전부, 픽셀은 렌더가 만든다
@@ -12,7 +13,7 @@ scenes: "Core(상주) + Main·집·캠프·이동·배송지"
 collision: {layers: [Player, Static, Interactable, Trigger], type: 3D}
 anim: {system: Animator(Mecanim), set: [idle,walk,run,jump,pickup,carry],
        facing: "이동방향 회전 · 45° 스냅 옵션(그레이박스 판정)"}
-rig: "Mixamo 휴머노이드 기본 (일반 3D 모델이라 자동리깅 정상 작동 — 복셀 비율 문제 소멸)"
+rig: "🔒 확정 — Tripo 모델 + Mixamo 리깅·애니 (단일검증 실측: Humanoid 아바타·Walk/Run 리타깃·본 구동 — D-034)"
 asset_import: "Meshy 생성물: 스케일 검증(1.8u 앵커) · 원점=바닥중심 · 데시메이트 자동"
 webgl_budget: {tris_total: "<200k", drawcalls: "<150", texture_mb: 96}
 # === 튜닝 (기본값) ===

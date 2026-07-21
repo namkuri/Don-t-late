@@ -46,3 +46,72 @@
 - 훅 직접 호출 테스트: 현상태 pass(0) / freeze-guard 수정 거부(1)·추가만 통과(0)·INTENT 원문 복원(md5 일치) / 라이선스 미등재 더미 거부(1)·잔해 0 / .cs 스테이지 컴파일 게이트 통과(0, 10.7s) / commit-msg 무태그 경고 후 0.
 - 채점기 실측: palette_check(night_v3.png — 네이비 최근접 99.4%·거리<64 비율 14.3%) / scene_stats(Greybox — tris 1,538,826 **예산 200k 초과** ← 지에스.fbx 단독 1,499,400 · 렌더러 33 OK · tex 10.7MB OK) / screenshot_bundle(Screenshots/bundle_2026-07-21/ greybox·district 2컷, Main 복귀).
 - 재시도 1회: 컴파일 게이트 첫 호출이 에디터 임포트 busy로 일시 거부 → 훅에 3s 1회 재시도 추가 후 통과.
+
+---
+
+## S-002 · 발주 2026-07-21 19:06 → unity-dev 서브에이전트 (구역 자동 배치 시스템)
+
+목표: District 씬의 빈 슬롯(slot_building_01~12·slot_prop_01~10)을 **결정론적 시드 랜덤**으로 자동 채우는 시스템 — 같은 구역은 재방문해도 항상 같은 배치 (결정 D-036, 사람 지시).
+
+입력:
+- 프로젝트: C:\Users\rnk50\Unity\Don't late (6000.5.3f1). 에디터 실행 중(플레이 중이면 stop).
+- 슬롯 실물: District.unity의 Slots 하위 22개 마커 — 좌표는 planning/socket-map.md
+- 통신 규칙: 런타임 이름 검색(GameObject.Find류) 전면 금지 → **DistrictSceneBuilder가 슬롯 Transform 배열을 직렬화 참조로 주입**하는 구조로 설계할 것
+- 시드 규칙: districtId 문자열(당장은 빌더가 "HappyVilla" 주입 — 주문 연동은 P3 몫, 주석 명시) → **자체 결정론 해시**(FNV-1a 등 — string.GetHashCode 금지: 플랫폼 보증 없음) → System.Random
+- 신규 런타임 스크립트 1개 허용: Assets/Scripts/Interactables/DistrictLayoutGenerator.cs (월드 오브젝트 분류 — 매니페스트 직교 추가 D-036)
+
+기대:
+1. DistrictLayoutGenerator.cs — OnEnable/Start 시: 이전 생성물 정리(멱등) → 시드 고정 Random으로
+   ⓐ 건물 슬롯 12개: 그레이박스 건물 생성(층수 1~3층×3.0u·폭 6~7u·색 3톤 변형 — 큐브 조합, 슬롯당 결정론 선택. 추후 Prefabs/Auto 건물 풀로 교체될 소켓 구조: [SerializeField] 프리팹 풀 배열이 비면 그레이박스 폴백)
+   ⓑ 소품 슬롯 10개: 배치 여부(확률)·종류 결정론 선택 (당장은 상자더미 큐브 1종 폴백)
+2. DistrictSceneBuilder 확장 — generator 부착·슬롯 배열/districtId/풀(빈) 주입·씬 저장.
+3. 검증 (Core Play → District 전이): ⓐ 슬롯에 건물 생성 확인(개수·스크린샷) ⓑ **결정론 실측: 씬 재로드(Travel 갔다가 District 재진입) 2회의 배치 스냅샷(슬롯별 층수·색 인덱스) 완전 일치** ⓒ 다른 districtId("TestB")로 1회 — 배치가 달라짐 확인 후 원복 ⓓ 배송 루프 무회귀 ⓔ 콘솔 0 · 시각 480 복원 · stop.
+4. Screenshots/district_generated.png · planning/ai_evidence.md 1줄 · **이 파일 S-002 하단에 결과 블록 append**(발주 19:06 기준 리드 계산).
+
+운용 주의(표준): Bash+작은따옴표 exec · stop→compile→console · 씬 dirty 확인 · Main.unity·_intake 불변 · 스크린샷 검수 체크리스트(16:9 프레이밍).
+
+수용기준: 결정론 2회 일치 실측(스냅샷 diff 0) · 이름 검색 0 (grep으로 Find 부재 확인) · 슬롯 주입 구조 · 재로드 멱등(중복 생성 없음) · 콘솔 0.
+
+실패시: 2회 후 [BLOCKED]+원문. Additive 재진입 시 OnEnable 중복 호출 함정 주의(생성물 정리로 방어).
+
+보고: 관찰만 — 파일 목록 / 결정론 스냅샷 2회 비교표 / 스크린샷 / 리드타임.
+
+### 결과 · 2026-07-21 19:24 (리드 18분)
+
+- 파일: 신규 `Assets/Scripts/Interactables/DistrictLayoutGenerator.cs`(런타임) · 수정 `Assets/Scripts/Editor/DistrictSceneBuilder.cs`(슬롯 Transform 수집→generator 부착·`_buildingSlots`12/`_propSlots`10 직렬화 주입·씬 저장) · `Screenshots/district_generated.png` · `planning/ai_evidence.md` 1줄. District.unity 재조립(씬은 커밋 안 함).
+- 설계: districtId(현재 빌더 "HappyVilla" 고정 — 구역별 주입은 P3 주석 명시) → 자체 **FNV-1a 32bit**(string.GetHashCode 미사용) → System.Random. 건물12=층1~3×3.0u·폭6~7u·색3톤 큐브조합(프리팹 풀 비면 그레이박스 폴백) · 소품10=확률0.6 배치·상자더미 1종. 슬롯은 **직렬화 Transform[] 주입** — 런타임 이름검색 0(grep `GameObject.Find`/`FindObjectOfType` 부재). 배경 시각물이라 콜라이더 제거. ClearGenerated=`DestroyImmediate`로 같은 프레임 중복 OnEnable에도 사본 0.
+- 결정론 스냅샷 2회 비교(Core Play → Main→Home→Camp→Travel→District 전이 후 Travel 왕복 재진입):
+
+  | | 오브젝트 수 | GeneratedLayout roots | 지문(건물 f/t·소품 k) |
+  |---|---|---|---|
+  | A (첫 진입) | 19 (건물12+소품7) | 1 | Building_01_f3_t1…12_f2_t2 · Prop 01,03,05,06,07,09,10 |
+  | B (재진입) | 19 | 1 | **A와 완전 일치 (diff 0)** |
+  | C (districtId="TestB") | 17 (건물12+소품5) | 1 | 층/톤 상이 · Prop 02,04,05,06,09 — **A와 상이** |
+  | A' (HappyVilla 복원) | 19 | 1 | **A와 재일치** |
+
+- 멱등: 같은 프레임 `Generate()` 2회 연속 후 GeneratedLayout roots=1(중복 생성 0). 재진입 시 genCount=1·roots=1 유지.
+- 무회귀: District 재진입 후 player·box·deliveryPoint·deliveryManager 전부 존재. 스크린샷(16:9)에 층수 다른 그레이박스 건물·보도변 상자더미·비콘·가로등 관찰.
+- 종료: 콘솔 error 0 · 시각 minuteOfDay 480 복원 · Main 재오픈 · play stop. Main.unity·_intake 불변(Main mtime 15:20 — 내 세션 이전, 미수정). 커밋 없음(사람 게이트).
+
+**판정 · 2026-07-21 19:24 — reviewer ACCEPT (13/13 PASS)** — reviewer 레인 첫 가동. HARNESS §6에 따라 사람 도장 없이 done 전이.
+
+---
+
+## S-003 · 발주 2026-07-21 19:41 → unity-dev 서브에이전트 (구역 배치 공간 정합 수정)
+
+목표: S-002 생성 건물의 공간 침범 2건 수정 — ① 건물이 보행로 앞으로 튀어나옴 ② 가로등이 건물에 파묻힘 (사람 육안 적발 — 스크린샷 Screenshots/district_generated.png 참조).
+
+입력:
+- 원인 추정: 건물이 슬롯(Z=2.6) 중심으로 생성돼 깊이의 절반이 −Z(보도 쪽)로 침범. 뒷줄 가로등(Z=+2.4)이 그 범위 안.
+- 대상: Assets/Scripts/Interactables/DistrictLayoutGenerator.cs (건물 생성 로직만 — 시드·슬롯 구조는 reviewer ACCEPT 상태이니 불변)
+- 공간 규약(socket-map): 보도=Z −3~+3(레인 6u) · 건물 라인 Z=2.6 · 뒷줄 가로등 Z=+2.4
+
+기대:
+1. 건물 풋프린트 규칙: **전면(길 쪽) 면이 Z≈+3.0(보도 경계 뒤)에 정렬**, 깊이는 +Z(안쪽)로만 확장 — 보도·가로등 공간 침범 0.
+2. 검증: ⓐ 생성 후 각 건물 바운즈의 min.z ≥ 2.9 실측(12건 전수 수치) ⓑ 가로등 8기 바운즈와 건물 바운즈 교차 0 실측 ⓒ 결정론 재확인(수정 후 A=B diff 0 — 시드 로직 불변 증명) ⓓ 스크린샷(공간 정합 체크리스트 D-038 적용: 겹침·침범·접지 명시 관찰) ⓔ 콘솔 0 · 시각 480 복원 · stop.
+3. planning/ai_evidence.md 1줄 · 본 파일 결과 블록 append.
+
+운용 주의(표준): Bash+작은따옴표 · stop→compile→console · Main·_intake 불변.
+수용기준: 침범 실측 0(수치) · 교차 0 · 결정론 유지 · 콘솔 0.
+실패시: 2회 후 [BLOCKED]+원문.
+보고: 관찰만 — 바운즈 수치표 · 스크린샷 · 리드.
