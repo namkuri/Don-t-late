@@ -162,3 +162,79 @@
 - 빌더: `__gb_Sign` 쿼드 = 간판 그 자체(URP Lit `GB_Sign.mat`). `_EMISSION` 키워드는 **CreateAsset 후**에 켜야 저장됨(실측 — 생성 과정이 키워드 리셋). 고아 에셋 4종 삭제(SignGlow.shader·데칼 잔재 2·GB_SignGlow.mat).
 - 부수 적발·수리: **Core 씬 카메라 소실**(화면 전체 무렌더) — 빌더가 카메라를 "설정만" 하고 생성하지 않던 구멍. 없으면 생성하도록 보강(AudioListener는 D-041대로 미부착).
 - 검증: 컴파일 ○ · 콘솔 0 ○ · Play에서 19:00 진입 시 간판 면 시안 발광(emission 0.42/1.76/1.57×2) → 09:00 소등(검정) 확인 ○. 증거: `Screenshots/s004_sign_night.png`.
+
+---
+
+## S-005 · 발주 2026-07-22 01:39 → 정수 (Camp 정산 레인: Debt + LoadingZone + 드링크)
+
+목표: Camp 씬의 존재 이유(짐싣기·정산)를 성립시킨다 — P3 미납 3종: `WorldDebtManager` · `LoadingZone` · `EnergyDrinkPickup`.
+
+입력:
+- `Assets/Scripts/SO/GameStateSO.cs` — money·debt·cargo(List<DeliveryOrderSO>)·completedCount·lateCount 필드 실재
+- `Assets/Scripts/Events/WorldEvents.cs` — Debt 도메인 이벤트 없음(신설 필요)
+- `Assets/Scripts/Interactables/PickupBox.cs` — IInteractable 구현 패턴 참조 (시그니처 동결 — 변경 금지)
+- `Assets/Scripts/Player/PlayerStatusManager.cs` — 스태미나 회복 훅 (드링크 접점)
+
+기대:
+1. `Managers/WorldDebtManager.cs`: `DeliveryCompleted`/`DeliveryFailed` 구독 → 보상 가산·지각 차감 집계, Camp 복귀(SceneTransitionCompleted=Camp) 시 정산 → GameState.money/debt 갱신 + **신규 이벤트 `DebtSettled(정산 요약 payload)`** Raise. 저빈도 → §9.5 로그 동반.
+2. `Interactables/LoadingZone.cs`: Camp의 적재존 — Interact 시 대기 주문(DeliveryOrderSO)을 GameState.cargo에 적재, **`OrderAccepted`** Raise(기존 이벤트 재사용). 적재 수 상한은 TuningConfigSO에 노출.
+3. `Interactables/EnergyDrinkPickup.cs`: Interact 시 스태미나 회복(회복량 TuningConfig 노출) 후 자기 파괴. World 경유 없이 PlayerContext로 처리 가능하면 이벤트 신설 금지(YAGNI).
+4. HUD 빚 게이지가 DebtSettled로 갱신되는 연결 확인 (HUDView 수정이 필요하면 최소 수정).
+
+수용기준: ① 컴파일 ② 콘솔 0 ③ Play: Camp에서 E로 적재→District 배송 완료→Camp 복귀 시 콘솔 `[EVENT] DebtSettled`와 money/debt 변화 확인. 프리팹 부착 필요사항은 PR 본문에 명시.
+
+실패시: [BLOCKED] 보고. 씬·프리팹·Settings 커밋 금지(훅이 차단). feature/jjs → PR.
+
+---
+
+## S-006 · 발주 2026-07-22 01:39 → 정수 (Travel 레인: 미니맵 노드 선택)
+
+목표: Travel 씬을 "노드 선택 = 시간 소모" 화면으로 성립 — P3 미납 `TravelMapView`.
+
+입력:
+- `Assets/Scripts/UI/SceneAdvanceButton.cs` — 현행 전환 버튼(대체 대상) · `UI/HUDView.cs` — View 패턴(로직 없음·이벤트 구독)
+- `Assets/Scripts/Managers/WorldSceneFlowManager.cs` — 씬 전이 API · `WorldDayNightManager.SetTime` — 시간 소모 반영 경로
+- SCOPE §코어루프: "이동(노드 선택=시간 소모 — 주행 조작 없음)"
+
+기대:
+- `UI/TravelMapView.cs`: 노드 2~3개(근거리/원거리 — 소모 시간 상이, TuningConfig 노출) 버튼 표시 → 선택 시 시간 소모 적용 + District 전이 요청. View 규칙: 게임 로직 금지 — 시간 가산·전이는 매니저 호출로 위임(어느 매니저가 소유할지는 SceneFlow에 메서드 추가로 해결, 새 매니저 발명 금지).
+- Travel 씬 조립은 관제(빌더) 몫 — 코드는 "어느 오브젝트에 뭘 붙일지"만 PR 본문에 기재.
+
+수용기준: ① 컴파일 ② 콘솔 0 ③ Play: Travel에서 원거리 노드 선택 시 시계가 더 많이 진행된 채 District 도착 확인(콘솔 SceneTransition 로그 + HUD 시계).
+
+실패시: [BLOCKED] 보고.
+
+---
+
+## S-007 · 발주 2026-07-22 01:39 → 정수 (진상 전화 미니게임 레인)
+
+목표: "진상 전화 → 방향키 리듬" 오버레이 성립 — P3 미납 `WorldMinigameManager` · `MinigameRhythmView`.
+
+입력:
+- ARCHITECTURE §5: Minigame은 **씬 아님 — UI 오버레이 모듈**, 결과를 이벤트로 방출
+- `Assets/Scripts/Events/EventPayloads.cs` — PhoneCall·MinigameResult struct 정의 여부 확인(없으면 신설)
+- `Assets/Scripts/Managers/WorldDialogueManager.cs` — 박말순 대화 재생(전화 수신 연출 접점)
+- `Assets/Scripts/UI/DialogueView.cs` — 오버레이 UI 패턴 참조
+
+기대:
+- WorldEvents 신설 3종(전부 저빈도 → §9.5 로그 동반): `PhoneRang(PhoneCall)` → `MinigameRequested` → `MinigameEnded(MinigameResult)`.
+- `Managers/WorldMinigameManager.cs`: District 체류 중 확률/타이머로 PhoneRang 발화(빈도 TuningConfig 노출) → 오버레이 구동 → 결과 Raise. 결과의 게임 반영(마감 압박·보상 차감)은 **Deadline/Debt가 구독**으로 처리 — Minigame이 직접 손대지 않는다.
+- `UI/MinigameRhythmView.cs`: 방향키 시퀀스 표시·판정(성공/실패 단순 2단 — sacrifice ① 반영, 다단계 금지). 진행 중 플레이어 이동 입력 차단은 PlayerInputHandler 기존 구조 활용.
+
+수용기준: ① 컴파일 ② 콘솔 0 ③ Play: District에서 전화 발화→방향키 입력→성공/실패에 따라 콘솔 `[EVENT] MinigameEnded` 결과 상이 확인.
+
+실패시: [BLOCKED] 보고. IInteractable·기존 이벤트 시그니처 변경 금지.
+
+---
+
+## S-008 · 발주 2026-07-22 01:40 → ClaudeCode (본 세션 실행 — Camp 그레이박스 무대)
+
+목표: Camp 씬에 짐싣기 무대(지면·트럭 소품·적재존 마커·플레이어·카메라)를 빌더로 조립 — S-005 스크립트 도착 시 꽂히기만 하면 되는 상태로 선행.
+
+입력: GreyboxStageBuilder 패턴(__gb_ 접두어·멱등 Clear·리플렉션 참조 주입) · Camp.unity 현행(전환 UI만).
+
+기대: `Editor/CampStageBuilder.cs` 신설(직교 추가 — 매니페스트 외 빌더, 기록 필수) — 메뉴 `DontLate/Build Camp Stage`. 지면·보도, 트럭(박스 조합 소품), 적재존 패드 3개(`__gb_LoadZone_01~03` — LoadingZone.cs 도착 시 부착 지점), 박스 더미, 플레이어+WalkableVolume+카메라. Travel은 무대 불요 판단(TravelMapView UI가 전부 — S-006 PR 후 관제가 캔버스 조립).
+
+수용기준: ① 컴파일 ② 콘솔 0 ③ Camp 씬 빌드 후 Play 진입 시 플레이어 이동 가능·무대 렌더 확인 + 스크린샷.
+
+실패시: [BLOCKED] 보고.
