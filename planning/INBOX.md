@@ -27,7 +27,8 @@
 | H1 | `Assets/Art/Building`→`Buildings` 리네임 + GS25 출처 기록 | 님 | [decisions.md](decisions.md) D-002 |
 | H3 | 폰에서 https://namkuri.github.io/dontlate-web/ 열기 (1분) | 님 | [TASKS.md](TASKS.md) M0-03 |
 | H5 | Greybox 떠돌이 `StreetLampLight`(x=17.5) 삭제 — 광원·광추 9번째의 범인 | 님 | 씬=님 독점 |
-| H10 | 정수 투입 개시 신호 — 주면 첫 발주 묶음(P3 스크립트) 발사 | 님 | [guides/distributed-workflow.md](guides/distributed-workflow.md) |
+| ~~H10~~ | ~~정수 투입 개시~~ → **자발 개시됨** (오디오 PR merge 완료) — 다음 발주 묶음은 P3 잔여 스크립트로 협의 | — | [orders/audio.md](orders/audio.md) |
+| H11 | 🎧 **BGM 10곡 인게임 청취 → 컷 판정** — WorldAudioManager에 순회 청취 도구 내장. 통과 곡만 gitignore 해제·커밋·bom_id 리네임 (D-042) | 님 | [orders/audio.md](orders/audio.md) AU-001 · [decisions.md](decisions.md) D-042 |
 
 ## 처리 완료 (최근)
 

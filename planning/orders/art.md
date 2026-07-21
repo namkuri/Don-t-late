@@ -15,6 +15,6 @@
 - 파일명: `prop_streetlamp` (기존과 동일 — 같은 이름이면 8기 일괄 자동 교체됨)
 - 텍스처: Embed Media 켜서 익스포트 (지난번 가로등·캐릭터가 텍스처 누락으로 회색이 된 원인)
 
-기대: `_intake/art/<도구>/Props/prop_streetlamp.fbx` 반입 → 관제가 검역·스왑·직하 90° 전환까지 처리.
+기대: **`Assets/_intake/art/Tripo/Props/prop_streetlamp.fbx`** 로 반입 (정확히 이 폴더·이 파일명 — 다른 도구를 썼다면 관제에 알려 폴더부터 맞출 것) → 관제가 검역·스왑·직하 90° 전환까지 처리.
 
 ### 결과 · (반입 대기)
