@@ -17,7 +17,7 @@
 | 생성일 | 2026-07-19 ~ 2026-07-20 (파일명 타임스탬프) |
 | 반입일 | 2026-07-21 |
 
-### 곡 목록 (10곡 · 48kHz / 16bit / stereo PCM)
+### 곡 목록 (9곡 · 48kHz / 16bit / stereo PCM)
 
 파일명 = ElevenLabs 원제 + 생성 타임스탬프. `bom_id` 리네임은 컷·분류 확정 후 (D-042).
 
@@ -28,7 +28,6 @@
 | `Seoul_Alley_Reflection_2026-07-20T161148.wav` | 60.0s | `3194df4c88a7` | 낮 |
 | `Breezy_Town_Stroll_2026-07-20T161422.wav` | **180.0s** | `93c74a16b7f6` | 낮 |
 | `Seoul_Afternoon_Stroll_2026-07-20T155537.wav` | 60.0s | `be66e3688257` | 밤 |
-| `Late_for_Work_8-Bit_Panic_2026-07-19T072529.wav` | 60.0s | `0c251eeedd11` | 미분류 — 8비트, Title 후보 |
 | `Pixel_Seoul_Breeze_2026-07-19T103036.wav` | 60.0s | `3f398520c39c` | 미분류 |
 | `Seoul_Pixel_Breeze_2026-07-19T103406.wav` | 60.0s | `5427eddf1af7` | 미분류 |
 | `Seoul_Pixel_Boulevard_2026-07-19T103537.wav` | 60.0s | `4c1169ca957b` | 미분류 |
@@ -69,6 +68,9 @@ late-night introspective, hazy, instrumental, 88 BPM
 
 - `afternoon-bgm-03`(60s, FLAC md5 `5a6990bb…`) · `night-bgm-03`(60s, `ba8b964b…`)
   — WAV 대응본 부재, 재확보 포기 (2026-07-21 Director 결정). FLAC 원본은 삭제됨.
+- `Late_for_Work_8-Bit_Panic_2026-07-19T072529`(60s, PCM md5 `0c251eeedd11`)
+  — **8비트 사운드로 나머지 곡과 분위기 불일치** (2026-07-21 Director 청취 판정). 프로젝트·아카이브 양쪽에서 삭제.
+  유일한 Title 슬롯 곡이었으므로 **Title 슬롯은 현재 공백** — Unsorted 5곡 중에서 재지정 필요.
 
 ---
 

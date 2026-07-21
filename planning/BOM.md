@@ -148,7 +148,7 @@
 |---|---|---|---|---|
 | bgm_day_loop | 낮 거리 BGM (Morning·Day) | 60~180s 루프 · 심리스 루프포인트 | **ElevenLabs(#9)** | **반입 3곡** — 컷 대기 |
 | bgm_night_loop | 밤 BGM (Evening·Night) | 〃 · Evening 진입(17시) 3초 크로스페이드로 교대 | **ElevenLabs(#9)** | **반입 1곡** — 컷 대기 |
-| bgm_title | 타이틀(Main 씬) BGM | 〃 | **ElevenLabs(#9)** | **반입 1곡** — 컷 대기 |
+| bgm_title | 타이틀(Main 씬) BGM | 〃 | **ElevenLabs(#9)** | **0곡 — 공백** (8비트 트랙 컷) |
 | (미분류) | 슬롯 판정 대기 | 사람 인게임 청취로 Day/Night/Title 배정 또는 컷 | 〃 | **5곡** |
 
 - ~~`bgm_night_var`(낮 곡 + 로우패스/리버브 변주)~~ **폐기(D-040)**: sacrifice 근거였던 제작비가 소멸했고,

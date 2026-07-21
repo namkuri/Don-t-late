@@ -17,8 +17,6 @@ MonoBehaviour:
     slot: 1
   - clip: {fileID: 8300000, guid: 87db2438fc56cfd4490cecee34ab226a, type: 3}
     slot: 0
-  - clip: {fileID: 8300000, guid: e1cb9092467ff384b91e26e831c32f90, type: 3}
-    slot: 3
   - clip: {fileID: 8300000, guid: 17ef8bae9ca03b74ba1f6d70390869ba, type: 3}
     slot: 0
   - clip: {fileID: 8300000, guid: 1afe4b482e66957428cc7a58b44ee429, type: 3}
