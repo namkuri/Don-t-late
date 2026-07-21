@@ -68,3 +68,35 @@
 
 **미결 전량 해소** — B-1~B-4 전부 결정 완료. 다음 미결은 Q2(BOM 동결)에서 발생 예정. — M2 발사 전 필수. **판단 재료는 M0-04 Meshy 관통 실측**이므로
 그 전에 결정하지 않는다(추측 금지).
+
+## 2026-07-21 — 오디오 레인 개통 (BGM 그릴링 세션)
+
+| # | 결정 | 사유 | 근거 |
+|---|---|---|---|
+| D-039 | **BGM 재생 정책 확정** — 슬롯 3종(Day/Night/Title) · **세션 시작 1회 추첨**(낮·밤·타이틀 동시, no-repeat) · 낮→밤 전환은 **Evening 진입(17시) + 3초 크로스페이드** | 사람 결정 (그릴링 4문답). 조명이 `t=minuteOfDay/1440` **연속 보간**이라 20시 컷 전환은 시청각이 어긋남 → 경계를 17시로 당겨 해소. 긴 블렌드는 105BPM major ↔ 88BPM minor 불협 노출이 길어져 기각 | [[orders/audio]] AU-001 · JUICE 15행("밤 진입") |
+| D-040 | **BOM §8 정정 4건** — ① BGM source `Suno(#8)` → **`ElevenLabs(#9)`** ② `bgm_night_var`(낮곡+로우패스 변주) → **밤 전용 곡 풀** ③ `Streaming` → **`Compressed In Memory`** ④ **`Title` 슬롯 신설** | ①은 실제 산출 경로(M0-06 #9 라인 실증). ②는 sacrifice 근거였던 제작비가 소멸했고 낮/밤 BPM·조성이 달라 필터로 재현 불가. ③은 **WebGL이 Streaming 미지원**(Web Audio API 기반·스레드 불가) — 규격이 애초에 성립 안 함. `DecompressOnLoad`는 60초 스테레오 1곡이 RAM 11.5MB 생PCM이라 기각 | [[BOM]] §8 · Unity Manual "Audio in Web" |
+| D-041 | **`AudioListener` = Core 소유** — District 카메라의 리스너를 제거하고 Core에 1개 | **현 구조는 5개 씬 중 4개가 완전 무음**(Core·Main·Home·Camp·Travel에 리스너 부재, District에만 존재). 선례 **D-021**(태양은 Core 소유, 콘텐츠 씬은 자체 Directional Light 금지)과 동형. BOM §8이 SFX를 `2D`로 규정해 리스너 위치는 무관 | [[orders/audio]] AU-001 |
+| D-042 | **오디오 원본은 컷 판정 전까지 git 미커밋** — `.gitignore`에 `Assets/Audio/**/*.wav`, 판정 통과분만 해제 후 커밋. 파일명 `bom_id` 리네임도 판정 후 | 곡 컷 판정을 인게임 청취로 **보류**했으므로 버릴 곡이 확실히 존재. git 히스토리는 삭제해도 안 사라져 죽은 곡의 무게가 영구 잔류. 리네임을 먼저 하면 미확정 분류를 파일명에 못박게 된다 | 〃 |
+
+| D-043 | **BGM 압축 = Vorbis q30 (~118kbps)** — SFX는 BOM 원안 q70 유지 | 실측: q70은 ~256kbps로 10곡 **20.6MB**(예산 2배 초과). q30에서 10곡 **10.04MB**. BGM은 재생시간이 길어 압축률이 곧 다운로드 예산이고, 118kbps는 게임 BGM 표준 대역이다 | [[BOM]] §8 · AU-001 실측 |
+
+| D-044 | **오디오 10MB 상한은 "미검증 자체 추정치"로 격하** — 곡 컷은 예산이 아니라 **품질 기준**으로 판정 | 사람 지적("WebGL 핵심 지침 아니면 무시"). 확인 결과 **WebGL 배포는 동결 지침이 맞다**([[SCOPE]] 완주 정의 🔒 + [[STATUS]] 제출 마감 2026-08-10 · "제출 규정 직결"). 그러나 **10MB는 TECH_SPEC 동결값이 아니다** — `webgl_budget`은 tris·drawcalls·texture_mb뿐이고 오디오 항목이 없다. BOM이 스스로 적은 정성적 판단이며 실빌드 검증 이력이 없다 | [[BOM]] §8 · [[SCOPE]] · [[retrospective-2026-07-21]] §4-1 |
+| D-045 | **SFX 필수 3종을 코드 합성 플레이스홀더로 선가동** (`sfx_pickup`·`sfx_delivery_ok`·`sfx_late_buzzer`) | 음원 미확보로 코어루프가 무음이었다. [[pipelines/audio]] 폴백 원칙("전부 불가 → 무음+최소 신디")의 정규 적용 · 실음원은 **같은 파일명 덮어쓰기로 교체**(BOM §8 스왑 계약) · 생성기는 파일 존재 시 덮지 않아 실음원을 되돌리지 않는다. J-1 게이트 대기 7종과 Locomotion 훅인 footstep은 제외 | [[orders/audio]] AU-004 |
+
+### D-041 실행 정정 (구현 중 실측으로 드러난 것)
+
+Core에 리스너를 올리자 **`Main.unity`가 자체 리스너를 갖고 있어 2개 경고**가 났고, 반대로 콘텐츠 씬
+소유로 되돌리자 **Core 단독 구간(Main 로드 전)에 "no audio listeners" 경고가 매 프레임** 발생했다.
+→ 결론: **리스너는 Core 소유가 맞다**(Core는 항상 로드돼 있어 씬 교체 중에도 끊기지 않는다).
+`Main.unity`가 들고 있던 **Core 소유물의 중복분**을 `CoreSceneBuilder`가 정리한다 —
+`AudioListener` 1개 + **`CoreBootstrap` 1개**. 후자는 "Main → Main 는 허용되지 않은 전이" 경고의
+정체였다(부트스트랩이 로드하는 씬 안에 또 부트스트랩이 있어 `Request(Main)`이 두 번 발생).
+[[ai_evidence]]에 "기존 버그·미수정"으로 기록돼 있던 건이 여기서 해소됐다.
+씬 파일은 커밋하지 않으므로 **정수 PC는 빌더 메뉴 실행으로 동일 상태가 재현**된다.
+
+- 부수 결정: `afternoon-bgm-03`·`night-bgm-03` **2곡 폐기**(WAV 대응본 부재, 재확보 포기 — 사람 결정) ·
+  FLAC 원본 8개 삭제 완료(분류 증거는 `Don-t-late-bgm/MAPPING.md`에 PCM MD5 대조로 보존).
+- 실수→규칙: **AI 생성곡의 제목으로 무드를 추정하면 틀린다.** 실증 — `Seoul_Alley_Reflection`(골목 사색)이
+  분류상 **낮**, `Seoul_Afternoon_Stroll`(오후 산책)이 분류상 **밤**이었다. 분류는 사람 청취로만 확정한다.
+- 파생 과제: `docs/TECH_SPEC.md`에 **오디오 절이 없다.** BOM §8이 "TECH_SPEC 믹스 비율 적용"을 지시하는데
+  참조 대상이 부재 — 신설 필요([[orders/audio]] 후속 표).

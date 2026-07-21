@@ -57,8 +57,8 @@ namespace DontLate.EditorTools
             GameObject go = new GameObject("Main Camera");
             go.tag = "MainCamera";
             go.AddComponent<Camera>();
-            // Core엔 AudioListener가 없으므로 District 카메라가 유일한 리스너를 맡는다.
-            go.AddComponent<AudioListener>();
+            // AudioListener는 Core 소유(D-041) — 콘텐츠 씬 카메라에 붙이지 않는다.
+            // 붙이면 Core 것과 합쳐 2개가 되어 Unity가 경고를 내고 한쪽이 무시된다.
             // ConfigureCamera(GreyboxStageBuilder)가 FOV·위치·피치를 잡는다.
         }
 
