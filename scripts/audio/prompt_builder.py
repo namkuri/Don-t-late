@@ -5,9 +5,14 @@
 이 파이프라인의 앞단 게이트. 후공정(정규화·편집)은 못 만든 음원을 좋게 만들지 못하므로
 품질은 여기서 갈린다.
 
+지침 위계 (2026-07-21 Director 결정):
+  1. `rules/GAME-BGM-RULES.md`  — **제1지침. 차단력을 가진 유일한 문서.**
+  2. 스타일 md(낮/밤)            — 참고(앵커·기본 BPM·네거티브). 충돌 시 1번이 이긴다.
+  3. BOM §8 · JUICE             — 참고(생성 단계는 경고만). 반입·승격에서만 차단한다.
+  4. INTENT                     — 참고(톤 근거).
+
 조립 방식 = 하이브리드:
   · 규격(필수 태그·금지 태그·BPM·조성·길이·네거티브)은 **코드가 결정론적으로** 박는다.
-    출처 = `rules/GAME-BGM-RULES.md` (충돌 시 이 규격이 스타일보다 이긴다).
   · 악기·장면·무드 같은 **창작 태그만** 사람이 준다.
 BGM은 규격 §5의 「편집 인계」 블록을 함께 낸다 — 곡을 받는 순간 어디를 자를지가 손에 있어야 한다.
 
@@ -239,12 +244,9 @@ def render(bom_id, item, intent, note, prompt, length, gen, old_rows, meta):
 # ---------- 명령 ----------
 
 def cmd_build(args):
-    items = bom_audio.load()
-    if args.bom_id not in items:
-        raise SystemExit(f"[차단] '{args.bom_id}' 는 BOM §8에 없다.")
-    item = items[args.bom_id]
-    if not item["juice_ok"]:
-        raise SystemExit(f"[차단] '{args.bom_id}' 는 JUICE 근거가 없다(J-1 미승인). 프롬프트도 만들지 않는다.")
+    # 지침 위계: 생성 단계의 제1지침은 rules/GAME-BGM-RULES.md 다.
+    # BOM·JUICE 는 참고 — 여기선 경고만 하고, 차단은 반입·승격(audio_pipeline)에서 한다.
+    item = bom_audio.resolve(args.bom_id)
 
     path = os.path.join(PROMPT_DIR, args.bom_id + ".md")
     note = args.tags or _extract(path, NOTE_BEGIN, NOTE_END) or SEED_TAGS.get(args.bom_id, "")

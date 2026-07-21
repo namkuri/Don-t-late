@@ -20,14 +20,14 @@
 ## 창작 태그 (사람이 고치는 유일한 칸)
 
 <!-- NOTE:BEGIN -->
-sunny afternoon, breezy, cozy neighborhood, city pop, retro 80s
+retro 80s, bright FM electric piano, sparkling bell synth, punchy analog synths, driving synth bass, bright arpeggiated synth, clean bright synth lead, crisp dry drum machine, glossy pads, warm analog, cheerful, nostalgic, sunny afternoon, cozy old neighborhood, breezy town stroll, laid-back daytime groove
 <!-- NOTE:END -->
 
 ## 전송 프롬프트 (조립 결과 — 그대로 API에 투입)
 
 <!-- PROMPT:BEGIN -->
 ```
-major key city pop, retro 80s, bright FM electric piano, sparkling bell synth, punchy analog synths, driving synth bass, bright arpeggiated synth, clean bright synth lead, crisp dry drum machine, glossy pads, warm analog, sunny afternoon, breezy, cozy neighborhood, city pop, major key, no intro fade-in, no outro fade-out, no ending, continuous groove from start to finish, consistent dynamics, steady level, no dramatic build-ups, no drops, background music for a game, understated melody, texture-driven, unobtrusive, minimal arrangement, sparse midrange, leave space in the mids, instrumental, 105 BPM, no vocals, no jazz, no saxophone, no acoustic guitar, no neon, no nighttime mood
+major key city pop, retro 80s, bright FM electric piano, sparkling bell synth, punchy analog synths, driving synth bass, bright arpeggiated synth, clean bright synth lead, crisp dry drum machine, glossy pads, warm analog, cheerful, nostalgic, sunny afternoon, cozy old neighborhood, breezy town stroll, laid-back daytime groove, major key, no intro fade-in, no outro fade-out, no ending, continuous groove from start to finish, consistent dynamics, steady level, no dramatic build-ups, no drops, background music for a game, understated melody, texture-driven, unobtrusive, minimal arrangement, sparse midrange, leave space in the mids, instrumental, 105 BPM, no vocals, no jazz, no saxophone, no acoustic guitar, no neon, no nighttime mood
 ```
 <!-- PROMPT:END -->
 
@@ -79,3 +79,4 @@ python scripts/audio/audio_pipeline.py intake --bom-id bgm_day_loop
 | 3 | 2026-07-21 | 재조립 |
 | 4 | 2026-07-21 | 재조립 |
 | 5 | 2026-07-21 | 재조립 |
+| 6 | 2026-07-21 | 재조립 |

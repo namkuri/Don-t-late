@@ -92,6 +92,36 @@ def load(bom_path=BOM_PATH):
     return items
 
 
+def fallback(bom_id):
+    """BOM에 없는 id를 위한 임시 항목.
+
+    지침 위계(2026-07-21): **생성 단계의 제1지침은 GAME-BGM-RULES.md**이고 BOM은 참고다.
+    따라서 미등재 id로도 프롬프트 조립·생성은 가능해야 한다(경고만).
+    다만 `Assets/`로 들어가는 반입·승격은 여전히 BOM이 지배한다 — audio_pipeline 쪽 게이트는 유지.
+    """
+    kind = "sfx" if bom_id.startswith("sfx_") else "bgm"
+    return {
+        "kind": kind,
+        "desc": "(BOM 미등재)",
+        "spec": "(BOM 미등재 — 생성은 규격만으로 진행)",
+        "juice_ok": True,
+        "dest_dir": DEST[kind],
+        "note": "BOM §8 등재 후에만 반입·승격 가능",
+    }
+
+
+def resolve(bom_id, items=None):
+    """생성 단계용 조회 — 없거나 JUICE 미승인이면 **경고만** 하고 진행한다."""
+    items = load() if items is None else items
+    if bom_id not in items:
+        print(f"  ⚠ '{bom_id}' 는 BOM §8에 없다 — 생성은 진행하되 반입·승격은 등재 후에만 가능하다.")
+        return fallback(bom_id)
+    item = items[bom_id]
+    if not item["juice_ok"]:
+        print(f"  ⚠ '{bom_id}' 는 JUICE 근거가 없다(J-1 미승인) — 생성은 진행하되 반입은 차단된다.")
+    return item
+
+
 def main():
     items = load()
     print(f"BOM §8 오디오 항목 {len(items)}건 ({BOM_PATH})\n")

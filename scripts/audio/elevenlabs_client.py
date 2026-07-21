@@ -135,12 +135,8 @@ def pcm_to_wav(pcm, path, expected_seconds):
 
 def _prompt_of(bom_id):
     """prompt_builder가 조립해 저장한 전송 프롬프트를 읽는다(손편집 방지 검사 포함)."""
-    items = bom_audio.load()
-    if bom_id not in items:
-        raise SystemExit(f"[차단] '{bom_id}' 는 BOM §8에 없다.")
-    item = items[bom_id]
-    if not item["juice_ok"]:
-        raise SystemExit(f"[차단] '{bom_id}' 는 JUICE 근거가 없다(J-1 미승인).")
+    # 지침 위계: 전송 단계의 제1지침도 GAME-BGM-RULES 다. BOM·JUICE 는 경고만.
+    item = bom_audio.resolve(bom_id)
 
     path = os.path.join(prompt_builder.PROMPT_DIR, bom_id + ".md")
     if not os.path.isfile(path):
