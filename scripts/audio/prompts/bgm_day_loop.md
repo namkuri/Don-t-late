@@ -20,14 +20,14 @@
 ## 창작 태그 (사람이 고치는 유일한 칸)
 
 <!-- NOTE:BEGIN -->
-city pop, retro 80s, lonely muted saxophone, breathy sax lead, pre-dawn empty streets, cold blue light, melancholic
+city pop, retro 80s, sunny afternoon, breezy, cozy neighborhood
 <!-- NOTE:END -->
 
 ## 전송 프롬프트 (조립 결과 — 그대로 API에 투입)
 
 <!-- PROMPT:BEGIN -->
 ```
-major key city pop, retro 80s, bright FM electric piano, sparkling bell synth, punchy analog synths, driving synth bass, bright arpeggiated synth, clean bright synth lead, crisp dry drum machine, glossy pads, warm analog, city pop, retro 80s, lonely muted saxophone, breathy sax lead, pre-dawn empty streets, cold blue light, melancholic, major key, no intro fade-in, no outro fade-out, no ending, continuous groove from start to finish, consistent dynamics, steady level, no dramatic build-ups, no drops, background music for a game, understated melody, texture-driven, unobtrusive, minimal arrangement, sparse midrange, leave space in the mids, instrumental, 96 BPM, no vocals, no jazz, no acoustic guitar, no neon, no nighttime mood
+major key city pop, retro 80s, bright FM electric piano, sparkling bell synth, punchy analog synths, driving synth bass, bright arpeggiated synth, clean bright synth lead, crisp dry drum machine, glossy pads, warm analog, city pop, sunny afternoon, breezy, cozy neighborhood, major key, no intro fade-in, no outro fade-out, no ending, continuous groove from start to finish, consistent dynamics, steady level, no dramatic build-ups, no drops, background music for a game, understated melody, texture-driven, unobtrusive, minimal arrangement, sparse midrange, leave space in the mids, instrumental, 96 BPM, no vocals, no jazz, no saxophone, no acoustic guitar, no neon, no nighttime mood
 ```
 <!-- PROMPT:END -->
 
@@ -47,7 +47,6 @@ BPM        : 96
 
 - 필수 태그 15종 · 금지 태그 9종: **통과**
 - 조성 `major key` · BPM `96`(정수) · instrumental 명시
-- ⚠ 네거티브 해제: `no saxophone` — 창작 태그가 해당 악기를 **명시 요청**해서 기본 네거티브를 뺐다(노트 > 스타일 기본값)
 
 ## 생성 파라미터
 
@@ -76,3 +75,6 @@ python scripts/audio/audio_pipeline.py intake --bom-id bgm_day_loop
 | gen | 일자 | 변경 |
 |---|---|---|
 | 1 | 2026-07-21 | 최초 조립 |
+| 2 | 2026-07-21 | 재조립 |
+| 3 | 2026-07-21 | 재조립 |
+| 4 | 2026-07-21 | 재조립 |

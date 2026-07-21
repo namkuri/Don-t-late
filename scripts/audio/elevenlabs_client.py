@@ -18,6 +18,7 @@ import array
 import hashlib
 import json
 import os
+import random
 import sys
 import urllib.error
 import urllib.request
@@ -231,16 +232,23 @@ def cmd_gen(args):
     os.makedirs(INTAKE_DIR, exist_ok=True)
     out = os.path.join(INTAKE_DIR, args.bom_id + ".wav")
 
+    # seed 필수 — 생략하면 자동 생성한다. seed 없이 만든 곡은 영영 복원할 수 없다
+    # (2026-07-21 실수: seed 없이 뽑은 30초 검증곡을 삭제해 재현 불가가 됐다).
+    seed = args.seed if args.seed is not None else random.randint(1, 2**31 - 1)
+    print(f"[seed] {seed}" + ("  (지정)" if args.seed is not None else "  (자동 생성 — 이 값으로 복원한다)"))
+
     meta = {
         "bom_id": args.bom_id,
         "prompt": prompt,
         "prompt_sha1": hashlib.sha1(prompt.encode("utf-8")).hexdigest()[:12],
         "output_format": PCM_FORMAT,
         "length_s": length,
+        "seed": seed,
     }
 
     if item["kind"] == "bgm":
-        body = {"model_id": args.model, "force_instrumental": True}
+        # force_instrumental 은 prompt 와만 병용 가능(API 422). 계획 모드에선 계획 안에 instrumental 이 들어간다.
+        body = {"model_id": args.model}
         plan_path = os.path.join(prompt_builder.PROMPT_DIR, args.bom_id + ".plan.json")
         if args.use_plan:
             if not os.path.isfile(plan_path):
@@ -251,9 +259,8 @@ def cmd_gen(args):
         else:
             body["prompt"] = prompt
             body["music_length_ms"] = int(length * 1000)
-        if args.seed is not None:
-            body["seed"] = args.seed
-            meta["seed"] = args.seed
+            body["force_instrumental"] = True   # prompt 모드에서만 허용된다
+        body["seed"] = seed
         endpoint = EP_MUSIC
     else:
         body = {"text": prompt, "duration_seconds": length}

@@ -165,6 +165,15 @@ def render(bom_id, item, intent, note, prompt, length, gen, old_rows, meta):
             "",
             "## 규격 검사",
             "",
+        ]
+        if meta.get("raw"):
+            lines.append(
+                "- ⚠ **raw 붙여넣기** — 조립기를 거치지 않은 사람 작성 프롬프트다. "
+                "규격 태그·톤 근거가 코드로 보장되지 않는다."
+                + ("  \n- 🚨 **게이트 우회(`--no-gate`)** — 규격 위반을 알고도 통과시켰다."
+                   if meta.get("gate_bypassed") else "  \n- 규격 검사 자체는 통과했다.")
+            )
+        lines += [
             f"- 필수 태그 {len(bgm_rules.MANDATORY_TAGS)}종 · 금지 태그 {len(bgm_rules.BANNED_TAGS)}종: **통과**"
             + ("  (타이틀=단발 연출이라 §1·§3 면제)" if meta.get("oneshot") else ""),
             f"- 조성 `{bgm_rules.STYLES[meta['slot']]['key']}` · BPM `{meta['bpm']}`(정수) · instrumental 명시",
@@ -240,7 +249,35 @@ def cmd_build(args):
 
     length = args.length or DEFAULT_LENGTH[item["kind"]]
 
-    if item["kind"] == "bgm":
+    if args.raw:
+        # 붙여넣기 경로 — 조립을 건너뛰고 사람이 쓴 프롬프트를 그대로 쓴다.
+        # 재현성은 유지된다(문서에 원문이 남는다). 규격 검사는 여전히 돈다.
+        prompt = args.raw.strip()
+        note = "(raw 붙여넣기 — 조립기 미경유)"
+        if item["kind"] == "bgm":
+            m = re.search(r"(\d+)\s*BPM", prompt, re.I)
+            bpm = args.bpm or (int(m.group(1)) if m else None)
+            if not bpm:
+                raise SystemExit("[중단] raw 프롬프트에서 BPM을 못 찾았다 — --bpm 으로 지정하라 (편집 인계 계산에 필요).")
+            missing = verify(prompt, "bgm")
+            banned = [t for t in bgm_rules.BANNED_TAGS if t.lower() in prompt.lower()]
+            if (missing or banned) and not args.no_gate:
+                raise SystemExit(
+                    "[차단] 규격 위반:\n"
+                    + (f"  - 필수 태그 누락: {missing}\n" if missing else "")
+                    + (f"  - 금지 태그 포함: {banned}\n" if banned else "")
+                    + "  그대로 쓰려면 --no-gate (문서에 우회 사실이 기록된다)"
+                )
+            if missing or banned:
+                print(f"[우회] --no-gate — 누락 {missing} 금지 {banned}")
+            risk = [t for t in bgm_rules.LOOP_RISK_TAGS if t in prompt.lower()]
+            meta = {"slot": args.slot or slot_of(args.bom_id), "bpm": bpm, "loop_bars": args.loop_bars,
+                    "dropped_negatives": [], "loop_risk": risk, "oneshot": False,
+                    "raw": True, "gate_bypassed": bool(missing or banned)}
+        else:
+            meta = {"raw": True, "gate_bypassed": False}
+
+    elif item["kind"] == "bgm":
         slot = args.slot or slot_of(args.bom_id)
         bpm = args.bpm or bgm_rules.STYLES[slot]["bpm"]
         tags = [t.strip() for t in note.split(",") if t.strip()]
@@ -271,8 +308,10 @@ def cmd_build(args):
     print(f"[조립] {args.bom_id}  gen={gen}  ({item['kind']}"
           + (f" · {meta['slot']} · {meta['bpm']}BPM" if item["kind"] == "bgm" else "")
           + f" · {length:.1f}s)")
-    if item["kind"] == "bgm":
+    if item["kind"] == "bgm" and not meta.get("raw"):
         print(f"[규격] 필수 {len(bgm_rules.MANDATORY_TAGS)}종 · 금지 {len(bgm_rules.BANNED_TAGS)}종 · 길이/루프 통과")
+    elif item["kind"] == "bgm" and meta.get("gate_bypassed"):
+        print("[규격] ⚠ 미통과 상태로 진행 — 이 프롬프트는 루프·반복내성이 보장되지 않는다")
         if meta["dropped_negatives"]:
             print(f"[해제] 네거티브 제거: {', '.join(meta['dropped_negatives'])}  ← 창작 태그가 명시 요청")
         if meta["loop_risk"]:
@@ -319,6 +358,8 @@ def main():
     s.add_argument("--bpm", type=int, help="정수 1개 (규격 §2 — 범위 금지). 생략 시 스타일 기본")
     s.add_argument("--length", type=float, help="초 (BGM 기본 180 · SFX 기본 2.0)")
     s.add_argument("--loop-bars", type=int, default=DEFAULT_LOOP_BARS, choices=[16, 32, 64])
+    s.add_argument("--raw", help="완성된 프롬프트를 그대로 사용 (조립기 미경유). 규격 검사는 그대로 돈다")
+    s.add_argument("--no-gate", action="store_true", help="--raw 전용: 규격 위반을 경고로 낮춘다(문서에 기록됨)")
     s.set_defaults(func=cmd_build)
 
     sub.add_parser("check", help="전 프롬프트 규격 검사").set_defaults(func=cmd_check)
