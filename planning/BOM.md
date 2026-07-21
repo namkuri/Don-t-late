@@ -151,10 +151,9 @@
 
 | bom_id | 항목 | 스펙 | source | 비고 |
 |---|---|---|---|---|
-| bgm_day_loop | 낮 거리 BGM (Morning·Day) | 60~180s · **플레이리스트 순환**(D-046) | **ElevenLabs(#9)** | **2곡** |
-| bgm_night_loop | 밤 BGM (Evening·Night) | 〃 · Evening 진입(17시) 3초 크로스페이드로 교대 | **ElevenLabs(#9)** | **3곡** |
-| bgm_title | 타이틀(Main 씬) BGM | 〃 | **ElevenLabs(#9)** | **0곡 — 공백** (8비트 트랙 컷) |
-| (미분류) | 슬롯 판정 대기 | 사람 인게임 청취로 Day/Night/Title 배정 또는 컷 | 〃 | **5곡** |
+| bgm_day_loop | 낮 거리 BGM (Morning·Day) | 60s · **플레이리스트 순환**(D-046) | **ElevenLabs(#9)** | **2곡 확정** |
+| bgm_night_loop | 밤 BGM (Evening·Night) | 60~180s · Evening 진입(17시) 3초 크로스페이드로 교대 | **ElevenLabs(#9)** | **3곡 확정** |
+| bgm_title | 타이틀(Main 씬) BGM | 〃 | **ElevenLabs(#9)** | **0곡 — 공백**(Director 보류). 빈 슬롯이면 낮곡이 이어진다 |
 
 - ~~`bgm_night_var`(낮 곡 + 로우패스/리버브 변주)~~ **폐기(D-040)**: sacrifice 근거였던 제작비가 소멸했고,
   낮(major·105BPM)과 밤(minor·88BPM)은 BPM·조성이 달라 필터로 재현 불가. 전용 곡 = AudioMixer 불요.

@@ -71,6 +71,7 @@
 - 전 5곡 원본 48kHz/16bit/stereo PCM. 임포트 = **Vorbis q30 · Compressed In Memory · 스테레오**(D-040·D-043).
   Streaming은 WebGL 미지원이라 금지, DecompressOnLoad는 60s 스테레오 1곡이 RAM 11.5MB 생PCM이라 기각.
 - 압축 후 크기: 60s곡 0.78~0.88MB(109~124kbps) · `Breezy_Town_Stroll`(180s) 2.53MB. **채택 5곡 합 ≈ 5.6MB**.
-- **미판정 4곡**(`Ironic_Stillness`·`Pixel_Seoul_Breeze`·`Seoul_Pixel_Boulevard`·`Sunlit_Stroll_in_Seoul`)은
-  `Unsorted` 슬롯 유지 · **커밋 제외**. 판정 후 이 표에 추가한다.
+- **컷 4곡**(`Ironic_Stillness`·`Pixel_Seoul_Breeze`·`Seoul_Pixel_Boulevard`·`Sunlit_Stroll_in_Seoul`)
+  — 2026-07-21 청취 판정으로 최종 미채택. 프로젝트에서 제거, 원본 아카이브(`Don-t-late-bgm/`)에는 보존.
+  **BGM 청취 판정 종료** — 반입 10곡 → 채택 5곡.
 - **폐기 1곡**: `Late_for_Work_8-Bit_Panic` — 8비트로 분위기 불일치(Director 청취 판정). 프로젝트·아카이브 삭제.
