@@ -480,13 +480,13 @@ namespace DontLate.EditorTools
 
             PhoneView view = canvasGo.AddComponent<PhoneView>();
 
-            // 폰 본체 — 좌하단 앵커, 시안 테두리 + 네이비 스크린.
+            // 폰 본체 — 우하단 앵커(사람 요청 S-011 후속), 시안 테두리 + 네이비 스크린.
             GameObject panel = CreateImage(canvasGo.transform, "Panel", CYAN).gameObject;
             RectTransform panelRect = panel.GetComponent<RectTransform>();
-            panelRect.anchorMin = panelRect.anchorMax = new Vector2(0f, 0f);
-            panelRect.pivot = new Vector2(0f, 0f);
+            panelRect.anchorMin = panelRect.anchorMax = new Vector2(1f, 0f);
+            panelRect.pivot = new Vector2(1f, 0f);
             panelRect.sizeDelta = new Vector2(430f, 610f);
-            panelRect.anchoredPosition = new Vector2(28f, -640f); // 닫힘 = 화면 밖 (PhoneView가 구동)
+            panelRect.anchoredPosition = new Vector2(-28f, -640f); // 닫힘 = 화면 밖 (PhoneView가 구동)
             SetField(view, "_panel", panelRect);
 
             Image screen = CreateImage(panel.transform, "Screen", NAVY);

@@ -98,10 +98,18 @@ namespace DontLate
             Mouse mouse = Mouse.current;
             if (camera == null || mouse == null) return;
 
+            // 첫 히트만 보면 WalkableVolume(거리 전체를 덮는 트리거)이 상자를 가린다 —
+            // 전체 히트에서 PickupBox만 골라 가장 가까운 것을 취한다 (S-011 수정).
             PickupBox box = null;
+            float nearest = float.MaxValue;
             Ray ray = camera.ScreenPointToRay(mouse.position.ReadValue());
-            if (Physics.Raycast(ray, out RaycastHit hit, 100f, ~0, QueryTriggerInteraction.Collide))
-                hit.collider.TryGetComponent(out box);
+            foreach (RaycastHit hit in Physics.RaycastAll(ray, 100f, ~0, QueryTriggerInteraction.Collide))
+            {
+                if (!hit.collider.TryGetComponent(out PickupBox candidate)) continue;
+                if (hit.distance >= nearest) continue;
+                nearest = hit.distance;
+                box = candidate;
+            }
 
             if (_hoverLabel != null)
                 _hoverLabel.text = box != null && box.Order != null

@@ -310,3 +310,7 @@
 - ③ 폰 "배송상차": `PhoneView`(직교 추가) + PhoneCanvas(CoreSceneBuilder). Tab 슬라이드(unscaled 0.22s)·호버 송장 표시·클릭 스캔(등록은 WorldDeliveryManager.RegisterBarcode — 신규 이벤트 `BarcodeScanned`)·중복 경고·목록 표(No/운송장 DL-XXXX/순번=마감빠른순/목적지). **스캔 짐만 픽업**(`_requireScanned` — Camp 상자). 관찰: 미스캔 E 거부 → 스캔 true·중복 false → 목록 "1 DL-0007 1 행복빌라" → 픽업 성공.
 - ④ Trellis2 반입: 가로등 8기 일괄 교체(전략 B + 프리팹 Visual 재구축 — 구 fbx 덮어쓰기 시 메시 서브에셋 ID 불일치로 링크 파손 실측) · 편의점 District 12슬롯 배치(빌더가 Prefabs/Auto 풀 배선 + 제너레이터가 층수 높이 정규화·전면 Z정렬 신설). 검역·출처·H12(데시메이트·텍스처)는 orders/art.md·assets_manifest 기록.
 - 검증: 컴파일 ○ 콘솔 0 ○ 스크린샷 3장(`s011_home_830`·`s011_district_trellis` 외).
+
+### 결과 · 2026-07-22 04:10 — S-011 후속 (폰 스캔 무반응 수리 + 우측 이동, 리드 10분)
+- 무반응 원인 실측: 마우스 시선 레이의 첫 히트가 `__gb_Walkable@38.2`(거리 전체 트리거) — 박스(42.5)는 그 뒤라 단일 Raycast가 영원히 놓침. **RaycastAll 전수에서 PickupBox만 골라 최근접 선택**으로 교체 → #7 검출 확인.
+- 폰 패널 좌하단 → **우하단**(anchor 1,0 · x=-28) 이동, Core 재조립 확인.
