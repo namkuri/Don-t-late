@@ -14,20 +14,20 @@
 | 종류 | BGM · 슬롯 `night` |
 | 용도 | 밤 변주 |
 | 스펙 | **별도 곡 대신 낮 곡 + 로우패스/리버브 변주 1순위** (DayPhaseChanged 훅) |
-| 요청 길이 | 200.0s |
+| 요청 길이 | 60.0s |
 | dest | `Assets/Audio/BGM/bgm_night_var.wav` |
 
 ## 창작 태그 (사람이 고치는 유일한 칸)
 
 <!-- NOTE:BEGIN -->
-city pop, retro 80s, lonely muted saxophone, breathy sax lead, pre-dawn empty streets, cold blue light, quiet city before sunrise, melancholic, sparse
+city pop, retro 80s, lonely muted saxophone, pre-dawn empty streets, melancholic
 <!-- NOTE:END -->
 
 ## 전송 프롬프트 (조립 결과 — 그대로 API에 투입)
 
 <!-- PROMPT:BEGIN -->
 ```
-downtempo synthwave city pop, lo-fi, warm analog synth pads, round mellow synth bass, dreamy nostalgic lead synth, dusty laid-back drum machine beat, soft bell tones, vinyl warmth, jazzy 7th chords, city pop, retro 80s, lonely muted saxophone, breathy sax lead, pre-dawn empty streets, cold blue light, quiet city before sunrise, melancholic, sparse, minor key, no intro fade-in, no outro fade-out, no ending, continuous groove from start to finish, consistent dynamics, steady level, no dramatic build-ups, no drops, background music for a game, understated melody, texture-driven, unobtrusive, minimal arrangement, sparse midrange, leave space in the mids, instrumental, 84 BPM, no vocals, no EDM drops
+downtempo synthwave city pop, lo-fi, warm analog synth pads, round mellow synth bass, dreamy nostalgic lead synth, dusty laid-back drum machine beat, soft bell tones, vinyl warmth, jazzy 7th chords, city pop, retro 80s, lonely muted saxophone, pre-dawn empty streets, melancholic, minor key, no intro fade-in, no outro fade-out, no ending, continuous groove from start to finish, consistent dynamics, steady level, no dramatic build-ups, no drops, background music for a game, understated melody, texture-driven, unobtrusive, minimal arrangement, sparse midrange, leave space in the mids, instrumental, 88 BPM, no vocals, no EDM drops
 ```
 <!-- PROMPT:END -->
 
@@ -35,18 +35,18 @@ downtempo synthwave city pop, lo-fi, warm analog synth pads, round mellow synth 
 
 ```
 ── 편집 인계 ──
-BPM        : 84
-1마디      : 2.86초   (240 ÷ 84)
-권장 루프  : 32마디 = 91.43초   (대안: 16마디 = 45.71초)
-반복 내성  : 30분 플레이 시 20회 반복 — 🟡 최소선
-요청 길이  : 200초
+BPM        : 88
+1마디      : 2.73초   (240 ÷ 88)
+권장 루프  : 16마디 = 43.64초   (대안: 8마디 = 21.82초)
+반복 내성  : 30분 플레이 시 41회 반복 — 🟡 최소선 미달 — 32마디(87s) 검토 권장
+요청 길이  : 60초
 편집 경고  : ⚠ 편집 경고: 긴 잔향/지속 노이즈 포함. 루프 이음매에 테일 랩 필요. [dreamy, vinyl warmth, dusty, lo-fi]
 ```
 
 ## 규격 검사
 
 - 필수 태그 15종 · 금지 태그 9종: **통과**
-- 조성 `minor key` · BPM `84`(정수) · instrumental 명시
+- 조성 `minor key` · BPM `88`(정수) · instrumental 명시
 - 🔴 루프 난이도: `dreamy`, `vinyl warmth`, `dusty`, `lo-fi` → ⚠ 편집 경고: 긴 잔향/지속 노이즈 포함. 루프 이음매에 테일 랩 필요.
 
 ## 생성 파라미터
@@ -79,3 +79,4 @@ python scripts/audio/audio_pipeline.py intake --bom-id bgm_night_var
 | 2 | 2026-07-21 | 재조립 |
 | 3 | 2026-07-21 | 재조립 |
 | 4 | 2026-07-21 | 재조립 |
+| 5 | 2026-07-21 | 재조립 |

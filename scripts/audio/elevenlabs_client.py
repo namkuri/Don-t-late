@@ -29,6 +29,7 @@ for _s in (sys.stdout, sys.stderr):
         _s.reconfigure(encoding="utf-8")  # Windows cp949 콘솔 대응
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import bgm_rules        # noqa: E402
 import bom_audio        # noqa: E402
 import prompt_builder   # noqa: E402
 
@@ -150,7 +151,9 @@ def _prompt_of(bom_id):
     body = prompt_builder._extract(path, prompt_builder.PROMPT_BEGIN, prompt_builder.PROMPT_END)
     if body.startswith("```"):
         body = body[3:].strip("`\n ")
-    missing = prompt_builder.verify(body, item["kind"])
+    slot = prompt_builder.slot_of(bom_id)
+    oneshot = bool(bgm_rules.STYLES.get(slot, {}).get("oneshot")) if item["kind"] == "bgm" else False
+    missing = prompt_builder.verify(body, item["kind"], oneshot)
     if missing:
         raise SystemExit(f"[차단] 금칙어 누락: {missing} — build 로 재조립하라.")
 
@@ -176,6 +179,18 @@ def _sidecar(bom_id, data):
     with open(p, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
     return p
+
+
+def _make_plan(prompt, length_s, model):
+    """구성계획 생성 — 크레딧 0. 경로가 여러 표기로 돌아다녀 후보를 순회한다."""
+    body = {"prompt": prompt, "music_length_ms": int(length_s * 1000), "model_id": model}
+    last = None
+    for ep in EP_PLAN_CANDIDATES:
+        try:
+            return _post(ep, body, expect_json=True)
+        except SystemExit as e:
+            last = e
+    raise last
 
 
 # ---------- 명령 ----------
@@ -257,20 +272,30 @@ def cmd_gen(args):
     }
 
     if item["kind"] == "bgm":
-        # force_instrumental 은 prompt 와만 병용 가능(API 422). 계획 모드에선 계획 안에 instrumental 이 들어간다.
+        # API 제약 (2026-07-21 실측):
+        #   · force_instrumental 은 prompt 와만 병용 가능
+        #   · seed 는 prompt 와 병용 **불가** — composition_plan 모드에서만 유효
+        # 재현성이 seed에 걸려 있으므로 **계획 모드를 기본**으로 한다. 계획 호출은 크레딧 0이라 손해가 없다.
         body = {"model_id": args.model}
         plan_path = os.path.join(prompt_builder.PROMPT_DIR, args.bom_id + ".plan.json")
-        if args.use_plan:
-            if not os.path.isfile(plan_path):
-                raise SystemExit(f"[중단] {plan_path} 없음 — 먼저 plan 을 실행하라.")
-            with open(plan_path, encoding="utf-8") as f:
-                body["composition_plan"] = json.load(f)   # prompt와 병용 불가
-            meta["composition_plan"] = os.path.basename(plan_path)
-        else:
+
+        if args.no_plan:
             body["prompt"] = prompt
             body["music_length_ms"] = int(length * 1000)
-            body["force_instrumental"] = True   # prompt 모드에서만 허용된다
-        body["seed"] = seed
+            body["force_instrumental"] = True
+            print("  ⚠ --no-plan: prompt 모드 — API가 seed를 거부하므로 **이 곡은 복원 불가**하다.")
+            meta["seed"] = None
+        else:
+            if not os.path.isfile(plan_path):
+                print(f"[구성계획] 없음 → 자동 생성 (크레딧 0)")
+                plan = _make_plan(prompt, length, args.model)
+                with open(plan_path, "w", encoding="utf-8") as f:
+                    json.dump(plan, f, ensure_ascii=False, indent=2)
+                print(f"  저장: {os.path.relpath(plan_path)} · 섹션 {len(plan.get('chunks', []))}개")
+            with open(plan_path, encoding="utf-8") as f:
+                body["composition_plan"] = json.load(f)   # prompt·music_length_ms 와 병용 불가
+            body["seed"] = seed
+            meta["composition_plan"] = os.path.basename(plan_path)
         endpoint = EP_MUSIC
     else:
         body = {"text": prompt, "duration_seconds": length}
@@ -315,7 +340,8 @@ def main():
     s.add_argument("--bom-id", required=True)
     s.add_argument("--model", default="music_v2")
     s.add_argument("--seed", type=int, help="같은 프롬프트+같은 seed = 같은 곡 (재현)")
-    s.add_argument("--use-plan", action="store_true", help="저장된 구성 계획으로 작곡(프롬프트와 병용 불가)")
+    s.add_argument("--no-plan", action="store_true",
+                   help="구성계획 없이 prompt 모드로 생성. API가 seed를 거부하므로 **복원 불가**해진다")
     s.add_argument("--length", type=float, help="소액 검증용 길이 축소 (예: 30). 생략 시 프롬프트 문서의 규격 길이")
     s.add_argument("--dry-run", action="store_true", help="전송 없이 요청 본문만 출력")
     s.add_argument("--overwrite", action="store_true",

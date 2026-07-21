@@ -84,6 +84,17 @@ NEGATIVE_SUBJECT = {
 }
 
 
+# 길이 정책 (2026-07-21 Director 결정 — 원 규격 §2에서 완화)
+#   원 규격: 길이 = 목표 루프 × 2 이상, 기본 3분.
+#   변경   : 기본 60초 · 여유 1.3배 · 기본 루프 16마디.
+#   근거   : 기존 반입 10곡이 대부분 60초라 라이브러리 일관성이 맞고, 생성비가 절반 이하로 준다
+#           (60초 = 825크레딧 vs 180초 = 2,475). 대신 편집 재료 여유가 얇아지므로
+#           "덜어내는 편집"의 실패 위험은 올라간다 — 이건 감수한 비용이다.
+DEFAULT_TRACK_SECONDS = 60.0
+LENGTH_MARGIN = 1.3
+MIN_LOOP_SECONDS = 20.0
+
+
 def bar_seconds(bpm):
     """1마디(4/4) 길이 = 240 ÷ BPM."""
     return 240.0 / bpm
@@ -102,15 +113,21 @@ def resolve_negatives(style_negatives, creative_tags):
     return kept, dropped
 
 
-def compose_bgm(style_name, creative_tags, bpm, length_s, extra_negatives=None):
+def compose_bgm(style_name, creative_tags, bpm, length_s, extra_negatives=None,
+                no_anchors=False, key=None):
     """§1·§2·§3 규격을 적용해 단일 프롬프트 블록을 만든다.
 
     배치 순서(각 md의 출력 규칙 2·3): 앵커 → 창작 태그 → 조성 → 필수 태그 → instrumental → BPM → 네거티브
+
+    no_anchors: 스타일 팩 앵커를 생략한다. 요청 장르가 팩과 다를 때(예: 칩튠 vs 신스웨이브)
+                앵커가 창작 태그와 싸우므로, 규격만 남기고 장르는 창작 태그에 맡긴다.
+    key:        조성 강제(`major key`/`minor key`). 팩 기본값과 무드가 어긋날 때.
     """
     style = STYLES[style_name]
     oneshot = style.get("oneshot", False)
 
-    parts = list(style["anchors"]) + list(creative_tags) + [style["key"]]
+    anchors = [] if no_anchors else list(style["anchors"])
+    parts = anchors + list(creative_tags) + [key or style["key"]]
     if not oneshot:
         parts += MANDATORY_TAGS
     parts.append("instrumental")
@@ -154,18 +171,18 @@ def verify_bgm(prompt, bpm, length_s, loop_bars, oneshot=False):
             if t.lower() in low:
                 problems.append(f"§3 금지 태그 포함: {t}")
         loop_s = bar_seconds(bpm) * loop_bars
-        if length_s < loop_s * 2:
-            need = loop_s * 2
+        if length_s < loop_s * LENGTH_MARGIN:
+            need = loop_s * LENGTH_MARGIN
             half = bar_seconds(bpm) * (loop_bars // 2)
             problems.append(
-                f"§2 길이 부족: 요청 {length_s:.0f}s < 목표 루프 {loop_s:.1f}s × 2 = {need:.0f}s\n"
+                f"§2 길이 부족: 요청 {length_s:.0f}s < 목표 루프 {loop_s:.1f}s × {LENGTH_MARGIN} = {need:.0f}s\n"
                 f"    (편집은 덜어내는 작업 — 재료가 딱 맞으면 실패한다)\n"
                 f"    해법 ①  --length {int(need) + 1}          (길이를 늘린다 · 권장)\n"
                 f"    해법 ②  --loop-bars {loop_bars // 2}      (루프 {half:.1f}s로 줄인다 — 반복이 잦아진다)"
             )
-        if loop_s < 60:
+        if loop_s < MIN_LOOP_SECONDS:
             problems.append(
-                f"§2 루프 {loop_s:.1f}s — 60s는 30분 플레이에 30회 반복(❌ 판정). 마디를 늘려라"
+                f"§2 루프 {loop_s:.1f}s — {MIN_LOOP_SECONDS:.0f}s 미만은 반복이 너무 잦다. 마디를 늘려라"
             )
     return problems
 
@@ -183,7 +200,7 @@ def loop_verdict(bpm, loop_bars):
     return loop_s, reps, mark
 
 
-def handoff_block(bpm, length_s, loop_bars, loop_risk):
+def handoff_block(bpm, length_s, loop_bars, loop_risk, oneshot=False):
     """§5 편집 인계 블록 — 곡을 받는 순간 어디를 자를지가 손에 있어야 한다."""
     bar = bar_seconds(bpm)
     alt = loop_bars // 2
@@ -193,7 +210,8 @@ def handoff_block(bpm, length_s, loop_bars, loop_risk):
         f"BPM        : {bpm}",
         f"1마디      : {bar:.2f}초   (240 ÷ {bpm})",
         f"권장 루프  : {loop_bars}마디 = {loop_s:.2f}초   (대안: {alt}마디 = {bar * alt:.2f}초)",
-        f"반복 내성  : 30분 플레이 시 {reps:.0f}회 반복 — {mark}",
+        f"반복 내성  : 단발 연출 — 반복 내성 규칙 비적용(§3 예외)" if oneshot
+        else f"반복 내성  : 30분 플레이 시 {reps:.0f}회 반복 — {mark}",
         f"요청 길이  : {length_s:.0f}초",
         f"편집 경고  : {EDIT_WARNING + ' [' + ', '.join(loop_risk) + ']' if loop_risk else '없음'}",
     ]

@@ -41,8 +41,8 @@ SFX_CONSTRAINTS = (
 SFX_REQUIRED = ["no background music", "no vocals"]
 SFX_STYLE_EN = "Style: retro pixel-art game sound design, dark comedy tone, clean and readable in a busy mix."
 SFX_RANGE = (0.5, 5.0)          # text_to_sound_effects 제약
-DEFAULT_LENGTH = {"bgm": 180.0, "sfx": 2.0}   # BGM 기본 3분 (규격 §2 — 목표 루프의 2배 이상)
-DEFAULT_LOOP_BARS = 32
+DEFAULT_LENGTH = {"bgm": bgm_rules.DEFAULT_TRACK_SECONDS, "sfx": 2.0}   # BGM 기본 60초 (완화 정책)
+DEFAULT_LOOP_BARS = 16
 
 NOTE_BEGIN, NOTE_END = "<!-- NOTE:BEGIN -->", "<!-- NOTE:END -->"
 PROMPT_BEGIN, PROMPT_END = "<!-- PROMPT:BEGIN -->", "<!-- PROMPT:END -->"
@@ -81,12 +81,16 @@ def compose_sfx(item, note, length):
     return " ".join(parts)
 
 
-def verify(prompt, kind):
-    """전송 직전 가벼운 관문 (elevenlabs_client 가 호출). 상세 규격 검사는 build 시점에 한다."""
+def verify(prompt, kind, oneshot=False):
+    """전송 직전 가벼운 관문 (elevenlabs_client 가 호출). 상세 규격 검사는 build 시점에 한다.
+
+    oneshot(타이틀·트레일러·엔딩) 은 규격 §3 예외라 필수 태그를 요구하지 않는다 —
+    조립기와 같은 판단을 해야 한다(두 곳이 어긋나면 통과한 프롬프트가 전송에서 막힌다).
+    """
     low = prompt.lower()
     if kind == "sfx":
         return [t for t in SFX_REQUIRED if t not in low]
-    missing = [t for t in bgm_rules.MANDATORY_TAGS if t.lower() not in low]
+    missing = [] if oneshot else [t for t in bgm_rules.MANDATORY_TAGS if t.lower() not in low]
     if "instrumental" not in low:
         missing.append("instrumental")
     if "major key" not in low and "minor key" not in low:
@@ -160,7 +164,7 @@ def render(bom_id, item, intent, note, prompt, length, gen, old_rows, meta):
             "## 편집 인계 (규격 §5)",
             "",
             "```",
-            bgm_rules.handoff_block(meta["bpm"], length, meta["loop_bars"], meta["loop_risk"]),
+            bgm_rules.handoff_block(meta["bpm"], length, meta["loop_bars"], meta["loop_risk"], meta.get("oneshot")),
             "```",
             "",
             "## 규격 검사",
@@ -281,7 +285,9 @@ def cmd_build(args):
         slot = args.slot or slot_of(args.bom_id)
         bpm = args.bpm or bgm_rules.STYLES[slot]["bpm"]
         tags = [t.strip() for t in note.split(",") if t.strip()]
-        prompt, info = bgm_rules.compose_bgm(slot, tags, bpm, length)
+        key = f"{args.key} key" if args.key else None
+        prompt, info = bgm_rules.compose_bgm(slot, tags, bpm, length,
+                                             no_anchors=args.no_anchors, key=key)
         problems = bgm_rules.verify_bgm(prompt, bpm, length, args.loop_bars, info["oneshot"])
         if problems:
             raise SystemExit("[차단] 규격 위반:\n  - " + "\n  - ".join(problems))
@@ -321,7 +327,7 @@ def cmd_build(args):
     print(prompt)
     if item["kind"] == "bgm":
         print()
-        print(bgm_rules.handoff_block(meta["bpm"], length, meta["loop_bars"], meta["loop_risk"]))
+        print(bgm_rules.handoff_block(meta["bpm"], length, meta["loop_bars"], meta["loop_risk"], meta.get("oneshot")))
 
 
 def cmd_check(args):
@@ -358,6 +364,9 @@ def main():
     s.add_argument("--bpm", type=int, help="정수 1개 (규격 §2 — 범위 금지). 생략 시 스타일 기본")
     s.add_argument("--length", type=float, help="초 (BGM 기본 180 · SFX 기본 2.0)")
     s.add_argument("--loop-bars", type=int, default=DEFAULT_LOOP_BARS, choices=[16, 32, 64])
+    s.add_argument("--no-anchors", action="store_true",
+                   help="스타일 팩 앵커 생략 — 요청 장르가 팩과 다를 때(칩튠 vs 신스웨이브 등)")
+    s.add_argument("--key", choices=["major", "minor"], help="조성 강제 (팩 기본값 무시)")
     s.add_argument("--raw", help="완성된 프롬프트를 그대로 사용 (조립기 미경유). 규격 검사는 그대로 돈다")
     s.add_argument("--no-gate", action="store_true", help="--raw 전용: 규격 위반을 경고로 낮춘다(문서에 기록됨)")
     s.set_defaults(func=cmd_build)

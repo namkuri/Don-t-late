@@ -1,0 +1,91 @@
+{
+  "chunks": [
+    {
+      "text": "[Alarm and Panic]",
+      "duration_ms": 15000,
+      "positive_styles": [
+        "150 BPM",
+        "retro Famicom sound design",
+        "frantic 8-bit alarm sound fx",
+        "high-pitched square wave bleeps",
+        "bouncy square bass",
+        "upbeat chiptune intro",
+        "comedic panic mood",
+        "dry video game soundchip aesthetic"
+      ],
+      "negative_styles": [],
+      "context_adherence": "high",
+      "conditioning_ref": null,
+      "condition_strength": null
+    },
+    {
+      "text": "[Frantic Morning Rush Theme]",
+      "duration_ms": 35000,
+      "positive_styles": [
+        "150 BPM",
+        "bright square wave lead melody",
+        "fast 8-bit arpeggios",
+        "noise channel drums",
+        "bouncy square bassline",
+        "playful comedic pace",
+        "major key game boy soundtrack",
+        "dynamic high-energy retro groove"
+      ],
+      "negative_styles": [],
+      "context_adherence": "high",
+      "conditioning_ref": null,
+      "condition_strength": null
+    },
+    {
+      "text": "[Slipping and Tripping Breakdown]",
+      "duration_ms": 20000,
+      "positive_styles": [
+        "150 BPM",
+        "staccato square waves",
+        "descending chiptune pitch slides",
+        "clumsy half-time feel",
+        "comedic timing sound effects",
+        "gated noise drums",
+        "8-bit playful video game arrangement"
+      ],
+      "negative_styles": [],
+      "context_adherence": "high",
+      "conditioning_ref": null,
+      "condition_strength": null
+    },
+    {
+      "text": "[Running to the Train Peak]",
+      "duration_ms": 30000,
+      "positive_styles": [
+        "150 BPM",
+        "double-time noise drums",
+        "hyper-fast square wave arpeggios",
+        "triumphant driving 8-bit bass",
+        "soaring square lead melody",
+        "upbeat retro arcade action",
+        "bright major key peak"
+      ],
+      "negative_styles": [],
+      "context_adherence": "high",
+      "conditioning_ref": null,
+      "condition_strength": null
+    },
+    {
+      "text": "[In the Nick of Time Catchy Outro]",
+      "duration_ms": 20000,
+      "positive_styles": [
+        "150 BPM",
+        "short catchy loop jingle",
+        "victorious game boy fanfare",
+        "falling square wave tone",
+        "fading noise channel drums",
+        "sharp abrupt retro ending",
+        "playful classic chime"
+      ],
+      "negative_styles": [],
+      "context_adherence": "high",
+      "conditioning_ref": null,
+      "condition_strength": null
+    }
+  ]
+}

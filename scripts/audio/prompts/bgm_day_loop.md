@@ -14,20 +14,20 @@
 | 종류 | BGM · 슬롯 `day` |
 | 용도 | 낮 거리 BGM |
 | 스펙 | 60~90s 루프 · 심리스 루프포인트 |
-| 요청 길이 | 200.0s |
+| 요청 길이 | 60.0s |
 | dest | `Assets/Audio/BGM/bgm_day_loop.wav` |
 
 ## 창작 태그 (사람이 고치는 유일한 칸)
 
 <!-- NOTE:BEGIN -->
-city pop, retro 80s, sunny afternoon, breezy, cozy neighborhood
+sunny afternoon, breezy, cozy neighborhood, city pop, retro 80s
 <!-- NOTE:END -->
 
 ## 전송 프롬프트 (조립 결과 — 그대로 API에 투입)
 
 <!-- PROMPT:BEGIN -->
 ```
-major key city pop, retro 80s, bright FM electric piano, sparkling bell synth, punchy analog synths, driving synth bass, bright arpeggiated synth, clean bright synth lead, crisp dry drum machine, glossy pads, warm analog, city pop, sunny afternoon, breezy, cozy neighborhood, major key, no intro fade-in, no outro fade-out, no ending, continuous groove from start to finish, consistent dynamics, steady level, no dramatic build-ups, no drops, background music for a game, understated melody, texture-driven, unobtrusive, minimal arrangement, sparse midrange, leave space in the mids, instrumental, 96 BPM, no vocals, no jazz, no saxophone, no acoustic guitar, no neon, no nighttime mood
+major key city pop, retro 80s, bright FM electric piano, sparkling bell synth, punchy analog synths, driving synth bass, bright arpeggiated synth, clean bright synth lead, crisp dry drum machine, glossy pads, warm analog, sunny afternoon, breezy, cozy neighborhood, city pop, major key, no intro fade-in, no outro fade-out, no ending, continuous groove from start to finish, consistent dynamics, steady level, no dramatic build-ups, no drops, background music for a game, understated melody, texture-driven, unobtrusive, minimal arrangement, sparse midrange, leave space in the mids, instrumental, 105 BPM, no vocals, no jazz, no saxophone, no acoustic guitar, no neon, no nighttime mood
 ```
 <!-- PROMPT:END -->
 
@@ -35,18 +35,18 @@ major key city pop, retro 80s, bright FM electric piano, sparkling bell synth, p
 
 ```
 ── 편집 인계 ──
-BPM        : 96
-1마디      : 2.50초   (240 ÷ 96)
-권장 루프  : 32마디 = 80.00초   (대안: 16마디 = 40.00초)
-반복 내성  : 30분 플레이 시 22회 반복 — 🟡 최소선 미달 — 64마디(160s) 검토 권장
-요청 길이  : 200초
+BPM        : 105
+1마디      : 2.29초   (240 ÷ 105)
+권장 루프  : 16마디 = 36.57초   (대안: 8마디 = 18.29초)
+반복 내성  : 30분 플레이 시 49회 반복 — 🟡 최소선 미달 — 32마디(73s) 검토 권장
+요청 길이  : 60초
 편집 경고  : 없음
 ```
 
 ## 규격 검사
 
 - 필수 태그 15종 · 금지 태그 9종: **통과**
-- 조성 `major key` · BPM `96`(정수) · instrumental 명시
+- 조성 `major key` · BPM `105`(정수) · instrumental 명시
 
 ## 생성 파라미터
 
@@ -78,3 +78,4 @@ python scripts/audio/audio_pipeline.py intake --bom-id bgm_day_loop
 | 2 | 2026-07-21 | 재조립 |
 | 3 | 2026-07-21 | 재조립 |
 | 4 | 2026-07-21 | 재조립 |
+| 5 | 2026-07-21 | 재조립 |

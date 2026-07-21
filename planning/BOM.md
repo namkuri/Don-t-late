@@ -138,6 +138,7 @@
 |---|---|---|---|---|
 | bgm_day_loop | 낮 거리 BGM | 60~90s 루프 · 심리스 루프포인트 | **ElevenLabs(#9)**→폴백 #10 (#8 Suno는 공식 API 부재로 🖐 강등 · 2026-07-21) | 필수 |
 | bgm_night_var | 밤 변주 | **별도 곡 대신 낮 곡 + 로우패스/리버브 변주 1순위** (DayPhaseChanged 훅) | 믹스로 해결 | 전용 곡은 sacrifice 후보 |
+| bgm_title | 타이틀(Main 씬) BGM | 짧은 루프 징글 · **단발 연출이라 훅 허용**(GAME-BGM-RULES §3 예외 — 필수/금지 태그 면제) | **ElevenLabs(#9)** | 필수 |
 
 ### SFX — WorldEvents 트리거 매핑 (Unity 소비 관점)
 
