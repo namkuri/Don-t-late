@@ -135,3 +135,24 @@
 - ⓒ 결정론: `Generate()` 재실행 후 fingerprint(이름+min.z+width) `A==B True` (len 584 동일) · `GeneratedLayout` roots=1(멱등, 중복 생성 0). 시드 로직 불변 증명.
 - ⓓ 스크린샷 `Screenshots/district_spacefix.png` (D-038 공간 정합 체크): 건물(어두운 큐브)이 가로등 라인 **뒤로 물러남** — 가로등이 건물 앞 보도에 서 있고 파묻히지 않음 · 보도 전면 클리어(침범 0) · 건물·가로등·상자 전부 접지 정상.
 - ⓔ 콘솔 error 0 · play stop · Main 재오픈. Main.unity mtime 15:20(내 세션 19:29 이전 — 미수정, 재오픈은 읽기전용) · `_intake` 불변. 커밋 없음(사람 게이트). 재시도 0회.
+
+---
+
+## S-004 · 발주 2026-07-22 01:01 → ClaudeCode (본 세션 실행 — 간판 발광 이미시브 스왑 전환)
+
+목표: R11 반려 처방 시공 (D-051) — 간판 앞을 덮는 additive 발광판을 폐지하고, **간판 렌더러 자체 머티리얼의 이미시브를 구동**하는 방식으로 교체.
+
+입력:
+- `Assets/Scripts/Interactables/SignGlowPlate.cs` (현행 판 방식 — 개조 대상)
+- `Assets/Scripts/Editor/GreyboxStageBuilder.cs` BuildSignGlow/GetOrCreateSignGlowMaterial (판 생성부)
+- 반려 기록: iterations.md M1 — "발광판이 실제 간판을 가림"
+
+기대:
+- `SignGlow` 컴포넌트(파일명 개명): `_signRenderer` 머티리얼의 `_EmissionColor`를 phase에 따라 시안↔검정 구동. URP Lit 키워드 제약(MPB 불가) 때문에 Awake에서 머티리얼 인스턴스화 + `_EMISSION` 상시 켬.
+- 그레이박스: 간판 자리 쿼드가 별도 판이 아니라 **간판 그 자체**(어두운 베이스 URP Lit) — 저녁·밤에 그 면이 발광. 머티리얼 에셋에 `_EMISSION` 키워드를 에디트타임에 켜서 WebGL 배리언트 스트리핑 방지.
+- 향후 실건물: 간판 분리 익스포트(art.md 공통 규격)로 들어온 간판 렌더러를 `_signRenderer`에 꽂으면 동일 동작.
+- 구방식 고아 에셋 삭제: SignGlow.shader · M_SignGlowDecal.mat · T_SignGlowCyan.asset · GB_SignGlow.mat (+meta).
+
+수용기준: ① 컴파일 통과 ② 콘솔 0 ③ Play에서 저녁 진입 시 간판 면 자체가 시안 발광(가리는 판 없음)·아침 소등, 스크린샷 확보.
+
+실패시: [BLOCKED] 보고. ⚠ 발주 시점 에디터 미가동 — 검증 3종은 에디터 기동 후 수행(그 전 push 금지).

@@ -2,6 +2,7 @@
 
 > 형식: [guides/distributed-workflow.md](../guides/distributed-workflow.md) §3. 반입은 `Assets/_intake/art/<도구>/<분류>/`.
 > 공통 규격: 텍스처 **FBX Embed Media 필수**(별도 png 동봉도 가능) · 원점=바닥중심 · 실상표 금지 · 파일명=지정 bom_id.
+> **간판 분리** (2026-07-22 승격, [decisions](../decisions.md) D-051): 간판 있는 건물은 간판을 **별도 메시 또는 별도 머티리얼 슬롯**으로 분리 익스포트 — 밤 발광을 시스템이 간판 머티리얼만 이미시브로 스왑해 처리하기 위함. 통짜면 밤 간판 발광 불가.
 
 ---
 
