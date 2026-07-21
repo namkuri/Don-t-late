@@ -35,9 +35,12 @@ namespace DontLate
 
         private readonly Dictionary<BgmSlot, List<AudioClip>> _pools =
             new Dictionary<BgmSlot, List<AudioClip>>();
-        // 세션 추첨 결과 — 세션 내내 고정.
+        // 슬롯별 현재 곡. 세션 추첨으로 시작해 플레이리스트가 갱신한다.
         private readonly Dictionary<BgmSlot, AudioClip> _picked =
             new Dictionary<BgmSlot, AudioClip>();
+        // 이번 세션에 이미 들어가 본 슬롯. 첫 진입은 추첨분을 그대로 쓰고(no-repeat 보존),
+        // 재진입부터 다음 곡으로 넘긴다 — 낮↔밤을 오갈 때마다 새 곡이 나오도록.
+        private readonly HashSet<BgmSlot> _entered = new HashSet<BgmSlot>();
 
         private AudioSource _sourceA;
         private AudioSource _sourceB;
@@ -185,11 +188,30 @@ namespace DontLate
             else next = BgmSlot.Day;
 
             if (next == _slot) return;
-            if (!_picked.TryGetValue(next, out AudioClip clip)) return; // 빈 슬롯이면 현 재생 유지
+
+            AudioClip clip = SelectForSlot(next);
+            if (clip == null) return; // 빈 슬롯이면 현 재생 유지
 
             _slot = next;
             SyncDebugIndex(next, clip);
             Crossfade(clip);
+        }
+
+        /// <summary>
+        /// 슬롯에 들어갈 때 재생할 곡을 정한다. 첫 진입은 추첨분 그대로, 재진입은 다음 곡 —
+        /// 낮↔밤을 오갈 때마다 같은 곡이 반복되지 않게 한다.
+        /// </summary>
+        private AudioClip SelectForSlot(BgmSlot slot)
+        {
+            if (!_pools.TryGetValue(slot, out List<AudioClip> pool) || pool.Count == 0) return null;
+
+            if (_entered.Add(slot))
+                return _picked.TryGetValue(slot, out AudioClip drawn) ? drawn : pool[0];
+
+            AudioClip current = _picked.TryGetValue(slot, out AudioClip held) ? held : null;
+            AudioClip next = pool[(pool.IndexOf(current) + 1) % pool.Count];
+            _picked[slot] = next;
+            return next;
         }
 
         /// <summary>청취 도구의 커서를 현재 곡에 맞춘다 — 안 맞추면 첫 N키가 같은 곡을 다시 고른다.</summary>
@@ -315,16 +337,12 @@ namespace DontLate
             for (int step = 1; step <= DebugSlotOrder.Length; step++)
             {
                 BgmSlot next = DebugSlotOrder[(start + step + DebugSlotOrder.Length) % DebugSlotOrder.Length];
-                if (!_pools.TryGetValue(next, out List<AudioClip> pool) || pool.Count == 0) continue;
 
-                if (!_picked.TryGetValue(next, out AudioClip clip))
-                {
-                    clip = pool[0];
-                    _picked[next] = clip; // Unsorted 는 추첨이 없으므로 첫 곡부터 시작
-                }
+                AudioClip clip = SelectForSlot(next); // 재진입이면 다음 곡 — ApplySlot과 같은 규칙
+                if (clip == null) continue;           // 빈 슬롯은 건너뛴다
 
                 _slot = next;
-                _debugIndex = Mathf.Max(0, pool.IndexOf(clip));
+                _debugIndex = Mathf.Max(0, _pools[next].IndexOf(clip));
                 Crossfade(clip);
                 return;
             }
