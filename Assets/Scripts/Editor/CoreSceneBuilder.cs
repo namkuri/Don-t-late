@@ -23,6 +23,11 @@ namespace DontLate.EditorTools
         private const string FONT_PATH = "Assets/Art/UI/Fonts/Pretendard-Regular SDF.asset";
         private static readonly Color AMBER = new Color(1f, 0.624f, 0.271f, 1f); // #ff9f45
         private static readonly Color CYAN = new Color(0.208f, 0.878f, 0.784f, 1f); // #35e0c8
+        private static readonly Color NAVY = new Color(0.039f, 0.051f, 0.086f, 0.9f); // #0a0d16 반투명
+
+        private const string BLIP_PATH = "Assets/Audio/SFX/sfx_dialogue_blip.wav";
+        private const string DIALOGUE_DATA_ROOT = "Assets/Data/Dialogue";
+        private const string PARK_SCENARIO_PATH = DIALOGUE_DATA_ROOT + "/Scenario_ParkMalsoon_Intro.asset";
 
         private static readonly string[] ContentSceneNames = { "Home", "Camp", "Travel", "District" };
 
@@ -56,6 +61,7 @@ namespace DontLate.EditorTools
             BuildCore(gameState);
             BuildFadeCanvas();
             BuildHUDCanvas(gameState);
+            BuildDialogueCanvas();
             BuildEventSystem();
 
             EditorSceneManager.SaveScene(scene, CORE_PATH);
@@ -89,6 +95,8 @@ namespace DontLate.EditorTools
             WorldDayNightManager dayNight = managers.AddComponent<WorldDayNightManager>();
             SetField(dayNight, "_gameState", gameState);
             SetField(dayNight, "_tuning", tuning);
+
+            managers.AddComponent<WorldDialogueManager>(); // 라인 인덱스만 관리 — 외부 참조 없음
 
             // 태양은 Core 소유(D-021 교정) — 콘텐츠 씬은 자체 Directional Light를 두지 않는다.
             GameObject sunGo = new GameObject("Sun");
@@ -224,6 +232,152 @@ namespace DontLate.EditorTools
                 38f, CYAN, TextAlignmentOptions.Center);
             AnchorMiddleBottom(ePrompt.rectTransform, new Vector2(0f, 120f), new Vector2(640f, 60f));
             SetField(hud, "_ePrompt", ePrompt.gameObject);
+        }
+
+        // ── 대화 캔버스 (Core 상주) ──────────────────────────
+
+        private static void BuildDialogueCanvas()
+        {
+            TMP_FontAsset font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FONT_PATH);
+            AudioClip blip = EnsureBlipClip();
+            EnsureTestScenario();
+
+            // Canvas: Overlay · sortOrder 90 (HUD 위) · Scale With Screen Size 1920×1080.
+            GameObject canvasGo = new GameObject("DialogueCanvas");
+            Canvas canvas = canvasGo.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 90;
+            CanvasScaler scaler = canvasGo.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = 0.5f;
+            canvasGo.AddComponent<GraphicRaycaster>();
+
+            DialogueView view = canvasGo.AddComponent<DialogueView>();
+
+            // 로컬 2D 블립 소스.
+            AudioSource blipSource = canvasGo.AddComponent<AudioSource>();
+            blipSource.playOnAwake = false;
+            blipSource.spatialBlend = 0f;
+            SetField(view, "_blipSource", blipSource);
+            SetField(view, "_blipClip", blip);
+
+            // 박스 루트 (평소 숨김). 하단 가로 박스 — 시안 테두리 프레임.
+            GameObject border = CreateImage(canvasGo.transform, "Box", CYAN).gameObject;
+            RectTransform borderRect = border.GetComponent<RectTransform>();
+            AnchorMiddleBottom(borderRect, new Vector2(0f, 40f), new Vector2(1720f, 260f));
+            SetField(view, "_box", border);
+
+            // 네이비 반투명 내부 (테두리보다 3px 안쪽) — 클릭 진행용 Button 타겟.
+            Image inner = CreateImage(border.transform, "Inner", NAVY);
+            inner.raycastTarget = true;
+            RectTransform innerRect = inner.rectTransform;
+            innerRect.anchorMin = Vector2.zero;
+            innerRect.anchorMax = Vector2.one;
+            innerRect.offsetMin = new Vector2(3f, 3f);
+            innerRect.offsetMax = new Vector2(-3f, -3f);
+            Button advanceButton = inner.gameObject.AddComponent<Button>();
+            advanceButton.transition = Selectable.Transition.None;
+            advanceButton.targetGraphic = inner;
+            SetField(view, "_advanceButton", advanceButton);
+
+            // 이름표 (앰버, 좌상).
+            TMP_Text nameLabel = CreateText(inner.transform, "Name", "박말순", font,
+                34f, AMBER, TextAlignmentOptions.TopLeft);
+            AnchorCorner(nameLabel.rectTransform, new Vector2(0f, 1f), new Vector2(44f, -18f), new Vector2(600f, 46f));
+            SetField(view, "_nameLabel", nameLabel);
+
+            // 본문 (흰색, Pretendard).
+            TMP_Text body = CreateText(inner.transform, "Body", string.Empty, font,
+                40f, Color.white, TextAlignmentOptions.TopLeft);
+            body.textWrappingMode = TextWrappingModes.Normal;
+            RectTransform bodyRect = body.rectTransform;
+            bodyRect.anchorMin = Vector2.zero;
+            bodyRect.anchorMax = Vector2.one;
+            bodyRect.offsetMin = new Vector2(44f, 24f);
+            bodyRect.offsetMax = new Vector2(-44f, -74f);
+            SetField(view, "_bodyLabel", body);
+
+            // 대기 화살표 "▼" (시안, 우하). 기본 숨김.
+            TMP_Text arrow = CreateText(inner.transform, "Arrow", "▼", font,
+                40f, CYAN, TextAlignmentOptions.BottomRight);
+            AnchorCorner(arrow.rectTransform, new Vector2(1f, 0f), new Vector2(-30f, 18f), new Vector2(60f, 60f));
+            arrow.gameObject.SetActive(false);
+            SetField(view, "_arrow", arrow.gameObject);
+        }
+
+        // ── 블립 합성 (없을 때만 — 진짜 SFX 스왑 계약) ───────
+        // 사각파 ~1000Hz · 0.045s · 즉시 어택 · 짧은 페이드아웃 · 44.1kHz 16bit mono WAV.
+        private static AudioClip EnsureBlipClip()
+        {
+            if (!System.IO.File.Exists(BLIP_PATH))
+            {
+                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(BLIP_PATH));
+                System.IO.File.WriteAllBytes(BLIP_PATH, SynthBlipWav());
+                AssetDatabase.ImportAsset(BLIP_PATH, ImportAssetOptions.ForceSynchronousImport);
+                Debug.Log("[CoreSceneBuilder] 블립 WAV 생성 — " + BLIP_PATH);
+            }
+            return AssetDatabase.LoadAssetAtPath<AudioClip>(BLIP_PATH);
+        }
+
+        private static byte[] SynthBlipWav()
+        {
+            const int sampleRate = 44100;
+            const float durationSec = 0.045f;
+            const float freq = 1000f;
+            const float amp = 0.45f;
+            int sampleCount = Mathf.RoundToInt(sampleRate * durationSec);
+            int fadeStart = Mathf.RoundToInt(sampleCount * 0.6f); // 뒤 40% 페이드아웃
+
+            short[] samples = new short[sampleCount];
+            for (int i = 0; i < sampleCount; i++)
+            {
+                float phase = (i * freq / sampleRate) % 1f;
+                float square = phase < 0.5f ? 1f : -1f; // 즉시 어택 (엔벨로프 없음)
+                float env = i < fadeStart ? 1f : 1f - (float)(i - fadeStart) / (sampleCount - fadeStart);
+                samples[i] = (short)(square * env * amp * short.MaxValue);
+            }
+
+            int dataBytes = sampleCount * 2;
+            using (var ms = new System.IO.MemoryStream())
+            using (var w = new System.IO.BinaryWriter(ms))
+            {
+                w.Write(new char[] { 'R', 'I', 'F', 'F' });
+                w.Write(36 + dataBytes);
+                w.Write(new char[] { 'W', 'A', 'V', 'E' });
+                w.Write(new char[] { 'f', 'm', 't', ' ' });
+                w.Write(16);                 // Subchunk1Size
+                w.Write((short)1);           // PCM
+                w.Write((short)1);           // mono
+                w.Write(sampleRate);
+                w.Write(sampleRate * 2);     // ByteRate
+                w.Write((short)2);           // BlockAlign
+                w.Write((short)16);          // BitsPerSample
+                w.Write(new char[] { 'd', 'a', 't', 'a' });
+                w.Write(dataBytes);
+                foreach (short s in samples) w.Write(s);
+                w.Flush();
+                return ms.ToArray();
+            }
+        }
+
+        // ── 테스트 시나리오 (없을 때만) ──────────────────────
+        private static void EnsureTestScenario()
+        {
+            if (AssetDatabase.LoadAssetAtPath<DialogueScenarioSO>(PARK_SCENARIO_PATH) != null) return;
+
+            System.IO.Directory.CreateDirectory(DIALOGUE_DATA_ROOT);
+            DialogueScenarioSO so = ScriptableObject.CreateInstance<DialogueScenarioSO>();
+            so.lines = new[]
+            {
+                new DialogueScenarioSO.Line { speaker = "박말순", text = "어이~ 총각!! 내 김치냉장고 어디 갔어?!" },
+                new DialogueScenarioSO.Line { speaker = "박말순", text = "행복빌라 301호! 10시까지 안 오면 알지?!" },
+                new DialogueScenarioSO.Line { speaker = "주인공", text = "(…오늘도 시작이다.)" },
+            };
+            AssetDatabase.CreateAsset(so, PARK_SCENARIO_PATH);
+            AssetDatabase.SaveAssets();
+            Debug.Log("[CoreSceneBuilder] 테스트 시나리오 생성 — " + PARK_SCENARIO_PATH);
         }
 
         private static void BuildEventSystem()

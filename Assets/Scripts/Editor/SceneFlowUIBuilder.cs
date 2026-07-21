@@ -1,0 +1,226 @@
+using System.Reflection;
+using TMPro;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+
+namespace DontLate.EditorTools
+{
+    /// <summary>
+    /// 씬 흐름 골격 UI를 각 콘텐츠 씬에 조립하는 개발 도구.
+    /// Core에서 Play → Main(타이틀)부터 클릭만으로 하루 사이클을 완주할 수 있게 최소 UI를 깐다.
+    /// 생성물은 전부 "__ui_" 접두 루트 캔버스 하나에 담고, 다시 실행하면 지우고 새로 만든다(멱등).
+    /// Main.unity는 UI 캔버스 추가만 한다 — 기존 오브젝트는 건드리지 않는다(사람 승인 범위).
+    /// </summary>
+    public static class SceneFlowUIBuilder
+    {
+        private const string SCENES_ROOT = "Assets/Scenes";
+        private const string FONT_PATH = "Assets/Art/UI/Fonts/Pretendard-Regular SDF.asset";
+        private const string UI_PREFIX = "__ui_";
+
+        private static readonly Color AMBER = new Color(1f, 0.624f, 0.271f, 1f);      // #ff9f45 목표
+        private static readonly Color CYAN = new Color(0.208f, 0.878f, 0.784f, 1f);   // #35e0c8 상호작용
+        private static readonly Color NAVY = new Color(0.039f, 0.051f, 0.086f, 1f);   // #0a0d16 배경
+
+        [MenuItem("DontLate/Build Scene Flow UI", priority = 13)]
+        public static void BuildSceneFlowUI()
+        {
+            TMP_FontAsset font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FONT_PATH);
+            if (font == null)
+                Debug.LogWarning("[SceneFlowUIBuilder] Pretendard 폰트 미발견 — TMP 기본 폰트로 진행.");
+
+            BuildMain(font);
+            BuildLabeledAction("Home", "집 — 아침", "하루 시작 → 물류캠프", GameScene.Camp, font);
+            BuildLabeledAction("Camp", "물류캠프", "짐 싣고 출발 (임시)", GameScene.Travel, font);
+            BuildLabeledAction("Travel", "이동 — 노드 선택(임시)", "행복빌라 구역으로", GameScene.District, font);
+            BuildDistrict(font);
+
+            Debug.Log("[SceneFlowUIBuilder] 씬 흐름 UI 조립 완료 — Main·Home·Camp·Travel·District 5씬.");
+        }
+
+        // ── 씬별 조립 ────────────────────────────────────────
+
+        // Main = 타이틀 화면. 기존 오브젝트 불변, __ui_ 캔버스만 추가.
+        private static void BuildMain(TMP_FontAsset font)
+        {
+            Scene scene = EditorSceneManager.OpenScene(SCENES_ROOT + "/Main.unity", OpenSceneMode.Single);
+            Transform root = CreateFlowCanvas().transform;
+
+            Image bg = CreateImage(root, "Bg", NAVY);
+            StretchFull(bg.rectTransform);
+            bg.raycastTarget = true; // 타이틀 배경 — 뒤 씬으로의 클릭 통과 차단
+
+            TMP_Text title = CreateText(root, "Title", "늦지마!!", font, 180f, AMBER,
+                TextAlignmentOptions.Center, FontStyles.Bold);
+            AnchorCentered(title.rectTransform, new Vector2(0f, 130f), new Vector2(1500f, 280f));
+
+            TMP_Text sub = CreateText(root, "Subtitle", "지각 압박 배달 생존기", font, 48f, Color.white,
+                TextAlignmentOptions.Center, FontStyles.Normal);
+            AnchorCentered(sub.rectTransform, new Vector2(0f, -30f), new Vector2(1200f, 80f));
+
+            CreateButton(root, "StartButton", "시작", GameScene.Home, font, CYAN,
+                new Vector2(0.5f, 0f), new Vector2(0f, 170f), new Vector2(440f, 118f), 48f);
+
+            EditorSceneManager.SaveScene(scene, SCENES_ROOT + "/Main.unity");
+        }
+
+        // Home/Camp/Travel = 좌상 라벨 + 하단 중앙 진행 버튼.
+        private static void BuildLabeledAction(string sceneName, string labelText,
+            string buttonText, GameScene target, TMP_FontAsset font)
+        {
+            Scene scene = EditorSceneManager.OpenScene(SCENES_ROOT + "/" + sceneName + ".unity", OpenSceneMode.Single);
+            Transform root = CreateFlowCanvas().transform;
+
+            TMP_Text label = CreateText(root, "Label", labelText, font, 46f, Color.white,
+                TextAlignmentOptions.TopLeft, FontStyles.Normal);
+            AnchorCorner(label.rectTransform, new Vector2(0f, 1f), new Vector2(48f, -44f), new Vector2(1000f, 72f));
+
+            CreateButton(root, "AdvanceButton", buttonText, target, font, CYAN,
+                new Vector2(0.5f, 0f), new Vector2(0f, 150f), new Vector2(600f, 104f), 40f);
+
+            EditorSceneManager.SaveScene(scene, SCENES_ROOT + "/" + sceneName + ".unity");
+        }
+
+        // District = 우상 작은 "하루 끝" 버튼만. 무대는 기존 DistrictSceneBuilder 산출물 유지.
+        private static void BuildDistrict(TMP_FontAsset font)
+        {
+            Scene scene = EditorSceneManager.OpenScene(SCENES_ROOT + "/District.unity", OpenSceneMode.Single);
+
+            bool hasStage = false;
+            foreach (GameObject go in Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include))
+                if (go != null && go.name.StartsWith("__gb_")) { hasStage = true; break; }
+            if (!hasStage)
+                Debug.LogWarning("[SceneFlowUIBuilder] District 무대 없음 — 'DontLate/Build District Stage'를 먼저 실행하라. UI만 얹는다.");
+
+            Transform root = CreateFlowCanvas().transform;
+
+            // 우상, HUD 경제 블록(상단) 아래로 내려 겹침 회피.
+            CreateButton(root, "EndDayButton", "하루 끝 — 집으로", GameScene.Home, font, CYAN,
+                new Vector2(1f, 1f), new Vector2(-40f, -220f), new Vector2(380f, 74f), 30f);
+
+            EditorSceneManager.SaveScene(scene, SCENES_ROOT + "/District.unity");
+        }
+
+        // ── UI 헬퍼 ──────────────────────────────────────────
+
+        private static Canvas CreateFlowCanvas()
+        {
+            ClearFlowUI();
+
+            GameObject go = new GameObject(UI_PREFIX + "FlowCanvas");
+            Canvas canvas = go.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 20; // HUD(10) 위, Fade(100) 아래
+            CanvasScaler scaler = go.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = 0.5f;
+            go.AddComponent<GraphicRaycaster>();
+            return canvas;
+        }
+
+        private static void ClearFlowUI()
+        {
+            foreach (GameObject go in Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include))
+            {
+                if (go == null || go.transform.parent != null) continue;
+                if (go.name.StartsWith(UI_PREFIX)) Object.DestroyImmediate(go);
+            }
+        }
+
+        private static void CreateButton(Transform parent, string name, string label, GameScene target,
+            TMP_FontAsset font, Color bgColor, Vector2 anchor, Vector2 anchoredPos, Vector2 size, float fontSize)
+        {
+            GameObject go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+
+            Image img = go.AddComponent<Image>();
+            img.color = bgColor;
+
+            RectTransform rect = (RectTransform)go.transform;
+            rect.anchorMin = anchor;
+            rect.anchorMax = anchor;
+            rect.pivot = anchor;
+            rect.sizeDelta = size;
+            rect.anchoredPosition = anchoredPos;
+
+            Button button = go.AddComponent<Button>();
+            button.targetGraphic = img;
+
+            SceneAdvanceButton advance = go.AddComponent<SceneAdvanceButton>();
+            SetField(advance, "_target", target);
+            EditorUtility.SetDirty(advance);
+
+            TMP_Text text = CreateText(go.transform, "Label", label, font, fontSize, NAVY,
+                TextAlignmentOptions.Center, FontStyles.Bold);
+            StretchFull(text.rectTransform);
+        }
+
+        private static TMP_Text CreateText(Transform parent, string name, string text, TMP_FontAsset font,
+            float fontSize, Color color, TextAlignmentOptions align, FontStyles style)
+        {
+            GameObject go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+            TextMeshProUGUI t = go.AddComponent<TextMeshProUGUI>();
+            if (font != null) t.font = font;
+            t.text = text;
+            t.fontSize = fontSize;
+            t.color = color;
+            t.alignment = align;
+            t.fontStyle = style;
+            t.textWrappingMode = TextWrappingModes.NoWrap;
+            t.raycastTarget = false;
+            return t;
+        }
+
+        private static Image CreateImage(Transform parent, string name, Color color)
+        {
+            GameObject go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+            Image img = go.AddComponent<Image>();
+            img.color = color;
+            return img;
+        }
+
+        private static void StretchFull(RectTransform rect)
+        {
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+        }
+
+        private static void AnchorCentered(RectTransform rect, Vector2 anchoredPos, Vector2 size)
+        {
+            rect.anchorMin = new Vector2(0.5f, 0.5f);
+            rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.sizeDelta = size;
+            rect.anchoredPosition = anchoredPos;
+        }
+
+        private static void AnchorCorner(RectTransform rect, Vector2 anchor, Vector2 anchoredPos, Vector2 size)
+        {
+            rect.anchorMin = anchor;
+            rect.anchorMax = anchor;
+            rect.pivot = anchor;
+            rect.sizeDelta = size;
+            rect.anchoredPosition = anchoredPos;
+        }
+
+        private static void SetField(Object target, string fieldName, object value)
+        {
+            FieldInfo field = target.GetType().GetField(
+                fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+            if (field == null)
+            {
+                Debug.LogError("[SceneFlowUIBuilder] 필드 없음: " + target.GetType().Name + "." + fieldName);
+                return;
+            }
+            field.SetValue(target, value);
+        }
+    }
+}

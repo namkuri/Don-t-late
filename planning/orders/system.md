@@ -115,3 +115,23 @@
 수용기준: 침범 실측 0(수치) · 교차 0 · 결정론 유지 · 콘솔 0.
 실패시: 2회 후 [BLOCKED]+원문.
 보고: 관찰만 — 바운즈 수치표 · 스크린샷 · 리드.
+
+### 결과 · 2026-07-21 19:38 (착수 19:29 기준 리드 9분)
+
+- 수정 파일: `Assets/Scripts/Interactables/DistrictLayoutGenerator.cs` (건물 생성 로직만). 상수 `BUILDING_FRONT_Z=3.0` 추가 + `BuildBuilding`에서 floor 큐브 `localPosition.z`에 `centerZLocal = (BUILDING_FRONT_Z + BUILDING_DEPTH/2) − slot.position.z` 오프셋 적용 → 전면(길 쪽 −Z 면)을 세계 Z=+3.0에 정렬, 깊이는 +Z(안쪽)로만 확장. **시드·슬롯·RNG 스트림 불변**(floors/tone/width 추첨은 오프셋 앞에서 그대로 소비 — reviewer ACCEPT 상태 유지). 슬롯 회전=identity(빌더가 localPosition만 설정) 전제.
+- ⓐ 건물 12건 전수 바운즈 min.z (District Play, OnEnable→Generate 실측):
+
+  | 건물 | min.z | max.z | 건물 | min.z | max.z |
+  |---|---|---|---|---|---|
+  | Building_01 | 3.000 | 8.000 | Building_07 | 3.000 | 8.000 |
+  | Building_02 | 3.000 | 8.000 | Building_08 | 3.000 | 8.000 |
+  | Building_03 | 3.000 | 8.000 | Building_09 | 3.000 | 8.000 |
+  | Building_04 | 3.000 | 8.000 | Building_10 | 3.000 | 8.000 |
+  | Building_05 | 3.000 | 8.000 | Building_11 | 3.000 | 8.000 |
+  | Building_06 | 3.000 | 8.000 | Building_12 | 3.000 | 8.000 |
+
+  **전수 min.z=3.000 ≥ 2.9 충족** (수정 전엔 slot Z=2.6 중심·깊이5로 min.z≈0.1, 보도 깊이 침범).
+- ⓑ 가로등 8기 × 건물 바운즈 교차: **솔리드 포스트(LampModel) 교차 0**. 뒷줄 가로등 06/07/08 포스트 max.z=2.93 < 건물 min.z 3.0 (0.07u 클리어). 앞줄 01~05는 Z=−2.2대라 무관. **관찰 주의**: 각 가로등엔 라이트 빔 비주얼 `Cone` 렌더러(size 2.8×3.5×2.8·max.z=3.60)가 별도로 있어 뒷줄 3기 Cone이 건물 전면과 겹치나(LIGHTCONE_OVERLAP=3), 이는 솔리드 파묻힘이 아니라 **광원이 벽면에 투사되는 의도 동작**이라 판단. 사람 육안 적발 대상(가로등 포스트가 건물에 파묻힘)은 해소.
+- ⓒ 결정론: `Generate()` 재실행 후 fingerprint(이름+min.z+width) `A==B True` (len 584 동일) · `GeneratedLayout` roots=1(멱등, 중복 생성 0). 시드 로직 불변 증명.
+- ⓓ 스크린샷 `Screenshots/district_spacefix.png` (D-038 공간 정합 체크): 건물(어두운 큐브)이 가로등 라인 **뒤로 물러남** — 가로등이 건물 앞 보도에 서 있고 파묻히지 않음 · 보도 전면 클리어(침범 0) · 건물·가로등·상자 전부 접지 정상.
+- ⓔ 콘솔 error 0 · play stop · Main 재오픈. Main.unity mtime 15:20(내 세션 19:29 이전 — 미수정, 재오픈은 읽기전용) · `_intake` 불변. 커밋 없음(사람 게이트). 재시도 0회.

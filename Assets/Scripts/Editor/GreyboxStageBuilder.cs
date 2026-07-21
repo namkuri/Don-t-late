@@ -506,9 +506,9 @@ namespace DontLate.EditorTools
             go.name = PREFIX + "Moon";
             Object.DestroyImmediate(go.GetComponent<Collider>());
             // 좌상 하늘. 카메라(0,8.1,-40.4)/FOV22/10°다운에서 z=69의 화면 상단은 대략 world y≈10 —
-            // 봉투 예시 y=33은 화면 위로 벗어나므로 가시 상단(y≈4)으로 내려 배치(별밭 z=70보다 카메라 쪽).
-            go.transform.position = new Vector3(-15f, 4f, 69f);
-            go.transform.localScale = new Vector3(4.5f, 4.5f, 1f);
+            // y=4·scale4.5는 상단이 프레임 밖으로 짤렸다(사람 보고). y=2.6·scale4.0으로 내려/줄여 전체를 프레임 안에.
+            go.transform.position = new Vector3(-15f, 2.6f, 69f);
+            go.transform.localScale = new Vector3(4.0f, 4.0f, 1f);
             Undo.RegisterCreatedObjectUndo(go, "Build Greybox Stage");
 
             Renderer renderer = go.GetComponent<Renderer>();

@@ -110,5 +110,23 @@ namespace DontLate
         }
 
         public static void RaiseStaminaChanged(float normalized) => StaminaChanged?.Invoke(normalized);
+
+        // ── 대화 ──────────────────────────────────────────────
+        // 시작/종료만 저빈도 경계 이벤트로 발행한다. 라인 단위 통지는 준-고빈도라
+        // WorldDialogueManager의 C# 이벤트(LineChanged)로 UI에만 흘린다 (CODE_RULES §9.5).
+        public static event Action<string> DialogueStarted;
+        public static event Action<string> DialogueEnded;
+
+        public static void RaiseDialogueStarted(string scenarioName)
+        {
+            Log("DialogueStarted → " + scenarioName);
+            DialogueStarted?.Invoke(scenarioName);
+        }
+
+        public static void RaiseDialogueEnded(string scenarioName)
+        {
+            Log("DialogueEnded → " + scenarioName);
+            DialogueEnded?.Invoke(scenarioName);
+        }
     }
 }
