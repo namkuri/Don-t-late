@@ -12,6 +12,8 @@ namespace DontLate
     {
         [Tooltip("실린 상자가 쌓이는 짐칸 내부 앵커.")]
         [SerializeField] private Transform _stackRoot;
+        [Tooltip("짐칸에 쌓이는 상자 비주얼(prop_box_parcel). 비우면 큐브 폴백.")]
+        [SerializeField] private GameObject _boxVisualPrefab;
         [SerializeField] private Material _boxMaterial;
         [SerializeField] private Renderer _renderer;
         [SerializeField] private Material _normalMaterial;
@@ -41,19 +43,42 @@ namespace DontLate
             StackBoxVisual();
         }
 
-        /// <summary>짐칸에 상자를 한 칸씩 쌓는다 — "실렸다"가 눈에 보이게.</summary>
+        /// <summary>짐칸에 상자를 한 칸씩 쌓는다 — "실렸다"가 눈에 보이게. 수제 박스 프리팹 우선 (S-012).</summary>
         private void StackBoxVisual()
         {
             if (_stackRoot == null) return;
 
-            GameObject box = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            GameObject box;
+            if (_boxVisualPrefab != null)
+            {
+                box = Instantiate(_boxVisualPrefab);
+                float height = ComputeHeight(box);
+                if (height > 0.001f) box.transform.localScale = Vector3.one * (0.7f / height);
+            }
+            else
+            {
+                box = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                Destroy(box.GetComponent<Collider>());
+                box.transform.localScale = Vector3.one * 0.8f;
+                if (_boxMaterial != null) box.GetComponent<Renderer>().sharedMaterial = _boxMaterial;
+            }
+
             box.name = "LoadedBox_" + (_stacked + 1);
-            Object.Destroy(box.GetComponent<Collider>());
-            box.transform.SetParent(_stackRoot, false);
-            box.transform.localPosition = new Vector3((_stacked % 2) * 0.85f - 0.4f, 0.4f + (_stacked / 2) * 0.85f, 0f);
-            box.transform.localScale = Vector3.one * 0.8f;
-            if (_boxMaterial != null) box.GetComponent<Renderer>().sharedMaterial = _boxMaterial;
+            box.transform.SetParent(_stackRoot, true);
+            box.transform.localPosition = new Vector3((_stacked % 2) * 0.85f - 0.4f, (_stacked / 2) * 0.75f, 0f);
             _stacked++;
+        }
+
+        private static float ComputeHeight(GameObject go)
+        {
+            Bounds bounds = new Bounds(go.transform.position, Vector3.zero);
+            bool initialized = false;
+            foreach (Renderer r in go.GetComponentsInChildren<Renderer>())
+            {
+                if (!initialized) { bounds = r.bounds; initialized = true; }
+                else bounds.Encapsulate(r.bounds);
+            }
+            return initialized ? bounds.size.y : 0f;
         }
 
         public void SetHighlight(bool on)

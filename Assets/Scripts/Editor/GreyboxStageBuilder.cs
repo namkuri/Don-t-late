@@ -402,23 +402,58 @@ namespace DontLate.EditorTools
 
         private static void BuildPickupBox(DeliveryOrderSO order, Material normal, Material highlight)
         {
-            GameObject go = CreatePrimitive(PrimitiveType.Cube, "Box", new Vector3(-5f, 0.4f, 0f));
-            go.transform.localScale = new Vector3(0.8f, 0.8f, 0.8f);
-            go.GetComponent<BoxCollider>().isTrigger = true;
-
-            Renderer renderer = go.GetComponent<Renderer>();
-            renderer.sharedMaterial = normal;
+            var (go, renderer, boxNormal) = CreateParcelBox("Box", new Vector3(-5f, 0f, 0f), normal);
 
             PickupBox pickup = go.AddComponent<PickupBox>();
             SetReference(pickup, "_order", order);
             SetReference(pickup, "_renderer", renderer);
-            SetReference(pickup, "_normalMaterial", normal);
+            SetReference(pickup, "_normalMaterial", boxNormal);
             SetReference(pickup, "_highlightMaterial", highlight);
 
             // 거리 상자 = 배송용 — 캠프에서 실은 건만 집을 수 있다 (S-010).
             SerializedObject serialized = new SerializedObject(pickup);
             serialized.FindProperty("_requireInCargo").boolValue = true;
             serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        /// <summary>
+        /// 택배상자 생성 — prop_box_parcel(민지 수제, Prefabs/Auto)이 있으면 그걸 쓰고 없으면 큐브 폴백.
+        /// 반환: (루트, 하이라이트용 렌더러, 원상복구용 원 머티리얼). 0.7u 정규화·발 y=0 (S-012).
+        /// </summary>
+        internal static (GameObject go, Renderer renderer, Material normalMaterial) CreateParcelBox(
+            string name, Vector3 groundPosition, Material fallback)
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Auto/prop_box_parcel.prefab");
+            if (prefab == null)
+            {
+                GameObject cube = CreatePrimitive(PrimitiveType.Cube, name, groundPosition + new Vector3(0f, 0.4f, 0f));
+                cube.transform.localScale = Vector3.one * 0.8f;
+                cube.GetComponent<BoxCollider>().isTrigger = true;
+                Renderer cubeRenderer = cube.GetComponent<Renderer>();
+                cubeRenderer.sharedMaterial = fallback;
+                return (cube, cubeRenderer, fallback);
+            }
+
+            GameObject root = CreateEmpty(name, groundPosition);
+            BoxCollider collider = root.AddComponent<BoxCollider>();
+            collider.isTrigger = true;
+            collider.size = Vector3.one * 0.7f;
+            collider.center = new Vector3(0f, 0.35f, 0f);
+
+            GameObject visual = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+            visual.name = "Visual";
+            visual.transform.SetParent(root.transform, false);
+
+            Bounds bounds = ComputeRenderBounds(visual);
+            if (bounds.size.y > 0.001f)
+                visual.transform.localScale = Vector3.one * (0.7f / bounds.size.y);
+            bounds = ComputeRenderBounds(visual);
+            visual.transform.position += root.transform.position
+                - new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);
+
+            Renderer renderer = visual.GetComponentInChildren<Renderer>();
+            Material normal = renderer != null ? renderer.sharedMaterial : fallback;
+            return (root, renderer, normal);
         }
 
         // 문 큐브는 이제 시각물(배경)일 뿐 — 인증은 보도 위 비콘이 맡는다.

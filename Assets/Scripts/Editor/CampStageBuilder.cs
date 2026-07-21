@@ -71,6 +71,8 @@ namespace DontLate.EditorTools
 
             LoadingZone zone = root.AddComponent<LoadingZone>();
             GreyboxStageBuilder.SetReference(zone, "_stackRoot", stack.transform);
+            GreyboxStageBuilder.SetReference(zone, "_boxVisualPrefab",
+                AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Auto/prop_box_parcel.prefab"));
             GreyboxStageBuilder.SetReference(zone, "_boxMaterial", boxMaterial);
             GreyboxStageBuilder.SetReference(zone, "_renderer", cargo.GetComponent<Renderer>());
             GreyboxStageBuilder.SetReference(zone, "_normalMaterial", material);
@@ -94,17 +96,14 @@ namespace DontLate.EditorTools
         {
             for (int i = 0; i < LOAD_ZONE_COUNT; i++)
             {
-                GameObject boxGo = GreyboxStageBuilder.CreatePrimitive(
-                    PrimitiveType.Cube, "CampBox_" + (i + 1).ToString("00"),
-                    new Vector3(-7f + (i % 2) * 1f, 0.4f + (i / 2) * 0.85f, 1.5f + i * 0.15f));
-                boxGo.transform.localScale = Vector3.one * 0.8f;
-                boxGo.GetComponent<BoxCollider>().isTrigger = true;
-                boxGo.GetComponent<Renderer>().sharedMaterial = material;
+                var (boxGo, renderer, boxNormal) = GreyboxStageBuilder.CreateParcelBox(
+                    "CampBox_" + (i + 1).ToString("00"),
+                    new Vector3(-7f + (i % 2) * 1f, (i / 2) * 0.75f, 1.5f + i * 0.15f), material);
 
                 PickupBox pickup = boxGo.AddComponent<PickupBox>();
                 GreyboxStageBuilder.SetReference(pickup, "_order", GetOrCreateCampOrder(i));
-                GreyboxStageBuilder.SetReference(pickup, "_renderer", boxGo.GetComponent<Renderer>());
-                GreyboxStageBuilder.SetReference(pickup, "_normalMaterial", material);
+                GreyboxStageBuilder.SetReference(pickup, "_renderer", renderer);
+                GreyboxStageBuilder.SetReference(pickup, "_normalMaterial", boxNormal);
                 GreyboxStageBuilder.SetReference(pickup, "_highlightMaterial", highlight);
 
                 // 상차 절차(S-011): 폰으로 바코드를 찍은 짐만 들 수 있다.

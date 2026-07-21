@@ -84,3 +84,11 @@
 |---|---|---|---|
 | store_2.fbx (편의점) | `Art/Buildings/store_2.fbx` | **485,891 ⚠**(상한 3,000) | District 슬롯 배치 완료 · 데시메이트·텍스처 대기(H12) |
 | street_lamp_wood.fbx (한국식 가로등) | `Art/Props/prop_streetlamp.fbx` (전략 B 덮어쓰기) | **95,724 ⚠**(상한 1,500) | 8기 일괄 교체 완료 · 데시메이트·텍스처 대기(H12) |
+
+## Hand INTAKE (민지 수제) — 2026-07-22
+
+> 출처 = **민지 직접 모델링** (수제 — 생성 AI 아님). 권리 = 팀 자작, 제약 없음.
+
+| bom_id | 원파일명 | dest | tris | 상태 |
+|---|---|---|---|---|
+| prop_box_parcel | box.fbx | `Art/Props/prop_box_parcel.fbx` | **106 ✓**(상한 1,500 — 첫 예산 통과 반입) | 원크기 2.48u→0.7u 정규화, 머티리얼 컬러 포함(테이프 디테일). Camp 3·District 1·트럭 적재 스택에 배선 |
