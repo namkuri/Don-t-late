@@ -74,7 +74,39 @@
 - 서브에이전트: 통지 duration 자동 집계 + 저비용 op 2~3개에서만 모델(haiku/sonnet) 실험.
   풀 op×model 매트릭스는 하지 않는다(과투자 — [[system-alignment-matrix]] 판정).
 
-## 5. 레이턴시 운용
+## 5. 정수용 프롬프트 카드 (Claude Code에 복붙)
+
+> 전제: 정수 PC의 Claude Code는 CLAUDE.md(공장 세션 규칙)를 자동으로 읽는다 — 코드 규칙·커밋 경계는
+> 이미 장전된 상태. 아래 카드만 붙이면 된다.
+
+**카드 1 — 최초 셋업 (clone/pull 후 1회)**
+```
+git pull 받았어. planning/guides/distributed-workflow.md §0을 읽고 공정 셋업을 진행해줘:
+1) git config core.hooksPath hooks 적용
+2) 에디터에서 씬 재현 메뉴 순서대로 실행: DontLate/Build Core Scene → Build Scene Flow UI → Build District Stage
+3) Core.unity 열고 Play — 타이틀 "늦지마!!"부터 하루 사이클이 클릭으로 완주되는지 확인
+끝나면 각 단계 결과를 관찰로 보고해줘 (판정어 말고).
+```
+
+**카드 2 — 발주 수행 (작업할 때마다)**
+```
+git pull 먼저. planning/orders/system.md에서 발주 <S-0XX>를 읽고 그대로 수행해줘.
+- 발주서의 수용기준이 곧 완료 조건이야. 모호하면 구현 전에 나한테 되물어.
+- 끝나면 셀프검증 3종(unity-cli 컴파일 → 콘솔 0 → Play 기대동작)을 직접 돌리고,
+  발주서 하단에 "### 결과 · 시각 (리드 N분)" 블록을 append 해.
+- feature/jjs 브랜치에 커밋([P#] 태그 + [self-tested])하고 push, PR 열어줘.
+  PR 본문은 관찰 기록으로 (씬·프리팹·Settings는 커밋 금지 — 훅이 어차피 막아줌).
+```
+
+**카드 3 — 자발 작업 (발주 없이 하고 싶은 게 있을 때)**
+```
+발주 없이 <하려는 것>을 하려고 해. 먼저 planning/BOM.md와 .claude/rules/dont-late-scripts-manifest.md에서
+이 작업이 어느 항목·시점(P2~P4)인지 확인하고, 매니페스트에 없는 파일이 필요하면 만들지 말고 멈춰서 알려줘.
+진행하게 되면 결정은 planning/decisions.md에 D-번호 append(사유 필수), 발주 대장에도 자기 발주로 기록해.
+나머지는 카드 2와 동일.
+```
+
+## 6. 레이턴시 운용
 
 - 발주는 **2~3건 묶음**으로 (정수의 한 작업 세션 분량) — 낱개 릴레이는 대기 낭비
 - 관제 커밋(main)이 잦으므로 정수는 작업 시작 시 pull 습관
