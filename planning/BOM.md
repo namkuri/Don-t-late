@@ -136,7 +136,7 @@
 
 | bom_id | 항목 | 스펙 | source | 비고 |
 |---|---|---|---|---|
-| bgm_day_loop | 낮 거리 BGM | 60~90s 루프 · 심리스 루프포인트 | Suno(#8)→폴백 #10 | 필수 |
+| bgm_day_loop | 낮 거리 BGM | 60~90s 루프 · 심리스 루프포인트 | **ElevenLabs(#9)**→폴백 #10 (#8 Suno는 공식 API 부재로 🖐 강등 · 2026-07-21) | 필수 |
 | bgm_night_var | 밤 변주 | **별도 곡 대신 낮 곡 + 로우패스/리버브 변주 1순위** (DayPhaseChanged 훅) | 믹스로 해결 | 전용 곡은 sacrifice 후보 |
 
 ### SFX — WorldEvents 트리거 매핑 (Unity 소비 관점)
@@ -155,7 +155,9 @@
 | sfx_scene_whoosh | `SceneTransitionStarted` | 전환 휙 | ❌ J-1 | 선택 |
 | amb_night | `DayPhaseChanged(Night)` | 밤 환경음(귀뚜라미·먼 차소리) | ❌ J-1 | 선택 — sacrifice 후보 |
 
-- source 공통: ElevenLabs(#9) 또는 Freesound(#10 — CC0/CC-BY만, 표기 기록) · M0-06이 관통 관문.
+- source 공통: ElevenLabs(#9 — MCP `text_to_sound_effects`, **0.5~5초 제한**이라 위 SFX는 전부 사정권)
+  또는 Freesound(#10 — CC0/CC-BY만, 표기 기록) · M0-06이 관통 관문.
+- 반입·후공정은 `scripts/audio/audio_pipeline.py` 가 집행 — BOM 밖 bom_id와 **JUICE 근거 ❌ 항목은 코드가 차단**한다.
 - ~~주차 성공(브레이크+성공음)~~ = 탑다운 잔재 → J-1에서 삭제.
 
 ### J-1 · JUICE 개정안 (동결 문서 — 사람 승인 게이트)
