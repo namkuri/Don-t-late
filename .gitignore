@@ -104,3 +104,6 @@ InitTestScene*.unity*
 
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
+# DontLate 관제 추가 (2026-07-21)
+/Screenshots/
+/Data/

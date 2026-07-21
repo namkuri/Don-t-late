@@ -137,6 +137,8 @@ Assets/
   _intake/<도구명>/                 # 반입 격리 (유지)
   Art/{Buildings, Props, Characters, Backgrounds, Portraits, UI}/
       # ⭐ 폴더 경로 = 임포트 규칙 트리거 (접두어 폐지 — min-BOM 항목만 파일명=bom_id)
+  Art/Shaders/                      # 직교 추가 2026-07-21 — 커스텀 셰이더·머티리얼 (임포트 트리거 비대상)
+  Audio/{BGM, SFX}/                 # 직교 추가 2026-07-21 — 파일명=bom_id 스왑 계약 (BOM §8)
   Prefabs/{Auto, Hand}/             # Auto=팩토리 생성(재임포트 시 갱신) · Hand=수제(불가침)
   Scenes/{Core, Main, Home, Camp, Travel, District}/
   Scripts/{Events, SO, Managers, Player, Interactables, UI, Utils}/

@@ -188,7 +188,7 @@
 
 | 발주 묶음 | 파일 | 시점 | 담당 | 비고 |
 |---|---|---|---|---|
-| UI 뷰 4종 | HUDView · DialogueView · MinigameRhythmView · TravelMapView | P3 | **CLI** | 이벤트 구독·표시만(로직 금지) — 씬 셋업 §13과 짝 |
+| UI 뷰 4종 | ~~HUDView~~(done) · **DialogueView(발주 대기열 — 타이핑+블립, 사람 지시)** · MinigameRhythmView · TravelMapView | P3 | **CLI** | 대화 스택 3종(SO·매니저·뷰) 당김 · 블립은 코드 합성 → sfx_dialogue_blip.wav 스왑 계약 |
 | World 매니저 4종 | WorldDebtManager · WorldDialogueManager · WorldMinigameManager · WorldAudioManager | P3 | **CLI** | Debt는 Camp 정산과 짝 |
 | 상호작용 2종 | LoadingZone · EnergyDrinkPickup | P3 | **CLI** | IInteractable 동결 시그니처 |
 | SO 클래스 1종 | DialogueScenarioSO | P3 | **CLI** | data_dialogue_pms 선행 조건 |
