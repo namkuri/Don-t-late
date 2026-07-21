@@ -151,15 +151,15 @@
 
 | bom_id | 항목 | 스펙 | source | 비고 |
 |---|---|---|---|---|
-| bgm_day_loop | 낮 거리 BGM (Morning·Day) | 60~180s 루프 · 심리스 루프포인트 | **ElevenLabs(#9)** | **반입 3곡** — 컷 대기 |
-| bgm_night_loop | 밤 BGM (Evening·Night) | 〃 · Evening 진입(17시) 3초 크로스페이드로 교대 | **ElevenLabs(#9)** | **반입 1곡** — 컷 대기 |
-| bgm_title | 타이틀(Main 씬) BGM | 〃 | **ElevenLabs(#9)** | **0곡 — 공백** (8비트 트랙 컷) |
-| (미분류) | 슬롯 판정 대기 | 사람 인게임 청취로 Day/Night/Title 배정 또는 컷 | 〃 | **5곡** |
+| bgm_day_loop | 낮 거리 BGM (Morning·Day) | 60s · **플레이리스트 순환**(D-046) | **ElevenLabs(#9)** | **2곡 확정** |
+| bgm_night_loop | 밤 BGM (Evening·Night) | 60~180s · Evening 진입(17시) 3초 크로스페이드로 교대 | **ElevenLabs(#9)** | **3곡 확정** |
+| bgm_title | 타이틀(Main 씬) BGM | 〃 | **ElevenLabs(#9)** | **0곡 — 공백**(Director 보류). 빈 슬롯이면 낮곡이 이어진다 |
 
 - ~~`bgm_night_var`(낮 곡 + 로우패스/리버브 변주)~~ **폐기(D-040)**: sacrifice 근거였던 제작비가 소멸했고,
   낮(major·105BPM)과 밤(minor·88BPM)은 BPM·조성이 달라 필터로 재현 불가. 전용 곡 = AudioMixer 불요.
 - source 전환: BGM도 **#9(ElevenLabs)** 에서 나왔다 — 원안의 Suno(#8)는 미사용. M0-06 #9 라인 실증.
-- **루프 이음새 크로스페이드·볼륨 정규화는 컷 판정 후** (버릴 곡에 작업 낭비 방지 — [[orders/audio]] AU-003).
+- ~~루프 이음새 크로스페이드~~ **불요(D-046)** — 플레이리스트가 같은 곡을 이어붙이지 않아 이음새가 생기지 않는다.
+  **볼륨 정규화만** 남는다 ([[orders/audio]] AU-003).
 
 ### SFX — WorldEvents 트리거 매핑 (Unity 소비 관점)
 

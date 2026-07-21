@@ -17,21 +17,21 @@
 | 생성일 | 2026-07-19 ~ 2026-07-20 (파일명 타임스탬프) |
 | 반입일 | 2026-07-21 |
 
-### 곡 목록 (9곡 · 48kHz / 16bit / stereo PCM)
+### 곡 목록 (채택 5곡 · 48kHz / 16bit / stereo PCM)
 
-파일명 = ElevenLabs 원제 + 생성 타임스탬프. `bom_id` 리네임은 컷·분류 확정 후 (D-042).
+2026-07-21 청취 판정 완료. 아래 5곡만 프로젝트에 남고 커밋된다
+(`.gitignore` 예외 + `assets_manifest.md` 등재). 미채택분은 **폐기 이력** 참조.
 
-| 파일 | 길이 | PCM MD5(앞 12) | 원본 분류 |
+파일명 = ElevenLabs 원제 + 생성 타임스탬프. **`bom_id` 리네임은 하지 않는다** — 플레이리스트(D-046)로
+슬롯당 다곡이라 `bom_id` 1:1 대응이 성립하지 않고, 스왑 계약은 `BgmLibrary.asset`(SO) 참조로 성립한다.
+
+| 파일 | 슬롯 | 길이 | PCM MD5(앞 12) |
 |---|---|---|---|
-| `Ironic_Stillness_2026-07-20T145653.wav` | 60.0s | `6cd06cf4ba1a` | 낮·밤 양쪽에 중복 배치돼 있었음 |
-| `Sunlit_Seoul_Afternoon_2026-07-20T154627.wav` | 60.0s | `e12de724acbd` | 낮 |
-| `Seoul_Alley_Reflection_2026-07-20T161148.wav` | 60.0s | `3194df4c88a7` | 낮 |
-| `Breezy_Town_Stroll_2026-07-20T161422.wav` | **180.0s** | `93c74a16b7f6` | 낮 |
-| `Seoul_Afternoon_Stroll_2026-07-20T155537.wav` | 60.0s | `be66e3688257` | 밤 |
-| `Pixel_Seoul_Breeze_2026-07-19T103036.wav` | 60.0s | `3f398520c39c` | 미분류 |
-| `Seoul_Pixel_Breeze_2026-07-19T103406.wav` | 60.0s | `5427eddf1af7` | 미분류 |
-| `Seoul_Pixel_Boulevard_2026-07-19T103537.wav` | 60.0s | `4c1169ca957b` | 미분류 |
-| `Sunlit_Stroll_in_Seoul_2026-07-20T154103.wav` | 60.0s | `4ffa4f0689f9` | 미분류 |
+| `Sunlit_Seoul_Afternoon_2026-07-20T154627.wav` | **Day** | 60.0s | `e12de724acbd` |
+| `Seoul_Alley_Reflection_2026-07-20T161148.wav` | **Day** | 60.0s | `3194df4c88a7` |
+| `Breezy_Town_Stroll_2026-07-20T161422.wav` | **Night** | **180.0s** | `93c74a16b7f6` |
+| `Seoul_Afternoon_Stroll_2026-07-20T155537.wav` | **Night** | 60.0s | `be66e3688257` |
+| `Seoul_Pixel_Breeze_2026-07-19T103406.wav` | **Night** | 60.0s | `5427eddf1af7` |
 
 **⚠ 제목으로 낮/밤을 추정하지 말 것.** `Seoul_Alley_Reflection`(골목 사색)이 분류상 **낮**,
 `Seoul_Afternoon_Stroll`(오후 산책)이 분류상 **밤**이었다. ElevenLabs가 붙인 제목은 프롬프트 무드와 무관하다.
@@ -71,10 +71,25 @@ late-night introspective, hazy, instrumental, 88 BPM
 - `Late_for_Work_8-Bit_Panic_2026-07-19T072529`(60s, PCM md5 `0c251eeedd11`)
   — **8비트 사운드로 나머지 곡과 분위기 불일치** (2026-07-21 Director 청취 판정). 프로젝트·아카이브 양쪽에서 삭제.
   유일한 Title 슬롯 곡이었으므로 **Title 슬롯은 현재 공백** — Unsorted 5곡 중에서 재지정 필요.
+- **미채택 4곡** (2026-07-21 청취 판정 — 최종 컷). 프로젝트에서 제거, 원본 아카이브(`Don-t-late-bgm/`)에는 보존:
+  `Ironic_Stillness`(`6cd06cf4ba1a`) · `Pixel_Seoul_Breeze`(`3f398520c39c`) ·
+  `Seoul_Pixel_Boulevard`(`4c1169ca957b`) · `Sunlit_Stroll_in_Seoul`(`4ffa4f0689f9`).
+  `Ironic_Stillness`는 원본에서 낮·밤 양쪽에 중복 배치돼 있던 곡이다.
 
 ---
 
 ## SFX
 
-미확보. `BOM.md` §8 참조 — 필수 4종(`sfx_delivery_ok`·`sfx_late_buzzer`·`sfx_pickup`·`sfx_footstep`)은
-발주 가능, 나머지 7종은 JUICE 개정안 **J-1 승인 게이트** 대기 중.
+**실음원 미확보 · 합성 플레이스홀더 3종 가동** (D-045). `SfxSynthGenerator`가 코드로 합성하며
+파일이 있으면 덮지 않는다 — **실음원을 같은 파일명으로 넣으면 그대로 교체**된다(BOM §8 스왑 계약).
+합성물은 빌더가 재생성하므로 커밋 대상이 아니다.
+
+| bom_id | 트리거 | 상태 |
+|---|---|---|
+| `sfx_pickup` | `PackagePickedUp` | 합성 플레이스홀더 (0.12s · 17KB) |
+| `sfx_delivery_ok` | `DeliveryCompleted` | 합성 플레이스홀더 (0.55s · 54KB) |
+| `sfx_late_buzzer` | `DeliveryFailed` | 합성 플레이스홀더 (0.45s · 45KB) |
+| `sfx_dialogue_blip` | 대화 글자 진행 | 합성 (대화 스택 소유 — `CoreSceneBuilder`가 생성) |
+| `sfx_footstep` | Locomotion 훅 | **미착수** — Player 도메인 별건 |
+
+나머지 7종은 JUICE 개정안 **J-1 승인 게이트** 대기 중.

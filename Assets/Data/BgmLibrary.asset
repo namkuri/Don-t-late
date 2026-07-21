@@ -14,20 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DontLate.BgmLibrarySO
   entries:
   - clip: {fileID: 8300000, guid: 206ac241b55cee042b0d5b692026af25, type: 3}
-    slot: 1
-  - clip: {fileID: 8300000, guid: 87db2438fc56cfd4490cecee34ab226a, type: 3}
-    slot: 0
-  - clip: {fileID: 8300000, guid: 17ef8bae9ca03b74ba1f6d70390869ba, type: 3}
-    slot: 0
+    slot: 2
   - clip: {fileID: 8300000, guid: 1afe4b482e66957428cc7a58b44ee429, type: 3}
     slot: 2
   - clip: {fileID: 8300000, guid: f46012296b69e164bada021c6bfafe78, type: 3}
     slot: 1
-  - clip: {fileID: 8300000, guid: 132bbe6c51952034caec28452b3f4e06, type: 3}
-    slot: 0
   - clip: {fileID: 8300000, guid: 33f94e9cca12a55479e8737f0311d966, type: 3}
-    slot: 0
+    slot: 2
   - clip: {fileID: 8300000, guid: ca1b70d78fd806d4aad3c6abe2659280, type: 3}
     slot: 1
-  - clip: {fileID: 8300000, guid: 846238f49216b1947a7b6b96a420c9d6, type: 3}
-    slot: 0
