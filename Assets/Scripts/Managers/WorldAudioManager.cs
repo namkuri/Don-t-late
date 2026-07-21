@@ -93,8 +93,9 @@ namespace DontLate
             foreach (BgmLibrarySO.Entry entry in _library.entries)
             {
                 if (entry == null || entry.clip == null) continue;
-                if (entry.slot == BgmSlot.Unsorted) continue; // 분류 미확정은 추첨 제외
 
+                // Unsorted 도 풀에는 담는다 — 청취 도구로 훑어봐야 분류를 정할 수 있다.
+                // 다만 PickForSession 이 제외하므로 게임 진행 중에는 절대 선택되지 않는다.
                 if (!_pools.TryGetValue(entry.slot, out List<AudioClip> pool))
                 {
                     pool = new List<AudioClip>();
@@ -109,6 +110,8 @@ namespace DontLate
         {
             foreach (KeyValuePair<BgmSlot, List<AudioClip>> pair in _pools)
             {
+                if (pair.Key == BgmSlot.Unsorted) continue; // 분류 미확정은 추첨 대상이 아니다
+
                 List<AudioClip> pool = pair.Value;
                 string key = PREF_LAST + pair.Key;
                 string last = PlayerPrefs.GetString(key, string.Empty);
@@ -241,16 +244,33 @@ namespace DontLate
             _active = source;
         }
 
+        // 청취 순회 순서. Unsorted 를 포함해야 분류 미정 곡을 들어보고 슬롯을 정할 수 있다.
+        private static readonly BgmSlot[] DebugSlotOrder =
+        {
+            BgmSlot.Day, BgmSlot.Night, BgmSlot.Title, BgmSlot.Unsorted
+        };
+
+        /// <summary>다음 슬롯으로 넘긴다. 빈 슬롯(예: 곡이 컷된 Title)은 건너뛴다.</summary>
         private void DebugToggleSlot()
         {
-            BgmSlot next = _slot == BgmSlot.Day ? BgmSlot.Night
-                         : _slot == BgmSlot.Night ? BgmSlot.Title
-                         : BgmSlot.Day;
-            if (!_picked.TryGetValue(next, out AudioClip clip)) return;
+            int start = System.Array.IndexOf(DebugSlotOrder, _slot);
 
-            _slot = next;
-            _debugIndex = 0;
-            Crossfade(clip);
+            for (int step = 1; step <= DebugSlotOrder.Length; step++)
+            {
+                BgmSlot next = DebugSlotOrder[(start + step + DebugSlotOrder.Length) % DebugSlotOrder.Length];
+                if (!_pools.TryGetValue(next, out List<AudioClip> pool) || pool.Count == 0) continue;
+
+                if (!_picked.TryGetValue(next, out AudioClip clip))
+                {
+                    clip = pool[0];
+                    _picked[next] = clip; // Unsorted 는 추첨이 없으므로 첫 곡부터 시작
+                }
+
+                _slot = next;
+                _debugIndex = Mathf.Max(0, pool.IndexOf(clip));
+                Crossfade(clip);
+                return;
+            }
         }
 
         private void OnGUI()
