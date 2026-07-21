@@ -1,12 +1,12 @@
 # 프롬프트 원본 — `sfx_late_buzzer`
 
 > ⚙ **자동 생성 문서** — `scripts/audio/prompt_builder.py` 가 조립한다. 규격 부분을 손으로 고치지 말 것
-> (다음 build 때 덮어쓰인다). 바꾸려면 **감독 노트**를 고치거나 BOM·INTENT를 고쳐라.
+> (다음 build 때 덮어쓰인다). 바꾸려면 **창작 태그**를 고치거나 BOM·규격 문서를 고쳐라.
 >
-> HARNESS §9 ②는 "프롬프트 기록 = 재현성"을 요구한다. 착지 원본은 승격 후 폐기되므로
-> **이 파일과 `planning/assets_manifest.md`가 유일한 재생산 근거**다.
+> 규격 출처: `scripts/audio/rules/GAME-BGM-RULES.md` (충돌 시 스타일보다 우선) ·
+> 스타일: `rules/afternoon-bgm-02.md`(낮) · `rules/night-bgm.md`(밤)
 
-## 대상 스펙 (출처: BOM §8 — 여기서 고치지 말 것)
+## 대상 스펙 (출처: BOM §8)
 
 | 항목 | 값 |
 |---|---|
@@ -14,21 +14,16 @@
 | 종류 | SFX |
 | 트리거 | `DeliveryFailed` |
 | 소리 | 낮은 부저 |
-| 길이 | 1.5s |
+| 요청 길이 | 1.5s |
 | dest | `Assets/Audio/SFX/sfx_late_buzzer.wav` |
-| 임포트 | Vorbis q70 · Decompress On Load · 2D |
 
-## 톤 근거 (출처: INTENT.md — 동결 · 자동 주입)
-
-`tone: 다크코미디` · `one_emotion: 늦지마!! — 쫓기며 웃픈 하루` · `player_fantasy: 쫓기는 밑바닥 노동자`
-
-## 감독 노트 (사람이 고치는 유일한 칸 — 창작 지시)
+## 창작 태그 (사람이 고치는 유일한 칸)
 
 <!-- NOTE:BEGIN -->
 A short low dull buzzer, deflating and unpleasant, like a failed game show answer.
 <!-- NOTE:END -->
 
-## 전송 프롬프트 (조립 결과 — 그대로 MCP에 투입)
+## 전송 프롬프트 (조립 결과 — 그대로 API에 투입)
 
 <!-- PROMPT:BEGIN -->
 ```
@@ -36,25 +31,29 @@ A short low dull buzzer, deflating and unpleasant, like a failed game show answe
 ```
 <!-- PROMPT:END -->
 
-금칙어 검사: **통과** (`no background music` · `no vocals`)
+## 규격 검사
+
+- 금칙어 **통과** (`no background music` · `no vocals`)
 
 ## 생성 파라미터
 
 | 파라미터 | 값 |
 |---|---|
-| MCP 툴 | `text_to_sound_effects` |
+| 엔드포인트 | `POST /v1/sound-generation` (REST 직호출) |
 | 모델 | `기본` |
-| 길이 | 1.5s |
-| 출력 포맷 | **PCM 16bit WAV** (mp3 패딩 = 심리스 루프 불가 · 후공정도 WAV 전용) |
+| 출력 포맷 | `output_format=pcm_44100` → **PCM 16bit를 WAV로 래핑** |
+| mp3 금지 근거 | 규격 §7 — 인코더가 앞뒤 무음 패딩을 붙여 매 루프마다 공백이 생긴다 |
+
+## 톤 근거 (INTENT.md — 동결)
+
+`tone: 다크코미디` · `one_emotion: 늦지마!! — 쫓기며 웃픈 하루` · `player_fantasy: 쫓기는 밑바닥 노동자`
 
 ## 재생산 절차
 
 ```bash
 python scripts/audio/prompt_builder.py build --bom-id sfx_late_buzzer
-# ↑ 전송 프롬프트로 MCP 생성 → _audio_intake/elevenlabs/ 착지
-python scripts/audio/audio_pipeline.py intake    --bom-id sfx_late_buzzer
-python scripts/audio/audio_pipeline.py normalize --bom-id sfx_late_buzzer
-python scripts/audio/audio_pipeline.py promote   --bom-id sfx_late_buzzer --yes   # ⚠ 별도 승인
+python scripts/audio/elevenlabs_client.py gen  --bom-id sfx_late_buzzer
+python scripts/audio/audio_pipeline.py intake --bom-id sfx_late_buzzer
 ```
 
 ## 세대 이력 (append-only)

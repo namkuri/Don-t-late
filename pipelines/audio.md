@@ -6,27 +6,40 @@
 > `Assets/` **밖**(`_audio_intake/`, gitignore)에서 끝내고, `Assets/Audio/`로 들어가는 승격 한 걸음만
 > 별도 승인·별도 커밋으로 뗀다. 유니티 작업자와 타이밍이 충돌하지 않게 하기 위한 것이다.
 
-## 0. MCP 연결 (#9 — 1회 설정)
-
-공식 서버 `elevenlabs/elevenlabs-mcp`. 툴 27종 중 이 공정이 쓰는 것:
-`compose_music`(BGM) · `create_composition_plan` · `text_to_sound_effects`(SFX · **0.5~5초**).
+## 0. 연결 (#9 — 1회 설정)
 
 ```bash
-# ① API 키를 환경변수로 (❗ 설정 파일에 키 원문을 넣지 않는다 — 커밋되면 폐기·재발급뿐)
+# API 키를 환경변수로. 이게 전부다 — 설치할 것도, 승인할 것도 없다.
+# ❗ 설정 파일·스크립트에 키 원문을 넣지 않는다 (커밋되면 폐기·재발급뿐)
 setx ELEVENLABS_API_KEY "<발급받은 키>"
-
-# ② MCP 로컬 스코프 등록 (리포에 흔적 0 — 팀원 환경 무영향)
-claude mcp add --scope local ElevenLabs -- uvx elevenlabs-mcp
-
-# ③ 착지 경로 고정 (기본값은 ~/Desktop — 그대로 두면 HARNESS §9 착지 격리가 깨진다)
-#    ~/.claude.json 의 해당 서버 env 에 추가:
-#      "ELEVENLABS_MCP_BASE_PATH": "C:/Works/Game/Don-t-late/_audio_intake/elevenlabs"
-#      "ELEVENLABS_MCP_OUTPUT_MODE": "files"
 ```
-설정 반영에는 **Claude Code 재시작**이 필요하다. 등록 확인은 `claude mcp list`.
+
+**MCP를 쓰지 않는다** (2026-07-21 실사 결과 — 처음엔 MCP로 설계했다가 뒤집었다):
+
+| | 공식 MCP `elevenlabs-mcp` | REST 직호출 |
+|---|---|---|
+| 출력 포맷 | `compose_music`에 파라미터 **없음 → mp3 고정** | `output_format=pcm_44100` |
+| 심리스 루프 | mp3 인코더 패딩으로 **불가** | PCM이라 샘플 정확 |
+| 후공정 | 표준 라이브러리에 mp3 디코더 없음 → **정규화 불가** | `wave`로 바로 처리 |
+| 재현 | seed 노출 안 함 | `seed` 기록 → **완전 복원** |
+| 설치·승인 | uvx + 로컬 등록 + 재시작 | 없음 |
+
+### 실측 확정 (2026-07-21 · 실호출)
+
+| 항목 | 실측값 |
+|---|---|
+| 작곡 | `POST /v1/music?output_format=pcm_44100` |
+| 구성계획 | `POST /v1/music/plan` — **크레딧 0**. (`composition_plan`·`create-composition-plan`은 404) |
+| 효과음 | `POST /v1/sound-generation` |
+| 잔량 조회 | `GET /v1/user/subscription` — 크레딧 0 |
+| **PCM 포맷** | **스테레오 2ch · 44100Hz · 16bit LE · 헤더 없음** (문서 미명시 → 실측) |
+| **크레딧 단가** | **초당 13.7** (30초 = 412크레딧 실측) → 200초 곡 ≈ **2,750크레딧** |
+| 플랜 | creator = 129,760크레딧/주기 → 200초 곡 **약 47곡분** |
+
+키 권한은 **뮤직 생성 · 효과음 · 사용자(읽음)** 3개면 충분하다. 나머지는 접근 불가로 둔다.
 
 ## 1. 기동 점검
-- [ ] `ELEVENLABS_API_KEY` 설정됨 · `claude mcp list` 에 ElevenLabs 보임 — 아니면 CONNECT_REQUEST(높음)
+- [ ] `ELEVENLABS_API_KEY` 환경변수 설정됨 — 아니면 CONNECT_REQUEST(높음)
 - [ ] `python scripts/audio/audio_pipeline.py status` — 착지 경로·예산 확인
 - [ ] `python scripts/audio/prompt_builder.py check` — 프롬프트 금칙어 전건 통과
 - [ ] JUICE.md 이벤트 목록 로드 (SFX 목록은 JUICE 이벤트와 짝)
@@ -41,10 +54,11 @@ claude mcp add --scope local ElevenLabs -- uvx elevenlabs-mcp
    · **금칙어 검사**: `no ending fade`·`no intro`·`loopable`·`no vocals`가 빠지면 **차단**한다 —
      페이드가 붙으면 4번의 루프 처리가 통째로 무의미해지기 때문이다.
    · 한국어 규격값은 `PHRASE_EN` 매핑으로 영문화한다(매핑 없으면 경고 — 조용한 한글 유출 방지).
-3. **생성 (MCP)** — 조립된 프롬프트를 그대로 투입. **출력은 PCM 16bit WAV**
-   (mp3는 인코더 패딩 때문에 심리스 루프가 원리적으로 불가).
-   BGM은 `create_composition_plan`으로 **구조를 먼저 받아 확인**한 뒤 `compose_music`에 넘긴다 —
-   마음에 안 들 때 곡 전체를 재생성하지 않아도 되어 크레딧을 아낀다. SFX(≤5초)는 이 단계를 건너뛴다.
+3. **생성 (REST)** — `elevenlabs_client.py gen --bom-id <id> [--seed N]`
+   조립된 프롬프트를 그대로 투입하고 `pcm_44100`으로 받아 **WAV로 래핑해 착지**시킨다.
+   채널 수는 응답 바이트 ÷ 요청 길이로 **실측 판정**한다(문서에 명시가 없어 추측하지 않는다).
+   BGM은 `plan` → 구조 확인 → `gen --use-plan` 순으로. 계획 호출은 **크레딧이 들지 않는다.**
+   `--seed`를 주면 같은 프롬프트+같은 seed = 같은 곡 → 매니페스트에 기록돼 완전 복원이 된다.
 4. **반입** — `audio_pipeline.py intake --bom-id <id>`
    확장자 화이트리스트 검역 + `assets_manifest.md` 기록(**= 입장권**) + `<bom_id>.wav` 리네임.
    **프롬프트 원본이 없으면 차단**한다 — 착지 원본은 나중에 폐기되므로 그때 재생산 근거가 사라진다.
@@ -75,5 +89,10 @@ claude mcp add --scope local ElevenLabs -- uvx elevenlabs-mcp
   → 연결을 처음 가동할 때는 **공식 문서로 API 실재 여부를 먼저 확인**하고 대장을 정정한다.
 - 2026-07-21: **mp3로 받으면 심리스 루프가 불가능하다** — 인코더 지연·패딩이 샘플 정확도를 깨뜨린다.
   루프가 필요한 음원은 생성 단계에서 WAV/PCM으로 받는다(후공정에서 되돌릴 수 없는 손실).
+- 2026-07-21: **래퍼(MCP)의 제약을 API의 제약으로 착각하지 않는다.** 공식 MCP가 mp3 고정이라
+  "포맷을 못 고른다"고 결론냈으나, REST는 `output_format=pcm_44100`을 받았다. 래퍼가 막히면
+  **아래 API를 직접 확인**한다 — 도구 하나가 못 한다고 경로 전체가 막힌 것이 아니다.
+- 2026-07-21: **전제를 검증하기 전에 그 위에 파이프라인을 세우지 않는다.** "PCM WAV로 받는다"를
+  전제로 후공정 전체를 짜놓고, 실제 시그니처는 나중에 확인했다. 포맷·경로 같은 계약은 **코드 착수 전에** 실사한다.
 - 2026-07-21: 착지 경로를 `Assets/` 안에 두면 유니티 임포트 규칙에 의존하게 된다.
   **`Assets/` 밖 + gitignore** 로 두면 규칙에 기대지 않고 분리가 성립한다.

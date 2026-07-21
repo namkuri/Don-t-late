@@ -1,0 +1,85 @@
+{
+  "chunks": [
+    {
+      "text": "[Part One]",
+      "duration_ms": 50000,
+      "positive_styles": [
+        "84 BPM",
+        "downtempo synthwave groove",
+        "lo-fi dusty drum machine beat",
+        "warm analog synth pads",
+        "round mellow synth bass",
+        "jazzy 7th chords",
+        "vinyl warmth texture",
+        "understated lead melody",
+        "minor key",
+        "steady dynamics",
+        "sparse midrange arrangement"
+      ],
+      "negative_styles": [],
+      "context_adherence": "high",
+      "conditioning_ref": null,
+      "condition_strength": null
+    },
+    {
+      "text": "[Part Two]",
+      "duration_ms": 50000,
+      "positive_styles": [
+        "84 BPM",
+        "consistent drum machine kick and snare",
+        "breathy sax lead with long tones",
+        "lonely muted saxophone",
+        "warm analog synth pads",
+        "round mellow synth bass",
+        "soft bell tones",
+        "pre-dawn atmosphere",
+        "minimal arrangement",
+        "unobtrusive background level"
+      ],
+      "negative_styles": [],
+      "context_adherence": "high",
+      "conditioning_ref": null,
+      "condition_strength": null
+    },
+    {
+      "text": "[Part Three]",
+      "duration_ms": 50000,
+      "positive_styles": [
+        "84 BPM",
+        "continuous retro drum machine beat",
+        "dreamy nostalgic lead synth",
+        "warm analog synth pads",
+        "round mellow synth bass",
+        "jazzy 7th chords",
+        "lo-fi vinyl crackle",
+        "texture-driven progression",
+        "no dramatic build-ups",
+        "sparse midrange"
+      ],
+      "negative_styles": [],
+      "context_adherence": "high",
+      "conditioning_ref": null,
+      "condition_strength": null
+    },
+    {
+      "text": "[Part Four]",
+      "duration_ms": 50000,
+      "positive_styles": [
+        "84 BPM",
+        "steady synthwave groove to finish",
+        "breathy sax lead",
+        "warm analog synth pads",
+        "round mellow synth bass",
+        "soft bell tones",
+        "no outro fade-out",
+        "no ending",
+        "abrupt cut at end of block",
+        "unobtrusive game music mix"
+      ],
+      "negative_styles": [],
+      "context_adherence": "high",
+      "conditioning_ref": null,
+      "condition_strength": null
+    }
+  ]
+}
