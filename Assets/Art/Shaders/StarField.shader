@@ -20,6 +20,7 @@ Shader "DontLate/StarField"
         _Intensity ("Star Intensity (HDR)", Float) = 1.3
         _SkyGradientStrength ("Sky Gradient Strength", Range(0, 2)) = 0.6
         _GlobalAlpha ("Global Alpha (fade)", Range(0, 1)) = 0
+        _Rotation ("Star Rotation (rad) — 별 패턴만 회전, 쿼드·하늘은 고정", Float) = 0
     }
     SubShader
     {
@@ -51,6 +52,7 @@ Shader "DontLate/StarField"
                 float _Intensity;
                 float _SkyGradientStrength;
                 float _GlobalAlpha;
+                float _Rotation;
             CBUFFER_END
 
             // 셀 좌표 → [0,1) 결정적 해시
@@ -71,8 +73,13 @@ Shader "DontLate/StarField"
 
             half4 frag(Varyings IN) : SV_Target
             {
-                // u에 aspect를 곱해 셀을 정사각화(쿼드 가로 늘림 보정)
-                float2 grid = float2(IN.uv.x * _Aspect, IN.uv.y) * _Density;
+                // 별 패턴만 UV 회전(S-015 후속) — 쿼드를 돌리면 모서리가 드러나 하늘이 기울어 보인다.
+                // 절차 별밭은 UV 밖도 무한히 이어지므로 회전해도 경계가 없다. 하늘 그라디언트는 원 UV 유지.
+                float2 centered = float2((IN.uv.x - 0.5) * _Aspect, IN.uv.y - 0.5);
+                float s = sin(_Rotation);
+                float c = cos(_Rotation);
+                float2 rotated = float2(centered.x * c - centered.y * s, centered.x * s + centered.y * c);
+                float2 grid = (rotated + 0.5) * _Density;
                 float2 cell = floor(grid);
                 float2 local = frac(grid);          // 셀 안의 지역 좌표 0..1 (정사각 셀)
 

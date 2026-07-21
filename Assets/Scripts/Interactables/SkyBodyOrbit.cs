@@ -22,8 +22,12 @@ namespace DontLate
         [SerializeField] private float _peakHour = 13f;
 
         [Header("Spin — 별밭")]
-        [Tooltip("하루당 회전 각도. 쿼드 모서리 노출을 피해 완만하게.")]
+        [Tooltip("하루당 회전 각도. 쿼드가 아니라 셰이더 UV(_Rotation)를 돌린다 — 모서리 노출 없음.")]
         [SerializeField] private float _spinDegreesPerDay = 30f;
+
+        private static readonly int RotationId = Shader.PropertyToID("_Rotation");
+        private Renderer _renderer;
+        private MaterialPropertyBlock _mpb;
 
         private void OnEnable() => WorldEvents.ClockTicked += OnClockTicked;
         private void OnDisable() => WorldEvents.ClockTicked -= OnClockTicked;
@@ -41,7 +45,14 @@ namespace DontLate
             }
             else
             {
-                transform.localRotation = Quaternion.Euler(0f, 0f, t * _spinDegreesPerDay);
+                // 쿼드 회전 금지 — 모서리가 드러나 "배경이 기울어진다" (사람 보고 2026-07-22).
+                // 셰이더 UV 회전(_Rotation)로 별 패턴만 돌린다. MPB — 공유 머티리얼 오염 없음.
+                if (_renderer == null) _renderer = GetComponent<Renderer>();
+                if (_renderer == null) return;
+                _mpb ??= new MaterialPropertyBlock();
+                _renderer.GetPropertyBlock(_mpb);
+                _mpb.SetFloat(RotationId, t * _spinDegreesPerDay * Mathf.Deg2Rad);
+                _renderer.SetPropertyBlock(_mpb);
             }
         }
     }
