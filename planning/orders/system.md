@@ -260,3 +260,22 @@
 - GreyboxStageBuilder 헬퍼 11종 internal 개방(BuildGround·BuildPlayer·ConfigureCamera 등) — 씬별 빌더가 재사용.
 - 검증: 컴파일 ○ · 콘솔 0 ○ · Camp Play에서 배송원·트럭·박스더미·적재패드 3개 렌더 + CharacterController 이동 확인 ○. 증거: `Screenshots/s008_camp_stage.png`. 씬 파일은 규칙대로 미커밋(빌더가 정본).
 - Travel 무대는 계획대로 생략 — S-006(TravelMapView) PR 도착 후 관제가 캔버스 조립.
+
+---
+
+## S-009 · 발주 2026-07-22 02:19 → ClaudeCode (본 세션 실행 — 플레이 피드백 6건 반영)
+
+목표: 님 플레이 관찰 6건 시공 — ① Home 인트로 전화(박말순 다이얼로그→버튼 등장) ② BGM은 인트로 종료 후 시작 ③ Camp 적재를 "박스 들어 트럭에 싣기"로 교체(패드 폐지) ④ Travel 카메라 부재 수리 ⑤ District 배송 판정 신뢰성(센서 버퍼 8 포화 진단) ⑥ 배송 완료 시 비콘 완전 소멸 + "집으로"에서 정산 패널 표시 후 Home 이동(Camp 자동정산 폐지).
+
+수용기준: ① 컴파일 ② 콘솔 0 ③ Play 관찰 — Home 도착 즉시 대화 시작·버튼 숨김→대화 끝 버튼 등장·BGM 개시 / Camp에서 박스 E픽업→트럭 E적재(OrderAccepted+트럭에 상자 쌓임) / Travel 게임뷰 정상 / District 패드 E 판정 재현성 / 완료 시 비콘 소멸 / 집으로→정산 패널→확인→Home.
+
+실패시: [BLOCKED]. 신규 파일(HideDuringDialogue·SettlementView)은 직교 추가로 기록.
+
+### 결과 · 2026-07-22 02:37 (리드 18분)
+- ① Home 도착 시 박말순 전화 자동 재생(WorldDialogueManager `_homeIntroScenario`·하루 1회) + 진행 버튼은 대화 종료까지 숨김(`HideDuringDialogue` — 상시 활성 캔버스에 부착, 자기은닉 구독 단절 함정 주석화). 관찰: 대화 중 buttonActive=False → 종료 후 True.
+- ② BGM 첫 DialogueEnded까지 보류(WorldAudioManager `_holdUntilFirstDialogue`). 관찰: 대화 종료 직후 Day 슬롯 `Sunlit_Seoul_Afternoon` 개시.
+- ③ Camp 적재 교체: 패드 폐지 → 박스 3개(PickupBox, 주문별) E픽업 → 트럭 짐칸 뒤 E → `OrderAccepted`+짐칸에 상자 스택(LoadingZone 개조: `_stackRoot`·상한 검사·빈손 안내). 관찰: carrying True→False·cargo 1·stacked 1.
+- ④ Travel 카메라 생성(SceneFlowUIBuilder — NAVY 솔리드, 리스너 없음 D-041). 관찰: cam=True, "No camera" 워터마크 소멸.
+- ⑤ 판정 신뢰성: 범인 = InteractionSensor `MAX_HITS 8` 포화(District 콜라이더 다수가 버퍼 점유 → 비콘 탈락) → 32로 확장. 관찰: 패드 위 focus=DeliveryPoint 즉시 획득. + 완료 시 비콘 루트째 SetActive(false) — 패드·빛기둥 전부 소멸(beacon Find=null). + 엣지 수정: 지각으로 적재에서 빠진 건은 인증 불가(상자를 떨어뜨리지 않음 — IsInCargo 선검사).
+- ⑥ "집으로" → 정산 패널(`SettlementView`, WorldDebtManager.SettleNow 표시: 상환 ₩4,800·벌금 -₩200·잔액 ₩0·남은 빚 ₩5,200) → 확인 → Home 전이 관찰. Camp 자동정산 폐지.
+- 직교 추가 2: `UI/HideDuringDialogue.cs` · `UI/SettlementView.cs` (D-054로 기록).

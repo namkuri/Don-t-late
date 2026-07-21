@@ -43,6 +43,8 @@ namespace DontLate
             DeliveryOrderSO carried = ctx.Player.Status.CarriedOrder;
             if (carried == null) return;
             if (_expectedOrder != null && carried != _expectedOrder) return;
+            // 이미 실패(지각)로 적재에서 빠진 건이면 인증 불가 — 상자를 떨어뜨리지 않는다 (S-009 엣지).
+            if (!WorldDeliveryManager.Instance.IsInCargo(carried)) return;
 
             ctx.Player.Status.ReleaseCarry(dropAsPhysics: true);
             WorldDeliveryManager.Instance.CompleteDelivery(carried);
@@ -75,8 +77,8 @@ namespace DontLate
         {
             if (_expectedOrder == null || data.OrderId != _expectedOrder.orderId) return;
             _isDestination = false;
-            ApplyHighlight();
-            if (_riseEffect != null) _riseEffect.SetActive(false);
+            // 처리된 배송지는 패드째 완전 소멸 (S-009) — 서 있어도 다시 빛나지 않는다.
+            gameObject.SetActive(false);
         }
 
         private void ApplyHighlight()

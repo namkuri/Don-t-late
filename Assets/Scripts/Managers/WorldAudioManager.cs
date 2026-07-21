@@ -49,6 +49,10 @@ namespace DontLate
         // 씬 전이 통지가 없는 무대(그레이박스)에서도 낮/밤이 정상 동작하도록 "타이틀인가"만 들고 있는다.
         private bool _titleScene;
         private DayPhase _phase;
+        // S-009: BGM은 첫 대화(Home 인트로 전화)가 끝난 뒤에야 시작한다.
+        [Tooltip("켜면 첫 DialogueEnded까지 BGM을 보류한다 (Home 인트로 연출).")]
+        [SerializeField] private bool _holdUntilFirstDialogue = true;
+        private bool _bgmReleased;
 
         public AudioClip CurrentClip => _active != null ? _active.clip : null;
 
@@ -69,6 +73,7 @@ namespace DontLate
 
         private void OnEnable()
         {
+            WorldEvents.DialogueEnded += OnDialogueEnded;
             WorldEvents.DayPhaseChanged += OnDayPhaseChanged;
             WorldEvents.SceneTransitionCompleted += OnSceneTransitionCompleted;
             WorldEvents.PackagePickedUp += OnPackagePickedUp;
@@ -78,6 +83,7 @@ namespace DontLate
 
         private void OnDisable()
         {
+            WorldEvents.DialogueEnded -= OnDialogueEnded;
             WorldEvents.DayPhaseChanged -= OnDayPhaseChanged;
             WorldEvents.SceneTransitionCompleted -= OnSceneTransitionCompleted;
             WorldEvents.PackagePickedUp -= OnPackagePickedUp;
@@ -177,8 +183,17 @@ namespace DontLate
         }
 
         /// <summary>Main = 타이틀곡. 그 밖에는 Evening·Night = 밤곡, Morning·Day = 낮곡 (D-039).</summary>
+        private void OnDialogueEnded(string _)
+        {
+            if (_bgmReleased) return;
+            _bgmReleased = true;
+            ApplySlot();
+        }
+
         private void ApplySlot()
         {
+            if (_holdUntilFirstDialogue && !_bgmReleased) return; // 인트로 전 무음 (S-009)
+
             BgmSlot next;
             if (_titleScene) next = BgmSlot.Title;
             else if (_phase == DayPhase.Evening || _phase == DayPhase.Night) next = BgmSlot.Night;

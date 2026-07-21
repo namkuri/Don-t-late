@@ -19,7 +19,7 @@ MonoBehaviour:
   cargo: []
   completedCount: 0
   lateCount: 0
-  currentScene: 2
+  currentScene: 1
   startDay: 1
   startMinuteOfDay: 480
   startMoney: 0

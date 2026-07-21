@@ -31,14 +31,12 @@ namespace DontLate
         {
             WorldEvents.DeliveryFailed += OnDeliveryFailed;
             WorldEvents.MinigameEnded += OnMinigameEnded;
-            WorldEvents.SceneTransitionCompleted += OnSceneArrived;
         }
 
         private void OnDisable()
         {
             WorldEvents.DeliveryFailed -= OnDeliveryFailed;
             WorldEvents.MinigameEnded -= OnMinigameEnded;
-            WorldEvents.SceneTransitionCompleted -= OnSceneArrived;
         }
 
         private void OnDeliveryFailed(DeliveryData data)
@@ -51,14 +49,11 @@ namespace DontLate
             if (!result.Success) _pendingPenalty += _tuning.minigamePenalty;
         }
 
-        private void OnSceneArrived(GameScene scene)
-        {
-            if (scene != GameScene.Camp) return;
-            Settle();
-        }
-
-        /// <summary>벌금 차감 → 잔액으로 빚 상환. 정산할 것이 없으면 조용히 지나간다.</summary>
-        private void Settle()
+        /// <summary>
+        /// 하루 정산 (S-009: "집으로" 시점에 SettlementView가 호출) —
+        /// 벌금 차감 → 잔액으로 빚 상환 → DebtSettled 발행 후 요약을 돌려준다.
+        /// </summary>
+        public DebtSettlement SettleNow()
         {
             int penalty = Mathf.Min(_pendingPenalty, _gameState.money);
             _gameState.money -= penalty;
@@ -68,15 +63,15 @@ namespace DontLate
             _gameState.money -= repaid;
             _gameState.debt -= repaid;
 
-            if (penalty == 0 && repaid == 0) return;
-
-            WorldEvents.RaiseDebtSettled(new DebtSettlement
+            var settlement = new DebtSettlement
             {
                 Repaid = repaid,
                 Penalty = penalty,
                 Money = _gameState.money,
                 Debt = _gameState.debt
-            });
+            };
+            WorldEvents.RaiseDebtSettled(settlement);
+            return settlement;
         }
     }
 }

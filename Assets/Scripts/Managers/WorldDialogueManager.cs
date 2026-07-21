@@ -15,8 +15,14 @@ namespace DontLate
         /// DialogueView만 구독한다. 정적이라 View의 구독이 매니저 Awake 순서에 영향받지 않는다.</summary>
         public static event Action<DialogueScenarioSO.Line> LineChanged;
 
+        [Tooltip("Home 첫 도착 시 자동 재생되는 박말순 전화 인트로 (S-009). 비우면 자동 재생 없음.")]
+        [SerializeField] private DialogueScenarioSO _homeIntroScenario;
+
         private DialogueScenarioSO _current;
         private int _index;
+        private bool _introPlayed;
+
+        public bool IsPlaying => _current != null;
 
         private void Awake()
         {
@@ -27,6 +33,18 @@ namespace DontLate
         private void OnDestroy()
         {
             if (Instance == this) Instance = null;
+        }
+
+        private void OnEnable() => WorldEvents.SceneTransitionCompleted += OnSceneArrived;
+        private void OnDisable() => WorldEvents.SceneTransitionCompleted -= OnSceneArrived;
+
+        /// <summary>Home 첫 도착 = 박말순 전화 인트로 (S-009). 하루 반복에는 다시 걸지 않는다.</summary>
+        private void OnSceneArrived(GameScene scene)
+        {
+            if (scene != GameScene.Home || _introPlayed || _homeIntroScenario == null) return;
+            _introPlayed = true;
+            WorldEvents.RaisePhoneRang(new PhoneCall { CallerName = "박말순", ScenarioId = _homeIntroScenario.name });
+            PlayScenario(_homeIntroScenario);
         }
 
         /// <summary>시나리오 재생 시작. Started 발행 후 첫 라인을 통지한다.</summary>

@@ -101,7 +101,10 @@ namespace DontLate.EditorTools
             SetField(dayNight, "_gameState", gameState);
             SetField(dayNight, "_tuning", tuning);
 
-            managers.AddComponent<WorldDialogueManager>(); // 라인 인덱스만 관리 — 외부 참조 없음
+            WorldDialogueManager dialogue = managers.AddComponent<WorldDialogueManager>();
+            EnsureTestScenario(); // 박말순 인트로 SO 확보(멱등)
+            SetField(dialogue, "_homeIntroScenario",
+                AssetDatabase.LoadAssetAtPath<DialogueScenarioSO>(PARK_SCENARIO_PATH)); // S-009 Home 인트로 전화
 
             WorldDebtManager debt = managers.AddComponent<WorldDebtManager>(); // S-005
             SetField(debt, "_gameState", gameState);

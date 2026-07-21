@@ -29,7 +29,6 @@ namespace DontLate.EditorTools
             Material lane = GreyboxStageBuilder.GetOrCreateMaterial("Lane", new Color(0.34f, 0.33f, 0.30f), false);
             Material box = GreyboxStageBuilder.GetOrCreateMaterial("Box", GreyboxStageBuilder.ParseColor("#ff9f45"), false);
             Material truck = GreyboxStageBuilder.GetOrCreateMaterial("Truck", new Color(0.30f, 0.42f, 0.55f), false);
-            Material pad = GreyboxStageBuilder.GetOrCreateMaterial("LoadPad", new Color(0.13f, 0.55f, 0.49f), false);
 
             Material highlight = GreyboxStageBuilder.GetOrCreateMaterial("Highlight", GreyboxStageBuilder.ParseColor("#35e0c8"), true);
             Material drink = GreyboxStageBuilder.GetOrCreateMaterial("Drink", GreyboxStageBuilder.ParseColor("#e04a35"), false);
@@ -37,31 +36,48 @@ namespace DontLate.EditorTools
             GreyboxStageBuilder.BuildGround(ground, lane);
             GreyboxStageBuilder.BuildWalkableVolume();
             GreyboxStageBuilder.BuildGroundMist();
-            BuildTruck(truck);
-            BuildLoadZonePads(pad, highlight);
-            BuildBoxPile(box);
+            BuildTruck(truck, box, highlight);
+            BuildPickupBoxes(box, highlight);
             BuildDrink(drink, highlight);
             GreyboxStageBuilder.BuildPlayer(gameState, tuning);
             GreyboxStageBuilder.BuildPostVolume();
             GreyboxStageBuilder.ConfigureCamera();
 
             EditorSceneManager.SaveScene(scene, CAMP_PATH);
-            Debug.Log("[Camp] 무대 조립 완료 — 적재존 패드 " + LOAD_ZONE_COUNT
-                    + "개(__gb_LoadZone_XX). LoadingZone.cs 도착 시 패드에 부착.");
+            Debug.Log("[Camp] 무대 조립 완료 — 박스 " + LOAD_ZONE_COUNT
+                    + "개를 E로 들어 트럭 짐칸 뒤에서 E로 싣는다 (S-009).");
         }
 
-        // 트럭 = 연출 소품(ARCHITECTURE §4 — 주행 없음). 적재함+캡+바퀴 큐브 조합, 우측 도로변.
-        private static void BuildTruck(Material material)
+        // 트럭 = 소품 + 적재존(S-009). 짐칸 뒤에서 박스를 든 채 E → LoadingZone이 짐칸에 쌓는다.
+        private static void BuildTruck(Material material, Material boxMaterial, Material highlight)
         {
             GameObject root = GreyboxStageBuilder.CreateEmpty("Truck", new Vector3(9f, 0f, 1.8f));
 
-            AddPart(root, "Cargo", new Vector3(-0.8f, 1.5f, 0f), new Vector3(4.0f, 2.2f, 2.0f), material);
+            GameObject cargo = AddPart(root, "Cargo", new Vector3(-0.8f, 1.5f, 0f), new Vector3(4.0f, 2.2f, 2.0f), material);
             AddPart(root, "Cab", new Vector3(2.2f, 0.95f, 0f), new Vector3(1.6f, 1.5f, 1.9f), material);
             AddPart(root, "WheelF", new Vector3(2.2f, 0.35f, 0f), new Vector3(0.7f, 0.7f, 2.1f), material);
             AddPart(root, "WheelB", new Vector3(-1.6f, 0.35f, 0f), new Vector3(0.7f, 0.7f, 2.1f), material);
+
+            // 적재 감지 트리거 — 짐칸 뒤편(보도 쪽) 앞 공간.
+            BoxCollider trigger = root.AddComponent<BoxCollider>();
+            trigger.isTrigger = true;
+            trigger.center = new Vector3(-0.8f, 1f, -1.8f);
+            trigger.size = new Vector3(4.2f, 2f, 1.8f);
+
+            // 실린 상자가 쌓이는 짐칸 내부 앵커.
+            GameObject stack = new GameObject("StackRoot");
+            stack.transform.SetParent(root.transform, false);
+            stack.transform.localPosition = new Vector3(-1.6f, 0.5f, 0f);
+
+            LoadingZone zone = root.AddComponent<LoadingZone>();
+            GreyboxStageBuilder.SetReference(zone, "_stackRoot", stack.transform);
+            GreyboxStageBuilder.SetReference(zone, "_boxMaterial", boxMaterial);
+            GreyboxStageBuilder.SetReference(zone, "_renderer", cargo.GetComponent<Renderer>());
+            GreyboxStageBuilder.SetReference(zone, "_normalMaterial", material);
+            GreyboxStageBuilder.SetReference(zone, "_highlightMaterial", highlight);
         }
 
-        private static void AddPart(GameObject root, string name, Vector3 localPos, Vector3 size, Material material)
+        private static GameObject AddPart(GameObject root, string name, Vector3 localPos, Vector3 size, Material material)
         {
             GameObject part = GameObject.CreatePrimitive(PrimitiveType.Cube);
             part.name = name;
@@ -70,25 +86,26 @@ namespace DontLate.EditorTools
             part.transform.localScale = size;
             Object.DestroyImmediate(part.GetComponent<BoxCollider>());
             part.GetComponent<Renderer>().sharedMaterial = material;
+            return part;
         }
 
-        // 적재존 패드 — 패드당 주문 1건, E로 적재(LoadingZone — S-005).
-        private static void BuildLoadZonePads(Material material, Material highlight)
+        // 대기 물량 = 손에 집히는 박스(PickupBox) — 주문 1건씩. E로 들고 트럭으로 나른다 (S-009).
+        private static void BuildPickupBoxes(Material material, Material highlight)
         {
             for (int i = 0; i < LOAD_ZONE_COUNT; i++)
             {
-                GameObject padGo = GreyboxStageBuilder.CreatePrimitive(
-                    PrimitiveType.Cube, "LoadZone_" + (i + 1).ToString("00"),
-                    new Vector3(-2f + i * 2f, 0.05f, 0f));
-                padGo.transform.localScale = new Vector3(1.2f, 0.06f, 1.2f);
-                padGo.GetComponent<BoxCollider>().isTrigger = true;
-                padGo.GetComponent<Renderer>().sharedMaterial = material;
+                GameObject boxGo = GreyboxStageBuilder.CreatePrimitive(
+                    PrimitiveType.Cube, "CampBox_" + (i + 1).ToString("00"),
+                    new Vector3(-7f + (i % 2) * 1f, 0.4f + (i / 2) * 0.85f, 1.5f + i * 0.15f));
+                boxGo.transform.localScale = Vector3.one * 0.8f;
+                boxGo.GetComponent<BoxCollider>().isTrigger = true;
+                boxGo.GetComponent<Renderer>().sharedMaterial = material;
 
-                LoadingZone zone = padGo.AddComponent<LoadingZone>();
-                GreyboxStageBuilder.SetReference(zone, "_order", GetOrCreateCampOrder(i));
-                GreyboxStageBuilder.SetReference(zone, "_renderer", padGo.GetComponent<Renderer>());
-                GreyboxStageBuilder.SetReference(zone, "_normalMaterial", material);
-                GreyboxStageBuilder.SetReference(zone, "_highlightMaterial", highlight);
+                PickupBox pickup = boxGo.AddComponent<PickupBox>();
+                GreyboxStageBuilder.SetReference(pickup, "_order", GetOrCreateCampOrder(i));
+                GreyboxStageBuilder.SetReference(pickup, "_renderer", boxGo.GetComponent<Renderer>());
+                GreyboxStageBuilder.SetReference(pickup, "_normalMaterial", material);
+                GreyboxStageBuilder.SetReference(pickup, "_highlightMaterial", highlight);
             }
         }
 
@@ -129,15 +146,5 @@ namespace DontLate.EditorTools
             GreyboxStageBuilder.SetReference(pickup, "_highlightMaterial", highlight);
         }
 
-        // 대기 물량 더미 — 순수 배경(상호작용 없음. 적재는 LoadingZone 몫).
-        private static void BuildBoxPile(Material material)
-        {
-            GameObject root = GreyboxStageBuilder.CreateEmpty("BoxPile", new Vector3(-7f, 0f, 1.5f));
-
-            AddPart(root, "Box1", new Vector3(0f, 0.4f, 0f), Vector3.one * 0.8f, material);
-            AddPart(root, "Box2", new Vector3(0.9f, 0.4f, 0.2f), Vector3.one * 0.8f, material);
-            AddPart(root, "Box3", new Vector3(0.45f, 1.2f, 0.1f), Vector3.one * 0.8f, material);
-            AddPart(root, "Box4", new Vector3(1.8f, 0.35f, -0.1f), Vector3.one * 0.7f, material);
-        }
     }
 }

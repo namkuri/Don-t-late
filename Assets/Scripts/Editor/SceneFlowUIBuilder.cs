@@ -32,7 +32,7 @@ namespace DontLate.EditorTools
                 Debug.LogWarning("[SceneFlowUIBuilder] Pretendard 폰트 미발견 — TMP 기본 폰트로 진행.");
 
             BuildMain(font);
-            BuildLabeledAction("Home", "집 — 아침", "하루 시작 → 물류캠프", GameScene.Camp, font);
+            BuildHome(font);
             BuildLabeledAction("Camp", "물류캠프 — 패드에서 E로 적재", "짐 다 실었다 — 출발", GameScene.Travel, font);
             BuildTravel(font);
             BuildDistrict(font);
@@ -83,6 +83,27 @@ namespace DontLate.EditorTools
             EditorSceneManager.SaveScene(scene, SCENES_ROOT + "/" + sceneName + ".unity");
         }
 
+        // Home = 라벨 + 진행 버튼. 버튼은 인트로 전화(대화)가 끝나야 나타난다 (S-009 게이트).
+        private static void BuildHome(TMP_FontAsset font)
+        {
+            Scene scene = EditorSceneManager.OpenScene(SCENES_ROOT + "/Home.unity", OpenSceneMode.Single);
+            Transform root = CreateFlowCanvas().transform;
+
+            TMP_Text label = CreateText(root, "Label", "집 — 아침", font, 46f, Color.white,
+                TextAlignmentOptions.TopLeft, FontStyles.Normal);
+            AnchorCorner(label.rectTransform, new Vector2(0f, 1f), new Vector2(48f, -44f), new Vector2(1000f, 72f));
+
+            CreateButton(root, "AdvanceButton", "하루 시작 → 물류캠프", GameScene.Camp, font, CYAN,
+                new Vector2(0.5f, 0f), new Vector2(0f, 150f), new Vector2(600f, 104f), 40f);
+
+            // 게이트는 상시 활성인 캔버스에 붙인다 — 버튼 자신에 붙이면 꺼질 때 구독이 끊긴다.
+            HideDuringDialogue gate = root.gameObject.AddComponent<HideDuringDialogue>();
+            SetField(gate, "_target", root.Find("AdvanceButton").gameObject);
+            EditorUtility.SetDirty(gate);
+
+            EditorSceneManager.SaveScene(scene, SCENES_ROOT + "/Home.unity");
+        }
+
         // Travel = 미니맵 노드 선택(S-006). 노드 버튼엔 SceneAdvanceButton 대신 TravelMapView —
         // 선택이 시간 소모(근거리/원거리 상이)를 시계에 가산한 뒤 District로 전이한다.
         private static void BuildTravel(TMP_FontAsset font)
@@ -90,6 +111,18 @@ namespace DontLate.EditorTools
             TuningConfigSO tuning = AssetDatabase.LoadAssetAtPath<TuningConfigSO>("Assets/Data/Tuning.asset");
 
             Scene scene = EditorSceneManager.OpenScene(SCENES_ROOT + "/Travel.unity", OpenSceneMode.Single);
+
+            // UI 전용 씬이라도 카메라는 있어야 한다 — 없으면 게임뷰에 "No camera" 워터마크 (S-009 ④).
+            if (Camera.main == null)
+            {
+                GameObject camGo = new GameObject("Main Camera");
+                camGo.tag = "MainCamera";
+                Camera cam = camGo.AddComponent<Camera>();
+                cam.clearFlags = CameraClearFlags.SolidColor;
+                cam.backgroundColor = NAVY;
+                // AudioListener는 Core 소유(D-041) — 붙이지 않는다.
+            }
+
             Transform root = CreateFlowCanvas().transform;
 
             TMP_Text label = CreateText(root, "Label", "이동 — 배송 구역을 골라라 (멀수록 시간을 먹는다)", font,
@@ -148,9 +181,65 @@ namespace DontLate.EditorTools
 
             Transform root = CreateFlowCanvas().transform;
 
-            // 우상, HUD 경제 블록(상단) 아래로 내려 겹침 회피.
-            CreateButton(root, "EndDayButton", "하루 끝 — 집으로", GameScene.Home, font, CYAN,
-                new Vector2(1f, 1f), new Vector2(-40f, -220f), new Vector2(380f, 74f), 30f);
+            // "집으로" = 즉시 전이가 아니라 정산 패널을 연다 (S-009 ⑥) — SceneAdvanceButton 없이 만든다.
+            GameObject endDay = new GameObject("EndDayButton", typeof(RectTransform));
+            endDay.transform.SetParent(root, false);
+            Image endImg = endDay.AddComponent<Image>();
+            endImg.color = CYAN;
+            RectTransform endRect = (RectTransform)endDay.transform;
+            endRect.anchorMin = endRect.anchorMax = endRect.pivot = new Vector2(1f, 1f);
+            endRect.sizeDelta = new Vector2(380f, 74f);
+            endRect.anchoredPosition = new Vector2(-40f, -220f);
+            Button endButton = endDay.AddComponent<Button>();
+            endButton.targetGraphic = endImg;
+            TMP_Text endLabel = CreateText(endDay.transform, "Label", "하루 끝 — 집으로", font, 30f, NAVY,
+                TextAlignmentOptions.Center, FontStyles.Bold);
+            StretchFull(endLabel.rectTransform);
+
+            // 정산 패널 — 시안 테두리 + 네이비 내부 + 확인 버튼.
+            GameObject panel = CreateImage(root, "SettlementPanel", CYAN).gameObject;
+            RectTransform panelRect = panel.GetComponent<RectTransform>();
+            panelRect.anchorMin = panelRect.anchorMax = panelRect.pivot = new Vector2(0.5f, 0.5f);
+            panelRect.sizeDelta = new Vector2(640f, 520f);
+            panelRect.anchoredPosition = Vector2.zero;
+
+            Image panelInner = CreateImage(panel.transform, "Inner", NAVY);
+            panelInner.raycastTarget = true; // 뒤 클릭 차단
+            RectTransform innerRect = panelInner.rectTransform;
+            innerRect.anchorMin = Vector2.zero;
+            innerRect.anchorMax = Vector2.one;
+            innerRect.offsetMin = new Vector2(3f, 3f);
+            innerRect.offsetMax = new Vector2(-3f, -3f);
+
+            TMP_Text body = CreateText(panelInner.transform, "Body", string.Empty, font, 40f, Color.white,
+                TextAlignmentOptions.TopLeft, FontStyles.Normal);
+            RectTransform bodyRect = body.rectTransform;
+            bodyRect.anchorMin = Vector2.zero;
+            bodyRect.anchorMax = Vector2.one;
+            bodyRect.offsetMin = new Vector2(48f, 130f);
+            bodyRect.offsetMax = new Vector2(-48f, -44f);
+
+            GameObject confirm = new GameObject("ConfirmButton", typeof(RectTransform));
+            confirm.transform.SetParent(panelInner.transform, false);
+            Image confirmImg = confirm.AddComponent<Image>();
+            confirmImg.color = AMBER;
+            RectTransform confirmRect = (RectTransform)confirm.transform;
+            confirmRect.anchorMin = confirmRect.anchorMax = confirmRect.pivot = new Vector2(0.5f, 0f);
+            confirmRect.sizeDelta = new Vector2(320f, 84f);
+            confirmRect.anchoredPosition = new Vector2(0f, 32f);
+            Button confirmButton = confirm.AddComponent<Button>();
+            confirmButton.targetGraphic = confirmImg;
+            TMP_Text confirmLabel = CreateText(confirm.transform, "Label", "확인 — 집으로", font, 32f, NAVY,
+                TextAlignmentOptions.Center, FontStyles.Bold);
+            StretchFull(confirmLabel.rectTransform);
+
+            SettlementView view = root.gameObject.AddComponent<SettlementView>();
+            SetField(view, "_openButton", endButton);
+            SetField(view, "_panel", panel);
+            SetField(view, "_bodyLabel", body);
+            SetField(view, "_confirmButton", confirmButton);
+            EditorUtility.SetDirty(view);
+            panel.SetActive(false);
 
             EditorSceneManager.SaveScene(scene, SCENES_ROOT + "/District.unity");
         }
