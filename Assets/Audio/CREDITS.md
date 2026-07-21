@@ -19,6 +19,9 @@
 
 ### 곡 목록 (9곡 · 48kHz / 16bit / stereo PCM)
 
+**채택 5곡**(Day 2 · Night 3)은 2026-07-21 청취 판정으로 확정돼 커밋 대상이 됐다
+(`.gitignore` 예외 + `assets_manifest.md` 등재). **미판정 4곡**은 `Unsorted` 슬롯 유지 · 커밋 제외.
+
 파일명 = ElevenLabs 원제 + 생성 타임스탬프. `bom_id` 리네임은 컷·분류 확정 후 (D-042).
 
 | 파일 | 길이 | PCM MD5(앞 12) | 원본 분류 |

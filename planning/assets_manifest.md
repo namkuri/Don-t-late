@@ -46,3 +46,31 @@
 - **A_chr_courier_walk**: Mixamo 걷기, clip "mixamo.com" **0.967s**, animType=Human(아바타 CopyFromOther=chr_courier)·loop=True·isHumanMotion=True. 리타깃 경고(수치 아님)만.
 - **A_chr_courier_run**(기존): Human 재셋업, clip 0.533s·loop=True·human=True.
 - **AC_chr_courier.controller**: 파라미터 3종(Speed float·IsCarrying bool·IsGrounded bool — PlayerAnimationManager 계약) + 기본 스테이트 **Locomotion = Speed 1D 블렌드트리**(Walk@0·Walk@2.5·Run@4.5 — idle 클립 미납품이라 0 구간은 Walk 대체).
+
+## ElevenLabs BGM INTAKE — 2026-07-21
+
+> 출처 = **Eleven Music (ElevenLabs)**, Director 개인 **유료 구독** 생성물.
+> 권리 = **상업적 사용 가능·기간 무제한**. 전 유료 플랜에 상업 라이선스 포함(Beta Services 제외).
+> Eleven Music은 레이블·퍼블리셔·아티스트 협업으로 제작돼 **게이밍 포함 거의 모든 상업 용도에 클리어**.
+> 표기 의무는 무료 플랜 한정이므로 **없음**. 근거: ElevenLabs Help Center "Can I publish the content
+> I generate on the platform?" · Docs "Eleven Music" (2026-07-21 확인).
+> 상세 대장은 `Assets/Audio/CREDITS.md` (프롬프트 설계서·PCM MD5·폐기 이력 포함).
+>
+> **파일명은 원제 유지** — BGM은 슬롯당 다곡 플레이리스트(D-046)라 `bom_id` 1:1 대응이 성립하지 않고,
+> 스왑 계약은 파일명이 아니라 `Assets/Data/BgmLibrary.asset`(SO) 참조로 성립한다(BOM §8 개정분).
+
+| 파일명 | 슬롯 | 길이 | dest | 출처 | 라이선스 | 반입일 |
+|---|---|---|---|---|---|---|
+| Seoul_Alley_Reflection_2026-07-20T161148.wav | Day | 60s | `Assets/Audio/BGM/` | Eleven Music (유료 구독) | 상업 사용 가능·무기한 | 2026-07-21 |
+| Sunlit_Seoul_Afternoon_2026-07-20T154627.wav | Day | 60s | 〃 | 〃 | 〃 | 2026-07-21 |
+| Breezy_Town_Stroll_2026-07-20T161422.wav | Night | 180s | 〃 | 〃 | 〃 | 2026-07-21 |
+| Seoul_Afternoon_Stroll_2026-07-20T155537.wav | Night | 60s | 〃 | 〃 | 〃 | 2026-07-21 |
+| Seoul_Pixel_Breeze_2026-07-19T103406.wav | Night | 60s | 〃 | 〃 | 〃 | 2026-07-21 |
+
+### 검역 수치
+- 전 5곡 원본 48kHz/16bit/stereo PCM. 임포트 = **Vorbis q30 · Compressed In Memory · 스테레오**(D-040·D-043).
+  Streaming은 WebGL 미지원이라 금지, DecompressOnLoad는 60s 스테레오 1곡이 RAM 11.5MB 생PCM이라 기각.
+- 압축 후 크기: 60s곡 0.78~0.88MB(109~124kbps) · `Breezy_Town_Stroll`(180s) 2.53MB. **채택 5곡 합 ≈ 5.6MB**.
+- **미판정 4곡**(`Ironic_Stillness`·`Pixel_Seoul_Breeze`·`Seoul_Pixel_Boulevard`·`Sunlit_Stroll_in_Seoul`)은
+  `Unsorted` 슬롯 유지 · **커밋 제외**. 판정 후 이 표에 추가한다.
+- **폐기 1곡**: `Late_for_Work_8-Bit_Panic` — 8비트로 분위기 불일치(Director 청취 판정). 프로젝트·아카이브 삭제.

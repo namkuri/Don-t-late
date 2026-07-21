@@ -109,9 +109,21 @@ InitTestScene*.unity*
 /Data/
 
 # 오디오 원본 — 컷 판정 전까지 미커밋 (D-042)
-# 판정 통과분만 이 규칙을 풀고 assets_manifest 등재 후 커밋한다.
+# 판정 통과분만 아래 예외에 추가하고 assets_manifest 등재 후 커밋한다.
 /[Aa]ssets/[Aa]udio/**/*.wav
 /[Aa]ssets/[Aa]udio/**/*.wav.meta
+
+# 채택분 예외 (2026-07-21 Director 청취 판정 — Day 2 · Night 3)
+!/[Aa]ssets/[Aa]udio/BGM/Seoul_Alley_Reflection_2026-07-20T161148.wav
+!/[Aa]ssets/[Aa]udio/BGM/Seoul_Alley_Reflection_2026-07-20T161148.wav.meta
+!/[Aa]ssets/[Aa]udio/BGM/Sunlit_Seoul_Afternoon_2026-07-20T154627.wav
+!/[Aa]ssets/[Aa]udio/BGM/Sunlit_Seoul_Afternoon_2026-07-20T154627.wav.meta
+!/[Aa]ssets/[Aa]udio/BGM/Breezy_Town_Stroll_2026-07-20T161422.wav
+!/[Aa]ssets/[Aa]udio/BGM/Breezy_Town_Stroll_2026-07-20T161422.wav.meta
+!/[Aa]ssets/[Aa]udio/BGM/Seoul_Afternoon_Stroll_2026-07-20T155537.wav
+!/[Aa]ssets/[Aa]udio/BGM/Seoul_Afternoon_Stroll_2026-07-20T155537.wav.meta
+!/[Aa]ssets/[Aa]udio/BGM/Seoul_Pixel_Breeze_2026-07-19T103406.wav
+!/[Aa]ssets/[Aa]udio/BGM/Seoul_Pixel_Breeze_2026-07-19T103406.wav.meta
 
 # npx skills 로컬 설치물 (mattpocock/skills — grilling 계열)
 /.agents/
