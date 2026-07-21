@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace DontLate
 {
@@ -18,6 +19,15 @@ namespace DontLate
             if (WorldSceneFlowManager.Instance == null)
             {
                 Debug.LogError("[CoreBootstrap] WorldSceneFlowManager가 Core 씬에 없다.");
+                return;
+            }
+
+            // 씬 단독 Play(S-013): 콘텐츠 씬이 이미 떠 있는 상태로 Core가 사후 로드된 경우 —
+            // Main으로 끌고 가지 않고, 현재 씬 도착만 통지해 매니저들을 동기화한다.
+            if (SceneManager.sceneCount > 1)
+            {
+                if (System.Enum.TryParse(SceneManager.GetActiveScene().name, out GameScene current))
+                    WorldEvents.RaiseSceneTransitionCompleted(current);
                 return;
             }
 

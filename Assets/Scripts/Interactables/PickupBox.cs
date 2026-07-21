@@ -11,15 +11,31 @@ namespace DontLate
         [SerializeField] private bool _requireInCargo;
         [Tooltip("켜면 폰으로 바코드 스캔한 건만 픽업 가능 — Camp 상차용 (S-011).")]
         [SerializeField] private bool _requireScanned;
-        [SerializeField] private Renderer _renderer;
-        [SerializeField] private Material _normalMaterial;
         [SerializeField] private Material _highlightMaterial;
 
+        // 수제 박스는 렌더러·머티리얼 슬롯이 여럿(본체+테이프) — 전 슬롯을 통째로 바꿨다 되돌린다 (S-013).
+        private Renderer[] _renderers;
+        private Material[][] _originalMaterials;
+
         public DeliveryOrderSO Order => _order;
+
+        private void Awake()
+        {
+            _renderers = GetComponentsInChildren<Renderer>(true);
+            _originalMaterials = new Material[_renderers.Length][];
+            for (int i = 0; i < _renderers.Length; i++)
+                _originalMaterials[i] = _renderers[i].sharedMaterials;
+        }
 
         public void Interact(PlayerContext ctx)
         {
             if (_order == null) return;
+            // 씬 단독 Play 직후 프레임 등 매니저 부재 시 조용히 무시 (S-013 — EnsureCoreLoaded가 로드 중).
+            if (WorldDeliveryManager.Instance == null)
+            {
+                Debug.LogWarning("[PickupBox] WorldDeliveryManager 없음 — Core 로드 대기 중이거나 씬 구성 오류.");
+                return;
+            }
             // S-010: 캠프에서 싣지 않은(또는 지각 실패한) 건은 배송 불가 — 침묵 무반응 대신 사유를 남긴다.
             if (_requireInCargo && !WorldDeliveryManager.Instance.IsInCargo(_order))
             {
@@ -43,9 +59,21 @@ namespace DontLate
 
         public void SetHighlight(bool on)
         {
-            if (_renderer == null) return;
-            Material material = on ? _highlightMaterial : _normalMaterial;
-            if (material != null) _renderer.sharedMaterial = material;
+            if (_renderers == null) return;
+            for (int i = 0; i < _renderers.Length; i++)
+            {
+                if (_renderers[i] == null) continue;
+                if (on && _highlightMaterial != null)
+                {
+                    var materials = new Material[_originalMaterials[i].Length];
+                    for (int s = 0; s < materials.Length; s++) materials[s] = _highlightMaterial;
+                    _renderers[i].sharedMaterials = materials;
+                }
+                else
+                {
+                    _renderers[i].sharedMaterials = _originalMaterials[i];
+                }
+            }
         }
     }
 }

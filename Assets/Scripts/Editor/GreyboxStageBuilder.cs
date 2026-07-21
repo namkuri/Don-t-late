@@ -402,12 +402,10 @@ namespace DontLate.EditorTools
 
         private static void BuildPickupBox(DeliveryOrderSO order, Material normal, Material highlight)
         {
-            var (go, renderer, boxNormal) = CreateParcelBox("Box", new Vector3(-5f, 0f, 0f), normal);
+            var (go, _, _) = CreateParcelBox("Box", new Vector3(-5f, 0f, 0f), normal);
 
             PickupBox pickup = go.AddComponent<PickupBox>();
             SetReference(pickup, "_order", order);
-            SetReference(pickup, "_renderer", renderer);
-            SetReference(pickup, "_normalMaterial", boxNormal);
             SetReference(pickup, "_highlightMaterial", highlight);
 
             // 거리 상자 = 배송용 — 캠프에서 실은 건만 집을 수 있다 (S-010).

@@ -249,6 +249,7 @@ namespace DontLate.EditorTools
         private static Canvas CreateFlowCanvas()
         {
             ClearFlowUI();
+            EnsureCoreLoader();
 
             GameObject go = new GameObject(UI_PREFIX + "FlowCanvas");
             Canvas canvas = go.AddComponent<Canvas>();
@@ -261,6 +262,16 @@ namespace DontLate.EditorTools
             scaler.matchWidthOrHeight = 0.5f;
             go.AddComponent<GraphicRaycaster>();
             return canvas;
+        }
+
+        // 씬 단독 Play 지원(S-013) — 콘텐츠 씬마다 Core 사후 로더 1개 보장(멱등).
+        private static void EnsureCoreLoader()
+        {
+            foreach (EnsureCoreLoaded existing in Object.FindObjectsByType<EnsureCoreLoaded>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                Object.DestroyImmediate(existing.gameObject);
+
+            GameObject go = new GameObject("__ui_EnsureCore");
+            go.AddComponent<EnsureCoreLoaded>();
         }
 
         private static void ClearFlowUI()
