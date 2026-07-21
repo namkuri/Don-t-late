@@ -53,6 +53,7 @@ namespace DontLate
             WorldEvents.DeliveryCompleted += OnDeliveryCompleted;
             WorldEvents.DeliveryFailed += OnDeliveryFailed;
             WorldEvents.DebtSettled += OnDebtSettled;
+            WorldEvents.DebtIncreased += OnDebtIncreased;
             WorldEvents.StaminaChanged += OnStaminaChanged;
             WorldEvents.InteractionFocusChanged += OnInteractionFocusChanged;
             WorldEvents.SceneTransitionCompleted += OnSceneTransitionCompleted;
@@ -66,6 +67,7 @@ namespace DontLate
             WorldEvents.DeliveryCompleted -= OnDeliveryCompleted;
             WorldEvents.DeliveryFailed -= OnDeliveryFailed;
             WorldEvents.DebtSettled -= OnDebtSettled;
+            WorldEvents.DebtIncreased -= OnDebtIncreased;
             WorldEvents.StaminaChanged -= OnStaminaChanged;
             WorldEvents.InteractionFocusChanged -= OnInteractionFocusChanged;
             WorldEvents.SceneTransitionCompleted -= OnSceneTransitionCompleted;
@@ -123,6 +125,8 @@ namespace DontLate
             _hasCard = false;
             if (_cardRoot != null) _cardRoot.SetActive(false);
             RefreshEconomy();
+            // 보상 플로팅 (S-015) — 돈 라벨 곁 시안.
+            SpawnFloatingAmount("+₩" + data.Reward.ToString("N0"), new Color(0.208f, 0.878f, 0.784f), _moneyLabel);
         }
 
         private void OnDeliveryFailed(DeliveryData data)
@@ -133,6 +137,57 @@ namespace DontLate
 
         // 정산 직후 즉시 반영 — 정산 중엔 시간이 멈춰(ClockTicked 없음) 이 경로가 유일하다 (S-010).
         private void OnDebtSettled(DebtSettlement _) => RefreshEconomy();
+
+        // 벌금 즉시 가산 (S-015) — 빚 라벨 옆에 빨간 플로팅 금액.
+        private void OnDebtIncreased(int amount)
+        {
+            RefreshEconomy();
+            SpawnFloatingAmount("+₩" + amount.ToString("N0"), new Color(1f, 0.45f, 0.35f), _debtLabel);
+        }
+
+        // ── 플로팅 금액 (S-015) — 라벨 곁에서 떠올랐다 사라진다 ──
+        private void SpawnFloatingAmount(string text, Color color, TMP_Text anchorLabel)
+        {
+            if (anchorLabel == null) return;
+
+            GameObject go = new GameObject("FloatAmount", typeof(RectTransform));
+            go.transform.SetParent(anchorLabel.transform.parent, false);
+            TMP_Text label = go.AddComponent<TextMeshProUGUI>();
+            label.font = anchorLabel.font;
+            label.fontSize = anchorLabel.fontSize;
+            label.fontStyle = FontStyles.Bold;
+            label.color = color;
+            label.text = text;
+            label.alignment = TextAlignmentOptions.Right;
+            label.raycastTarget = false;
+            label.textWrappingMode = TextWrappingModes.NoWrap;
+
+            RectTransform rect = (RectTransform)go.transform;
+            RectTransform anchorRect = anchorLabel.rectTransform;
+            rect.anchorMin = anchorRect.anchorMin;
+            rect.anchorMax = anchorRect.anchorMax;
+            rect.pivot = anchorRect.pivot;
+            rect.sizeDelta = anchorRect.sizeDelta;
+            rect.anchoredPosition = anchorRect.anchoredPosition + new Vector2(-30f, -8f);
+
+            StartCoroutine(FloatAndFade(label, rect));
+        }
+
+        private System.Collections.IEnumerator FloatAndFade(TMP_Text label, RectTransform rect)
+        {
+            const float DURATION = 1.4f;
+            Vector2 start = rect.anchoredPosition;
+            Color baseColor = label.color;
+            float t = 0f;
+            while (t < 1f)
+            {
+                t += Time.unscaledDeltaTime / DURATION;
+                rect.anchoredPosition = start + new Vector2(0f, 46f * t);
+                label.color = new Color(baseColor.r, baseColor.g, baseColor.b, 1f - t * t);
+                yield return null;
+            }
+            Destroy(label.gameObject);
+        }
 
         // ── 스태미나 ──────────────────────────────────────────
         private void OnStaminaChanged(float normalized)

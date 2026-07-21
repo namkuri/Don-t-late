@@ -24,6 +24,8 @@ namespace DontLate
         public List<DeliveryOrderSO> cargo = new List<DeliveryOrderSO>();
         /// <summary>바코드 스캔된 주문 id (S-011 — 스캔한 짐만 픽업 가능. 스캔 순서 유지).</summary>
         public List<int> scannedOrderIds = new List<int>();
+        /// <summary>이동맵에서 고른 목적 구역 (S-015) — District 도착 시 이 구역의 짐·비콘만 스폰.</summary>
+        public string currentDistrict;
         public int completedCount;
         public int lateCount;
 

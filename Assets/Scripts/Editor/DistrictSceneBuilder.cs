@@ -43,9 +43,32 @@ namespace DontLate.EditorTools
             (GameObject slotsRoot, List<Transform> buildingSlots, List<Transform> propSlots) = BuildSlots();
             AttachLayoutGenerator(slotsRoot, buildingSlots, propSlots);
 
+            // S-015: 정적 짐·비콘 제거 — 도착 시 cargo 실데이터로 스폰(DistrictCargoSpawner)한다.
+            DestroyRoot("__gb_Box");
+            DestroyRoot("__gb_Beacon");
+            AttachCargoSpawner(gameState);
+
             EditorSceneManager.SaveScene(scene, DISTRICT_PATH);
             Debug.Log("[DistrictSceneBuilder] District.unity 조립 완료 — 매니저 제외 무대 + 슬롯 마커 "
                     + (BUILDING_SLOTS + PROP_SLOTS) + "개.");
+        }
+
+        // 짐·비콘 런타임 스포너 (S-015).
+        private static void AttachCargoSpawner(GameStateSO gameState)
+        {
+            GameObject go = new GameObject("__gb_CargoSpawner");
+            DistrictCargoSpawner spawner = go.AddComponent<DistrictCargoSpawner>();
+
+            SerializedObject serialized = new SerializedObject(spawner);
+            serialized.FindProperty("_gameState").objectReferenceValue = gameState;
+            serialized.FindProperty("_boxVisualPrefab").objectReferenceValue =
+                AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Auto/prop_box_parcel.prefab");
+            serialized.FindProperty("_beaconPrefab").objectReferenceValue = GreyboxStageBuilder.GetOrCreateBeaconPrefab();
+            serialized.FindProperty("_boxHighlight").objectReferenceValue =
+                GreyboxStageBuilder.GetOrCreateMaterial("Highlight", GreyboxStageBuilder.ParseColor("#35e0c8"), true);
+            serialized.FindProperty("_boxFallback").objectReferenceValue =
+                GreyboxStageBuilder.GetOrCreateMaterial("Box", GreyboxStageBuilder.ParseColor("#ff9f45"), false);
+            serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
         // ── 카메라·조명 (빈 씬 보강) ─────────────────────────

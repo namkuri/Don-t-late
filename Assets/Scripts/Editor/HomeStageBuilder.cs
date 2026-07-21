@@ -27,6 +27,7 @@ namespace DontLate.EditorTools
 
             BuildRoom(floor, wall, door);
             BuildBed(bed);
+            BuildSky();
             GreyboxStageBuilder.BuildPostVolume();
             GreyboxStageBuilder.ConfigureCamera();
             PullCameraIntoRoom();
@@ -85,6 +86,28 @@ namespace DontLate.EditorTools
             pillow.transform.localPosition = new Vector3(-0.8f, 0.58f, 0f);
             pillow.transform.localScale = new Vector3(0.5f, 0.16f, 0.7f);
             Object.DestroyImmediate(pillow.GetComponent<BoxCollider>());
+        }
+
+        // 창밖 하늘 (S-015) — 별밭·달·해를 거리 무대와 같은 원경(z≈69)에 깔되,
+        // 방 창(개구부)에서 보이는 대역이 낮아(y -5~3) 해·달 궤도를 낮춰 재조정한다.
+        private static void BuildSky()
+        {
+            GreyboxStageBuilder.BuildStarField();
+            GreyboxStageBuilder.BuildMoon();
+            GreyboxStageBuilder.BuildSunDisc();
+
+            foreach (string name in new[] { "__gb_Moon", "__gb_SunDisc" })
+            {
+                GameObject body = GameObject.Find(name);
+                if (body == null) continue;
+                body.transform.localScale = Vector3.one * 2.2f; // 창 프레임 안에 들어오는 크기
+                SkyBodyOrbit orbit = body.GetComponent<SkyBodyOrbit>();
+                SerializedObject so = new SerializedObject(orbit);
+                so.FindProperty("_center").vector3Value = new Vector3(1.5f, -6f, 69f); // 창(x≈1.6) 시선축
+                so.FindProperty("_radiusX").floatValue = 20f;
+                so.FindProperty("_radiusY").floatValue = 7.5f; // 정점 y≈1.5 — 창 대역 안
+                so.ApplyModifiedPropertiesWithoutUndo();
+            }
         }
 
         // 방은 거리 무대보다 훨씬 작다 — 표준 리그(FOV 22·y8.1·z-40)로는 방이 점이 된다.

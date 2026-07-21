@@ -29,7 +29,7 @@ Material:
     - _Density: 40
     - _GlobalAlpha: 0
     - _Intensity: 1.3
-    - _SkyGradientStrength: 0.6
+    - _SkyGradientStrength: 0.4
     - _StarChance: 0.25
     - _StarSizeMax: 0.12
     - _StarSizeMin: 0.02

@@ -34,6 +34,8 @@ namespace DontLate
     {
         public int OrderId;
         public string Address;
+        /// <summary>배송 구역 라벨 (S-015 — 폰 안내·스폰 매칭).</summary>
+        public string District;
         public int Floor;
         public int Reward;
         /// <summary>마감 시각 (하루 기준 분, 0~1440).</summary>
@@ -46,6 +48,7 @@ namespace DontLate
             {
                 OrderId = order.orderId,
                 Address = order.address,
+                District = order.district,
                 Floor = order.floor,
                 Reward = order.reward,
                 DeadlineMinuteOfDay = order.deadlineMinuteOfDay,

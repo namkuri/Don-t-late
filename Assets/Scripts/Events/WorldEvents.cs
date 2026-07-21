@@ -122,6 +122,15 @@ namespace DontLate
         }
 
         // ── 정산 ──────────────────────────────────────────────
+        /// <summary>지각·미니게임 벌금으로 빚이 즉시 늘었을 때 (S-015). HUD 플로팅 표시가 구독.</summary>
+        public static event Action<int> DebtIncreased;
+
+        public static void RaiseDebtIncreased(int amount)
+        {
+            Log("DebtIncreased +" + amount);
+            DebtIncreased?.Invoke(amount);
+        }
+
         /// <summary>Camp 복귀 정산 완료. WorldDebtManager가 발행, HUD·연출이 구독.</summary>
         public static event Action<DebtSettlement> DebtSettled;
 

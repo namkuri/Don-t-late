@@ -124,6 +124,7 @@ namespace DontLate.EditorTools
             order = ScriptableObject.CreateInstance<DeliveryOrderSO>();
             order.orderId = 100 + index;
             order.address = index == 1 ? "청운상가 2층" : "달빛맨션 502호";
+            order.district = index == 1 ? "행복빌라 구역" : "달빛맨션 구역";
             order.floor = index == 1 ? 2 : 5;
             order.deadlineMinuteOfDay = index == 1 ? 15f * 60f : 19f * 60f;
             order.reward = index == 1 ? 900 : 1400;

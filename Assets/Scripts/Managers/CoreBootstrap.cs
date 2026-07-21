@@ -27,7 +27,10 @@ namespace DontLate
             if (SceneManager.sceneCount > 1)
             {
                 if (System.Enum.TryParse(SceneManager.GetActiveScene().name, out GameScene current))
+                {
+                    WorldSceneFlowManager.Instance.AdoptCurrent(current); // 다음 전이에서 이 씬이 정상 언로드되게 (S-015)
                     WorldEvents.RaiseSceneTransitionCompleted(current);
+                }
                 return;
             }
 

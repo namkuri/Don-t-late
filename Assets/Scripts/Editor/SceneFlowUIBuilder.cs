@@ -129,9 +129,9 @@ namespace DontLate.EditorTools
                 46f, Color.white, TextAlignmentOptions.TopLeft, FontStyles.Normal);
             AnchorCorner(label.rectTransform, new Vector2(0f, 1f), new Vector2(48f, -44f), new Vector2(1400f, 72f));
 
-            CreateTravelNode(root, "NodeNear", "행복빌라 구역 (가까움)", false, tuning, font,
+            CreateTravelNode(root, "NodeNear", "행복빌라 구역", "행복빌라 구역 (가까움)", false, tuning, font,
                 new Vector2(-360f, 40f));
-            CreateTravelNode(root, "NodeFar", "달빛맨션 구역 (멀다)", true, tuning, font,
+            CreateTravelNode(root, "NodeFar", "달빛맨션 구역", "달빛맨션 구역 (멀다)", true, tuning, font,
                 new Vector2(360f, -60f));
 
             CreateButton(root, "AdvanceButton", "캠프로 돌아간다", GameScene.Camp, font, AMBER,
@@ -140,7 +140,7 @@ namespace DontLate.EditorTools
             EditorSceneManager.SaveScene(scene, SCENES_ROOT + "/Travel.unity");
         }
 
-        private static void CreateTravelNode(Transform parent, string name, string label, bool isFar,
+        private static void CreateTravelNode(Transform parent, string name, string district, string label, bool isFar,
             TuningConfigSO tuning, TMP_FontAsset font, Vector2 anchoredPos)
         {
             GameObject go = new GameObject(name, typeof(RectTransform));
@@ -160,6 +160,7 @@ namespace DontLate.EditorTools
             TravelMapView node = go.AddComponent<TravelMapView>();
             SetField(node, "_tuning", tuning);
             SetField(node, "_isFarNode", isFar);
+            SetField(node, "_district", district);
             EditorUtility.SetDirty(node);
 
             float minutes = isFar ? tuning.travelFarMinutes : tuning.travelNearMinutes;

@@ -45,6 +45,7 @@ namespace DontLate
             WorldEvents.BarcodeScanned += OnBarcodeScanned;
             WorldEvents.DeliveryCompleted += OnDeliveryCompleted;
             WorldEvents.DeliveryFailed += OnDeliveryFailed;
+            WorldEvents.ClockTicked += OnClockTicked;
         }
 
         private void OnDisable()
@@ -54,10 +55,20 @@ namespace DontLate
             WorldEvents.BarcodeScanned -= OnBarcodeScanned;
             WorldEvents.DeliveryCompleted -= OnDeliveryCompleted;
             WorldEvents.DeliveryFailed -= OnDeliveryFailed;
+            WorldEvents.ClockTicked -= OnClockTicked;
         }
 
         private void OnDeliveryCompleted(DeliveryData data) { _status[data.OrderId] = 1; RefreshList(); }
         private void OnDeliveryFailed(DeliveryData data) { _status[data.OrderId] = 2; RefreshList(); }
+
+        // 남은 시간 표시용 — 열려 있을 때만 분 단위로 갱신 (S-015).
+        private void OnClockTicked(GameClock clock)
+        {
+            _lastClockMinute = clock.MinuteOfDay;
+            if (_open) RefreshList();
+        }
+
+        private int _lastClockMinute = -1;
 
         private void OnDestroy() => _toggle.Dispose();
 
@@ -168,6 +179,25 @@ namespace DontLate
                 else if (status == 2) sb.Append("<color=#ff7359><s>").Append(row).Append("</s>  지각</color>");
                 else sb.Append(row);
                 sb.Append('\n');
+
+                // 구역·남은 시간 부제 줄 (S-015) — 어디로 가야 하고 얼마나 급한지.
+                if (status == 0)
+                {
+                    string where = string.IsNullOrEmpty(d.District) ? "구역 미지정" : d.District;
+                    if (_lastClockMinute >= 0)
+                    {
+                        int remain = Mathf.RoundToInt(d.DeadlineMinuteOfDay) - _lastClockMinute;
+                        string remainText = remain >= 0
+                            ? (remain <= 30 ? "<color=#ff9f45>남은 " + remain + "분</color>" : "남은 " + remain + "분")
+                            : "<color=#ff7359>마감 지남</color>";
+                        sb.Append("<size=80%><color=#8a93a8>    └ </color>").Append(where)
+                          .Append("<color=#8a93a8> · </color>").Append(remainText).Append("</size>\n");
+                    }
+                    else
+                    {
+                        sb.Append("<size=80%><color=#8a93a8>    └ </color>").Append(where).Append("</size>\n");
+                    }
+                }
             }
             if (_scanned.Count == 0) sb.Append("<color=#8a93a8>박스를 클릭해 송장을 찍어라</color>");
 

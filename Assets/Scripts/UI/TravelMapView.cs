@@ -14,6 +14,8 @@ namespace DontLate
         [SerializeField] private TuningConfigSO _tuning;
         [Tooltip("켜면 원거리 노드(travelFarMinutes), 끄면 근거리(travelNearMinutes).")]
         [SerializeField] private bool _isFarNode;
+        [Tooltip("이 노드의 구역 라벨 — 주문 SO의 district와 일치해야 스폰이 맞물린다 (S-015).")]
+        [SerializeField] private string _district;
 
         private void Awake()
         {
@@ -31,6 +33,7 @@ namespace DontLate
 
             float cost = _isFarNode ? _tuning.travelFarMinutes : _tuning.travelNearMinutes;
             WorldDayNightManager.Instance.AdvanceMinutes(cost);
+            WorldDeliveryManager.Instance.SetDestination(_district);
             WorldSceneFlowManager.Instance.Request(GameScene.District);
         }
     }

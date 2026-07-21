@@ -20,6 +20,12 @@ namespace DontLate
 
         public Vector2 PadSize => _padSize;
 
+        /// <summary>런타임 스폰 초기화 (S-015 — 비콘 프리팹 인스턴스에 주문 배정).</summary>
+        public void SetOrder(DeliveryOrderSO order)
+        {
+            _expectedOrder = order;
+        }
+
         private bool _focused;
         private bool _isDestination;
         private MaterialPropertyBlock _riseMpb;

@@ -507,11 +507,12 @@ namespace DontLate.EditorTools
 
         // S-010: 낮 하늘의 해 디스크 — 픽셀풍 정사각 발광 쿼드. 정점 13시, 달과 반대 위상.
         // S-011: 마인크래프트풍 흰색 — 캐시 머티리얼에도 매 빌드 강제(색 변경이 전파되도록).
-        private static void BuildSunDisc()
+        internal static void BuildSunDisc()
         {
+            // S-015: 주변 광원 무관 순백 — Unlit (기존 Lit 이미시브는 하늘광에 눌려 어두웠음).
             Material sun = GetOrCreateMaterial("SunDisc", Color.white, true);
-            sun.color = Color.white;
-            sun.SetColor("_EmissionColor", Color.white * 2.2f);
+            sun.shader = Shader.Find("Universal Render Pipeline/Unlit");
+            sun.SetColor("_BaseColor", Color.white * 1.6f); // HDR — 블룸이 살짝 문다
             EditorUtility.SetDirty(sun);
 
             GameObject go = GameObject.CreatePrimitive(PrimitiveType.Quad);
@@ -541,7 +542,7 @@ namespace DontLate.EditorTools
         // 밤하늘 배경 별밭 쿼드. 지평선 위 하늘 영역(z=70 원경)에 절차적 사각 별.
         // 카메라(0,8.1,-40.4)가 +Z를 보므로 무회전 쿼드가 -Z(카메라)를 향한다(SignGlow와 동일).
         // 지면(z≤40, 불투명)이 지평선 아래 별을 뎁스 오클루전한다.
-        private static void BuildStarField()
+        internal static void BuildStarField()
         {
             Material stars = GetOrCreateStarFieldMaterial();
 
@@ -561,6 +562,7 @@ namespace DontLate.EditorTools
             stars.SetColor("_Color", Color.white);
             // 별 크기 한 단계 축소(v3) + HDR 강도 주입(블룸 임계 돌파) — 캐시 머티리얼에도 매 빌드 갱신.
             stars.SetFloat("_StarSizeMin", 0.02f);
+            stars.SetFloat("_SkyGradientStrength", 0.4f); // 별 배경 한 단계 어둡게 (S-015 사람 요청, 구 0.6)
             stars.SetFloat("_StarSizeMax", 0.12f);
             stars.SetFloat("_Intensity", 1.3f);
 
@@ -590,7 +592,7 @@ namespace DontLate.EditorTools
 
         // 밤 전용 달 쿼드. 별밭(z=70)보다 카메라 쪽(z=69) · 하늘 좌상. StarField.cs 재부착해 밤 페이드 재사용
         // (_GlobalAlpha 프로퍼티명 일치). 정사각 쿼드라 셰이더 원판 마스크가 원형을 유지한다.
-        private static void BuildMoon()
+        internal static void BuildMoon()
         {
             Texture2D moonTex = GetOrCreateMoonTexture();
             Material moonMat = GetOrCreateMoonMaterial();
@@ -771,6 +773,58 @@ namespace DontLate.EditorTools
 
             AssetDatabase.SaveAssets();
             return profile;
+        }
+
+        // 비콘 패드 프리팹 (S-015) — 런타임 스포너가 주문 수만큼 찍는다. 주문은 SetOrder로 배정.
+        internal static GameObject GetOrCreateBeaconPrefab()
+        {
+            const string path = "Assets/Prefabs/Hand/BeaconPad.prefab";
+            GameObject existing = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (existing != null) return existing;
+
+            EnsureFolder("Assets/Prefabs");
+            EnsureFolder("Assets/Prefabs/Hand");
+
+            Material normal = GetOrCreateMaterial("Beacon", new Color(0.13f, 0.55f, 0.49f), false);
+            Material highlight = GetOrCreateMaterial("Highlight", ParseColor("#35e0c8"), true);
+            Material rise = GetOrCreateBeaconRiseMaterial();
+            Vector2 padSize = new Vector2(1f, 1f);
+
+            GameObject root = new GameObject("BeaconPad");
+            BoxCollider trigger = root.AddComponent<BoxCollider>();
+            trigger.isTrigger = true;
+            trigger.size = new Vector3(1.2f, 2f, 1.2f);
+            trigger.center = new Vector3(0f, 1f, 0f);
+
+            GameObject pad = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            pad.name = "Pad";
+            Object.DestroyImmediate(pad.GetComponent<BoxCollider>());
+            pad.transform.SetParent(root.transform, false);
+            pad.transform.localPosition = new Vector3(0f, 0.03f, 0f);
+            pad.transform.localScale = new Vector3(padSize.x, 0.06f, padSize.y);
+            Renderer renderer = pad.GetComponent<Renderer>();
+            renderer.sharedMaterial = normal;
+
+            DeliveryPoint point = root.AddComponent<DeliveryPoint>();
+            SetReference(point, "_renderer", renderer);
+            SetReference(point, "_normalMaterial", normal);
+            SetReference(point, "_highlightMaterial", highlight);
+            SetVector2(point, "_padSize", padSize);
+
+            GameObject fx = new GameObject("Fx");
+            fx.transform.SetParent(root.transform, false);
+            float hw = padSize.x * 0.5f;
+            float hd = padSize.y * 0.5f;
+            const float fxHeight = 1.2f;
+            CreateFxQuad(fx.transform, "FxPZ", new Vector3(0f, fxHeight * 0.5f, hd), new Vector3(padSize.x, fxHeight, 1f), Vector3.zero, rise);
+            CreateFxQuad(fx.transform, "FxNZ", new Vector3(0f, fxHeight * 0.5f, -hd), new Vector3(padSize.x, fxHeight, 1f), Vector3.zero, rise);
+            CreateFxQuad(fx.transform, "FxPX", new Vector3(hw, fxHeight * 0.5f, 0f), new Vector3(padSize.y, fxHeight, 1f), new Vector3(0f, 90f, 0f), rise);
+            CreateFxQuad(fx.transform, "FxNX", new Vector3(-hw, fxHeight * 0.5f, 0f), new Vector3(padSize.y, fxHeight, 1f), new Vector3(0f, 90f, 0f), rise);
+            SetReference(point, "_riseEffect", fx);
+
+            GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
+            Object.DestroyImmediate(root);
+            return prefab;
         }
 
         // 문 앞 보도(Z 중앙) 발광 패드. DeliveryPoint를 얹고, 감지 트리거는 패드보다 크게.
@@ -982,6 +1036,7 @@ namespace DontLate.EditorTools
         {
             order.orderId = 7;
             order.address = "행복빌라 301호";
+            order.district = "행복빌라 구역";
             order.floor = 3;
             // 14시 — 인트로 대화·상차·이동(30~90분)을 거치는 실제 루프에서 잡을 수 있는 마감 (S-014, 구 10시는 구조적 지각).
             order.deadlineMinuteOfDay = 14f * 60f;

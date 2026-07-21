@@ -19,12 +19,24 @@ namespace DontLate
 
         public DeliveryOrderSO Order => _order;
 
-        private void Awake()
+        private void Awake() => CacheRenderers();
+
+        private void CacheRenderers()
         {
             _renderers = GetComponentsInChildren<Renderer>(true);
             _originalMaterials = new Material[_renderers.Length][];
             for (int i = 0; i < _renderers.Length; i++)
                 _originalMaterials[i] = _renderers[i].sharedMaterials;
+        }
+
+        /// <summary>런타임 스폰 초기화 (S-015 — DistrictCargoSpawner). AddComponent 직후 호출.</summary>
+        public void Initialize(DeliveryOrderSO order, Material highlight, bool requireInCargo, bool requireScanned)
+        {
+            _order = order;
+            _highlightMaterial = highlight;
+            _requireInCargo = requireInCargo;
+            _requireScanned = requireScanned;
+            CacheRenderers(); // 비주얼이 Initialize 전에 붙었을 수 있어 재캐시
         }
 
         public void Interact(PlayerContext ctx)

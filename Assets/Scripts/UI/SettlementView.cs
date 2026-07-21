@@ -42,9 +42,9 @@ namespace DontLate
                 _bodyLabel.text =
                     "오늘 정산\n\n" +
                     "빚 상환   <color=#35e0c8>₩" + s.Repaid.ToString("N0") + "</color>\n" +
-                    "벌금       <color=#ff9f45>-₩" + s.Penalty.ToString("N0") + "</color>\n" +
                     "잔액       ₩" + s.Money.ToString("N0") + "\n" +
-                    "남은 빚   ₩" + s.Debt.ToString("N0");
+                    "남은 빚   ₩" + s.Debt.ToString("N0") + "\n\n" +
+                    "<size=60%><color=#8a93a8>벌금은 발생 즉시 빚에 반영됨</color></size>";
             _panel.SetActive(true);
         }
 
