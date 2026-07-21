@@ -983,7 +983,8 @@ namespace DontLate.EditorTools
             order.orderId = 7;
             order.address = "행복빌라 301호";
             order.floor = 3;
-            order.deadlineMinuteOfDay = 10f * 60f;
+            // 14시 — 인트로 대화·상차·이동(30~90분)을 거치는 실제 루프에서 잡을 수 있는 마감 (S-014, 구 10시는 구조적 지각).
+            order.deadlineMinuteOfDay = 14f * 60f;
             order.reward = 5000;
             order.memo = "그레이박스 확인용";
         }

@@ -25,6 +25,8 @@ namespace DontLate
         [SerializeField] private float _shownY = 24f;
 
         private readonly List<DeliveryData> _scanned = new List<DeliveryData>();
+        // 운송장별 상태 (S-014): 0=진행 · 1=완료 · 2=지각 실패. 콘솔만 보던 지각을 폰에서 보이게.
+        private readonly Dictionary<int, int> _status = new Dictionary<int, int>();
         private InputAction _toggle;
         private bool _open;
         private Coroutine _slide;
@@ -41,6 +43,8 @@ namespace DontLate
             _toggle.Enable();
             _toggle.performed += OnToggle;
             WorldEvents.BarcodeScanned += OnBarcodeScanned;
+            WorldEvents.DeliveryCompleted += OnDeliveryCompleted;
+            WorldEvents.DeliveryFailed += OnDeliveryFailed;
         }
 
         private void OnDisable()
@@ -48,7 +52,12 @@ namespace DontLate
             _toggle.performed -= OnToggle;
             _toggle.Disable();
             WorldEvents.BarcodeScanned -= OnBarcodeScanned;
+            WorldEvents.DeliveryCompleted -= OnDeliveryCompleted;
+            WorldEvents.DeliveryFailed -= OnDeliveryFailed;
         }
+
+        private void OnDeliveryCompleted(DeliveryData data) { _status[data.OrderId] = 1; RefreshList(); }
+        private void OnDeliveryFailed(DeliveryData data) { _status[data.OrderId] = 2; RefreshList(); }
 
         private void OnDestroy() => _toggle.Dispose();
 
@@ -149,10 +158,16 @@ namespace DontLate
             {
                 DeliveryData d = _scanned[i];
                 int rank = byDeadline.FindIndex(x => x.OrderId == d.OrderId) + 1;
-                sb.Append((i + 1).ToString().PadRight(4))
-                  .Append(InvoiceNo(d.OrderId).PadRight(12))
-                  .Append(rank.ToString().PadRight(6))
-                  .Append(d.Address).Append('\n');
+                string row = (i + 1).ToString().PadRight(4)
+                    + InvoiceNo(d.OrderId).PadRight(12)
+                    + rank.ToString().PadRight(6)
+                    + d.Address;
+
+                int status = _status.TryGetValue(d.OrderId, out int s) ? s : 0;
+                if (status == 1) sb.Append("<color=#8a93a8>").Append(row).Append("  ✓완료</color>");
+                else if (status == 2) sb.Append("<color=#ff7359><s>").Append(row).Append("</s>  지각</color>");
+                else sb.Append(row);
+                sb.Append('\n');
             }
             if (_scanned.Count == 0) sb.Append("<color=#8a93a8>박스를 클릭해 송장을 찍어라</color>");
 
