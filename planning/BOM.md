@@ -128,16 +128,33 @@
 
 ## 8. 오디오 (JUICE 도출 원칙 유지 — 목록 확장은 JUICE 개정안 J-1 승인 후 유효)
 
-> 소비자: `WorldAudioManager`(P4 — §11) · 임포트 규격: SFX=Vorbis q70·**Decompress On Load**·2D /
-> BGM=Vorbis·**Streaming**. dest = `Assets/Audio/{BGM,SFX}/` (아키텍처 §9에 Audio 폴더 직교 추가 필요).
-> 파일명=bom_id · 총 오디오 예산 ≤ 10MB (WebGL 다운로드 체감 보호) · 전 건 라이선스 기록 필수.
+> 소비자: `WorldAudioManager` (**P4→당김, 2026-07-21 납품 · BGM 전용**) ·
+> dest = `Assets/Audio/{BGM,SFX}/` (아키텍처 §9 Audio 폴더 · 임포트 자동화 = `AudioImportPostprocessor`).
+> 총 오디오 예산 ≤ 10MB (WebGL 다운로드 체감 보호) · 전 건 라이선스 기록 필수.
+>
+> **임포트 규격 (D-040 정정 — 실측 반영)**
+> - SFX = Vorbis **q70** · **Decompress On Load** · 모노(2D) — 원안 유지
+> - BGM = Vorbis **q30** · **Compressed In Memory** · 스테레오 · 백그라운드 로드
+>   - ~~Streaming~~ **폐기**: WebGL은 Web Audio API 기반이라 Streaming 로드타입을 지원하지 않는다
+>   - `Decompress On Load`도 부적합 — 60s 스테레오 1곡이 RAM에 11.5MB 생PCM으로 풀린다
+>   - q70은 실측 **~256kbps → 10곡 20.6MB로 예산 2배 초과**. q30 = ~118kbps(게임 BGM 표준 대역),
+>     10곡 **10.04MB**로 51% 감축 실측
+> - 파일명 = bom_id — **단, 다곡 풀 슬롯은 컷·분류 확정 후 리네임** (D-042).
+>   슬롯 배정은 `Assets/Data/BgmLibrary.asset`(SO)이 소유하므로 스왑 계약은 파일명이 아니라 SO 참조로 성립한다
 
 ### BGM
 
 | bom_id | 항목 | 스펙 | source | 비고 |
 |---|---|---|---|---|
-| bgm_day_loop | 낮 거리 BGM | 60~90s 루프 · 심리스 루프포인트 | Suno(#8)→폴백 #10 | 필수 |
-| bgm_night_var | 밤 변주 | **별도 곡 대신 낮 곡 + 로우패스/리버브 변주 1순위** (DayPhaseChanged 훅) | 믹스로 해결 | 전용 곡은 sacrifice 후보 |
+| bgm_day_loop | 낮 거리 BGM (Morning·Day) | 60~180s 루프 · 심리스 루프포인트 | **ElevenLabs(#9)** | **반입 3곡** — 컷 대기 |
+| bgm_night_loop | 밤 BGM (Evening·Night) | 〃 · Evening 진입(17시) 3초 크로스페이드로 교대 | **ElevenLabs(#9)** | **반입 1곡** — 컷 대기 |
+| bgm_title | 타이틀(Main 씬) BGM | 〃 | **ElevenLabs(#9)** | **반입 1곡** — 컷 대기 |
+| (미분류) | 슬롯 판정 대기 | 사람 인게임 청취로 Day/Night/Title 배정 또는 컷 | 〃 | **5곡** |
+
+- ~~`bgm_night_var`(낮 곡 + 로우패스/리버브 변주)~~ **폐기(D-040)**: sacrifice 근거였던 제작비가 소멸했고,
+  낮(major·105BPM)과 밤(minor·88BPM)은 BPM·조성이 달라 필터로 재현 불가. 전용 곡 = AudioMixer 불요.
+- source 전환: BGM도 **#9(ElevenLabs)** 에서 나왔다 — 원안의 Suno(#8)는 미사용. M0-06 #9 라인 실증.
+- **루프 이음새 크로스페이드·볼륨 정규화는 컷 판정 후** (버릴 곡에 작업 낭비 방지 — [[orders/audio]] AU-003).
 
 ### SFX — WorldEvents 트리거 매핑 (Unity 소비 관점)
 

@@ -112,6 +112,11 @@ namespace DontLate.EditorTools
             SetReference(dayNight, "_tuning", tuning);
             SetReference(dayNight, "_sun", EnsureSun());
             SetReference(dayNight, "_backgroundCamera", Camera.main);
+
+            // BGM — 그레이박스에서도 곡 청취·판정이 되도록 같이 올린다.
+            // AudioListener는 씬 기본 카메라의 것을 쓴다(여기서 추가하면 중복 경고).
+            WorldAudioManager audio = managers.AddComponent<WorldAudioManager>();
+            SetReference(audio, "_library", CoreSceneBuilder.GetOrCreateBgmLibrary());
         }
 
         /// <summary>씬의 Directional Light를 찾아 재사용(없으면 생성). DayNight의 _sun에 배선.</summary>

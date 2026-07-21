@@ -107,3 +107,16 @@ InitTestScene*.unity*
 # DontLate 관제 추가 (2026-07-21)
 /Screenshots/
 /Data/
+
+# 오디오 원본 — 컷 판정 전까지 미커밋 (D-042)
+# 판정 통과분만 이 규칙을 풀고 assets_manifest 등재 후 커밋한다.
+/[Aa]ssets/[Aa]udio/**/*.wav
+/[Aa]ssets/[Aa]udio/**/*.wav.meta
+
+# npx skills 로컬 설치물 (mattpocock/skills — grilling 계열)
+/.agents/
+/.claude/skills/grilling/
+/.claude/skills/grill-me/
+/.claude/skills/grill-with-docs/
+/.claude/skills/domain-modeling/
+/skills-lock.json

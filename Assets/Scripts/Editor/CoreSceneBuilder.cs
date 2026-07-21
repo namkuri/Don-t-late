@@ -21,6 +21,8 @@ namespace DontLate.EditorTools
         private const string CORE_PATH = SCENES_ROOT + "/Core.unity";
         private const string DATA_ROOT = "Assets/Data";
         private const string FONT_PATH = "Assets/Art/UI/Fonts/Pretendard-Regular SDF.asset";
+        private const string BGM_FOLDER = "Assets/Audio/BGM";
+        private const string BGM_LIBRARY_PATH = DATA_ROOT + "/BgmLibrary.asset";
         private static readonly Color AMBER = new Color(1f, 0.624f, 0.271f, 1f); // #ff9f45
         private static readonly Color CYAN = new Color(0.208f, 0.878f, 0.784f, 1f); // #35e0c8
 
@@ -49,6 +51,8 @@ namespace DontLate.EditorTools
                 Debug.LogError("[CoreSceneBuilder] GameState.asset / Tuning.asset 을 찾지 못했다.");
                 return;
             }
+
+            CleanCoreDuplicatesInMain();
 
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
@@ -90,12 +94,85 @@ namespace DontLate.EditorTools
             SetField(dayNight, "_gameState", gameState);
             SetField(dayNight, "_tuning", tuning);
 
+            WorldAudioManager audio = managers.AddComponent<WorldAudioManager>();
+            SetField(audio, "_library", GetOrCreateBgmLibrary());
+
             // 태양은 Core 소유(D-021 교정) — 콘텐츠 씬은 자체 Directional Light를 두지 않는다.
             GameObject sunGo = new GameObject("Sun");
             Light sun = sunGo.AddComponent<Light>();
             sun.type = LightType.Directional;
             sun.shadows = LightShadows.Soft;
             SetField(dayNight, "_sun", sun);
+
+            // AudioListener는 Core 소유(D-041) — 태양과 같은 이유다. Core는 항상 로드돼 있으므로
+            // 콘텐츠 씬이 교체되는 순간에도 리스너가 끊기지 않는다(콘텐츠 씬 소유로 두면
+            // 언로드→로드 사이 구간에 "no audio listeners" 경고가 매 프레임 발생).
+            GameObject listenerGo = new GameObject("AudioListener");
+            listenerGo.AddComponent<AudioListener>();
+        }
+
+        /// <summary>
+        /// Main.unity(사람 샌드박스)에서 **Core 소유물의 중복분만** 떼어낸다. 지오메트리·조명 등
+        /// 사람이 배치한 내용은 손대지 않는다.
+        /// - AudioListener: 리스너는 Core 소유(D-041) — Main이 들고 오면 씬에 2개가 된다
+        /// - CoreBootstrap: Main은 부트스트랩이 로드하는 씬인데 그 안에 또 부트스트랩이 있으면
+        ///   Request(Main)이 두 번 발생해 "Main → Main 는 허용되지 않은 전이" 경고가 난다
+        /// </summary>
+        private static void CleanCoreDuplicatesInMain()
+        {
+            const string mainPath = SCENES_ROOT + "/Main.unity";
+            if (AssetDatabase.LoadAssetAtPath<SceneAsset>(mainPath) == null) return;
+
+            Scene scene = EditorSceneManager.OpenScene(mainPath, OpenSceneMode.Single);
+            int listeners = 0;
+            int bootstraps = 0;
+
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                foreach (AudioListener listener in root.GetComponentsInChildren<AudioListener>(true))
+                {
+                    Object.DestroyImmediate(listener);
+                    listeners++;
+                }
+                foreach (CoreBootstrap bootstrap in root.GetComponentsInChildren<CoreBootstrap>(true))
+                {
+                    Object.DestroyImmediate(bootstrap);
+                    bootstraps++;
+                }
+            }
+
+            if (listeners + bootstraps <= 0) return;
+
+            EditorSceneManager.SaveScene(scene);
+            Debug.Log("[CoreSceneBuilder] Main.unity 정리 — AudioListener " + listeners
+                    + "개 · CoreBootstrap " + bootstraps + "개 제거 (둘 다 Core 소유).");
+        }
+
+        /// <summary>
+        /// BGM 목록 SO를 확보한다(없으면 계약 폴더의 클립으로 생성). 슬롯 분류는 사람 청취로 확정하므로
+        /// 자동 생성분은 전부 Unsorted — 제목으로 낮/밤을 추정하지 않는다(D-039 실수→규칙).
+        /// </summary>
+        internal static BgmLibrarySO GetOrCreateBgmLibrary()
+        {
+            BgmLibrarySO library = AssetDatabase.LoadAssetAtPath<BgmLibrarySO>(BGM_LIBRARY_PATH);
+            if (library != null) return library;
+
+            library = ScriptableObject.CreateInstance<BgmLibrarySO>();
+
+            if (AssetDatabase.IsValidFolder(BGM_FOLDER))
+            {
+                foreach (string guid in AssetDatabase.FindAssets("t:AudioClip", new[] { BGM_FOLDER }))
+                {
+                    AudioClip clip = AssetDatabase.LoadAssetAtPath<AudioClip>(
+                        AssetDatabase.GUIDToAssetPath(guid));
+                    if (clip == null) continue;
+                    library.entries.Add(new BgmLibrarySO.Entry { clip = clip, slot = BgmSlot.Unsorted });
+                }
+            }
+
+            AssetDatabase.CreateAsset(library, BGM_LIBRARY_PATH);
+            AssetDatabase.SaveAssets();
+            return library;
         }
 
         private static void BuildCore(GameStateSO gameState)
@@ -243,9 +320,16 @@ namespace DontLate.EditorTools
                 Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
                 GameObject label = new GameObject("SceneLabel_" + name);
                 label.transform.position = Vector3.zero;
+
+                // 카메라는 콘텐츠 씬 소유(기존 구조 — Core는 카메라를 갖지 않는다).
+                // AudioListener는 붙이지 않는다 — Core가 소유하므로 여기 두면 2개가 된다.
+                GameObject cameraGo = new GameObject("Main Camera");
+                cameraGo.tag = "MainCamera";
+                cameraGo.AddComponent<Camera>();
+
                 EditorSceneManager.SaveScene(scene, SCENES_ROOT + "/" + name + ".unity");
             }
-            Debug.Log("[CoreSceneBuilder] 콘텐츠 씬 4종 생성 — Home·Camp·Travel·District.");
+            Debug.Log("[CoreSceneBuilder] 콘텐츠 씬 4종 생성 — Home·Camp·Travel·District (각 카메라 포함).");
         }
 
         // ── 빌드 세팅 등록 ───────────────────────────────────
