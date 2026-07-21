@@ -47,6 +47,9 @@ namespace DontLate
         {
             _advance = new InputAction("DialogueAdvance", InputActionType.Button);
             _advance.AddBinding("<Keyboard>/space");
+            _advance.AddBinding("<Keyboard>/enter");      // S-010: 엔터도 진행
+            _advance.AddBinding("<Keyboard>/numpadEnter");
+            _advance.AddBinding("<Mouse>/leftButton");    // S-010: 화면 아무 데나 좌클릭
         }
 
         private void OnEnable()
@@ -143,9 +146,14 @@ namespace DontLate
         // ── 입력 → 2단 진행 ──────────────────────────────────
         private void OnAdvancePerformed(InputAction.CallbackContext _) => OnAdvanceInput();
 
+        private int _lastAdvanceFrame = -1;
+
         private void OnAdvanceInput()
         {
             if (!_boxActive) return;
+            // 박스 클릭(Button)과 좌클릭 바인딩이 같은 프레임에 겹쳐 2줄 스킵되는 것 방지 (S-010).
+            if (Time.frameCount == _lastAdvanceFrame) return;
+            _lastAdvanceFrame = Time.frameCount;
 
             if (_isTyping)
             {

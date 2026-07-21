@@ -7,6 +7,8 @@ namespace DontLate
     public class PickupBox : MonoBehaviour, IInteractable
     {
         [SerializeField] private DeliveryOrderSO _order;
+        [Tooltip("켜면 오늘 적재 목록(cargo)에 있는 건만 픽업 가능 — 배송지(District) 상자용. Camp 상자는 끔.")]
+        [SerializeField] private bool _requireInCargo;
         [SerializeField] private Renderer _renderer;
         [SerializeField] private Material _normalMaterial;
         [SerializeField] private Material _highlightMaterial;
@@ -16,6 +18,12 @@ namespace DontLate
         public void Interact(PlayerContext ctx)
         {
             if (_order == null) return;
+            // S-010: 캠프에서 싣지 않은(또는 지각 실패한) 건은 배송 불가 — 침묵 무반응 대신 사유를 남긴다.
+            if (_requireInCargo && !WorldDeliveryManager.Instance.IsInCargo(_order))
+            {
+                Debug.Log("[PickupBox] #" + _order.orderId + " 은 오늘 적재 목록에 없다 — 캠프에서 싣지 않았거나 지각 실패한 건.");
+                return;
+            }
             if (!ctx.Player.Status.TryCarry(_order)) return;
 
             WorldDeliveryManager.Instance.NotifyPickedUp(_order);

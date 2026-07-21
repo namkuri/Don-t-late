@@ -41,10 +41,18 @@ namespace DontLate
         public void Interact(PlayerContext ctx)
         {
             DeliveryOrderSO carried = ctx.Player.Status.CarriedOrder;
-            if (carried == null) return;
-            if (_expectedOrder != null && carried != _expectedOrder) return;
+            if (carried == null) { Debug.Log("[DeliveryPoint] 빈손 — 상자를 들고 와야 인증된다."); return; }
+            if (_expectedOrder != null && carried != _expectedOrder)
+            {
+                Debug.Log("[DeliveryPoint] 주소 불일치 — 든 건 #" + carried.orderId + ", 이 문은 #" + _expectedOrder.orderId + ".");
+                return;
+            }
             // 이미 실패(지각)로 적재에서 빠진 건이면 인증 불가 — 상자를 떨어뜨리지 않는다 (S-009 엣지).
-            if (!WorldDeliveryManager.Instance.IsInCargo(carried)) return;
+            if (!WorldDeliveryManager.Instance.IsInCargo(carried))
+            {
+                Debug.Log("[DeliveryPoint] #" + carried.orderId + " 은 적재 목록에 없다(지각 실패?) — 인증 불가.");
+                return;
+            }
 
             ctx.Player.Status.ReleaseCarry(dropAsPhysics: true);
             WorldDeliveryManager.Instance.CompleteDelivery(carried);

@@ -32,6 +32,10 @@ namespace DontLate
                 Debug.LogWarning("[SettlementView] World 매니저 없음 — 씬 단독 Play인가?");
                 return;
             }
+            if (_panel.activeSelf) return; // 중복 클릭 방지 (S-010)
+
+            // 정산은 하루의 마침표 — 패널이 떠 있는 동안 세계를 멈춰 표시·상태 불일치를 차단 (S-010).
+            Time.timeScale = 0f;
 
             DebtSettlement s = WorldDebtManager.Instance.SettleNow();
             if (_bodyLabel != null)
@@ -46,8 +50,15 @@ namespace DontLate
 
         private void Confirm()
         {
+            Time.timeScale = 1f;
             _panel.SetActive(false);
             WorldSceneFlowManager.Instance.Request(GameScene.Home);
+        }
+
+        private void OnDestroy()
+        {
+            // 패널이 뜬 채 씬이 언로드되는 예외 경로에서도 시간은 반드시 복구.
+            if (_panel != null && _panel.activeSelf) Time.timeScale = 1f;
         }
     }
 }

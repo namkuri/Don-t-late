@@ -52,6 +52,7 @@ namespace DontLate
             WorldEvents.DeadlineWarned += OnDeadlineWarned;
             WorldEvents.DeliveryCompleted += OnDeliveryCompleted;
             WorldEvents.DeliveryFailed += OnDeliveryFailed;
+            WorldEvents.DebtSettled += OnDebtSettled;
             WorldEvents.StaminaChanged += OnStaminaChanged;
             WorldEvents.InteractionFocusChanged += OnInteractionFocusChanged;
             WorldEvents.SceneTransitionCompleted += OnSceneTransitionCompleted;
@@ -64,6 +65,7 @@ namespace DontLate
             WorldEvents.DeadlineWarned -= OnDeadlineWarned;
             WorldEvents.DeliveryCompleted -= OnDeliveryCompleted;
             WorldEvents.DeliveryFailed -= OnDeliveryFailed;
+            WorldEvents.DebtSettled -= OnDebtSettled;
             WorldEvents.StaminaChanged -= OnStaminaChanged;
             WorldEvents.InteractionFocusChanged -= OnInteractionFocusChanged;
             WorldEvents.SceneTransitionCompleted -= OnSceneTransitionCompleted;
@@ -128,6 +130,9 @@ namespace DontLate
             _hasCard = false;
             if (_cardRoot != null) _cardRoot.SetActive(false);
         }
+
+        // 정산 직후 즉시 반영 — 정산 중엔 시간이 멈춰(ClockTicked 없음) 이 경로가 유일하다 (S-010).
+        private void OnDebtSettled(DebtSettlement _) => RefreshEconomy();
 
         // ── 스태미나 ──────────────────────────────────────────
         private void OnStaminaChanged(float normalized)

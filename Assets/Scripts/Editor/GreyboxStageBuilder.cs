@@ -61,6 +61,7 @@ namespace DontLate.EditorTools
             BuildGroundMist();
             BuildStarField();
             BuildMoon();
+            BuildSunDisc();
             BuildPickupBox(order, box, highlight);
             BuildDoorVisual(door);
             BuildSignGlow();
@@ -413,6 +414,11 @@ namespace DontLate.EditorTools
             SetReference(pickup, "_renderer", renderer);
             SetReference(pickup, "_normalMaterial", normal);
             SetReference(pickup, "_highlightMaterial", highlight);
+
+            // 거리 상자 = 배송용 — 캠프에서 실은 건만 집을 수 있다 (S-010).
+            SerializedObject serialized = new SerializedObject(pickup);
+            serialized.FindProperty("_requireInCargo").boolValue = true;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
         // 문 큐브는 이제 시각물(배경)일 뿐 — 인증은 보도 위 비콘이 맡는다.
@@ -466,6 +472,35 @@ namespace DontLate.EditorTools
             return material;
         }
 
+        // S-010: 낮 하늘의 해 디스크 — 픽셀풍 정사각 발광 쿼드. 정점 13시, 달과 반대 위상.
+        private static void BuildSunDisc()
+        {
+            Material sun = GetOrCreateMaterial("SunDisc", ParseColor("#ffd27a"), true);
+
+            GameObject go = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            go.name = PREFIX + "SunDisc";
+            Object.DestroyImmediate(go.GetComponent<Collider>());
+            go.transform.position = new Vector3(0f, 8.5f, 69f); // 초기값 — 첫 틱에 궤도가 덮어쓴다
+            go.transform.localScale = new Vector3(4.5f, 4.5f, 1f);
+            go.GetComponent<Renderer>().sharedMaterial = sun;
+            Undo.RegisterCreatedObjectUndo(go, "Build Greybox Stage");
+
+            ConfigureOrbit(go.AddComponent<SkyBodyOrbit>(), "Arc", 13f);
+        }
+
+        // 궤도 파라미터 주입 — 가시 하늘대(z≈69에서 y 0~10)에 맞춘 공통 반타원.
+        private static void ConfigureOrbit(SkyBodyOrbit orbit, string mode, float peakHour)
+        {
+            SerializedObject so = new SerializedObject(orbit);
+            so.FindProperty("_mode").enumValueIndex = mode == "Arc" ? 0 : 1;
+            so.FindProperty("_center").vector3Value = new Vector3(0f, -2f, 69f);
+            so.FindProperty("_radiusX").floatValue = 30f;
+            so.FindProperty("_radiusY").floatValue = 10.5f;
+            so.FindProperty("_peakHour").floatValue = peakHour;
+            so.FindProperty("_spinDegreesPerDay").floatValue = 30f;
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
         // 밤하늘 배경 별밭 쿼드. 지평선 위 하늘 영역(z=70 원경)에 절차적 사각 별.
         // 카메라(0,8.1,-40.4)가 +Z를 보므로 무회전 쿼드가 -Z(카메라)를 향한다(SignGlow와 동일).
         // 지면(z≤40, 불투명)이 지평선 아래 별을 뎁스 오클루전한다.
@@ -479,6 +514,9 @@ namespace DontLate.EditorTools
             go.transform.position = new Vector3(0f, 28f, 70f);
             go.transform.localScale = new Vector3(200f, 70f, 1f);
             Undo.RegisterCreatedObjectUndo(go, "Build Greybox Stage");
+
+            // S-010: 별밭 완만 회전 — 별들이 천구처럼 호를 그린다.
+            ConfigureOrbit(go.AddComponent<SkyBodyOrbit>(), "Spin", 0f);
 
             // 쿼드 가로/세로 비를 셰이더에 주입해 별 셀을 정사각화(_Aspect 보정).
             // 캐시된 머티리얼 대비 팔레트 틴트를 흰색으로 고정(별색은 셰이더 팔레트 소유).
@@ -531,6 +569,9 @@ namespace DontLate.EditorTools
             go.transform.position = new Vector3(-15f, 2.6f, 69f);
             go.transform.localScale = new Vector3(4.0f, 4.0f, 1f);
             Undo.RegisterCreatedObjectUndo(go, "Build Greybox Stage");
+
+            // S-010: 시간에 따라 포물선 궤적 (정점 새벽 1시 — 해와 반대 위상, 아침·저녁 교차).
+            ConfigureOrbit(go.AddComponent<SkyBodyOrbit>(), "Arc", 1f);
 
             Renderer renderer = go.GetComponent<Renderer>();
             renderer.sharedMaterial = moonMat;
