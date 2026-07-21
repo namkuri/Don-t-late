@@ -132,6 +132,11 @@
 > dest = `Assets/Audio/{BGM,SFX}/` (아키텍처 §9 Audio 폴더 · 임포트 자동화 = `AudioImportPostprocessor`).
 > 총 오디오 예산 ≤ 10MB (WebGL 다운로드 체감 보호) · 전 건 라이선스 기록 필수.
 >
+> ⚠ **10MB는 미검증 자체 추정치다** (D-044). `TECH_SPEC`의 `webgl_budget`은 `tris·drawcalls·texture_mb`
+> 뿐이고 **오디오 항목이 없다** — 이 상한은 BOM이 스스로 적은 정성적 판단이며 실제 WebGL 빌드로
+> 검증된 적이 없다. **곡 컷은 예산이 아니라 품질 기준으로 판정한다.** 근거가 필요하면
+> WebGL 회귀 빌드 1회로 실측한다([[retrospective-2026-07-21]] §4-1이 지목한 최대 구멍과 같은 작업).
+>
 > **임포트 규격 (D-040 정정 — 실측 반영)**
 > - SFX = Vorbis **q70** · **Decompress On Load** · 모노(2D) — 원안 유지
 > - BGM = Vorbis **q30** · **Compressed In Memory** · 스테레오 · 백그라운드 로드
@@ -160,9 +165,9 @@
 
 | bom_id | 트리거 (실존 이벤트) | 소리 | JUICE 근거 | 상태 |
 |---|---|---|---|---|
-| sfx_delivery_ok | `DeliveryCompleted` | 딩동+동전 | ✓ 배송 완료 | 필수 |
-| sfx_late_buzzer | `DeliveryFailed` | 낮은 부저 | ✓ 시간초과 실패 | 필수 |
-| sfx_pickup | `PackagePickedUp` | 집는 소리 | ✓ 택배 픽업 | 필수 |
+| sfx_delivery_ok | `DeliveryCompleted` | 딩동+동전 | ✓ 배송 완료 | **연결됨 · 합성 플레이스홀더** |
+| sfx_late_buzzer | `DeliveryFailed` | 낮은 부저 | ✓ 시간초과 실패 | **연결됨 · 합성 플레이스홀더** |
+| sfx_pickup | `PackagePickedUp` | 집는 소리 | ✓ 택배 픽업 | **연결됨 · 합성 플레이스홀더** |
 | sfx_footstep | Locomotion 이동중 (도메인 내부 훅) | 발소리+숨소리(달리기 가중) | ✓ 계단 오르기 | 필수 |
 | sfx_deadline_warn | `DeadlineWarned` | 짧은 경고 틱 | ❌ **J-1 개정 필요** | 필수 — 마감 압박의 청각 축 |
 | sfx_phone_ring | `PhoneRang`(P3 예정) | 전화벨 (박말순) | ❌ J-1 | 필수 — must_have 이벤트인데 표에 없음 |
@@ -172,6 +177,10 @@
 | sfx_scene_whoosh | `SceneTransitionStarted` | 전환 휙 | ❌ J-1 | 선택 |
 | amb_night | `DayPhaseChanged(Night)` | 밤 환경음(귀뚜라미·먼 차소리) | ❌ J-1 | 선택 — sacrifice 후보 |
 
+- **합성 플레이스홀더 3종 가동 (2026-07-21)**: `SfxSynthGenerator`가 코드로 합성(단순 파형 1~2겹,
+  JUICE "작은 순간 1~2레이어" 준수) → `Assets/Audio/SFX/<bom_id>.wav` · 총 **117KB**.
+  **실음원이 같은 파일명으로 들어오면 그대로 교체**된다(§8 스왑 계약) — 생성기는 파일이 있으면 덮지 않는다.
+  빌더가 자동 생성하므로 합성물은 커밋 대상이 아니다(실음원 확보 시 ignore 해제).
 - source 공통: ElevenLabs(#9) 또는 Freesound(#10 — CC0/CC-BY만, 표기 기록) · M0-06이 관통 관문.
 - ~~주차 성공(브레이크+성공음)~~ = 탑다운 잔재 → J-1에서 삭제.
 

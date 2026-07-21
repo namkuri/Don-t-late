@@ -19,8 +19,14 @@ namespace DontLate
         [Header("데이터")]
         [SerializeField] private BgmLibrarySO _library;
 
+        [Header("SFX — 실음원이 오면 같은 파일명으로 교체된다(BOM §8 스왑 계약)")]
+        [SerializeField] private AudioClip _sfxPickup;
+        [SerializeField] private AudioClip _sfxDeliveryOk;
+        [SerializeField] private AudioClip _sfxLateBuzzer;
+
         [Header("믹스")]
         [SerializeField, Range(0f, 1f)] private float _volume = 0.5f;
+        [SerializeField, Range(0f, 1f)] private float _sfxVolume = 0.7f;
         // Evening 진입 시 낮→밤 전환에 쓰는 교차 시간(초).
         [SerializeField] private float _crossfadeSeconds = 3f;
 
@@ -36,6 +42,7 @@ namespace DontLate
         private AudioSource _sourceA;
         private AudioSource _sourceB;
         private AudioSource _active;
+        private AudioSource _sfxSource;
         private Coroutine _fade;
 
         private BgmSlot _slot = BgmSlot.Unsorted;
@@ -53,6 +60,10 @@ namespace DontLate
             _sourceA = CreateSource();
             _sourceB = CreateSource();
 
+            _sfxSource = CreateSource();
+            _sfxSource.loop = false; // 원샷 전용 — BGM 소스와 분리해 페이드에 휘둘리지 않게 한다
+            _sfxSource.volume = _sfxVolume;
+
             BuildPools();
             PickForSession();
         }
@@ -61,12 +72,18 @@ namespace DontLate
         {
             WorldEvents.DayPhaseChanged += OnDayPhaseChanged;
             WorldEvents.SceneTransitionCompleted += OnSceneTransitionCompleted;
+            WorldEvents.PackagePickedUp += OnPackagePickedUp;
+            WorldEvents.DeliveryCompleted += OnDeliveryCompleted;
+            WorldEvents.DeliveryFailed += OnDeliveryFailed;
         }
 
         private void OnDisable()
         {
             WorldEvents.DayPhaseChanged -= OnDayPhaseChanged;
             WorldEvents.SceneTransitionCompleted -= OnSceneTransitionCompleted;
+            WorldEvents.PackagePickedUp -= OnPackagePickedUp;
+            WorldEvents.DeliveryCompleted -= OnDeliveryCompleted;
+            WorldEvents.DeliveryFailed -= OnDeliveryFailed;
         }
 
         private void OnDestroy()
@@ -145,6 +162,19 @@ namespace DontLate
         {
             _titleScene = scene == GameScene.Main;
             ApplySlot();
+        }
+
+        // ── SFX ──────────────────────────────────────────────
+        // JUICE 표에 이미 있는 3건만 건다. 나머지는 J-1 승인 게이트 대기(BOM §8).
+
+        private void OnPackagePickedUp(DeliveryData data) => PlaySfx(_sfxPickup);
+        private void OnDeliveryCompleted(DeliveryData data) => PlaySfx(_sfxDeliveryOk);
+        private void OnDeliveryFailed(DeliveryData data) => PlaySfx(_sfxLateBuzzer);
+
+        private void PlaySfx(AudioClip clip)
+        {
+            if (clip == null) return; // 음원 미확보 = 무음 (폴백 원칙)
+            _sfxSource.PlayOneShot(clip, _sfxVolume);
         }
 
         /// <summary>Main = 타이틀곡. 그 밖에는 Evening·Night = 밤곡, Morning·Day = 낮곡 (D-039).</summary>

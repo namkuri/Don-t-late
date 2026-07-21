@@ -96,6 +96,10 @@ namespace DontLate.EditorTools
 
             WorldAudioManager audio = managers.AddComponent<WorldAudioManager>();
             SetField(audio, "_library", GetOrCreateBgmLibrary());
+            SfxSynthGenerator.EnsurePlaceholders();
+            SetField(audio, "_sfxPickup", LoadSfx("sfx_pickup"));
+            SetField(audio, "_sfxDeliveryOk", LoadSfx("sfx_delivery_ok"));
+            SetField(audio, "_sfxLateBuzzer", LoadSfx("sfx_late_buzzer"));
 
             // 태양은 Core 소유(D-021 교정) — 콘텐츠 씬은 자체 Directional Light를 두지 않는다.
             GameObject sunGo = new GameObject("Sun");
@@ -146,6 +150,12 @@ namespace DontLate.EditorTools
             EditorSceneManager.SaveScene(scene);
             Debug.Log("[CoreSceneBuilder] Main.unity 정리 — AudioListener " + listeners
                     + "개 · CoreBootstrap " + bootstraps + "개 제거 (둘 다 Core 소유).");
+        }
+
+        /// <summary>bom_id 로 SFX 클립을 집는다. 실음원이 같은 이름으로 들어오면 그대로 교체된다.</summary>
+        internal static AudioClip LoadSfx(string bomId)
+        {
+            return AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/SFX/" + bomId + ".wav");
         }
 
         /// <summary>
