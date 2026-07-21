@@ -13,8 +13,7 @@
 
 | # | 결정 | 배경 | 참조 |
 |---|---|---|---|
-| B-5 | **씬 공백 채움 발주 묶음 승인** — 정수: S-005(Camp 레인 = LoadingZone+WorldDebtManager+정산 UI) · S-006(Travel 레인 = TravelMapView 노드 선택) / 관제: S-007(Camp·Travel 그레이박스 무대) | 씬 감사(2026-07-22): Home·Camp·Travel이 전환 버튼만 있는 빈 껍데기. 필요 스크립트가 전부 P3 미납분 | [dont-late-scripts-manifest](../.claude/rules/dont-late-scripts-manifest.md) P3 |
-| B-6 | **Home(집) 씬 존치 여부** — SCOPE sacrifice 후보 ②(집 씬→인트로 흡수)가 미확정. 흡수면 무대 제작 불요, 존치면 S-007에 포함 | [SCOPE](../docs/SCOPE.md) §sacrifice 🔶 | [open-questions.md](open-questions.md) |
+| B-6 | **Home(집) 씬 존치 여부** — SCOPE sacrifice 후보 ②(집 씬→인트로 흡수)가 미확정. 흡수면 무대 제작 불요, 존치면 후속 무대 발주 | [SCOPE](../docs/SCOPE.md) §sacrifice 🔶 | [open-questions.md](open-questions.md) |
 
 ## ③ 손 작업·외부 대기
 
@@ -27,6 +26,8 @@
 | ~~H10~~ | ~~정수 투입 개시~~ → **자발 개시됨** (오디오 PR merge 완료) — 다음 발주 묶음은 P3 잔여 스크립트로 협의 | — | [orders/audio.md](orders/audio.md) |
 
 ## 처리 완료 (최근)
+
+- ✅ **B-5 발주 진행** (2026-07-22 님 "전부 발주") — 정수 3건([orders/system.md](orders/system.md) S-005 Camp정산 · S-006 Travel · S-007 미니게임) push 완료 + 관제 S-008 Camp 무대 즉시 납품
 
 - ✅ **H1 리네임 완료** (2026-07-22 관제 대행) — `Assets/Art/Buildings`로 계약 경로 정합. 내용물은 GS25(지에스.fbx)뿐이라 출처 기록은 생략 — D-050 폐기 예정이므로 폐기 시 폴더째 정리
 - ✅ **H3 폰 확인 완료** (2026-07-22 님 관찰: "되긴 됨, 컨트롤 안 됨") — 모바일 렌더·로드는 정상, **터치 입력은 미구현**(키보드 전제). 심사·시연은 데스크톱 전제라 스코프 밖 — 본선에서 필요해지면 그때 발주 ([open-questions.md](open-questions.md) 백로그 기재)
