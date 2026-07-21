@@ -21,6 +21,8 @@
 
 | R13 | 밤하늘 패키지 v4 (별밭+블룸+달 토끼) | 반려 3회 반영 완료 · **달 토끼 텍스처 판정 요망** (32×32 코드 그림 — 마음에 안 들면 `Art/Backgrounds/moon_pixel.png`를 직접 그린 그림으로 덮어쓰면 끝, 빌더가 보존) · 달 위치(−15, 4)도 확정 요망 | Screenshots/crop_moon_v4.png |
 
+| R15 | 하네스 도구 10종 (S-001) | 훅 4(컴파일 게이트·freeze-guard·라이선스 대조·태그) 전부 시나리오 테스트 exit code 검증 · 채점기 3 실측 가동 · AAPP 자동화 3 (calibration.md 첫 행 자동 생성) | [[orders/system]] S-001 결과 블록 |
+
 ## ② 결정 대기
 
 | # | 질문 | 권고 | 참조 |
@@ -40,6 +42,7 @@
 | H2 | **실상표 일괄 제거 (제출 전 필수)**: GS25 건물 + 캐릭터 쿠팡 로고(민지 삭제 예정 — D-029 인지됨) | `docs/INTENT.md` 금지: 실상표(택배사·편의점 명시) — 실격급 | [[BOM]] §9 data_brands |
 | H3 | 폰에서 https://namkuri.github.io/dontlate-web/ 열기 (1분) | 타 기기 확인 = 제출 규정 검증 완결 | [[TASKS]] M0-03 |
 | H4 | (민지) RunPod Trellis 관통 → 소품 1개 실측 | 양산·캐릭터 결정의 관문 | [[TASKS]] M0-04 · [[open-questions]] §B-4 |
+| H7 | 🔴 **(민지) GS25 건물 데시메이트 요청 — 단독 1,499,400 tris** (WebGL 전체 예산 200k의 **7.5배**를 건물 1채가 소비. 씬 통계 채점기가 첫 가동에서 적발) | 이대로 WebGL 빌드하면 로딩·프레임 참사. 목표 <3,000 tris (건물 모듈 상한) — Tripo 재생성 시 폴리 옵션 or Blender 데시메이트 | scene_stats 실측 · [[BOM]] §0 예산표 |
 
 ## 처리 완료 (최근)
 

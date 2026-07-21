@@ -1,0 +1,13 @@
+#!/bin/sh
+# 늦지마 commit-msg — 대괄호 태그([P2]/[ENV]/[docs] 등) 부재 시 경고만 출력 (차단 아님 — 항상 exit 0)
+
+first=$(head -1 "$1")
+case "$first" in
+  \[*\]*) ;;                # [태그] 로 시작 — 통과
+  Merge*|Revert*|fixup!*|squash!*) ;;   # git 자동 메시지 — 통과
+  *)
+    echo "[commit-msg] 경고: 커밋 메시지에 대괄호 태그가 없다." >&2
+    echo "  예: [P2] PlayerLocomotionManager: ... / [ENV] ... / [docs] ..." >&2
+    ;;
+esac
+exit 0

@@ -1,0 +1,72 @@
+#!/bin/sh
+# 늦지마 pre-commit — (1) freeze-guard (2) 라이선스 대조 (3) .cs 컴파일 게이트
+# 활성화: git config core.hooksPath hooks   (clone 후 1회)
+# 정책: 실패 = 커밋 거부(exit 1). Windows Git Bash sh 호환 · LF 필수.
+
+fail=0
+
+# 파일명 공백 대응 — 반복 변수 분리를 개행으로만
+IFS='
+'
+
+# ---------- 1) freeze-guard ----------
+# 헤더(선두 30줄)에 줄 시작 `frozen: true`가 있는 문서(HEAD 기준)의
+# 기존 줄 수정/삭제 diff 검출 시 거부. 줄 추가만 있는 diff는 통과.
+for f in $(git diff --cached --name-only --diff-filter=ACMR); do
+  git cat-file -e "HEAD:$f" 2>/dev/null || continue   # 신규 파일은 대상 아님
+  if git show "HEAD:$f" | head -30 | grep -q '^frozen:[[:space:]]*true'; then
+    removed=$(git diff --cached HEAD -- "$f" | grep '^-' | grep -cv '^---')
+    if [ "$removed" -gt 0 ]; then
+      echo "[pre-commit] FREEZE-GUARD 거부: $f 는 frozen 문서 — 기존 줄 ${removed}개 수정/삭제 감지 (추가만 허용)." >&2
+      fail=1
+    fi
+  fi
+done
+
+# ---------- 2) 라이선스 대조 ----------
+# Assets/Art|Audio 아래 신규(A) 바이너리가 assets_manifest.md에 파일명 미등재면 거부.
+MANIFEST="planning/assets_manifest.md"
+for f in $(git diff --cached --name-only --diff-filter=A); do
+  case "$f" in
+    Assets/Art/*|Assets/Audio/*) ;;
+    *) continue ;;
+  esac
+  case "$f" in
+    *.fbx|*.FBX|*.glb|*.GLB|*.png|*.PNG|*.wav|*.WAV|*.ogg|*.OGG|*.mp3|*.MP3) ;;
+    *) continue ;;
+  esac
+  base=$(basename "$f")
+  if ! grep -qF "$base" "$MANIFEST" 2>/dev/null; then
+    echo "[pre-commit] LICENSE 거부: $base — $MANIFEST 미등재 신규 바이너리. 출처·라이선스 기록 후 커밋하라." >&2
+    fail=1
+  fi
+done
+
+# 훅 1·2 실패면 컴파일 검사 전에 거부 (에디터 왕복 낭비 방지)
+[ "$fail" -ne 0 ] && exit 1
+
+# ---------- 3) .cs 컴파일 게이트 ----------
+# 스테이지에 .cs가 있으면 unity-cli로 재컴파일 + 콘솔 에러 0 확인. .cs 없으면 통과.
+staged_cs=$(git diff --cached --name-only --diff-filter=ACMR | grep '\.cs$')
+if [ -n "$staged_cs" ]; then
+  if ! unity-cli status 2>/dev/null | grep -q 'Unity:'; then
+    echo "[pre-commit] unity-cli 무응답 — Unity 에디터를 켜고(커넥터 가동) 다시 커밋하라." >&2
+    exit 1
+  fi
+  unity-cli console --clear >/dev/null 2>&1
+  if ! unity-cli editor refresh --compile >/dev/null 2>&1; then
+    sleep 3   # 에디터가 에셋 임포트 중이면 일시 거부될 수 있다 — 1회 재시도
+    if ! unity-cli editor refresh --compile >/dev/null 2>&1; then
+      echo "[pre-commit] 컴파일 실패 — unity-cli editor refresh --compile 로그를 확인하라." >&2
+      exit 1
+    fi
+  fi
+  errs=$(unity-cli console --type error --lines 50 2>/dev/null)
+  if [ -n "$errs" ] && [ "$errs" != "[]" ]; then
+    echo "[pre-commit] 콘솔 에러 검출 — 커밋 거부:" >&2
+    echo "$errs" >&2
+    exit 1
+  fi
+fi
+
+exit 0

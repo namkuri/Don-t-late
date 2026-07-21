@@ -52,7 +52,9 @@ clock_note: "정상 — 제출까지 21일"
   대장 6종(STATUS·TASKS·BOM·decisions·INBOX·open-questions) + 증거 3종(ai_evidence·iterations·
   assets_manifest — manifest는 HARNESS §9의 json 대신 **md로 확정**, Foam 가독 우선) +
   보조 4종(socket-map·swap-strategy·guides/·reference/) + 회고(retrospective-*).
-  `orders/`는 **사람 게이트가 걸리는 대형 발주만** 파일로 보존(일반 발주는 봉투+ai_evidence 1줄로 충분).
+  `orders/` = **도메인별 발주 대장 4개**(system·art·audio·content, append-only) — 발주·결과 시각을
+  파일 안에 명시(리드타임 자기완결). 사람 반론 2회로 진화(대형만→건별 파일→도메인 대장).
+  상세: [[guides/distributed-workflow]] §3~4.
 - **봉투 표준 절차 v2 (백로그 2·7 반영)**: 모든 에디터 발주 봉투에 ⓐ Bash+작은따옴표 ⓑ runInBackground
   ⓒ stop→compile→console ⓓ **작업 전 활성 씬 dirty 확인·보고** ⓔ _intake 폴더 보존 ⓕ **스크린샷
   검수 체크리스트: 게임뷰 16:9 프레이밍 · 텍스처 유무 · 종횡비 · 팔레트 4색 이탈** — ⓕ는 검증 컷을

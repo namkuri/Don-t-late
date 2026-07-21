@@ -36,8 +36,8 @@
 | M0-04 | Trellis@RunPod 소품 1개 → Blender → 임포트 관통 + 실측 | 민지+남규 | todo | [[BOM]] §15 양산(M2) 발사 전제 · **[[open-questions]] §B-4(캐릭터 도구·리그) 판단 재료** |
 | M0-05 | Mixamo 수동 절차서 | 남규 | hold(B-4) | — |
 | M0-06 | 오디오 3종 클립 1개 관통 + 라이선스 기록 | 남규 | todo | M3 전제 |
-| M0-07 | 훅 5종 제작 | 관제 | todo | 본선 중 신축 금지 → 지금이 유일 기회 |
-| M0-08 | 채점기 3종 | 관제 | todo | 사람 판정 예산 절감 |
+| M0-07 | 훅 4종 (컴파일·freeze-guard·라이선스·태그) | CLI | **review** | [[orders/system]] S-001 · 리드 12분 · exit code 검증 · dest 대조는 GC 몫 이월 |
+| M0-08 | 채점기 3 + AAPP 자동화 3 | CLI | **review** | S-001 · **씬 통계가 첫 가동에 GS25 150만 tri 적발**([[INBOX]] H7) · calibration.md 개시 |
 
 ## M2 이후 (착수 금지 — Q1 동결 후 개봉)
 
