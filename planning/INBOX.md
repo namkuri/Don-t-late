@@ -11,9 +11,7 @@
 
 ## ② 결정 대기
 
-| # | 결정 | 배경 | 참조 |
-|---|---|---|---|
-| B-6 | **Home(집) 씬 존치 여부** — SCOPE sacrifice 후보 ②(집 씬→인트로 흡수)가 미확정. 흡수면 무대 제작 불요, 존치면 후속 무대 발주 | [SCOPE](../docs/SCOPE.md) §sacrifice 🔶 | [open-questions.md](open-questions.md) |
+**현재 없음** — B-6까지 전량 해소. 다음 결정은 Q2(BOM 동결)에서 발생.
 
 ## ③ 손 작업·외부 대기
 
@@ -27,6 +25,8 @@
 
 ## 처리 완료 (최근)
 
+- ✅ **B-6 Home 존치 확정 + 무대 시공** (2026-07-22 님 결정, [decisions.md](decisions.md) D-052) — 방 그레이박스(침대·창문·문) `DontLate/Build Home Stage`
+- ✅ **S-005~007 직접 납품 완료** (님 지시 D-053 — 정수→관제) — 매니페스트 31/34, 관찰 기록은 [orders/system.md](orders/system.md) 결과 블록
 - ✅ **B-5 발주 진행** (2026-07-22 님 "전부 발주") — 정수 3건([orders/system.md](orders/system.md) S-005 Camp정산 · S-006 Travel · S-007 미니게임) push 완료 + 관제 S-008 Camp 무대 즉시 납품
 
 - ✅ **H1 리네임 완료** (2026-07-22 관제 대행) — `Assets/Art/Buildings`로 계약 경로 정합. 내용물은 GS25(지에스.fbx)뿐이라 출처 기록은 생략 — D-050 폐기 예정이므로 폐기 시 폴더째 정리
