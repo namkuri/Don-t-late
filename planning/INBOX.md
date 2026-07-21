@@ -17,8 +17,8 @@
 
 | # | 작업 | 누구 | 참조 |
 |---|---|---|---|
-| A-001 | **한국형 직하 가로등 모델** (신규 발주 — D-c 해소안) | 민지 | [orders/art.md](orders/art.md) |
-| H8 | 텍스처 재전송 2건: 가로등·캐릭터 — FBX **Embed Media** 켜기 (캐릭터는 쿠팡 로고 제거 겸) | 민지 | [assets_manifest.md](assets_manifest.md) |
+| H12 | **Trellis2 반입물 2종 마감질** — 편의점 store_2(485,891→<3,000 tris)·가로등(95,724→<1,500) 데시메이트 + 텍스처 포함 재출력 (현재 회백색) | 민지 | [orders/art.md](orders/art.md) A-001 결과 |
+| H8 | 텍스처 재전송 2건: ~~가로등~~(Trellis2로 대체됨)·캐릭터 — FBX **Embed Media** 켜기 (캐릭터는 쿠팡 로고 제거 겸) | 민지 | [assets_manifest.md](assets_manifest.md) |
 | H9 | 애니 클립: **idle**(급함 — 정지 시에도 걸음) · jump·pickup·carry | 민지(Mixamo) | [BOM.md](BOM.md) §1 |
 | H4 | RunPod Trellis 관통 → 소품 1개 실측 | 민지 | [TASKS.md](TASKS.md) M0-04 |
 | ~~H10~~ | ~~정수 투입 개시~~ → **자발 개시됨** (오디오 PR merge 완료) — 다음 발주 묶음은 P3 잔여 스크립트로 협의 | — | [orders/audio.md](orders/audio.md) |

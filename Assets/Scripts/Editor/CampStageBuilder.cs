@@ -106,6 +106,11 @@ namespace DontLate.EditorTools
                 GreyboxStageBuilder.SetReference(pickup, "_renderer", boxGo.GetComponent<Renderer>());
                 GreyboxStageBuilder.SetReference(pickup, "_normalMaterial", material);
                 GreyboxStageBuilder.SetReference(pickup, "_highlightMaterial", highlight);
+
+                // 상차 절차(S-011): 폰으로 바코드를 찍은 짐만 들 수 있다.
+                var serialized = new UnityEditor.SerializedObject(pickup);
+                serialized.FindProperty("_requireScanned").boolValue = true;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
             }
         }
 

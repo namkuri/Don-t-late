@@ -18,4 +18,10 @@
 
 기대: **`Assets/_intake/art/Tripo/Props/prop_streetlamp.fbx`** 로 반입 (정확히 이 폴더·이 파일명 — 다른 도구를 썼다면 관제에 알려 폴더부터 맞출 것) → 관제가 검역·스왑·직하 90° 전환까지 처리.
 
-### 결과 · (반입 대기)
+### 결과 · 2026-07-22 03:54 (리드 — 발주 07-21 19:06 기준 약 8.8시간 · 반입 경로는 Tripo→**Trellis2**로 변경돼 도착)
+- `street_lamp_wood` 반입 → `Assets/Art/Props/prop_streetlamp.fbx` 덮어쓰기(전략 B·GUID 보존) + 프리팹 Visual 재구축(구 메시 링크 파손 수리) → **8기 일괄 교체 확인** (한국식 직선 폴+가로 암, 4u 정규화).
+- ⚠ 잔여: 폴리 95,724 tris(상한 64배 — 데시메이트 필요) · 텍스처/버텍스컬러 없음(회백색). H12로 재요청.
+- 동반 반입 `store_2`(편의점) → `Art/Buildings` → 자동 프리팹 → District 슬롯 12곳 배치(층수 스케일 정규화). 동일 잔여(485,891 tris·무텍스처) — H12.
+
+## 부기 · Trellis2 출처 기록 (2026-07-22 — 라이선스 대장)
+- 도구: **RunPod 셀프호스팅 TRELLIS**(Microsoft, MIT 라이선스) — 민지 생성. 생성물 권리 = 생성자 소유, 상업 사용 제약 없음. 파일: store_2.fbx · street_lamp_wood.fbx (반입일 2026-07-22).

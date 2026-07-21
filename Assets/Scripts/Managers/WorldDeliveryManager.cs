@@ -26,6 +26,17 @@ namespace DontLate
         private void OnEnable() => WorldEvents.DeliveryFailed += OnDeliveryFailed;
         private void OnDisable() => WorldEvents.DeliveryFailed -= OnDeliveryFailed;
 
+        /// <summary>폰 바코드 스캔 등록 (S-011). 이미 등록된 건이면 false — 호출자가 경고 표시.</summary>
+        public bool RegisterBarcode(DeliveryOrderSO order)
+        {
+            if (_gameState.scannedOrderIds.Contains(order.orderId)) return false;
+            _gameState.scannedOrderIds.Add(order.orderId);
+            WorldEvents.RaiseBarcodeScanned(DeliveryData.From(order));
+            return true;
+        }
+
+        public bool IsScanned(DeliveryOrderSO order) => _gameState.scannedOrderIds.Contains(order.orderId);
+
         /// <summary>Camp에서 짐을 받는다.</summary>
         public void AcceptOrder(DeliveryOrderSO order)
         {

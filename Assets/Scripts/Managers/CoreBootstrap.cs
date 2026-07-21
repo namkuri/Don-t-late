@@ -31,6 +31,7 @@ namespace DontLate
             _gameState.money = _gameState.startMoney;
             _gameState.debt = _gameState.startDebt;
             _gameState.cargo.Clear();
+            _gameState.scannedOrderIds.Clear();
             _gameState.completedCount = 0;
             _gameState.lateCount = 0;
         }

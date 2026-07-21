@@ -110,7 +110,8 @@ namespace DontLate
                 GameObject prefab = _buildingPrefabPool[tone % _buildingPrefabPool.Length];
                 if (prefab != null)
                 {
-                    Instantiate(prefab, building.transform);
+                    GameObject instance = Instantiate(prefab, building.transform);
+                    NormalizeBuilding(instance, floors, slot.position.z);
                     return;
                 }
             }
@@ -125,6 +126,31 @@ namespace DontLate
                     new Vector3(width, FLOOR_HEIGHT, BUILDING_DEPTH));
                 Tint(cube, ToneColors[tone]);
             }
+        }
+
+        /// <summary>임포트 건물을 층수 높이에 맞춰 스케일하고 발 y=0·전면 Z=3.0 정렬 (S-011 — 반입물이 1u 정규화라 필수).</summary>
+        private void NormalizeBuilding(GameObject instance, int floors, float slotZ)
+        {
+            Bounds bounds = new Bounds(instance.transform.position, Vector3.zero);
+            bool initialized = false;
+            foreach (Renderer r in instance.GetComponentsInChildren<Renderer>())
+            {
+                if (!initialized) { bounds = r.bounds; initialized = true; }
+                else bounds.Encapsulate(r.bounds);
+            }
+            if (!initialized || bounds.size.y < 0.01f) return;
+
+            float targetHeight = floors * FLOOR_HEIGHT;
+            instance.transform.localScale *= targetHeight / bounds.size.y;
+
+            initialized = false;
+            foreach (Renderer r in instance.GetComponentsInChildren<Renderer>())
+            {
+                if (!initialized) { bounds = r.bounds; initialized = true; }
+                else bounds.Encapsulate(r.bounds);
+            }
+            instance.transform.position += new Vector3(
+                0f, -bounds.min.y, BUILDING_FRONT_Z - bounds.min.z);
         }
 
         private void BuildProp(Transform root, int slotNo, Transform slot, int kind)

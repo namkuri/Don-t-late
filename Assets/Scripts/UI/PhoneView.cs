@@ -1,0 +1,169 @@
+using System.Collections;
+using System.Collections.Generic;
+using TMPro;
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+namespace DontLate
+{
+    /// <summary>
+    /// 스마트폰 "배송상차" 화면(View) — S-011. Tab으로 좌하단에서 GTA식 슬라이드 개폐.
+    /// 열려 있는 동안 마우스가 가리키는 상자의 송장번호를 보여주고, 클릭하면 바코드 등록
+    /// (등록은 WorldDeliveryManager 몫 — 여기는 레이캐스트·표시만). 중복이면 경고.
+    /// 목록 컬럼: No · 운송장번호 · 배송순번(마감 빠른 순 제안) · 목적지.
+    /// </summary>
+    public class PhoneView : MonoBehaviour
+    {
+        private const float SLIDE_SECONDS = 0.22f;
+
+        [SerializeField] private RectTransform _panel;
+        [SerializeField] private TMP_Text _hoverLabel;
+        [SerializeField] private TMP_Text _listLabel;
+        [SerializeField] private TMP_Text _warnLabel;
+        [Tooltip("닫힘/열림 anchoredPosition Y.")]
+        [SerializeField] private float _hiddenY = -640f;
+        [SerializeField] private float _shownY = 24f;
+
+        private readonly List<DeliveryData> _scanned = new List<DeliveryData>();
+        private InputAction _toggle;
+        private bool _open;
+        private Coroutine _slide;
+        private Coroutine _warnFade;
+
+        private void Awake()
+        {
+            _toggle = new InputAction("PhoneToggle", InputActionType.Button);
+            _toggle.AddBinding("<Keyboard>/tab");
+        }
+
+        private void OnEnable()
+        {
+            _toggle.Enable();
+            _toggle.performed += OnToggle;
+            WorldEvents.BarcodeScanned += OnBarcodeScanned;
+        }
+
+        private void OnDisable()
+        {
+            _toggle.performed -= OnToggle;
+            _toggle.Disable();
+            WorldEvents.BarcodeScanned -= OnBarcodeScanned;
+        }
+
+        private void OnDestroy() => _toggle.Dispose();
+
+        private void Start()
+        {
+            if (_panel != null)
+                _panel.anchoredPosition = new Vector2(_panel.anchoredPosition.x, _hiddenY);
+            RefreshList();
+            if (_warnLabel != null) _warnLabel.text = string.Empty;
+        }
+
+        private void Update()
+        {
+            if (!_open) return;
+            ScanPointer();
+        }
+
+        // ── 개폐 ─────────────────────────────────────────────
+
+        private void OnToggle(InputAction.CallbackContext _)
+        {
+            _open = !_open;
+            if (_slide != null) StopCoroutine(_slide);
+            _slide = StartCoroutine(Slide(_open ? _shownY : _hiddenY));
+            if (!_open && _hoverLabel != null) _hoverLabel.text = "-";
+        }
+
+        private IEnumerator Slide(float targetY)
+        {
+            float startY = _panel.anchoredPosition.y;
+            float t = 0f;
+            while (t < 1f)
+            {
+                t += Time.unscaledDeltaTime / SLIDE_SECONDS;
+                float y = Mathf.Lerp(startY, targetY, Mathf.SmoothStep(0f, 1f, t));
+                _panel.anchoredPosition = new Vector2(_panel.anchoredPosition.x, y);
+                yield return null;
+            }
+            _slide = null;
+        }
+
+        // ── 스캔 (표시 계산 + 등록 위임) ─────────────────────
+
+        private void ScanPointer()
+        {
+            Camera camera = Camera.main;
+            Mouse mouse = Mouse.current;
+            if (camera == null || mouse == null) return;
+
+            PickupBox box = null;
+            Ray ray = camera.ScreenPointToRay(mouse.position.ReadValue());
+            if (Physics.Raycast(ray, out RaycastHit hit, 100f, ~0, QueryTriggerInteraction.Collide))
+                hit.collider.TryGetComponent(out box);
+
+            if (_hoverLabel != null)
+                _hoverLabel.text = box != null && box.Order != null
+                    ? "송장 " + InvoiceNo(box.Order.orderId)
+                    : "-";
+
+            if (box == null || box.Order == null) return;
+            if (!mouse.leftButton.wasPressedThisFrame) return;
+
+            if (WorldDeliveryManager.Instance == null) return;
+            if (!WorldDeliveryManager.Instance.RegisterBarcode(box.Order))
+                ShowWarn("⚠ " + InvoiceNo(box.Order.orderId) + " — 이미 등록된 운송장");
+        }
+
+        private void OnBarcodeScanned(DeliveryData data)
+        {
+            _scanned.Add(data);
+            RefreshList();
+        }
+
+        // ── 표시 ─────────────────────────────────────────────
+
+        private static string InvoiceNo(int orderId) => "DL-" + orderId.ToString("0000");
+
+        private void RefreshList()
+        {
+            if (_listLabel == null) return;
+
+            var sb = new System.Text.StringBuilder();
+            sb.Append("<color=#8a93a8>No  운송장      순번  목적지</color>\n");
+
+            // 배송순번 = 마감 빠른 순 제안 순위.
+            var byDeadline = new List<DeliveryData>(_scanned);
+            byDeadline.Sort((a, b) => a.DeadlineMinuteOfDay.CompareTo(b.DeadlineMinuteOfDay));
+
+            for (int i = 0; i < _scanned.Count; i++)
+            {
+                DeliveryData d = _scanned[i];
+                int rank = byDeadline.FindIndex(x => x.OrderId == d.OrderId) + 1;
+                sb.Append((i + 1).ToString().PadRight(4))
+                  .Append(InvoiceNo(d.OrderId).PadRight(12))
+                  .Append(rank.ToString().PadRight(6))
+                  .Append(d.Address).Append('\n');
+            }
+            if (_scanned.Count == 0) sb.Append("<color=#8a93a8>박스를 클릭해 송장을 찍어라</color>");
+
+            _listLabel.text = sb.ToString();
+        }
+
+        private void ShowWarn(string message)
+        {
+            if (_warnLabel == null) return;
+            if (_warnFade != null) StopCoroutine(_warnFade);
+            _warnLabel.text = message;
+            _warnFade = StartCoroutine(ClearWarnAfter(1.6f));
+        }
+
+        private IEnumerator ClearWarnAfter(float seconds)
+        {
+            yield return new WaitForSecondsRealtime(seconds);
+            _warnLabel.text = string.Empty;
+            _warnFade = null;
+        }
+    }
+}

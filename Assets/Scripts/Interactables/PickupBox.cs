@@ -9,6 +9,8 @@ namespace DontLate
         [SerializeField] private DeliveryOrderSO _order;
         [Tooltip("켜면 오늘 적재 목록(cargo)에 있는 건만 픽업 가능 — 배송지(District) 상자용. Camp 상자는 끔.")]
         [SerializeField] private bool _requireInCargo;
+        [Tooltip("켜면 폰으로 바코드 스캔한 건만 픽업 가능 — Camp 상차용 (S-011).")]
+        [SerializeField] private bool _requireScanned;
         [SerializeField] private Renderer _renderer;
         [SerializeField] private Material _normalMaterial;
         [SerializeField] private Material _highlightMaterial;
@@ -22,6 +24,11 @@ namespace DontLate
             if (_requireInCargo && !WorldDeliveryManager.Instance.IsInCargo(_order))
             {
                 Debug.Log("[PickupBox] #" + _order.orderId + " 은 오늘 적재 목록에 없다 — 캠프에서 싣지 않았거나 지각 실패한 건.");
+                return;
+            }
+            if (_requireScanned && !WorldDeliveryManager.Instance.IsScanned(_order))
+            {
+                Debug.Log("[PickupBox] #" + _order.orderId + " 은 바코드 미스캔 — Tab으로 폰을 열고 박스를 클릭해 송장을 찍어라.");
                 return;
             }
             if (!ctx.Player.Status.TryCarry(_order)) return;

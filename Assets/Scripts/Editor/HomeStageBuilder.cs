@@ -23,10 +23,9 @@ namespace DontLate.EditorTools
             Material floor = GreyboxStageBuilder.GetOrCreateMaterial("HomeFloor", new Color(0.42f, 0.35f, 0.27f), false);
             Material wall = GreyboxStageBuilder.GetOrCreateMaterial("HomeWall", new Color(0.55f, 0.52f, 0.46f), false);
             Material bed = GreyboxStageBuilder.GetOrCreateMaterial("HomeBed", new Color(0.30f, 0.42f, 0.55f), false);
-            Material window = GreyboxStageBuilder.GetOrCreateMaterial("HomeWindow", new Color(0.75f, 0.85f, 0.95f), true);
             Material door = GreyboxStageBuilder.GetOrCreateMaterial("Door", new Color(0.45f, 0.38f, 0.32f), false);
 
-            BuildRoom(floor, wall, window, door);
+            BuildRoom(floor, wall, door);
             BuildBed(bed);
             GreyboxStageBuilder.BuildPostVolume();
             GreyboxStageBuilder.ConfigureCamera();
@@ -36,36 +35,23 @@ namespace DontLate.EditorTools
             Debug.Log("[Home] 방 무대 조립 완료 — 연출 전용(조작 없음), 진행은 하단 버튼.");
         }
 
-        private static void BuildRoom(Material floor, Material wall, Material window, Material door)
+        private static void BuildRoom(Material floor, Material wall, Material door)
         {
             GameObject floorGo = GreyboxStageBuilder.CreatePrimitive(PrimitiveType.Cube, "HomeFloor", new Vector3(0f, -0.05f, 0f));
             floorGo.transform.localScale = new Vector3(8f, 0.1f, 6f);
             floorGo.GetComponent<Renderer>().sharedMaterial = floor;
 
-            // 뒷벽(카메라 반대편)과 좌우벽 — 앞면은 카메라를 위해 연다.
-            AddWall("WallBack", new Vector3(0f, 1.5f, 3f), new Vector3(8f, 3f, 0.15f), wall);
+            // 뒷벽 = 창 개구부(x 0.9~2.3 · y 1.15~2.25)를 남기고 4분할 — 진짜 뚫린 창 (S-011).
+            // 바깥은 스카이박스가 그대로 보이고, Core 태양(Directional)이 시간에 따라 다른 각도로 스민다.
+            AddWall("WallBackLeft", new Vector3(-1.55f, 1.5f, 3f), new Vector3(4.9f, 3f, 0.15f), wall);
+            AddWall("WallBackRight", new Vector3(3.15f, 1.5f, 3f), new Vector3(1.7f, 3f, 0.15f), wall);
+            AddWall("WallBackBelowWin", new Vector3(1.6f, 0.575f, 3f), new Vector3(1.4f, 1.15f, 0.15f), wall);
+            AddWall("WallBackAboveWin", new Vector3(1.6f, 2.625f, 3f), new Vector3(1.4f, 0.75f, 0.15f), wall);
             AddWall("WallLeft", new Vector3(-4f, 1.5f, 0f), new Vector3(0.15f, 3f, 6f), wall);
             AddWall("WallRight", new Vector3(4f, 1.5f, 0f), new Vector3(0.15f, 3f, 6f), wall);
 
             // 천장 — 실내가 하늘광을 그대로 받지 않게 막는다 (S-010).
             AddWall("Ceiling", new Vector3(0f, 3.05f, 0f), new Vector3(8f, 0.12f, 6f), wall);
-
-            // 창문 — 뒷벽에 밝은 이미시브 판(아침 햇살 그림).
-            GameObject windowGo = GreyboxStageBuilder.CreatePrimitive(PrimitiveType.Quad, "HomeWindow", new Vector3(1.6f, 1.7f, 2.9f));
-            Object.DestroyImmediate(windowGo.GetComponent<Collider>());
-            windowGo.transform.localScale = new Vector3(1.4f, 1.1f, 1f);
-            windowGo.GetComponent<Renderer>().sharedMaterial = window;
-
-            // 창문 햇살 — 창에서 방바닥으로 떨어지는 따뜻한 스팟 (S-010). 그림자 켜서 창틀 빛웅덩이.
-            GameObject shaft = GreyboxStageBuilder.CreateEmpty("SunShaft", new Vector3(1.6f, 1.9f, 2.8f));
-            Light spot = shaft.AddComponent<Light>();
-            spot.type = LightType.Spot;
-            spot.color = GreyboxStageBuilder.ParseColor("#ffe2b0");
-            spot.intensity = 6f;
-            spot.range = 9f;
-            spot.spotAngle = 55f;
-            spot.shadows = LightShadows.Soft;
-            shaft.transform.rotation = Quaternion.Euler(52f, 200f, 0f); // 창(뒷벽)에서 방 안쪽 바닥으로
 
             // 현관문 — 우측 벽.
             GameObject doorGo = GreyboxStageBuilder.CreatePrimitive(PrimitiveType.Cube, "HomeDoor", new Vector3(3.9f, 1f, -1.2f));

@@ -473,9 +473,13 @@ namespace DontLate.EditorTools
         }
 
         // S-010: 낮 하늘의 해 디스크 — 픽셀풍 정사각 발광 쿼드. 정점 13시, 달과 반대 위상.
+        // S-011: 마인크래프트풍 흰색 — 캐시 머티리얼에도 매 빌드 강제(색 변경이 전파되도록).
         private static void BuildSunDisc()
         {
-            Material sun = GetOrCreateMaterial("SunDisc", ParseColor("#ffd27a"), true);
+            Material sun = GetOrCreateMaterial("SunDisc", Color.white, true);
+            sun.color = Color.white;
+            sun.SetColor("_EmissionColor", Color.white * 2.2f);
+            EditorUtility.SetDirty(sun);
 
             GameObject go = GameObject.CreatePrimitive(PrimitiveType.Quad);
             go.name = PREFIX + "SunDisc";

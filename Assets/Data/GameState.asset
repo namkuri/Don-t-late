@@ -17,9 +17,10 @@ MonoBehaviour:
   money: 0
   debt: 10000
   cargo: []
+  scannedOrderIds: 
   completedCount: 0
   lateCount: 0
-  currentScene: 1
+  currentScene: 4
   startDay: 1
   startMinuteOfDay: 480
   startMoney: 0

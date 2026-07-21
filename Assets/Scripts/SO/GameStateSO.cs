@@ -22,6 +22,8 @@ namespace DontLate
         [Header("배송")]
         // 적재 목록의 단일 소유처. Player 쪽에 Inventory를 두지 않는다.
         public List<DeliveryOrderSO> cargo = new List<DeliveryOrderSO>();
+        /// <summary>바코드 스캔된 주문 id (S-011 — 스캔한 짐만 픽업 가능. 스캔 순서 유지).</summary>
+        public List<int> scannedOrderIds = new List<int>();
         public int completedCount;
         public int lateCount;
 

@@ -67,6 +67,7 @@ namespace DontLate.EditorTools
             BuildHUDCanvas(gameState);
             BuildDialogueCanvas();
             BuildMinigameCanvas();
+            BuildPhoneCanvas();
             BuildEventSystem();
 
             EditorSceneManager.SaveScene(scene, CORE_PATH);
@@ -460,6 +461,82 @@ namespace DontLate.EditorTools
             SetField(view, "_sequenceLabel", seq);
 
             panel.SetActive(false);
+        }
+
+        // 스마트폰 "배송상차" (S-011) — Tab으로 좌하단 슬라이드. 대화(90)보다 아래, HUD보다 위.
+        private static void BuildPhoneCanvas()
+        {
+            TMP_FontAsset font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FONT_PATH);
+
+            GameObject canvasGo = new GameObject("PhoneCanvas");
+            Canvas canvas = canvasGo.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 85;
+            CanvasScaler scaler = canvasGo.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = 0.5f;
+
+            PhoneView view = canvasGo.AddComponent<PhoneView>();
+
+            // 폰 본체 — 좌하단 앵커, 시안 테두리 + 네이비 스크린.
+            GameObject panel = CreateImage(canvasGo.transform, "Panel", CYAN).gameObject;
+            RectTransform panelRect = panel.GetComponent<RectTransform>();
+            panelRect.anchorMin = panelRect.anchorMax = new Vector2(0f, 0f);
+            panelRect.pivot = new Vector2(0f, 0f);
+            panelRect.sizeDelta = new Vector2(430f, 610f);
+            panelRect.anchoredPosition = new Vector2(28f, -640f); // 닫힘 = 화면 밖 (PhoneView가 구동)
+            SetField(view, "_panel", panelRect);
+
+            Image screen = CreateImage(panel.transform, "Screen", NAVY);
+            RectTransform screenRect = screen.rectTransform;
+            screenRect.anchorMin = Vector2.zero;
+            screenRect.anchorMax = Vector2.one;
+            screenRect.offsetMin = new Vector2(4f, 4f);
+            screenRect.offsetMax = new Vector2(-4f, -4f);
+            screen.raycastTarget = true; // 폰 위 클릭이 월드 스캔으로 새지 않게
+
+            TMP_Text title = CreateText(screen.transform, "Title", "배송상차", font,
+                40f, AMBER, TextAlignmentOptions.Top);
+            RectTransform titleRect = title.rectTransform;
+            titleRect.anchorMin = new Vector2(0f, 1f);
+            titleRect.anchorMax = new Vector2(1f, 1f);
+            titleRect.pivot = new Vector2(0.5f, 1f);
+            titleRect.anchoredPosition = new Vector2(0f, -22f);
+            titleRect.sizeDelta = new Vector2(0f, 52f);
+
+            TMP_Text hover = CreateText(screen.transform, "HoverInvoice", "-", font,
+                32f, CYAN, TextAlignmentOptions.Top);
+            RectTransform hoverRect = hover.rectTransform;
+            hoverRect.anchorMin = new Vector2(0f, 1f);
+            hoverRect.anchorMax = new Vector2(1f, 1f);
+            hoverRect.pivot = new Vector2(0.5f, 1f);
+            hoverRect.anchoredPosition = new Vector2(0f, -84f);
+            hoverRect.sizeDelta = new Vector2(0f, 44f);
+            SetField(view, "_hoverLabel", hover);
+
+            TMP_Text warn = CreateText(screen.transform, "Warn", string.Empty, font,
+                24f, new Color(1f, 0.45f, 0.35f), TextAlignmentOptions.Top);
+            RectTransform warnRect = warn.rectTransform;
+            warnRect.anchorMin = new Vector2(0f, 1f);
+            warnRect.anchorMax = new Vector2(1f, 1f);
+            warnRect.pivot = new Vector2(0.5f, 1f);
+            warnRect.anchoredPosition = new Vector2(0f, -132f);
+            warnRect.sizeDelta = new Vector2(0f, 36f);
+            SetField(view, "_warnLabel", warn);
+
+            TMP_Text list = CreateText(screen.transform, "InvoiceList", string.Empty, font,
+                24f, Color.white, TextAlignmentOptions.TopLeft);
+            list.textWrappingMode = TextWrappingModes.Normal;
+            RectTransform listRect = list.rectTransform;
+            listRect.anchorMin = Vector2.zero;
+            listRect.anchorMax = Vector2.one;
+            listRect.offsetMin = new Vector2(24f, 20f);
+            listRect.offsetMax = new Vector2(-24f, -176f);
+            SetField(view, "_listLabel", list);
+
+            EditorUtility.SetDirty(view);
         }
 
         // ── 블립 합성 (없을 때만 — 진짜 SFX 스왑 계약) ───────

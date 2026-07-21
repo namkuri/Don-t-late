@@ -102,6 +102,22 @@ namespace DontLate.EditorTools
             DistrictLayoutGenerator generator = slotsRoot.AddComponent<DistrictLayoutGenerator>();
             SetObjectArray(generator, "_buildingSlots", buildings);
             SetObjectArray(generator, "_propSlots", props);
+
+            // 건물 풀 = Prefabs/Auto 중 소스가 Art/Buildings 인 프리팹 (pull 조립 — S-011).
+            var pool = new List<GameObject>();
+            foreach (string guid in AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/Prefabs/Auto" }))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                string name = System.IO.Path.GetFileNameWithoutExtension(path);
+                if (AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/Buildings/" + name + ".fbx") != null)
+                    pool.Add(AssetDatabase.LoadAssetAtPath<GameObject>(path));
+            }
+            SerializedObject serialized = new SerializedObject(generator);
+            SerializedProperty poolProp = serialized.FindProperty("_buildingPrefabPool");
+            poolProp.arraySize = pool.Count;
+            for (int i = 0; i < pool.Count; i++)
+                poolProp.GetArrayElementAtIndex(i).objectReferenceValue = pool[i];
+            serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static void SetObjectArray(Object target, string fieldName, List<Transform> values)

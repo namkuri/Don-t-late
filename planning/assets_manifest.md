@@ -75,3 +75,12 @@
   — 2026-07-21 청취 판정으로 최종 미채택. 프로젝트에서 제거, 원본 아카이브(`Don-t-late-bgm/`)에는 보존.
   **BGM 청취 판정 종료** — 반입 10곡 → 채택 5곡.
 - **폐기 1곡**: `Late_for_Work_8-Bit_Panic` — 8비트로 분위기 불일치(Director 청취 판정). 프로젝트·아카이브 삭제.
+
+## Trellis2 INTAKE — 2026-07-22
+
+> 출처 = **RunPod 셀프호스팅 TRELLIS** (Microsoft · MIT) · 민지 생성. 생성물 상업 사용 제약 없음.
+
+| 파일 | dest | tris(실측) | 상태 |
+|---|---|---|---|
+| store_2.fbx (편의점) | `Art/Buildings/store_2.fbx` | **485,891 ⚠**(상한 3,000) | District 슬롯 배치 완료 · 데시메이트·텍스처 대기(H12) |
+| street_lamp_wood.fbx (한국식 가로등) | `Art/Props/prop_streetlamp.fbx` (전략 B 덮어쓰기) | **95,724 ⚠**(상한 1,500) | 8기 일괄 교체 완료 · 데시메이트·텍스처 대기(H12) |

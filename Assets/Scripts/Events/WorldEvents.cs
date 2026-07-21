@@ -111,6 +111,16 @@ namespace DontLate
 
         public static void RaiseStaminaChanged(float normalized) => StaminaChanged?.Invoke(normalized);
 
+        // ── 상차 (바코드) ─────────────────────────────────────
+        /// <summary>폰으로 박스 송장을 스캔했을 때. PhoneView가 목록 갱신에 구독 (S-011).</summary>
+        public static event Action<DeliveryData> BarcodeScanned;
+
+        public static void RaiseBarcodeScanned(DeliveryData data)
+        {
+            Log("BarcodeScanned " + Describe(data));
+            BarcodeScanned?.Invoke(data);
+        }
+
         // ── 정산 ──────────────────────────────────────────────
         /// <summary>Camp 복귀 정산 완료. WorldDebtManager가 발행, HUD·연출이 구독.</summary>
         public static event Action<DebtSettlement> DebtSettled;
