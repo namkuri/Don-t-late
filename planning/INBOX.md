@@ -21,14 +21,14 @@
 | H8 | 텍스처 재전송 2건: 가로등·캐릭터 — FBX **Embed Media** 켜기 (캐릭터는 쿠팡 로고 제거 겸) | 민지 | [assets_manifest.md](assets_manifest.md) |
 | H9 | 애니 클립: **idle**(급함 — 정지 시에도 걸음) · jump·pickup·carry | 민지(Mixamo) | [BOM.md](BOM.md) §1 |
 | H4 | RunPod Trellis 관통 → 소품 1개 실측 | 민지 | [TASKS.md](TASKS.md) M0-04 |
-| H1 | `Assets/Art/Building`→`Buildings` 리네임 + GS25 출처 기록 | 님 | [decisions.md](decisions.md) D-002 |
-| H3 | 폰에서 https://namkuri.github.io/dontlate-web/ 열기 (1분) | 님 | [TASKS.md](TASKS.md) M0-03 |
-| H5 | Greybox 떠돌이 `StreetLampLight`(x=17.5) 삭제 — 광원·광추 9번째의 범인 | 님 | 씬=님 독점 |
 | ~~H10~~ | ~~정수 투입 개시~~ → **자발 개시됨** (오디오 PR merge 완료) — 다음 발주 묶음은 P3 잔여 스크립트로 협의 | — | [orders/audio.md](orders/audio.md) |
-| H11 | 🎧 **BGM 10곡 인게임 청취 → 컷 판정** — WorldAudioManager에 순회 청취 도구 내장. 통과 곡만 gitignore 해제·커밋·bom_id 리네임 (D-042) | 님 | [orders/audio.md](orders/audio.md) AU-001 · [decisions.md](decisions.md) D-042 |
 
 ## 처리 완료 (최근)
 
+- ✅ **H1 리네임 완료** (2026-07-22 관제 대행) — `Assets/Art/Buildings`로 계약 경로 정합. 내용물은 GS25(지에스.fbx)뿐이라 출처 기록은 생략 — D-050 폐기 예정이므로 폐기 시 폴더째 정리
+- ✅ **H3 폰 확인 완료** (2026-07-22 님 관찰: "되긴 됨, 컨트롤 안 됨") — 모바일 렌더·로드는 정상, **터치 입력은 미구현**(키보드 전제). 심사·시연은 데스크톱 전제라 스코프 밖 — 본선에서 필요해지면 그때 발주 ([open-questions.md](open-questions.md) 백로그 기재)
+- ✅ **H5 소멸 확인** (2026-07-22 님: "떠돌이 없는 것 같은데") — 이후 Greybox 재빌드 과정에서 자연 정리된 것으로 판단, 종결
+- ✅ **H11 BGM 컷 판정 종결** (2026-07-22 님: "꽤 괜찮음") — 정수 위임 채택 5곡을 님이 최종 승인. **bom_id 리네임은 불필요** — D-046(슬롯당 다곡 플레이리스트)으로 파일명 1:1 계약이 소멸했고, 스왑 계약은 `BgmLibrary.asset`(SO) 참조로 성립 ([assets_manifest.md](assets_manifest.md) 참조)
 - ✅ **R15 하네스 도구 10종 승인** (2026-07-22 님 "패스") — 커밋·반입 실전에서 훅 4종·채점기 가동 확인됨 → done
 - ✅ **R4·R5 자동 임포트·프리팹 팩토리 완료** (2026-07-22 님 승인) — 반입 4건(가로등×2·달·캐릭터)에서 실전 가동: URP Lit 리맵·스케일 정규화·프리팹 자동 생성 동작, 가동 중 발견된 결함(애니 차단·텍스처 자동추출)도 규칙으로 회수됨 → done
 - ✅ **H7 철회 — GS25 폐기 예정** (2026-07-22 님 결정, [decisions.md](decisions.md) D-050) — 민지 데시메이트 불필요
