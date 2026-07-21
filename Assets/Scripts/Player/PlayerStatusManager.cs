@@ -37,6 +37,12 @@ namespace DontLate
         private void Update()
         {
             TuningConfigSO tuning = _hub.Tuning;
+
+            // 던지기 (S-016 ⑦) — 캐리 중 좌클릭이면 마우스 방향으로. 폰이 열려 있으면 스캔 클릭에 양보.
+            var mouse = UnityEngine.InputSystem.Mouse.current;
+            if (IsCarrying && mouse != null && mouse.leftButton.wasPressedThisFrame && !PhoneView.IsOpen)
+                ThrowCarryTowardsMouse(tuning.throwSpeed);
+
             bool moving = _hub.Locomotion.PlanarVelocity.sqrMagnitude > 0.01f;
 
             if (moving)
@@ -91,7 +97,31 @@ namespace DontLate
                 collider.isTrigger = false;
             }
 
-            if (!visual.TryGetComponent(out Rigidbody _)) visual.gameObject.AddComponent<Rigidbody>();
+            if (visual.TryGetComponent(out Rigidbody body)) body.isKinematic = false;
+            else visual.gameObject.AddComponent<Rigidbody>();
+        }
+
+        /// <summary>든 상자를 마우스가 가리키는 방향으로 던진다 (S-016 ⑦ — 물리 드롭 + 초기 속도).</summary>
+        private void ThrowCarryTowardsMouse(float speed)
+        {
+            Camera camera = Camera.main;
+            var mouse = UnityEngine.InputSystem.Mouse.current;
+            if (camera == null || mouse == null || _carriedVisual == null) return;
+
+            // 마우스 레이를 플레이어 Z평면에 투영해 조준점을 얻는다 (2.5D — 깊이는 유지).
+            Ray ray = camera.ScreenPointToRay(mouse.position.ReadValue());
+            Plane plane = new Plane(Vector3.back, new Vector3(0f, 0f, transform.position.z));
+            if (!plane.Raycast(ray, out float enter)) return;
+            Vector3 aim = ray.GetPoint(enter);
+
+            Transform visual = _carriedVisual;
+            Vector3 direction = (aim - visual.position);
+            direction.z = 0f;
+            direction = direction.sqrMagnitude < 0.01f ? Vector3.up : direction.normalized;
+
+            ReleaseCarry(dropAsPhysics: true);
+            if (visual.TryGetComponent(out Rigidbody body))
+                body.linearVelocity = direction * speed + Vector3.up * 1.5f; // 살짝 포물선
         }
 
         /// <summary>든 물건의 겉모습을 캐리 앵커에 붙인다. 내려놓을 때 함께 사라진다.</summary>

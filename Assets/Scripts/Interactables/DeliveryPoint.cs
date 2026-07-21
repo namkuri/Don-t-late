@@ -15,6 +15,8 @@ namespace DontLate
         [SerializeField] private Material _highlightMaterial;
         [SerializeField] private Vector2 _padSize = new Vector2(1f, 1f);
         [SerializeField] private GameObject _riseEffect;
+        [Tooltip("패드 위 포커스 시 나타나는 주소 라벨(월드 텍스트) — S-016 ②.")]
+        [SerializeField] private TMPro.TMP_Text _addressLabel;
         [SerializeField] private float _idleAlpha = 1f;
         [SerializeField] private float _focusedAlpha = 0.3f;
 
@@ -24,6 +26,11 @@ namespace DontLate
         public void SetOrder(DeliveryOrderSO order)
         {
             _expectedOrder = order;
+            if (_addressLabel != null)
+            {
+                _addressLabel.text = order != null ? order.address : string.Empty;
+                _addressLabel.gameObject.SetActive(false); // 포커스 시에만 (S-016 ②)
+            }
         }
 
         private bool _focused;
@@ -78,6 +85,7 @@ namespace DontLate
             _focused = on;
             ApplyHighlight();
             ApplyRiseAlpha(on);
+            if (_addressLabel != null) _addressLabel.gameObject.SetActive(on); // 패드 위 = 주소 표시 (S-016 ②)
         }
 
         private void OnPackagePickedUp(DeliveryData data)

@@ -64,8 +64,9 @@ namespace DontLate
             WorldDeliveryManager.Instance.NotifyPickedUp(_order);
             SetHighlight(false);
 
-            // 손에 든 동안은 센서에 다시 잡히면 안 된다.
+            // 손에 든 동안은 센서에 다시 잡히면 안 된다. 물리 상자면 손 안에서 잠근다 (S-016 ⑥).
             GetComponent<Collider>().enabled = false;
+            if (TryGetComponent(out Rigidbody body)) body.isKinematic = true;
             ctx.Player.Status.AttachCarried(transform);
         }
 

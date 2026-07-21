@@ -42,6 +42,7 @@ namespace DontLate.EditorTools
             GreyboxStageBuilder.BuildPlayer(gameState, tuning);
             GreyboxStageBuilder.BuildPostVolume();
             GreyboxStageBuilder.ConfigureCamera();
+            GreyboxStageBuilder.AttachCameraFollow();
 
             EditorSceneManager.SaveScene(scene, CAMP_PATH);
             Debug.Log("[Camp] 무대 조립 완료 — 박스 " + LOAD_ZONE_COUNT
@@ -98,7 +99,8 @@ namespace DontLate.EditorTools
             {
                 var (boxGo, _, _) = GreyboxStageBuilder.CreateParcelBox(
                     "CampBox_" + (i + 1).ToString("00"),
-                    new Vector3(-7f + (i % 2) * 1f, (i / 2) * 0.75f, 1.5f + i * 0.15f), material);
+                    new Vector3(-7f + (i % 2) * 1f, (i / 2) * 0.75f, 1.5f + i * 0.15f), material,
+                    physical: true); // 실물 스택 (S-016 ⑥) — 아래 상자를 빼면 위가 떨어진다
 
                 PickupBox pickup = boxGo.AddComponent<PickupBox>();
                 GreyboxStageBuilder.SetReference(pickup, "_order", GetOrCreateCampOrder(i));

@@ -49,6 +49,7 @@ namespace DontLate
         {
             WorldEvents.ClockTicked += OnClockTicked;
             WorldEvents.CarryStateChanged += OnCarryStateChanged;
+            WorldEvents.PackagePickedUp += OnPackagePickedUp;
             WorldEvents.DeadlineWarned += OnDeadlineWarned;
             WorldEvents.DeliveryCompleted += OnDeliveryCompleted;
             WorldEvents.DeliveryFailed += OnDeliveryFailed;
@@ -63,6 +64,7 @@ namespace DontLate
         {
             WorldEvents.ClockTicked -= OnClockTicked;
             WorldEvents.CarryStateChanged -= OnCarryStateChanged;
+            WorldEvents.PackagePickedUp -= OnPackagePickedUp;
             WorldEvents.DeadlineWarned -= OnDeadlineWarned;
             WorldEvents.DeliveryCompleted -= OnDeliveryCompleted;
             WorldEvents.DeliveryFailed -= OnDeliveryFailed;
@@ -99,15 +101,19 @@ namespace DontLate
         private void OnCarryStateChanged(bool isCarrying)
         {
             if (_cardRoot != null) _cardRoot.SetActive(isCarrying);
-            if (!isCarrying) { _hasCard = false; return; }
+            if (!isCarrying) _hasCard = false;
+            // 카드 내용은 PackagePickedUp(실제 든 건의 페이로드)이 채운다 (S-016 ① —
+            // 구현이 적재 첫 건을 읽던 결함 수리: 든 것과 다른 주소가 표시됐다).
+        }
 
-            // 캐리 시작 — 적재 목록(GameStateSO)에서 현재 배송의 주소·마감을 읽어 카드에 채운다(읽기만).
-            DeliveryOrderSO order = FirstCargo();
-            if (order == null) { _hasCard = false; return; }
-
-            _activeDeadline = order.deadlineMinuteOfDay;
+        private void OnPackagePickedUp(DeliveryData data)
+        {
+            _activeDeadline = data.DeadlineMinuteOfDay;
             _hasCard = true;
-            if (_addressLabel != null) _addressLabel.text = order.address;
+            if (_cardRoot != null) _cardRoot.SetActive(true);
+            if (_addressLabel != null)
+                _addressLabel.text = data.Address
+                    + (string.IsNullOrEmpty(data.District) ? "" : "  <size=70%><color=#8a93a8>" + data.District + "</color></size>");
             if (_cardBackground != null) _cardBackground.color = CardNormal;
 
             int remaining = Mathf.FloorToInt(_activeDeadline - _gameState.minuteOfDay);
@@ -215,12 +221,5 @@ namespace DontLate
             if (_debtLabel != null) _debtLabel.text = $"빚 ₩{_gameState.debt:N0}";
         }
 
-        private DeliveryOrderSO FirstCargo()
-        {
-            if (_gameState == null) return null;
-            foreach (DeliveryOrderSO o in _gameState.cargo)
-                if (o != null) return o;
-            return null;
-        }
     }
 }

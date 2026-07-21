@@ -40,6 +40,8 @@ namespace DontLate
 
         [Header("상호작용")]
         public float interactRadius = 1.6f;
+        /// <summary>캐리 중 좌클릭 던지기 속도 (S-016).</summary>
+        public float throwSpeed = 7f;
 
         [Header("정산 (Camp)")]
         /// <summary>지각 1건당 벌금.</summary>

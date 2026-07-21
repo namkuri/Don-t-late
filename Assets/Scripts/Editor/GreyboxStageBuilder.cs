@@ -70,6 +70,20 @@ namespace DontLate.EditorTools
             BuildStreetLamps();
             BuildPostVolume();
             ConfigureCamera();
+            AttachCameraFollow();
+        }
+
+        // 카메라 X 팔로우 (S-016 ⑤) — 멱등: 있으면 타겟만 갱신.
+        internal static void AttachCameraFollow()
+        {
+            Camera camera = Camera.main;
+            if (camera == null) return;
+            GameObject player = GameObject.Find(PREFIX + "Player");
+            if (player == null) return;
+
+            CameraFollowX follow = camera.GetComponent<CameraFollowX>();
+            if (follow == null) follow = camera.gameObject.AddComponent<CameraFollowX>();
+            SetReference(follow, "_target", player.transform);
         }
 
         [MenuItem("DontLate/Clear Greybox Stage", priority = 1)]
@@ -419,14 +433,15 @@ namespace DontLate.EditorTools
         /// 반환: (루트, 하이라이트용 렌더러, 원상복구용 원 머티리얼). 0.7u 정규화·발 y=0 (S-012).
         /// </summary>
         internal static (GameObject go, Renderer renderer, Material normalMaterial) CreateParcelBox(
-            string name, Vector3 groundPosition, Material fallback)
+            string name, Vector3 groundPosition, Material fallback, bool physical = false)
         {
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Auto/prop_box_parcel.prefab");
             if (prefab == null)
             {
                 GameObject cube = CreatePrimitive(PrimitiveType.Cube, name, groundPosition + new Vector3(0f, 0.4f, 0f));
                 cube.transform.localScale = Vector3.one * 0.8f;
-                cube.GetComponent<BoxCollider>().isTrigger = true;
+                cube.GetComponent<BoxCollider>().isTrigger = !physical;
+                if (physical) cube.AddComponent<Rigidbody>().mass = 2f;
                 Renderer cubeRenderer = cube.GetComponent<Renderer>();
                 cubeRenderer.sharedMaterial = fallback;
                 return (cube, cubeRenderer, fallback);
@@ -434,9 +449,11 @@ namespace DontLate.EditorTools
 
             GameObject root = CreateEmpty(name, groundPosition);
             BoxCollider collider = root.AddComponent<BoxCollider>();
-            collider.isTrigger = true;
+            // physical = 실물 스택 (S-016 ⑥) — 아래를 빼면 위가 무너진다. 아니면 센서용 트리거.
+            collider.isTrigger = !physical;
             collider.size = Vector3.one * 0.7f;
             collider.center = new Vector3(0f, 0.35f, 0f);
+            if (physical) root.AddComponent<Rigidbody>().mass = 2f;
 
             GameObject visual = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
             visual.name = "Visual";
@@ -821,6 +838,22 @@ namespace DontLate.EditorTools
             CreateFxQuad(fx.transform, "FxPX", new Vector3(hw, fxHeight * 0.5f, 0f), new Vector3(padSize.y, fxHeight, 1f), new Vector3(0f, 90f, 0f), rise);
             CreateFxQuad(fx.transform, "FxNX", new Vector3(-hw, fxHeight * 0.5f, 0f), new Vector3(padSize.y, fxHeight, 1f), new Vector3(0f, 90f, 0f), rise);
             SetReference(point, "_riseEffect", fx);
+
+            // 주소 라벨 — 패드 위 1.6u 월드 텍스트, 카메라(-Z) 방향. 포커스 시에만 켜진다 (S-016 ②).
+            GameObject labelGo = new GameObject("AddressLabel");
+            labelGo.transform.SetParent(root.transform, false);
+            labelGo.transform.localPosition = new Vector3(0f, 1.7f, 0f);
+            labelGo.transform.localRotation = Quaternion.Euler(0f, 180f, 0f); // TMP 앞면이 -Z(카메라)를 보게
+            var label = labelGo.AddComponent<TMPro.TextMeshPro>();
+            label.font = AssetDatabase.LoadAssetAtPath<TMPro.TMP_FontAsset>("Assets/Art/UI/Fonts/Pretendard-Regular SDF.asset");
+            label.fontSize = 4f;
+            label.color = ParseColor("#35e0c8");
+            label.alignment = TMPro.TextAlignmentOptions.Center;
+            label.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
+            var labelRect = labelGo.GetComponent<RectTransform>();
+            labelRect.sizeDelta = new Vector2(6f, 1f);
+            SetReference(point, "_addressLabel", label);
+            labelGo.SetActive(false);
 
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
             Object.DestroyImmediate(root);

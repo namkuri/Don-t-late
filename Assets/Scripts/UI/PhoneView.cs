@@ -24,6 +24,9 @@ namespace DontLate
         [SerializeField] private float _hiddenY = -640f;
         [SerializeField] private float _shownY = 24f;
 
+        /// <summary>폰이 열려 있는가 — 던지기 등 좌클릭 액션이 스캔 클릭과 겹치지 않게 참조 (S-016 ⑦).</summary>
+        public static bool IsOpen { get; private set; }
+
         private readonly List<DeliveryData> _scanned = new List<DeliveryData>();
         // 운송장별 상태 (S-014): 0=진행 · 1=완료 · 2=지각 실패. 콘솔만 보던 지각을 폰에서 보이게.
         private readonly Dictionary<int, int> _status = new Dictionary<int, int>();
@@ -91,6 +94,7 @@ namespace DontLate
         private void OnToggle(InputAction.CallbackContext _)
         {
             _open = !_open;
+            IsOpen = _open;
             if (_slide != null) StopCoroutine(_slide);
             _slide = StartCoroutine(Slide(_open ? _shownY : _hiddenY));
             if (!_open && _hoverLabel != null) _hoverLabel.text = "-";
@@ -159,6 +163,17 @@ namespace DontLate
             if (_listLabel == null) return;
 
             var sb = new System.Text.StringBuilder();
+
+            // 가야 할 구역 (S-016 ③) — 미처리 건 중 마감이 가장 급한 건의 구역.
+            DeliveryData? urgent = null;
+            foreach (DeliveryData d in _scanned)
+            {
+                if (_status.TryGetValue(d.OrderId, out int st) && st != 0) continue;
+                if (urgent == null || d.DeadlineMinuteOfDay < urgent.Value.DeadlineMinuteOfDay) urgent = d;
+            }
+            if (urgent != null && !string.IsNullOrEmpty(urgent.Value.District))
+                sb.Append("가야 할 구역  <color=#ff9f45><b>").Append(urgent.Value.District).Append("</b></color>\n\n");
+
             sb.Append("<color=#8a93a8>No  운송장      순번  목적지</color>\n");
 
             // 배송순번 = 마감 빠른 순 제안 순위.
