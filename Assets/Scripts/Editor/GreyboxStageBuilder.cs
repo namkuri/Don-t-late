@@ -84,7 +84,7 @@ namespace DontLate.EditorTools
 
         // ── 무대 구성 ────────────────────────────────────────
 
-        private static void BuildGround(Material groundMaterial, Material laneMaterial)
+        internal static void BuildGround(Material groundMaterial, Material laneMaterial)
         {
             GameObject ground = CreatePrimitive(PrimitiveType.Plane, "Ground", Vector3.zero);
             ground.transform.localScale = new Vector3(12f, 1f, 8f);
@@ -338,7 +338,7 @@ namespace DontLate.EditorTools
 
         // 바닥 안개층 쿼드 2장. 수평(rot X=90°)으로 눕혀 레인(폭 X)을 덮는다. y·스케일 상이.
         // GroundMist 셰이더 + StarField.cs(_GlobalAlpha 밤 페이드 재사용). 낮=소멸.
-        private static void BuildGroundMist()
+        internal static void BuildGroundMist()
         {
             Material mist = GetOrCreateGroundMistMaterial();
             BuildMistQuad("GroundMist_Lo", new Vector3(0f, 0.30f, 0f), new Vector3(36f, 5f, 1f), mist);
@@ -382,7 +382,7 @@ namespace DontLate.EditorTools
             return material;
         }
 
-        private static void BuildWalkableVolume()
+        internal static void BuildWalkableVolume()
         {
             GameObject volume = CreateEmpty("Walkable", Vector3.zero);
             BoxCollider collider = volume.AddComponent<BoxCollider>();
@@ -655,7 +655,7 @@ namespace DontLate.EditorTools
         }
 
         // 공용 무대 글로벌 블룸(약). 간판(HDR)·별·달·가로등이 블룸을 받는다. threshold~0.9 · intensity 0.35.
-        private static void BuildPostVolume()
+        internal static void BuildPostVolume()
         {
             VolumeProfile profile = GetOrCreatePostProfile();
 
@@ -769,7 +769,7 @@ namespace DontLate.EditorTools
         private const string COURIER_FBX_PATH = "Assets/Art/Characters/chr_courier.fbx";
         private const string COURIER_AC_PATH = "Assets/Art/Characters/AC_chr_courier.controller";
 
-        private static void BuildPlayer(GameStateSO gameState, TuningConfigSO tuning)
+        internal static void BuildPlayer(GameStateSO gameState, TuningConfigSO tuning)
         {
             GameObject player = CreateEmpty("Player", new Vector3(0f, 0.1f, 0f));
             player.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
@@ -851,7 +851,7 @@ namespace DontLate.EditorTools
             return bounds;
         }
 
-        private static void ConfigureCamera()
+        internal static void ConfigureCamera()
         {
             Camera camera = Camera.main;
             if (camera == null)
@@ -920,7 +920,7 @@ namespace DontLate.EditorTools
 
         // ── 헬퍼 ─────────────────────────────────────────────
 
-        private static GameObject CreateEmpty(string name, Vector3 position)
+        internal static GameObject CreateEmpty(string name, Vector3 position)
         {
             GameObject go = new GameObject(PREFIX + name);
             go.transform.position = position;
@@ -928,7 +928,7 @@ namespace DontLate.EditorTools
             return go;
         }
 
-        private static GameObject CreatePrimitive(PrimitiveType type, string name, Vector3 position)
+        internal static GameObject CreatePrimitive(PrimitiveType type, string name, Vector3 position)
         {
             GameObject go = GameObject.CreatePrimitive(type);
             go.name = PREFIX + name;
@@ -937,7 +937,7 @@ namespace DontLate.EditorTools
             return go;
         }
 
-        private static void SetReference(Object target, string fieldName, Object value)
+        internal static void SetReference(Object target, string fieldName, Object value)
         {
             SerializedObject serialized = new SerializedObject(target);
             SerializedProperty property = serialized.FindProperty(fieldName);
@@ -966,7 +966,7 @@ namespace DontLate.EditorTools
             return asset;
         }
 
-        private static Material GetOrCreateMaterial(string name, Color color, bool emissive)
+        internal static Material GetOrCreateMaterial(string name, Color color, bool emissive)
         {
             string path = GREYBOX_ROOT + "/GB_" + name + ".mat";
             Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
@@ -994,7 +994,7 @@ namespace DontLate.EditorTools
             AssetDatabase.CreateFolder(path.Substring(0, split), path.Substring(split + 1));
         }
 
-        private static Color ParseColor(string hex)
+        internal static Color ParseColor(string hex)
         {
             ColorUtility.TryParseHtmlString(hex, out Color color);
             return color;
