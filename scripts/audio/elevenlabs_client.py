@@ -232,6 +232,16 @@ def cmd_gen(args):
     os.makedirs(INTAKE_DIR, exist_ok=True)
     out = os.path.join(INTAKE_DIR, args.bom_id + ".wav")
 
+    # 유료 구간은 1회로 끊는다 — 판정자는 사람 귀다. 아직 안 들은 곡이 있으면 새로 뽑지 않는다.
+    if os.path.isfile(out) and not args.overwrite:
+        raise SystemExit(
+            f"[중단] 이미 생성된 곡이 있다: {out}\n"
+            "  들어보고 판정한 뒤 진행하라. 프롬프트 수정·재조립은 크레딧이 들지 않는다.\n"
+            "  · 채택 → audio_pipeline.py intake --bom-id " + args.bom_id + "\n"
+            "  · 폐기 → 파일을 옮기거나 지운 뒤 다시 gen\n"
+            "  · 그래도 덮어쓰려면 --overwrite (기존 곡은 사라진다)"
+        )
+
     # seed 필수 — 생략하면 자동 생성한다. seed 없이 만든 곡은 영영 복원할 수 없다
     # (2026-07-21 실수: seed 없이 뽑은 30초 검증곡을 삭제해 재현 불가가 됐다).
     seed = args.seed if args.seed is not None else random.randint(1, 2**31 - 1)
@@ -279,7 +289,15 @@ def cmd_gen(args):
     _sidecar(args.bom_id, meta)
 
     print(f"[착지] {out}")
-    print(f"다음:  python scripts/audio/audio_pipeline.py intake --bom-id {args.bom_id}")
+    print(f"\n■ 여기서 파이프라인이 멈춘다 — 판정은 사람 귀다. 파일을 재생해서 규격 §6으로 채점하라.")
+    print("   1) BPM 준수      탭 템포 + 파형 두 방법이 일치하는가")
+    print("   2) 페이드 유무    앞뒤 10초 파형에 페이드가 없는가")
+    print("   3) 유효 구간      쓸 수 있는 연속 길이가 목표 루프의 1.5배 이상인가")
+    print("   4) 잔향 꼬리      마디 경계에서 잘라 이어 들었을 때 싹둑 소리가 없는가")
+    print("   5) 반복 내성      5분 무한 반복에서 3분까지 안 거슬리는가")
+    print("   3개 이상 통과 → 채택.  2개 이하 → 곡이 아니라 **프롬프트**를 고친다(크레딧 0).")
+    print(f"\n   채택:  python scripts/audio/audio_pipeline.py intake --bom-id {args.bom_id}")
+    print(f"   재시도: prompt_builder.py build 로 태그 수정 → 이 파일을 치운 뒤 gen")
 
 
 def main():
@@ -300,6 +318,8 @@ def main():
     s.add_argument("--use-plan", action="store_true", help="저장된 구성 계획으로 작곡(프롬프트와 병용 불가)")
     s.add_argument("--length", type=float, help="소액 검증용 길이 축소 (예: 30). 생략 시 프롬프트 문서의 규격 길이")
     s.add_argument("--dry-run", action="store_true", help="전송 없이 요청 본문만 출력")
+    s.add_argument("--overwrite", action="store_true",
+                   help="아직 판정 안 한 기존 곡을 덮어쓴다 (기본은 차단 — 유료 구간 1회 원칙)")
     s.set_defaults(func=cmd_gen)
 
     args = p.parse_args()
