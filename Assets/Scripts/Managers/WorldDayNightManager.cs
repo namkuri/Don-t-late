@@ -1,5 +1,8 @@
 using UnityEngine;
 using UnityEngine.Rendering;
+#if UNITY_EDITOR
+using UnityEngine.InputSystem;
+#endif
 
 namespace DontLate
 {
@@ -91,6 +94,9 @@ namespace DontLate
 
         private void Update()
         {
+#if UNITY_EDITOR
+            DebugPhaseSkip();
+#endif
             _gameState.minuteOfDay += _tuning.gameMinutesPerRealSecond * Time.deltaTime;
 
             while (_gameState.minuteOfDay >= MINUTES_PER_DAY)
@@ -113,6 +119,35 @@ namespace DontLate
             _phase = phase;
             WorldEvents.RaiseDayPhaseChanged(phase);
         }
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// T = 다음 페이즈 경계로 점프 (에디터 전용 — 낮밤 전환을 기다리지 않고 확인하기 위함).
+        /// 하루가 실시간 12분이라 Night 구간만 5분이다. 게임 입력 계약(InputAction)에는 넣지 않는다.
+        /// </summary>
+        private void DebugPhaseSkip()
+        {
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard == null || !keyboard.tKey.wasPressedThisFrame) return;
+
+            int hour = Mathf.FloorToInt(_gameState.minuteOfDay / 60f);
+            int[] bounds =
+            {
+                _tuning.morningStartHour, _tuning.dayStartHour,
+                _tuning.eveningStartHour, _tuning.nightStartHour
+            };
+
+            int next = bounds[0]; // 어느 경계도 남지 않았으면 다음 날 아침
+            foreach (int bound in bounds)
+            {
+                if (bound <= hour) continue;
+                next = bound;
+                break;
+            }
+
+            SetTime(next, 0);
+        }
+#endif
 
         /// <summary>시각을 특정 시:분으로 강제 이동(디버그·연출용).</summary>
         public void SetTime(int hour, int minute)

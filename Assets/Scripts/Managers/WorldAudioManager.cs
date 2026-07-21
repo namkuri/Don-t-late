@@ -60,8 +60,7 @@ namespace DontLate
             _sourceA = CreateSource();
             _sourceB = CreateSource();
 
-            _sfxSource = CreateSource();
-            _sfxSource.loop = false; // 원샷 전용 — BGM 소스와 분리해 페이드에 휘둘리지 않게 한다
+            _sfxSource = CreateSource(); // 원샷 전용 — BGM 소스와 분리해 페이드에 휘둘리지 않게 한다
             _sfxSource.volume = _sfxVolume;
 
             BuildPools();
@@ -95,7 +94,7 @@ namespace DontLate
         {
             AudioSource source = gameObject.AddComponent<AudioSource>();
             source.playOnAwake = false;
-            source.loop = true;
+            source.loop = false; // 플레이리스트가 곡 끝을 잡아 다음 곡으로 넘긴다(D-046)
             source.spatialBlend = 0f; // 2D — 리스너 위치와 무관
             source.volume = 0f;
             return source;
@@ -205,9 +204,37 @@ namespace DontLate
 
         // ── 재생 ─────────────────────────────────────────────
 
-        private void Crossfade(AudioClip clip)
+        private void Update()
         {
-            if (_active != null && _active.clip == clip) return;
+#if UNITY_EDITOR
+            DebugKeys();
+#endif
+            PlaylistTick();
+        }
+
+        /// <summary>
+        /// 곡이 끝나기 전에 같은 슬롯의 다음 곡으로 넘긴다 (D-046 플레이리스트).
+        /// 같은 곡을 이어붙이지 않으므로 루프 이음새 문제가 구조적으로 사라진다.
+        /// 슬롯에 곡이 1개뿐이면 자기 자신과 교차되어 매끄러운 루프가 된다.
+        /// </summary>
+        private void PlaylistTick()
+        {
+            if (_fade != null || _active == null || _active.clip == null || !_active.isPlaying) return;
+            if (_active.clip.length - _active.time > _crossfadeSeconds) return;
+
+            if (!_pools.TryGetValue(_slot, out List<AudioClip> pool) || pool.Count == 0) return;
+
+            int index = pool.IndexOf(_active.clip);
+            AudioClip next = pool[(index + 1) % pool.Count]; // 못 찾으면(-1) 첫 곡부터
+
+            _picked[_slot] = next; // 슬롯을 떠났다 돌아와도 이어서 재생
+            SyncDebugIndex(_slot, next);
+            Crossfade(next, allowSame: true);
+        }
+
+        private void Crossfade(AudioClip clip, bool allowSame = false)
+        {
+            if (!allowSame && _active != null && _active.clip == clip) return;
 
             AudioSource from = _active;
             AudioSource to = _active == _sourceA ? _sourceB : _sourceA;
@@ -250,7 +277,7 @@ namespace DontLate
 
         private int _debugIndex;
 
-        private void Update()
+        private void DebugKeys()
         {
             Keyboard keyboard = Keyboard.current;
             if (keyboard == null) return;
