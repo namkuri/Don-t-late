@@ -56,6 +56,7 @@ namespace DontLate
             _gameState.wallpaperIndex = 0;
             _gameState.floorIndex = 0;
             _gameState.coinUnits = 0f;
+            _gameState.coinCostBasis = 0f;
             _gameState.nextOrderSerial = 200;
         }
     }

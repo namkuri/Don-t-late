@@ -39,14 +39,16 @@ namespace DontLate
             TuningConfigSO tuning = _hub.Tuning;
 
             var mouse = UnityEngine.InputSystem.Mouse.current;
-            bool click = mouse != null && mouse.leftButton.wasPressedThisFrame && !PhoneView.IsOpen;
+            bool leftClick = mouse != null && mouse.leftButton.wasPressedThisFrame && !PhoneView.IsOpen;
+            bool rightClick = mouse != null && mouse.rightButton.wasPressedThisFrame && !PhoneView.IsOpen;
 
-            // 드링크 섭취 (S-031 ⑩) — 손에 든 드링크가 있으면 좌클릭 = 마신다 (던지기보다 우선).
-            if (click && _heldDrink != null)
+            // S-032 ④: 우클릭 = 드링크 마시기 · 좌클릭 = 던지기(상자 우선, 없으면 드링크 — 택배와 동일 감각).
+            if (rightClick && _heldDrink != null)
                 ConsumeHeldDrink();
-            // 던지기 (S-016 ⑦) — 캐리 중 좌클릭이면 마우스 방향으로. 폰이 열려 있으면 스캔 클릭에 양보.
-            else if (click && IsCarrying)
-                ThrowCarryTowardsMouse(tuning.throwSpeed);
+            if (leftClick && IsCarrying)
+                ThrowCarryTowardsMouse(tuning.throwSpeed); // 던지기 (S-016 ⑦)
+            else if (leftClick && _heldDrink != null)
+                ThrowHeldDrink(tuning.throwSpeed);
 
             bool moving = _hub.Locomotion.PlanarVelocity.sqrMagnitude > 0.01f;
 
@@ -157,6 +159,37 @@ namespace DontLate
             _heldDrink = null;
             RecoverStamina(_hub.Tuning.energyDrinkRecover); // 내부에서 힐 이펙트(PlayDrinkEffect)까지 발화
             WorldAudioManager.Instance?.PlayDrinkSfx();     // AU-009
+            Debug.Log("[드링크] 섭취 — 스태미나 회복 (우클릭)");
+        }
+
+        /// <summary>S-032 ④: 든 드링크를 마우스 방향으로 던진다 — 다시 픽업체가 되어 E로 회수 가능.</summary>
+        private void ThrowHeldDrink(float speed)
+        {
+            Camera camera = Camera.main;
+            var mouse = UnityEngine.InputSystem.Mouse.current;
+            if (camera == null || mouse == null) return;
+
+            Transform drink = _heldDrink;
+            _heldDrink = null;
+            drink.SetParent(null, worldPositionStays: true);
+
+            if (drink.TryGetComponent(out Collider collider)) collider.enabled = true;
+            if (!drink.TryGetComponent(out Rigidbody body)) body = drink.gameObject.AddComponent<Rigidbody>();
+            body.mass = 0.3f;
+            if (drink.GetComponent<EnergyDrinkPickup>() == null) drink.gameObject.AddComponent<EnergyDrinkPickup>();
+
+            Ray ray = camera.ScreenPointToRay(mouse.position.ReadValue());
+            Plane plane = new Plane(Vector3.back, new Vector3(0f, 0f, transform.position.z));
+            Vector3 direction = Vector3.up;
+            if (plane.Raycast(ray, out float enter))
+            {
+                direction = ray.GetPoint(enter) - drink.position;
+                direction.z = 0f;
+                direction = direction.sqrMagnitude < 0.01f ? Vector3.up : direction.normalized;
+            }
+            body.linearVelocity = direction * speed + Vector3.up * 1.5f;
+            WorldAudioManager.Instance?.PlayThrowSfx();
+            Debug.Log("[드링크] 던짐 (좌클릭) — E로 다시 주울 수 있다");
         }
 
         /// <summary>든 물건의 겉모습을 캐리 앵커에 붙인다. 내려놓을 때 함께 사라진다.</summary>

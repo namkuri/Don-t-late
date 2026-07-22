@@ -55,21 +55,41 @@ namespace DontLate
         // ── 경제 API (S-019 — 폰 앱이 Instance 명령으로 호출) ──
 
         /// <summary>코인 현재가 — minuteOfDay 기반 결정론 랜덤워크 (원/개, 기준 1,000).</summary>
-        public int CoinPrice()
+        public int CoinPrice() => CoinPriceAt(_gameState.day * 1440f + _gameState.minuteOfDay);
+
+        /// <summary>절대 게임분 기준 시세 — 결정론 사인파라 과거 시점도 계산 가능 (S-032 ⑤ 차트용).</summary>
+        public int CoinPriceAt(float absoluteMinute)
         {
-            float t = _gameState.day * 1440f + _gameState.minuteOfDay;
+            float t = absoluteMinute;
             float wave = Mathf.Sin(t * 0.011f) * 0.5f + Mathf.Sin(t * 0.037f + 2.1f) * 0.3f
                        + Mathf.Sin(t * 0.0041f + 4.7f) * 0.2f;
             return Mathf.Max(100, Mathf.RoundToInt(1000f * (1f + wave * _tuning.coinVolatility)));
         }
 
-        /// <summary>코인 매수 — 성공 시 true.</summary>
-        public bool BuyCoin(int won)
+        // S-032 ⑤: 거래는 1개 단위 — 금액 매수(BuyCoin(won)) 폐지. 차익 계산용 매수원가(coinCostBasis) 동반.
+
+        /// <summary>현재 시세로 1개 매수 — 잔액 부족이면 false.</summary>
+        public bool BuyOneCoin()
         {
-            if (won <= 0 || _gameState.money < won) return false;
-            _gameState.money -= won;
-            _gameState.coinUnits += (float)won / CoinPrice();
+            int price = CoinPrice();
+            if (_gameState.money < price) return false;
+            _gameState.money -= price;
+            _gameState.coinUnits += 1f;
+            _gameState.coinCostBasis += price;
+            WorldEvents.RaiseMoneySpent(price);
             return true;
+        }
+
+        /// <summary>현재 시세로 1개 매도 — 평균 원가만큼 원가를 덜어낸다. 반환 = 회수액(0=보유 없음).</summary>
+        public int SellOneCoin()
+        {
+            if (_gameState.coinUnits < 1f) return 0;
+            int price = CoinPrice();
+            _gameState.coinCostBasis -= _gameState.coinCostBasis / _gameState.coinUnits; // 평균법
+            _gameState.coinUnits -= 1f;
+            if (_gameState.coinUnits < 0.001f) { _gameState.coinUnits = 0f; _gameState.coinCostBasis = 0f; }
+            _gameState.money += price;
+            return price;
         }
 
         /// <summary>코인 전량 매도 — 판 금액 반환(없으면 0).</summary>
@@ -79,6 +99,7 @@ namespace DontLate
             int gained = Mathf.RoundToInt(_gameState.coinUnits * CoinPrice());
             _gameState.money += gained;
             _gameState.coinUnits = 0f;
+            _gameState.coinCostBasis = 0f;
             return gained;
         }
 

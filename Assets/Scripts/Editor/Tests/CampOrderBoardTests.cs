@@ -5,7 +5,7 @@ using UnityEngine;
 namespace DontLate.Tests
 {
     /// <summary>
-    /// CampOrderBoard.IsConsumed 3분기(완료/마감경과/미접촉)·GenerateOrder 시리얼 증가 (S-024).
+    /// CampOrderBoard.IsConsumed(완료/여유 부족 — S-031 ⑦ 개정: 미적재+여유 120분 미만이면 교체)·GenerateOrder (S-024).
     /// 두 메서드는 private — TestSupport 리플렉션으로 호출.
     /// </summary>
     public class CampOrderBoardTests
@@ -59,34 +59,31 @@ namespace DontLate.Tests
         }
 
         [Test]
-        public void IsConsumed_마감경과_미적재_스캔됨이면_소진()
+        public void IsConsumed_마감경과_미적재면_소진()
         {
             _gameState.minuteOfDay = 700f; // 마감 600 경과
-            _gameState.scannedOrderIds.Add(42);
             Assert.IsTrue(IsConsumed(_order));
         }
 
         [Test]
-        public void IsConsumed_마감경과라도_미접촉이면_유지()
+        public void IsConsumed_여유_120분_미만이면_미적재는_소진_S031()
         {
-            _gameState.minuteOfDay = 700f; // 스캔 안 함 = 손도 안 댄 건
-            Assert.IsFalse(IsConsumed(_order));
+            _gameState.minuteOfDay = 599f; // 여유 1분 — "싣는 중 마감" 원흉
+            Assert.IsTrue(IsConsumed(_order));
         }
 
         [Test]
         public void IsConsumed_마감경과라도_적재_중이면_유지()
         {
             _gameState.minuteOfDay = 700f;
-            _gameState.scannedOrderIds.Add(42);
             _gameState.cargo.Add(_order); // 실은 짐은 소진 아님
             Assert.IsFalse(IsConsumed(_order));
         }
 
         [Test]
-        public void IsConsumed_마감_전이면_유지()
+        public void IsConsumed_여유_120분_이상이면_유지()
         {
-            _gameState.minuteOfDay = 599f;
-            _gameState.scannedOrderIds.Add(42);
+            _gameState.minuteOfDay = 400f; // 여유 200분
             Assert.IsFalse(IsConsumed(_order));
         }
 
@@ -106,10 +103,10 @@ namespace DontLate.Tests
         }
 
         [Test]
-        public void GenerateOrder_마감은_현재시각_240분_이후이되_1435를_넘지_않는다()
+        public void GenerateOrder_마감은_현재시각_300분_이후이되_1435를_넘지_않는다()
         {
-            _gameState.nextOrderSerial = 300; // serial%3==0 → 최소 오프셋 240분
-            _gameState.minuteOfDay = 1300f;   // 1300+240=1540 → 1435로 캡
+            _gameState.nextOrderSerial = 300; // serial%3==0 → 최소 오프셋 300분 (S-031 ⑦)
+            _gameState.minuteOfDay = 1300f;   // 1300+300=1600 → 1435로 캡
 
             DeliveryOrderSO capped = Generate();
             Assert.AreEqual(1435f, capped.deadlineMinuteOfDay);
@@ -117,7 +114,7 @@ namespace DontLate.Tests
             _gameState.minuteOfDay = 500f;    // 캡 미달 구간
             _gameState.nextOrderSerial = 300;
             DeliveryOrderSO normal = Generate();
-            Assert.AreEqual(740f, normal.deadlineMinuteOfDay);
+            Assert.AreEqual(800f, normal.deadlineMinuteOfDay);
         }
 
         [Test]

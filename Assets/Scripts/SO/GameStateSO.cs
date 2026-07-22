@@ -41,6 +41,7 @@ namespace DontLate
         public int floorIndex;      // S-031 ④ — 바닥 팔레트
         /// <summary>보유 코인 수량 (금융앱).</summary>
         public float coinUnits;
+        public float coinCostBasis; // S-032 ⑤ — 현재 보유분의 총 매수금액 (차익 = 평가액 − 이것)
         /// <summary>런타임 생성 주문의 다음 일련번호 (S-021 ③ — 캠프 주문 갱신).</summary>
         public int nextOrderSerial = 200;
 

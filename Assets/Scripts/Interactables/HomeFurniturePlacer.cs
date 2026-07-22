@@ -60,7 +60,8 @@ namespace DontLate
             Keyboard keyboard = Keyboard.current;
 
             // ESC = 취소 — 블루프린트 삭제 + 배치 대기 해제 (가구는 인벤토리에 남는다).
-            if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame)
+            // 폰이 열려 있으면 ESC는 폰 닫기 몫 (S-032 ③ 충돌 회피).
+            if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame && !PhoneView.IsOpen)
             {
                 PhoneView.PendingPlacementId = null;
                 ClearGhost();

@@ -40,6 +40,8 @@ namespace DontLate
         private readonly List<DeliveryData> _scanned = new List<DeliveryData>();
         private readonly Dictionary<int, int> _status = new Dictionary<int, int>(); // 0진행 1완료 2지각
         private InputAction _toggle;
+        private InputAction _close;   // S-032 ③ ESC·백스페이스
+        private bool _inTitle = true; // S-032 ① 타이틀에선 폰 금지 (게임은 Main에서 시작)
         private bool _open;
         private Screen _screen = Screen.Home;
         private Coroutine _slide;
@@ -53,6 +55,10 @@ namespace DontLate
         private TMP_Text _deliveryWarn;
         private TMP_Text _musicLabel;
         private TMP_Text _investLabel;
+        private RawImage _chartImage;   // S-032 ⑤ 시세 차트
+        private Texture2D _chartTexture;
+        private const int CHART_W = 200;
+        private const int CHART_H = 64;
         private TMP_Text _bankLabel;
         private TMP_Text _furnitureLabel;
         private RectTransform _furnitureListContent; // S-030 ③ 인벤토리 스크롤 내용
@@ -67,31 +73,40 @@ namespace DontLate
         {
             _toggle = new InputAction("PhoneToggle", InputActionType.Button);
             _toggle.AddBinding("<Keyboard>/tab");
+            _close = new InputAction("PhoneClose", InputActionType.Button); // S-032 ③
+            _close.AddBinding("<Keyboard>/escape");
+            _close.AddBinding("<Keyboard>/backspace");
         }
 
         private void OnEnable()
         {
             _toggle.Enable();
             _toggle.performed += OnToggle;
+            _close.Enable();
+            _close.performed += OnClosePressed;
             WorldEvents.BarcodeScanned += OnBarcodeScanned;
             WorldEvents.DeliveryCompleted += OnDeliveryCompleted;
             WorldEvents.DeliveryFailed += OnDeliveryFailed;
             WorldEvents.ClockTicked += OnClockTicked;
             WorldEvents.PhoneRang += OnPhoneRang; // S-031 ⑧ — 진상 전화 수신 화면
+            WorldEvents.SceneTransitionCompleted += OnSceneChanged; // S-032 ①
         }
 
         private void OnDisable()
         {
             _toggle.performed -= OnToggle;
             _toggle.Disable();
+            _close.performed -= OnClosePressed;
+            _close.Disable();
             WorldEvents.BarcodeScanned -= OnBarcodeScanned;
             WorldEvents.DeliveryCompleted -= OnDeliveryCompleted;
             WorldEvents.DeliveryFailed -= OnDeliveryFailed;
             WorldEvents.ClockTicked -= OnClockTicked;
             WorldEvents.PhoneRang -= OnPhoneRang;
+            WorldEvents.SceneTransitionCompleted -= OnSceneChanged;
         }
 
-        private void OnDestroy() => _toggle.Dispose();
+        private void OnDestroy() { _toggle.Dispose(); _close.Dispose(); }
 
         private void Start()
         {
@@ -109,6 +124,12 @@ namespace DontLate
 
         // ── 이벤트 핸들러 ────────────────────────────────────
 
+        private void OnSceneChanged(GameScene scene)
+        {
+            _inTitle = scene == GameScene.Main;
+            if (_inTitle && _open) OnToggle(default); // 타이틀 복귀 시 강제 수납
+        }
+
         private void OnBarcodeScanned(DeliveryData data) { _scanned.Add(data); RefreshCurrent(); }
         private void OnDeliveryCompleted(DeliveryData data) { _status[data.OrderId] = 1; RefreshCurrent(); }
         private void OnDeliveryFailed(DeliveryData data) { _status[data.OrderId] = 2; RefreshCurrent(); }
@@ -121,8 +142,14 @@ namespace DontLate
             if (_open) RefreshCurrent();
         }
 
+        private void OnClosePressed(InputAction.CallbackContext _)
+        {
+            if (_open) OnToggle(default); // 열려 있을 때만 닫는다 (S-032 ③)
+        }
+
         private void OnToggle(InputAction.CallbackContext _)
         {
+            if (_inTitle && !_open) return; // S-032 ① — 타이틀에선 열지 않는다
             _open = !_open;
             IsOpen = _open;
             WorldAudioManager.Instance?.PlayPhoneToggleSfx(); // AU-008 — 개폐 공용
@@ -357,7 +384,7 @@ namespace DontLate
         {
             GameObject screen = NewScreen(Screen.Music);
             _musicLabel = MakeText(screen.transform, "Info", "", 24f, Color.white, TextAlignmentOptions.TopLeft);
-            Anchor(_musicLabel.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 0f), 160f);
+            Anchor(_musicLabel.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 0f), 250f); // S-032 ② 플레이리스트 영역 확보
 
             (string label, System.Action act)[] controls =
             {
@@ -373,7 +400,7 @@ namespace DontLate
                 RectTransform rect = (RectTransform)b.transform;
                 rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0f, 1f);
                 rect.sizeDelta = new Vector2(84f, 60f);
-                rect.anchoredPosition = new Vector2(6f + i * 96f, -170f);
+                rect.anchoredPosition = new Vector2(6f + i * 96f, -260f); // S-032 ② 하향 — 위 250px는 플레이리스트 몫
             }
             // 곡선택 — 현재 슬롯 풀 1~4번
             for (int i = 0; i < 4; i++)
@@ -387,89 +414,112 @@ namespace DontLate
                 RectTransform rect = (RectTransform)b.transform;
                 rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0f, 1f);
                 rect.sizeDelta = new Vector2(84f, 48f);
-                rect.anchoredPosition = new Vector2(6f + i * 96f, -244f);
+                rect.anchoredPosition = new Vector2(6f + i * 96f, -334f); // S-032 ②
             }
         }
 
         private void BuildInvestScreen()
         {
             GameObject screen = NewScreen(Screen.Invest);
-            _investLabel = MakeText(screen.transform, "Info", "", 26f, Color.white, TextAlignmentOptions.TopLeft);
-            Anchor(_investLabel.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 0f), 220f);
+            _investLabel = MakeText(screen.transform, "Info", "", 24f, Color.white, TextAlignmentOptions.TopLeft);
+            Anchor(_investLabel.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 0f), 210f);
 
-            Button buy = MakeButton(screen.transform, "Buy", "1,000원 매수", () =>
+            // S-032 5: 시세 차트 - 과거 240게임분을 결정론 시세식으로 재계산해 그린다.
+            GameObject chartGo = new GameObject("Chart", typeof(RectTransform));
+            chartGo.transform.SetParent(screen.transform, false);
+            _chartImage = chartGo.AddComponent<RawImage>();
+            _chartTexture = new Texture2D(CHART_W, CHART_H, TextureFormat.RGBA32, false);
+            _chartTexture.filterMode = FilterMode.Point;
+            _chartImage.texture = _chartTexture;
+            RectTransform chartRect = (RectTransform)chartGo.transform;
+            chartRect.anchorMin = new Vector2(0f, 1f);
+            chartRect.anchorMax = new Vector2(1f, 1f);
+            chartRect.pivot = new Vector2(0.5f, 1f);
+            chartRect.offsetMin = new Vector2(6f, 0f);
+            chartRect.offsetMax = new Vector2(-6f, 0f);
+            chartRect.sizeDelta = new Vector2(chartRect.sizeDelta.x, 130f);
+            chartRect.anchoredPosition = new Vector2(0f, -215f);
+
+            Button buy = MakeButton(screen.transform, "Buy", "1개 매수", () =>
             {
-                if (WorldDebtManager.Instance != null && !WorldDebtManager.Instance.BuyCoin(1000))
+                if (WorldDebtManager.Instance != null && !WorldDebtManager.Instance.BuyOneCoin())
                     _investLabel.text += "\n<color=#ff7359>잔액 부족</color>";
-                else
-                    WorldAudioManager.Instance?.PlayCoinSfx(); // AU-008 — 매수 성공
-                RefreshInvest();
+                RefreshInvest(); // 매수 성공 SFX·플로팅은 MoneySpent 이벤트가 처리 (S-030)
             });
             RectTransform buyRect = (RectTransform)buy.transform;
             buyRect.anchorMin = buyRect.anchorMax = buyRect.pivot = new Vector2(0f, 0f);
             buyRect.sizeDelta = new Vector2(180f, 62f);
-            buyRect.anchoredPosition = new Vector2(6f, 8f);
+            buyRect.anchoredPosition = new Vector2(6f, 78f);
 
-            Button sell = MakeButton(screen.transform, "Sell", "전량 매도", () =>
+            Button sellOne = MakeButton(screen.transform, "SellOne", "1개 매도", () =>
+            {
+                int gained = WorldDebtManager.Instance != null ? WorldDebtManager.Instance.SellOneCoin() : 0;
+                RefreshInvest();
+                if (gained > 0) WorldAudioManager.Instance?.PlayCoinSfx();
+            });
+            RectTransform sellOneRect = (RectTransform)sellOne.transform;
+            sellOneRect.anchorMin = sellOneRect.anchorMax = sellOneRect.pivot = new Vector2(1f, 0f);
+            sellOneRect.sizeDelta = new Vector2(180f, 62f);
+            sellOneRect.anchoredPosition = new Vector2(-6f, 78f);
+
+            Button sellAll = MakeButton(screen.transform, "SellAll", "전량 매도", () =>
             {
                 int gained = WorldDebtManager.Instance != null ? WorldDebtManager.Instance.SellAllCoin() : 0;
                 RefreshInvest();
                 if (gained > 0)
                 {
                     _investLabel.text += "\n<color=#35e0c8>+₩" + gained.ToString("N0") + " 회수</color>";
-                    WorldAudioManager.Instance?.PlayCoinSfx(); // AU-008 — 매도 성공
+                    WorldAudioManager.Instance?.PlayCoinSfx();
                 }
             });
-            RectTransform sellRect = (RectTransform)sell.transform;
-            sellRect.anchorMin = sellRect.anchorMax = sellRect.pivot = new Vector2(1f, 0f);
-            sellRect.sizeDelta = new Vector2(180f, 62f);
-            sellRect.anchoredPosition = new Vector2(-6f, 8f);
+            RectTransform sellAllRect = (RectTransform)sellAll.transform;
+            sellAllRect.anchorMin = sellAllRect.anchorMax = sellAllRect.pivot = new Vector2(0.5f, 0f);
+            sellAllRect.sizeDelta = new Vector2(180f, 56f);
+            sellAllRect.anchoredPosition = new Vector2(0f, 10f);
         }
 
-        // ── 전화 수신 (S-031 ⑧) — PhoneRang(진상 전화)이 오면 폰이 열리며 이 화면이 뜬다 ──
-
-        private void OnPhoneRang(PhoneCall call)
+        // 차트 그리기 - 어두운 바탕에 시세 폴리라인 + 현재가 점 (S-032 5).
+        private void RedrawChart()
         {
-            if (call.ScenarioId != "phone_grumpy") return; // Home 인트로 전화(자동 대화)는 제외
-            if (!_open) OnToggle(default);
-            ShowScreen(Screen.Call);
-        }
+            if (_chartTexture == null || WorldDebtManager.Instance == null) return;
+            var debt = WorldDebtManager.Instance;
+            float now = _gameState.day * 1440f + _gameState.minuteOfDay;
+            const float SPAN = 240f; // 과거 4게임시간
 
-        private void BuildCallScreen()
-        {
-            GameObject screen = NewScreen(Screen.Call);
-
-            TMP_Text caller = MakeText(screen.transform, "Caller", "", 30f, Color.white, TextAlignmentOptions.Center);
-            Anchor(caller.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -60f), 140f);
-            _callLabel = caller;
-
-            Button accept = MakeButton(screen.transform, "Accept", "받기", () =>
+            var prices = new int[CHART_W];
+            int min = int.MaxValue, max = int.MinValue;
+            for (int x = 0; x < CHART_W; x++)
             {
-                ShowScreen(Screen.Home);
-                WorldMinigameManager.Instance?.AcceptCall(); // 미니게임 패널이 폰 위로 뜬다
-            });
-            RectTransform acceptRect = (RectTransform)accept.transform;
-            acceptRect.anchorMin = acceptRect.anchorMax = acceptRect.pivot = new Vector2(0.5f, 0f);
-            acceptRect.sizeDelta = new Vector2(170f, 70f);
-            acceptRect.anchoredPosition = new Vector2(-95f, 60f);
-            accept.GetComponentInChildren<TMP_Text>().color = new Color(0.3f, 0.95f, 0.5f);
+                prices[x] = debt.CoinPriceAt(now - SPAN + SPAN * x / (CHART_W - 1));
+                if (prices[x] < min) min = prices[x];
+                if (prices[x] > max) max = prices[x];
+            }
+            if (max == min) max = min + 1;
 
-            Button decline = MakeButton(screen.transform, "Decline", "거절", () =>
+            Color bg = new Color(0.05f, 0.07f, 0.11f, 0.95f);
+            Color line = new Color(1f, 0.62f, 0.27f); // 앰버
+            var pixels = new Color[CHART_W * CHART_H];
+            for (int i = 0; i < pixels.Length; i++) pixels[i] = bg;
+
+            int prevY = -1;
+            for (int x = 0; x < CHART_W; x++)
             {
-                if (_open) OnToggle(default);
-                WorldMinigameManager.Instance?.DeclineCall();
-            });
-            RectTransform declineRect = (RectTransform)decline.transform;
-            declineRect.anchorMin = declineRect.anchorMax = declineRect.pivot = new Vector2(0.5f, 0f);
-            declineRect.sizeDelta = new Vector2(170f, 70f);
-            declineRect.anchoredPosition = new Vector2(95f, 60f);
-            decline.GetComponentInChildren<TMP_Text>().color = new Color(1f, 0.45f, 0.35f);
-        }
-
-        private void RefreshCall()
-        {
-            if (_callLabel != null)
-                _callLabel.text = "☎ 수신 중\n\n<size=140%><b>박말순</b></size>\n<color=#8a93a8>진상 기류의 냄새가 난다…</color>";
+                int y = 4 + Mathf.RoundToInt((float)(prices[x] - min) / (max - min) * (CHART_H - 9));
+                if (prevY < 0) prevY = y;
+                for (int yy = Mathf.Min(y, prevY); yy <= Mathf.Max(y, prevY); yy++)
+                    pixels[yy * CHART_W + x] = line;
+                prevY = y;
+            }
+            // 현재가 점 (우측 끝 3x3 흰색)
+            int cy = 4 + Mathf.RoundToInt((float)(prices[CHART_W - 1] - min) / (max - min) * (CHART_H - 9));
+            for (int dx = -2; dx <= 0; dx++)
+                for (int dy = -1; dy <= 1; dy++)
+                {
+                    int px = CHART_W - 1 + dx, py = Mathf.Clamp(cy + dy, 0, CHART_H - 1);
+                    pixels[py * CHART_W + px] = Color.white;
+                }
+            _chartTexture.SetPixels(pixels);
+            _chartTexture.Apply();
         }
 
         private void BuildBankScreen()
@@ -682,11 +732,69 @@ namespace DontLate
             if (_investLabel == null || WorldDebtManager.Instance == null) return;
             int price = WorldDebtManager.Instance.CoinPrice();
             float held = _gameState.coinUnits;
+            int valuation = Mathf.RoundToInt(held * price);
+            int profit = valuation - Mathf.RoundToInt(_gameState.coinCostBasis);
+
+            // S-032 5: 차익 = 평가액 - 매수원가. + = 빨강, - = 파랑 (국장 색).
+            string profitLine = held > 0f
+                ? "차익  " + (profit >= 0
+                    ? "<color=#ff5a5a>+₩" + profit.ToString("N0") + "</color>"
+                    : "<color=#5a8cff>-₩" + Mathf.Abs(profit).ToString("N0") + "</color>")
+                  + "  <size=76%>(매수원가 ₩" + Mathf.RoundToInt(_gameState.coinCostBasis).ToString("N0") + ")</size>"
+                : "<color=#8a93a8>보유 없음 - 1개 매수로 시작</color>";
+
             _investLabel.text =
-                "늦코인 시세  <color=#ff9f45>₩" + price.ToString("N0") + "</color>\n" +
-                "보유  " + held.ToString("0.###") + "개  (평가 ₩" + Mathf.RoundToInt(held * price).ToString("N0") + ")\n" +
-                "잔액  ₩" + _gameState.money.ToString("N0") + "\n" +
-                "<size=76%><color=#8a93a8>시세는 시간에 따라 출렁인다 — 마감보다 빚이 먼저다</color></size>";
+                "늦코인 시세  <color=#ff9f45>₩" + price.ToString("N0") + "</color>  <size=70%>(1개 단위 거래)</size>\n" +
+                "보유  " + held.ToString("0") + "개  평가 ₩" + valuation.ToString("N0") + "\n" +
+                profitLine + "\n" +
+                "잔액  ₩" + _gameState.money.ToString("N0");
+            RedrawChart();
+        }
+
+        // ── 전화 수신 (S-031 ⑧) — PhoneRang(진상 전화)이 오면 폰이 열리며 이 화면이 뜬다 ──
+
+        private void OnPhoneRang(PhoneCall call)
+        {
+            if (call.ScenarioId != "phone_grumpy") return; // Home 인트로 전화(자동 대화)는 제외
+            if (!_open) OnToggle(default);
+            ShowScreen(Screen.Call);
+        }
+
+        private void BuildCallScreen()
+        {
+            GameObject screen = NewScreen(Screen.Call);
+
+            TMP_Text caller = MakeText(screen.transform, "Caller", "", 30f, Color.white, TextAlignmentOptions.Center);
+            Anchor(caller.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -60f), 140f);
+            _callLabel = caller;
+
+            Button accept = MakeButton(screen.transform, "Accept", "받기", () =>
+            {
+                ShowScreen(Screen.Home);
+                WorldMinigameManager.Instance?.AcceptCall(); // 미니게임 패널이 폰 위로 뜬다
+            });
+            RectTransform acceptRect = (RectTransform)accept.transform;
+            acceptRect.anchorMin = acceptRect.anchorMax = acceptRect.pivot = new Vector2(0.5f, 0f);
+            acceptRect.sizeDelta = new Vector2(170f, 70f);
+            acceptRect.anchoredPosition = new Vector2(-95f, 60f);
+            accept.GetComponentInChildren<TMP_Text>().color = new Color(0.3f, 0.95f, 0.5f);
+
+            Button decline = MakeButton(screen.transform, "Decline", "거절", () =>
+            {
+                if (_open) OnToggle(default);
+                WorldMinigameManager.Instance?.DeclineCall();
+            });
+            RectTransform declineRect = (RectTransform)decline.transform;
+            declineRect.anchorMin = declineRect.anchorMax = declineRect.pivot = new Vector2(0.5f, 0f);
+            declineRect.sizeDelta = new Vector2(170f, 70f);
+            declineRect.anchoredPosition = new Vector2(95f, 60f);
+            decline.GetComponentInChildren<TMP_Text>().color = new Color(1f, 0.45f, 0.35f);
+        }
+
+        private void RefreshCall()
+        {
+            if (_callLabel != null)
+                _callLabel.text = "☎ 수신 중\n\n<size=140%><b>박말순</b></size>\n<color=#8a93a8>진상 기류의 냄새가 난다…</color>";
         }
 
         private void RefreshBank()
