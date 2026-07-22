@@ -435,3 +435,12 @@ Morning  Seoul_Alley_Reflection   ← Day 순환
   - 호출 지점: VendingMachine.DispenseDrink(결제·명중 공용) · PlayerStatusManager.ThrowCarryTowardsMouse · PhoneView OnToggle/매수성공/매도성공 (PhoneView는 최소 diff 3줄 — 발주 경고 준수).
 - 검증: ① 컴파일 통과 ② 콘솔 에러·워닝 0 ③ Play 실측 — 7종 전 트리거 발화 시 `_sfxSource.isPlaying=True` + 클립 주입 10종 전부 실음원 길이 확인(`BoxBreak=1.00s·Barcode=0.48s·Penalty=0.80s·Vending=1.20s·Throw=0.60s·Coin=0.60s·Phone=0.48s`). **소리 자체의 귀 판정은 사람 몫** — 관제 청취 요청.
 - BOM §8 미등재 7종 — 발주서(본 절)가 근거. BOM·JUICE 행 추가는 동결 게이트라 관제 위임.
+
+### 결과 2세대 · 2026-07-22 21:35 (사람 판정 반영 — 볼륨·톤 개정)
+
+- 1세대 사람 판정: **음량 낮음 · 과장됨 · 8bit 부족** (3축).
+- 대응: ① 스타일 앵커 개정 `retro pixel-art` → `8-bit, chiptune sound chip, square wave and noise channel, subtle and understated` (prompt_builder SFX_STYLE_EN — 과장 억제 포함) ② 태그 19종 8bit 재서술 ③ 후처리 2단 신설: 피크 -1dBFS 정규화 → **RMS -14dB 부스트**(클립 ≤1% 자동 감쇠 · amb_night는 배경이라 피크만).
+- 절차: 대표 4종(pickup·box_break·coin·barcode) 샘플 → 사람 청취 2회(1차 "볼륨만 올려줘" → RMS 부스트 후 "좋네" 승인) → 잔여 15종 일괄 재생성·처리·재착지.
+- RMS 실측(부스트 전): coin **-26dB** · drink **-33dB** · throw -28 · rhythm_hit -25 — "음량 낮음" 지적 정량 확인.
+- 부산물 실측 2건: ① ElevenLabs SFX 프롬프트 **450자 상한**(API 400 — 앵커 축약으로 해소, 조립기 주석) ② `prompt_builder build`가 `--length` 생략 시 일부 기본값 2.0s로 리셋 — 13종이 2.0s로 생성됨(여분 꼬리 = 컷 판정 후 트림 대상, md 요청 길이는 원복).
+- CREDITS 2세대 표 갱신(신규 seed 전건). 1세대 seed는 git 이력 보존.

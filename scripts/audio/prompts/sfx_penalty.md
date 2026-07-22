@@ -20,14 +20,14 @@
 ## 창작 태그 (사람이 고치는 유일한 칸)
 
 <!-- NOTE:BEGIN -->
-A heavy rubber stamp slamming onto a paper ledger, dull ominous thump
+8-bit penalty thud, one low short square-wave stamp, ominous but small
 <!-- NOTE:END -->
 
 ## 전송 프롬프트 (조립 결과 — 그대로 API에 투입)
 
 <!-- PROMPT:BEGIN -->
 ```
-A heavy rubber stamp slamming onto a paper ledger, dull ominous thump. Duration about 0.8 seconds. Style: retro pixel-art game sound design, dark comedy tone, clean and readable in a busy mix. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
+8-bit penalty thud, one low short square-wave stamp, ominous but small. Duration about 0.8 seconds. Style: 8-bit retro game sound design, chiptune sound chip, square wave and noise channel, subtle and understated, dark comedy tone, readable in a busy mix. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
 ```
 <!-- PROMPT:END -->
 
@@ -61,3 +61,6 @@ python scripts/audio/audio_pipeline.py intake --bom-id sfx_penalty
 | gen | 일자 | 변경 |
 |---|---|---|
 | 1 | 2026-07-22 | 최초 조립 |
+| 2 | 2026-07-22 | 재조립 |
+| 3 | 2026-07-22 | 재조립 |
+| 4 | 2026-07-22 | 재조립 |

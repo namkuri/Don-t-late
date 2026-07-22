@@ -14,20 +14,20 @@
 | 종류 | SFX |
 | 트리거 | Locomotion 이동중 (도메인 내부 훅) |
 | 소리 | 발소리+숨소리(달리기 가중) |
-| 요청 길이 | 1.5s |
+| 요청 길이 | 0.5s |
 | dest | `Assets/Audio/SFX/sfx_footstep.wav` |
 
 ## 창작 태그 (사람이 고치는 유일한 칸)
 
 <!-- NOTE:BEGIN -->
-A single footstep on concrete pavement, worn sneaker, slight grit.
+8-bit footstep tick, one very short quiet noise-channel tap
 <!-- NOTE:END -->
 
 ## 전송 프롬프트 (조립 결과 — 그대로 API에 투입)
 
 <!-- PROMPT:BEGIN -->
 ```
-A single footstep on concrete pavement, worn sneaker, slight grit. Duration about 1.5 seconds. Style: retro pixel-art game sound design, dark comedy tone, clean and readable in a busy mix. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
+8-bit footstep tick, one very short quiet noise-channel tap. Duration about 0.5 seconds. Style: 8-bit retro game sound design, chiptune console sound chip, square wave and noise channel, subtle and understated, small scale, dark comedy tone, clean and readable in a busy mix. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
 ```
 <!-- PROMPT:END -->
 
@@ -61,3 +61,4 @@ python scripts/audio/audio_pipeline.py intake --bom-id sfx_footstep
 | gen | 일자 | 변경 |
 |---|---|---|
 | 1 | 2026-07-21 | 최초 조립 |
+| 2 | 2026-07-22 | 재조립 |

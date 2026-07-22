@@ -20,14 +20,14 @@
 ## 창작 태그 (사람이 고치는 유일한 칸)
 
 <!-- NOTE:BEGIN -->
-A quick short air swish of a box being tossed, fast cloth-like whip
+8-bit throw, one very short noise-channel swish
 <!-- NOTE:END -->
 
 ## 전송 프롬프트 (조립 결과 — 그대로 API에 투입)
 
 <!-- PROMPT:BEGIN -->
 ```
-A quick short air swish of a box being tossed, fast cloth-like whip. Duration about 0.6 seconds. Style: retro pixel-art game sound design, dark comedy tone, clean and readable in a busy mix. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
+8-bit throw, one very short noise-channel swish. Duration about 0.6 seconds. Style: 8-bit retro game sound design, chiptune sound chip, square wave and noise channel, subtle and understated, dark comedy tone, readable in a busy mix. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
 ```
 <!-- PROMPT:END -->
 
@@ -61,3 +61,6 @@ python scripts/audio/audio_pipeline.py intake --bom-id sfx_throw
 | gen | 일자 | 변경 |
 |---|---|---|
 | 1 | 2026-07-22 | 최초 조립 |
+| 2 | 2026-07-22 | 재조립 |
+| 3 | 2026-07-22 | 재조립 |
+| 4 | 2026-07-22 | 재조립 |

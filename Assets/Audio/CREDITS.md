@@ -107,27 +107,33 @@ late-night introspective, hazy, instrumental, 88 BPM
 | 재현 | 프롬프트 원본 = `scripts/audio/prompts/<bom_id>.md` · 아래 seed로 복원 가능 |
 | 판정 | **사람 청취 판정 전** — `Assets/Audio/SFX/` 배치는 검증용 로컬 사본(D-042 미커밋), 채택 판정 후 커밋 해제 |
 
+**세대 이력**: 1세대(2026-07-22 21:01 · retro pixel-art 앵커) → **사람 판정: 음량 낮음·과장·8bit 부족**
+→ **2세대 재생성**(같은 날 21:24~ · 8bit/chiptune 앵커 + 절제 태그 + 후처리: 피크 -1dBFS 정규화
+→ RMS -14dB 부스트(클립 ≤1% 관리 · amb_night는 배경이라 피크 정규화만) — 볼륨 샘플 승인 후 전량 적용).
+1세대 seed는 git 이력에 보존. ⚠ 일부 항목은 재조립 중 길이가 기본값 2.0s로 생성됨 — 여분 꼬리는
+컷 판정 후 트림 대상(프롬프트 md의 요청 길이는 원복 완료).
+
 | bom_id | 길이(요청→실측) | seed | 프롬프트 SHA1 |
 |---|---|---|---|
-| `sfx_pickup` | 1.5s→1.48s | 833110675 | `e35385a7aa4c` |
-| `sfx_delivery_ok` | 1.5s→1.48s | 1175807879 | `ac8cd0b4aa54` |
-| `sfx_late_buzzer` | 1.5s→1.48s | 1404483811 | `27580a317df9` |
-| `sfx_footstep` | 1.5s→1.48s | 40704632 | `32e33530d0ae` |
-| `sfx_deadline_warn` | 0.8s→0.8s | 316357229 | `cc2e5d483c7e` |
-| `sfx_phone_ring` | 1.5s→1.48s | 832148614 | `d8ea7b75484c` |
-| `sfx_dialogue_blip` | 0.5s→0.48s | 2072334155 | `32e664886add` |
-| `sfx_rhythm_hit` | 0.5s→0.48s | 228088866 | `e443109c2de6` |
-| `sfx_rhythm_miss` | 0.5s→0.48s | 311061565 | `77cf08910a69` |
-| `sfx_drink` | 1.5s→1.48s | 1306178704 | `5bedd237bdc2` |
-| `sfx_scene_whoosh` | 1.2s→1.2s | 2066294741 | `18065c8bde13` |
-| `amb_night` | 5.0s→5.0s | 824049942 | `cfd50b94a20d` |
-| `sfx_box_break` | 1.0s→1.0s | 40084753 | `62b9f9633a7e` |
-| `sfx_vending` | 1.2s→1.2s | 1990701728 | `922b2983bbfe` |
-| `sfx_throw` | 0.6s→0.6s | 175088322 | `5f218a103bd1` |
-| `sfx_barcode` | 0.5s→0.48s | 1259083845 | `c2012feb5007` |
-| `sfx_penalty` | 0.8s→0.8s | 39443164 | `cc83dd39d3d0` |
-| `sfx_coin` | 0.6s→0.6s | 653762893 | `885642f738c4` |
-| `sfx_phone` | 0.5s→0.48s | 2023202998 | `7e69b0600cc3` |
+| `sfx_pickup` | 2.0s→2.0s | 716063497 | `37bbfda3456c` |
+| `sfx_delivery_ok` | 2.0s→2.0s | 847665090 | `f935466e104c` |
+| `sfx_late_buzzer` | 2.0s→2.0s | 97751457 | `77ab3fad1a29` |
+| `sfx_footstep` | 0.5s→0.48s | 1657813957 | `fed69c1af383` |
+| `sfx_deadline_warn` | 0.8s→0.8s | 294880740 | `737af8b2af20` |
+| `sfx_phone_ring` | 2.0s→2.0s | 805364262 | `19b323d2bb42` |
+| `sfx_dialogue_blip` | 2.0s→2.0s | 43152987 | `31225c48af11` |
+| `sfx_rhythm_hit` | 2.0s→2.0s | 1236020364 | `d0c3ab150645` |
+| `sfx_rhythm_miss` | 2.0s→2.0s | 1376692253 | `a61afdb32cc2` |
+| `sfx_drink` | 2.0s→2.0s | 96405065 | `8a6d5157bbbd` |
+| `sfx_scene_whoosh` | 2.0s→2.0s | 1659543443 | `78608146bd98` |
+| `amb_night` | 2.0s→2.0s | 966281685 | `b50a4f26f1f7` |
+| `sfx_box_break` | 1.0s→1.0s | 61818053 | `dbe8a66ef3a0` |
+| `sfx_vending` | 2.0s→2.0s | 740942144 | `c4ab202bb71f` |
+| `sfx_throw` | 2.0s→2.0s | 369256461 | `cf135838455d` |
+| `sfx_barcode` | 0.5s→0.48s | 2076524728 | `ba21bacfaaf0` |
+| `sfx_penalty` | 2.0s→2.0s | 252797062 | `ee3bae5f2425` |
+| `sfx_coin` | 0.6s→0.6s | 50546780 | `ee9ac3cc7aed` |
+| `sfx_phone` | 0.5s→0.48s | 2118114110 | `4df6f7770dbc` |
 
 - AU-008 7종(`sfx_box_break`~`sfx_phone`)은 **BOM §8 미등재** — 발주서(AU-008 2026-07-22 19:10)가 근거.
   BOM·JUICE 행 추가는 관제 몫으로 위임(동결 문서 사람 게이트).

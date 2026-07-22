@@ -20,14 +20,14 @@
 ## 창작 태그 (사람이 고치는 유일한 칸)
 
 <!-- NOTE:BEGIN -->
-A smartphone sliding out of a pocket with a soft click, quick fabric slide
+8-bit phone slide click, one short soft square-wave pop
 <!-- NOTE:END -->
 
 ## 전송 프롬프트 (조립 결과 — 그대로 API에 투입)
 
 <!-- PROMPT:BEGIN -->
 ```
-A smartphone sliding out of a pocket with a soft click, quick fabric slide. Duration about 0.5 seconds. Style: retro pixel-art game sound design, dark comedy tone, clean and readable in a busy mix. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
+8-bit phone slide click, one short soft square-wave pop. Duration about 0.5 seconds. Style: 8-bit retro game sound design, chiptune console sound chip, square wave and noise channel, subtle and understated, small scale, dark comedy tone, clean and readable in a busy mix. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
 ```
 <!-- PROMPT:END -->
 
@@ -61,3 +61,4 @@ python scripts/audio/audio_pipeline.py intake --bom-id sfx_phone
 | gen | 일자 | 변경 |
 |---|---|---|
 | 1 | 2026-07-22 | 최초 조립 |
+| 2 | 2026-07-22 | 재조립 |
