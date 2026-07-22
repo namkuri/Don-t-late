@@ -16,7 +16,6 @@
 ## ③ 손 작업·외부 대기
 
 | # | 작업 | 누구 | 참조 |
-| H13 | **GitHub 브랜치 보호 켜기** (1분, 웹) — repo Settings→Branches→Add rule: 패턴 `main`, ☑ Require a pull request before merging(승인 1), "Include administrators"는 **체크 안 함**(님 direct push 유지). 로컬 훅과 이중 방벽 | 님 | [decisions.md](decisions.md) D-055 |
 |---|---|---|---|
 | H12 | **Trellis2 반입물 2종 마감질** — 편의점 store_2(485,891→<3,000 tris)·가로등(95,724→<1,500) 데시메이트 + 텍스처 포함 재출력 (현재 회백색) | 민지 | [orders/art.md](orders/art.md) A-001 결과 |
 | H8 | 텍스처 재전송 2건: ~~가로등~~(Trellis2로 대체됨)·캐릭터 — FBX **Embed Media** 켜기 (캐릭터는 쿠팡 로고 제거 겸) | 민지 | [assets_manifest.md](assets_manifest.md) |
@@ -25,6 +24,8 @@
 | ~~H10~~ | ~~정수 투입 개시~~ → **자발 개시됨** (오디오 PR merge 완료) — 다음 발주 묶음은 P3 잔여 스크립트로 협의 | — | [orders/audio.md](orders/audio.md) |
 
 ## 처리 완료 (최근)
+
+- ✅ **H13 GitHub 브랜치 보호 적용** (2026-07-22 님) — main은 PR+승인 1 필수, 관리자 직접 push 유지. 로컬 pre-push 훅과 이중 방벽 완성 (D-055)
 
 - ✅ **B-6 Home 존치 확정 + 무대 시공** (2026-07-22 님 결정, [decisions.md](decisions.md) D-052) — 방 그레이박스(침대·창문·문) `DontLate/Build Home Stage`
 - ✅ **S-005~007 직접 납품 완료** (님 지시 D-053 — 정수→관제) — 매니페스트 31/34, 관찰 기록은 [orders/system.md](orders/system.md) 결과 블록
