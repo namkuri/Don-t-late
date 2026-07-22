@@ -529,3 +529,11 @@
 - private 접근: `TestSupport` 리플렉션 헬퍼 1파일(필드 주입·메서드 호출). 에디터 모드는 Awake/OnEnable 미실행 — 싱글톤·이벤트 구독 간섭 없음(이벤트 검증은 구독 후 finally 해제).
 - **TECH_SPEC 오디오 절 추가** — 표 7행(믹스 0.5/0.7 · BGM: Vorbis q30+Compressed In Memory / SFX: q70+**Decompress On Load**+모노 · Streaming 금지 · 리스너 Core 소유 · BGM 슬롯/플레이리스트 · 반입 계약). 기존 줄 무수정(직교 추가만). 로드타입은 `AudioImportPostprocessor` 실코드 대조로 확정(초안에서 SFX를 Compressed In Memory로 잘못 적었다가 교정).
 - 컴파일 통과 · 콘솔 에러/워닝 0.
+
+---
+
+## S-025 · 발주 2026-07-22 21:42 → ClaudeCode (본 세션 실행 — UI 실아트 5종 스왑 소켓)
+
+요구 (님 원문 요약): 민지 UI 이미지 5종(chat_box·chat_box_box·logo·man·sub_logo) 도착 — 플레이스홀더 적용. 드라이브 직접 다운로드 승인(권한 401로 대기 — 소켓 선시공). 라이선스 = 전량 ChatGPT 생성(민지 구두 계약).
+
+수용기준: Art/UI에 bom_id 파일이 있으면 빌더가 스프라이트 사용·없으면 현행 코드 폴백(다이얼로그 박스·화살표, 타이틀 로고·맨·서브) · 파일 도착 후 재조립로 즉시 반영 · 라이선스 등재.
