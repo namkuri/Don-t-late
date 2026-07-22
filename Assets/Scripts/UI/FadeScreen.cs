@@ -30,6 +30,7 @@ namespace DontLate
             WorldEvents.SceneTransitionStarted += OnTransitionStarted;
             WorldEvents.SceneTransitionCompleted += OnTransitionCompleted;
             WorldEvents.DeliveryFailed += OnDeliveryFailed;
+            WorldEvents.DeadlineWarned += OnDeadlineWarned;
         }
 
         private void OnDisable()
@@ -37,6 +38,7 @@ namespace DontLate
             WorldEvents.SceneTransitionStarted -= OnTransitionStarted;
             WorldEvents.SceneTransitionCompleted -= OnTransitionCompleted;
             WorldEvents.DeliveryFailed -= OnDeliveryFailed;
+            WorldEvents.DeadlineWarned -= OnDeadlineWarned;
         }
 
         private void OnTransitionStarted(GameScene scene) => Fade(1f, blockRaycasts: true);
@@ -49,7 +51,12 @@ namespace DontLate
             _fadeRoutine = StartCoroutine(SpriteTween.Fade(_group, target, _fadeDuration));
         }
 
-        private void OnDeliveryFailed(DeliveryData data)
+        private void OnDeliveryFailed(DeliveryData data) => ShowCutIn();
+
+        /// <summary>마감 임박 경고 — "늦지마!" 컷인 (S-023).</summary>
+        private void OnDeadlineWarned(DeliveryData data) => ShowCutIn();
+
+        private void ShowCutIn()
         {
             if (_lateCutIn == null) return;
             if (_cutInRoutine != null) StopCoroutine(_cutInRoutine);

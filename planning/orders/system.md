@@ -487,6 +487,19 @@
 
 실패시: [BLOCKED]. JUICE 표에 없는 연출을 창작하지 않는다(사람 감각 영역).
 
+### 결과 · 2026-07-22 20:28 (리드 15분 · 정수 공장)
+
+- **WorldJuiceManager 신규** — DeliveryCompleted: 플래시(α0.35→0 · 0.18s)+체크팝 "✓ +₩5,000" 펀치스케일+히트스톱 0.05s+미세 셰이크 / DeliveryFailed: 레드 비네트 2펄스(0.7s)+히트스톱 0.1s+셰이크(소). 오버레이 캔버스는 런타임 자체 조립(sortOrder 80 — PhoneView 방식, 빌더 diff 최소화).
+- Play 실측(발화 프레임 동기 관찰): 완료 → `flashAlpha=0.333 popActive=True popText=[✓ +₩5,000] timeScale=0` · 2초 후 `flashAlpha=0 popActive=False timeScale=1` 복원. 실패 → `vignetteAlpha 램프업 timeScale=0 shakeApplied=-0.0252` · 종료 후 `shakeTarget=cleared camY=1.0000` 원위치.
+- **셰이크는 Y축 전용** — CameraFollowX가 X만 쓰고 Y·Z를 보존하므로 충돌이 구조적으로 없음(발주서의 "LateUpdate 이후 오프셋" 취지를 실행 순서 무관 방식으로 충족).
+- **FadeScreen** — DeadlineWarned 구독 추가, 발화 시 컷인 `before=False → after=True` 실측. 기존 DeliveryFailed 배선은 유지(최소 diff).
+- **PlayerEffectsManager 신규** — 이동 먼지(이동+접지 시 rate 8)·드링크 버스트(RecoverStamina 훅, 허브 경유). 파티클 코드 조립(프리팹 없음). 재조립 후 District·Camp 씬 직렬화 확인(guid 각 1건) — Home·Travel은 플레이어 자체가 없어 해당 없음.
+- CoreSceneBuilder BuildManagers 1블록 추가(Juice + 폰트 주입) — Core.unity 직렬화 확인.
+- 감각값 전부 [SerializeField](완료 7·실패 6·먼지 4·버스트 2). 매니페스트 직교: 두 파일 다 매니페스트 P4 기재분 — 신규 발명 없음.
+- **스킵 2건(사람 게이트)**: ① "미세 줌인" — ARCHITECTURE §2 동결 "줌 변경 금지(밀도 붕괴)"와 충돌 ② "진동" — 게임패드 럼블인데 키보드/WebGL 타겟에 장치 없음.
+- 콘솔 에러·워닝 0. 기존 워닝 2건(SceneFlowUIBuilder.cs:271 CS0618 — main pull분, 본 발주 범위 외). 참고: Overlay 캔버스는 unity-cli 스크린샷(카메라 캡처)에 안 찍혀 시각 확인은 상태 실측으로 대체.
+- 참고: 로컬에서 Unity가 `Greybox.unity.meta`를 자동 삭제함(씬 본문 없는 meta — 커밋 정책 D-061 후속 검토 대상, 본 커밋에 포함 안 함).
+
 ---
 
 ## S-024 · 발주 2026-07-22 19:10 → 정수 (품질 레인 — EditMode 테스트 + TECH_SPEC 오디오 절)

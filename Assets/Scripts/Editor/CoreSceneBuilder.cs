@@ -132,6 +132,9 @@ namespace DontLate.EditorTools
             WorldMinigameManager minigame = managers.AddComponent<WorldMinigameManager>(); // S-007
             SetField(minigame, "_tuning", tuning);
 
+            WorldJuiceManager juice = managers.AddComponent<WorldJuiceManager>(); // S-023
+            SetField(juice, "_font", AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FONT_PATH));
+
             WorldAudioManager audio = managers.AddComponent<WorldAudioManager>();
             SetField(audio, "_library", GetOrCreateBgmLibrary());
             SfxSynthGenerator.EnsurePlaceholders();
