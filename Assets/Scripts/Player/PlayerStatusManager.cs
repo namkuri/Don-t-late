@@ -129,6 +129,7 @@ namespace DontLate
             ReleaseCarry(dropAsPhysics: true);
             if (visual.TryGetComponent(out Rigidbody body))
                 body.linearVelocity = direction * speed + Vector3.up * 1.5f; // 살짝 포물선
+            WorldAudioManager.Instance?.PlayThrowSfx(); // AU-008 — Instance 명령 (이벤트 없는 지점)
         }
 
         /// <summary>든 물건의 겉모습을 캐리 앵커에 붙인다. 내려놓을 때 함께 사라진다.</summary>

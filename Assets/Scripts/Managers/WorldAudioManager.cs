@@ -24,6 +24,15 @@ namespace DontLate
         [SerializeField] private AudioClip _sfxDeliveryOk;
         [SerializeField] private AudioClip _sfxLateBuzzer;
 
+        [Header("SFX — 신기능 7종 (AU-008)")]
+        [SerializeField] private AudioClip _sfxBoxBreak;
+        [SerializeField] private AudioClip _sfxBarcode;
+        [SerializeField] private AudioClip _sfxPenalty;
+        [SerializeField] private AudioClip _sfxVending;
+        [SerializeField] private AudioClip _sfxThrow;
+        [SerializeField] private AudioClip _sfxCoin;
+        [SerializeField] private AudioClip _sfxPhone;
+
         [Header("믹스")]
         [SerializeField, Range(0f, 1f)] private float _volume = 0.5f;
         [SerializeField, Range(0f, 1f)] private float _sfxVolume = 0.7f;
@@ -131,6 +140,9 @@ namespace DontLate
             WorldEvents.PackagePickedUp += OnPackagePickedUp;
             WorldEvents.DeliveryCompleted += OnDeliveryCompleted;
             WorldEvents.DeliveryFailed += OnDeliveryFailed;
+            WorldEvents.PackageDestroyed += OnPackageDestroyed;
+            WorldEvents.BarcodeScanned += OnBarcodeScanned;
+            WorldEvents.DebtIncreased += OnDebtIncreased;
         }
 
         private void OnDisable()
@@ -141,6 +153,9 @@ namespace DontLate
             WorldEvents.PackagePickedUp -= OnPackagePickedUp;
             WorldEvents.DeliveryCompleted -= OnDeliveryCompleted;
             WorldEvents.DeliveryFailed -= OnDeliveryFailed;
+            WorldEvents.PackageDestroyed -= OnPackageDestroyed;
+            WorldEvents.BarcodeScanned -= OnBarcodeScanned;
+            WorldEvents.DebtIncreased -= OnDebtIncreased;
         }
 
         private void OnDestroy()
@@ -227,6 +242,16 @@ namespace DontLate
         private void OnPackagePickedUp(DeliveryData data) => PlaySfx(_sfxPickup);
         private void OnDeliveryCompleted(DeliveryData data) => PlaySfx(_sfxDeliveryOk);
         private void OnDeliveryFailed(DeliveryData data) => PlaySfx(_sfxLateBuzzer);
+        private void OnPackageDestroyed() => PlaySfx(_sfxBoxBreak);                 // AU-008
+        private void OnBarcodeScanned(DeliveryData data) => PlaySfx(_sfxBarcode);   // AU-008
+        private void OnDebtIncreased(int amount) => PlaySfx(_sfxPenalty);           // AU-008
+
+        // 이벤트 없는 지점(자판기·던지기·코인·폰 개폐)의 Instance 명령 API (AU-008).
+        // 컴포넌트가 클립을 들지 않게 해 배선을 빌더 한 곳(Core)으로 모은다.
+        public void PlayVendingSfx() => PlaySfx(_sfxVending);
+        public void PlayThrowSfx() => PlaySfx(_sfxThrow);
+        public void PlayCoinSfx() => PlaySfx(_sfxCoin);
+        public void PlayPhoneToggleSfx() => PlaySfx(_sfxPhone);
 
         private void PlaySfx(AudioClip clip)
         {

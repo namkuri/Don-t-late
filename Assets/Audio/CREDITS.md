@@ -93,3 +93,42 @@ late-night introspective, hazy, instrumental, 88 BPM
 | `sfx_footstep` | Locomotion 훅 | **미착수** — Player 도메인 별건 |
 
 나머지 7종은 JUICE 개정안 **J-1 승인 게이트** 대기 중.
+
+### 실음원 반입 — ElevenLabs Sound Effects (2026-07-22 · AU-007+AU-008)
+
+| 항목 | 내용 |
+|---|---|
+| 생성 도구 | **ElevenLabs Sound Effects** (`POST /v1/sound-generation` · `output_format=pcm_44100` → WAV 래핑) |
+| 계정 | 정수 개인 계정 — Creator 플랜 ($22/월, 유료) — BGM 절과 동일 계정 |
+| 권리 | 상업적 사용 가능 · 기간 무제한 (유료 플랜 상업 라이선스 — BGM 절 근거와 동일, 2026-07-21 확인) |
+| 표기 의무 | 없음 (유료 플랜) |
+| 생성일 | 2026-07-22 (19종 일괄) |
+| 착지 | `Assets/_intake/ElevenLabs/SFX/<bom_id>.wav` (발주 AU-007/008 계약 경로) |
+| 재현 | 프롬프트 원본 = `scripts/audio/prompts/<bom_id>.md` · 아래 seed로 복원 가능 |
+| 판정 | **사람 청취 판정 전** — `Assets/Audio/SFX/` 배치는 검증용 로컬 사본(D-042 미커밋), 채택 판정 후 커밋 해제 |
+
+| bom_id | 길이(요청→실측) | seed | 프롬프트 SHA1 |
+|---|---|---|---|
+| `sfx_pickup` | 1.5s→1.48s | 833110675 | `e35385a7aa4c` |
+| `sfx_delivery_ok` | 1.5s→1.48s | 1175807879 | `ac8cd0b4aa54` |
+| `sfx_late_buzzer` | 1.5s→1.48s | 1404483811 | `27580a317df9` |
+| `sfx_footstep` | 1.5s→1.48s | 40704632 | `32e33530d0ae` |
+| `sfx_deadline_warn` | 0.8s→0.8s | 316357229 | `cc2e5d483c7e` |
+| `sfx_phone_ring` | 1.5s→1.48s | 832148614 | `d8ea7b75484c` |
+| `sfx_dialogue_blip` | 0.5s→0.48s | 2072334155 | `32e664886add` |
+| `sfx_rhythm_hit` | 0.5s→0.48s | 228088866 | `e443109c2de6` |
+| `sfx_rhythm_miss` | 0.5s→0.48s | 311061565 | `77cf08910a69` |
+| `sfx_drink` | 1.5s→1.48s | 1306178704 | `5bedd237bdc2` |
+| `sfx_scene_whoosh` | 1.2s→1.2s | 2066294741 | `18065c8bde13` |
+| `amb_night` | 5.0s→5.0s | 824049942 | `cfd50b94a20d` |
+| `sfx_box_break` | 1.0s→1.0s | 40084753 | `62b9f9633a7e` |
+| `sfx_vending` | 1.2s→1.2s | 1990701728 | `922b2983bbfe` |
+| `sfx_throw` | 0.6s→0.6s | 175088322 | `5f218a103bd1` |
+| `sfx_barcode` | 0.5s→0.48s | 1259083845 | `c2012feb5007` |
+| `sfx_penalty` | 0.8s→0.8s | 39443164 | `cc83dd39d3d0` |
+| `sfx_coin` | 0.6s→0.6s | 653762893 | `885642f738c4` |
+| `sfx_phone` | 0.5s→0.48s | 2023202998 | `7e69b0600cc3` |
+
+- AU-008 7종(`sfx_box_break`~`sfx_phone`)은 **BOM §8 미등재** — 발주서(AU-008 2026-07-22 19:10)가 근거.
+  BOM·JUICE 행 추가는 관제 몫으로 위임(동결 문서 사람 게이트).
+- 후공정(앞 무음 트림·피크 정규화)은 **사람 청취 판정 후** — GAME-SFX-RULES §6·§7 절차.
