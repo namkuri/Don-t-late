@@ -118,6 +118,7 @@ namespace DontLate
         {
             _open = !_open;
             IsOpen = _open;
+            WorldAudioManager.Instance?.PlayPhoneToggleSfx(); // AU-008 — 개폐 공용
             if (_slide != null) StopCoroutine(_slide);
             _slide = StartCoroutine(Slide(_open ? _shownY : _hiddenY));
             if (_open) { ShowScreen(Screen.Home); }
@@ -390,6 +391,8 @@ namespace DontLate
             {
                 if (WorldDebtManager.Instance != null && !WorldDebtManager.Instance.BuyCoin(1000))
                     _investLabel.text += "\n<color=#ff7359>잔액 부족</color>";
+                else
+                    WorldAudioManager.Instance?.PlayCoinSfx(); // AU-008 — 매수 성공
                 RefreshInvest();
             });
             RectTransform buyRect = (RectTransform)buy.transform;
@@ -401,7 +404,11 @@ namespace DontLate
             {
                 int gained = WorldDebtManager.Instance != null ? WorldDebtManager.Instance.SellAllCoin() : 0;
                 RefreshInvest();
-                if (gained > 0) _investLabel.text += "\n<color=#35e0c8>+₩" + gained.ToString("N0") + " 회수</color>";
+                if (gained > 0)
+                {
+                    _investLabel.text += "\n<color=#35e0c8>+₩" + gained.ToString("N0") + " 회수</color>";
+                    WorldAudioManager.Instance?.PlayCoinSfx(); // AU-008 — 매도 성공
+                }
             });
             RectTransform sellRect = (RectTransform)sell.transform;
             sellRect.anchorMin = sellRect.anchorMax = sellRect.pivot = new Vector2(1f, 0f);

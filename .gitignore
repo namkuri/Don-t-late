@@ -140,3 +140,11 @@ __pycache__/
 /.claude/skills/grill-with-docs/
 /.claude/skills/domain-modeling/
 /skills-lock.json
+
+# audio pipeline (ENV — wt1 정합)
+_audio_intake/
+__pycache__/
+*.pyc
+
+# local secrets
+.elevenlabs_key

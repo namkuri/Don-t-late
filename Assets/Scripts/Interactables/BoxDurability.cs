@@ -62,6 +62,7 @@ namespace DontLate
                 Destroy(shard, 1.6f);
             }
             Debug.Log("[취급주의] 상자 파손! 주문은 남는다 — 구역을 다시 오면 재스폰.");
+            WorldEvents.RaisePackageDestroyed(); // AU-008 — 파손 SFX·연출 구독 지점
             Destroy(gameObject);
         }
 

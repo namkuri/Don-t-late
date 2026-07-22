@@ -116,6 +116,16 @@ namespace DontLate
 
         public static void RaiseStaminaChanged(float normalized) => StaminaChanged?.Invoke(normalized);
 
+        // ── 파손 ──────────────────────────────────────────────
+        /// <summary>취급주의 상자 파손 (AU-008). BoxDurability가 발행 — 상자는 주문을 모르므로 페이로드 없음.</summary>
+        public static event Action PackageDestroyed;
+
+        public static void RaisePackageDestroyed()
+        {
+            Log("PackageDestroyed — 상자 파손");
+            PackageDestroyed?.Invoke();
+        }
+
         // ── 상차 (바코드) ─────────────────────────────────────
         /// <summary>폰으로 박스 송장을 스캔했을 때. PhoneView가 목록 갱신에 구독 (S-011).</summary>
         public static event Action<DeliveryData> BarcodeScanned;

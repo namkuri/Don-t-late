@@ -50,6 +50,7 @@ namespace DontLate
 
         private void DispenseDrink()
         {
+            WorldAudioManager.Instance?.PlayVendingSfx(); // AU-008 — 결제·명중 배출 공용
             GameObject drink = GameObject.CreatePrimitive(PrimitiveType.Capsule);
             drink.name = "VendedDrink";
             drink.transform.position = transform.position + new Vector3(0f, 0.3f, -0.8f);
