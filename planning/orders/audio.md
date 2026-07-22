@@ -469,3 +469,12 @@ Morning  Seoul_Alley_Reflection   ← Day 순환
 - 절차: 샘플 4종 사람 승인("좋네") → 잔여 15종 일괄. 태그 19종 AC 재서술(코믹 실패음·토이 노크·마림바 트릴 등). 전건 --length 명시.
 - 후처리: 피크 -1dB → RMS -14dB(amb_night 피크만). dialogue_blip 40ms 컷은 5세대 스펙 전용이라 미적용(0.5s — 트림은 판정 후).
 - 재착지·CREDITS 6세대 표 완료. 세대 누적 6회 · 크레딧 총 ~85건 — 샘플 우선 절차 유지로 기각 세대 전개 손실 2회 방지(4·기타).
+
+### 결과 7 · 2026-07-22 23:20 (6세대 사람 청취 판정 통과 → 승격)
+
+- **Director 청취 판정: 19종 통과** ("검증결과 괜찮네") — 판정 도구 = 플레이 체크리스트(인게임 트리거 11종 동선 + 미배선 8종 exec 재생·amb_night 루프 청취, GAME-SFX-RULES §6 5축 기준).
+- 승격 실행: origin/main 병합(충돌 0 — merge-tree 사전 검사 일치) → `Assets/Audio/SFX/` 19종을 1세대→6세대 교체(관제 ignore 해제 커밋 승계 · **main .meta 보존 = guid 안정**) → 해시 19/19 = `_intake` 일치 실측.
+- 병합 후 재컴파일 통과 · 콘솔 에러 0 (워닝 2건 = SceneFlowUIBuilder CS0618, main pull분 기존).
+- 배선 현황 실측(체크리스트 작성 중 확인): **11종 인게임 배선** (WorldAudioManager 10 + DialogueView blip) · **8종 미배선**(deadline_warn·phone_ring·rhythm_hit/miss·scene_whoosh·footstep·drink·amb_night) — AU-007 카드1 선택분, 배선은 관제 몫 유지.
+- R16 잔여 = 관제 ③ BOM §8 신규 7종 행 추가+JUICE 대응 ④ GAME-SFX-RULES §1 앵커 개정(동결 게이트 문서 — 공장 권한 밖).
+- 반입 PR: #11 (2~6세대 델타 + 본 승격 커밋).
