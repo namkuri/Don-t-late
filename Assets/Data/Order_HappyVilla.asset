@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DontLate.DeliveryOrderSO
   orderId: 7
   address: "\uD589\uBCF5\uBE4C\uB77C 301\uD638"
+  district: "\uD589\uBCF5\uBE4C\uB77C \uAD6C\uC5ED"
   floor: 3
-  deadlineMinuteOfDay: 600
+  deadlineMinuteOfDay: 840
   reward: 5000
   memo: "\uADF8\uB808\uC774\uBC15\uC2A4 \uD655\uC778\uC6A9"

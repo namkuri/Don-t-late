@@ -34,6 +34,8 @@ namespace DontLate
     {
         public int OrderId;
         public string Address;
+        /// <summary>배송 구역 라벨 (S-015 — 폰 안내·스폰 매칭).</summary>
+        public string District;
         public int Floor;
         public int Reward;
         /// <summary>마감 시각 (하루 기준 분, 0~1440).</summary>
@@ -46,12 +48,24 @@ namespace DontLate
             {
                 OrderId = order.orderId,
                 Address = order.address,
+                District = order.district,
                 Floor = order.floor,
                 Reward = order.reward,
                 DeadlineMinuteOfDay = order.deadlineMinuteOfDay,
                 IsLate = isLate
             };
         }
+    }
+
+    /// <summary>Camp 복귀 정산 요약. 원본 갱신은 WorldDebtManager가 수행한 뒤 결과만 흘린다.</summary>
+    public struct DebtSettlement
+    {
+        /// <summary>이번 정산에서 빚 상환에 들어간 금액.</summary>
+        public int Repaid;
+        /// <summary>지각·미니게임 실패 벌금 합계.</summary>
+        public int Penalty;
+        public int Money;
+        public int Debt;
     }
 
     /// <summary>박말순 전화. 시나리오 본문은 WorldDialogueManager가 id로 찾는다.</summary>

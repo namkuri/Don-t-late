@@ -78,6 +78,8 @@
 | ui_rhythm_set | 리듬 미니게임: 방향키 4종+노트 트랙+판정선 | ~6 | MinigameRhythmView(P3) 소비 | generate |
 | ui_title | 타이틀 로고 "늦지마" | 1 | Main 씬 + itch/문서 재사용 | generate |
 | ui_cutin_late | "늦지마!" 컷인 그래픽 | 1 | FadeScreen._lateCutIn 소켓 (**코드 존재 — 즉시 소비 가능**) | generate |
+| ui_phone_wallpaper | 폰 배경화면 | 1 | `PhoneView._wallpaper` Sprite 슬롯 (S-020) — 폴백=코드 그라디언트. 세로 430×610 비율 | generate(이미지) |
+| ui_phone_icon_* | 폰 앱 아이콘 5종 (택배·음악·금융·은행·가구) | 5 | `PhoneView._appIcons[0..4]` Sprite 슬롯 — 폴백=라운드 색타일+이모지. 96×96 | generate(이미지) |
 
 ## 6.5 씬별 UI 구성 (조립 명세 — 씬 빌더·UI 뷰 발주서의 원본)
 
@@ -128,25 +130,46 @@
 
 ## 8. 오디오 (JUICE 도출 원칙 유지 — 목록 확장은 JUICE 개정안 J-1 승인 후 유효)
 
-> 소비자: `WorldAudioManager`(P4 — §11) · 임포트 규격: SFX=Vorbis q70·**Decompress On Load**·2D /
-> BGM=Vorbis·**Streaming**. dest = `Assets/Audio/{BGM,SFX}/` (아키텍처 §9에 Audio 폴더 직교 추가 필요).
-> 파일명=bom_id · 총 오디오 예산 ≤ 10MB (WebGL 다운로드 체감 보호) · 전 건 라이선스 기록 필수.
+> 소비자: `WorldAudioManager` (**P4→당김, 2026-07-21 납품 · BGM 전용**) ·
+> dest = `Assets/Audio/{BGM,SFX}/` (아키텍처 §9 Audio 폴더 · 임포트 자동화 = `AudioImportPostprocessor`).
+> 총 오디오 예산 ≤ 10MB (WebGL 다운로드 체감 보호) · 전 건 라이선스 기록 필수.
+>
+> ⚠ **10MB는 미검증 자체 추정치다** (D-044). `TECH_SPEC`의 `webgl_budget`은 `tris·drawcalls·texture_mb`
+> 뿐이고 **오디오 항목이 없다** — 이 상한은 BOM이 스스로 적은 정성적 판단이며 실제 WebGL 빌드로
+> 검증된 적이 없다. **곡 컷은 예산이 아니라 품질 기준으로 판정한다.** 근거가 필요하면
+> WebGL 회귀 빌드 1회로 실측한다([[retrospective-2026-07-21]] §4-1이 지목한 최대 구멍과 같은 작업).
+>
+> **임포트 규격 (D-040 정정 — 실측 반영)**
+> - SFX = Vorbis **q70** · **Decompress On Load** · 모노(2D) — 원안 유지
+> - BGM = Vorbis **q30** · **Compressed In Memory** · 스테레오 · 백그라운드 로드
+>   - ~~Streaming~~ **폐기**: WebGL은 Web Audio API 기반이라 Streaming 로드타입을 지원하지 않는다
+>   - `Decompress On Load`도 부적합 — 60s 스테레오 1곡이 RAM에 11.5MB 생PCM으로 풀린다
+>   - q70은 실측 **~256kbps → 10곡 20.6MB로 예산 2배 초과**. q30 = ~118kbps(게임 BGM 표준 대역),
+>     10곡 **10.04MB**로 51% 감축 실측
+> - 파일명 = bom_id — **단, 다곡 풀 슬롯은 컷·분류 확정 후 리네임** (D-042).
+>   슬롯 배정은 `Assets/Data/BgmLibrary.asset`(SO)이 소유하므로 스왑 계약은 파일명이 아니라 SO 참조로 성립한다
 
 ### BGM
 
 | bom_id | 항목 | 스펙 | source | 비고 |
 |---|---|---|---|---|
-| bgm_day_loop | 낮 거리 BGM | 60~90s 루프 · 심리스 루프포인트 | **ElevenLabs(#9)**→폴백 #10 (#8 Suno는 공식 API 부재로 🖐 강등 · 2026-07-21) | 필수 |
-| bgm_night_var | 밤 변주 | **별도 곡 대신 낮 곡 + 로우패스/리버브 변주 1순위** (DayPhaseChanged 훅) | 믹스로 해결 | 전용 곡은 sacrifice 후보 |
-| bgm_title | 타이틀(Main 씬) BGM | 짧은 루프 징글 · **단발 연출이라 훅 허용**(GAME-BGM-RULES §3 예외 — 필수/금지 태그 면제) | **ElevenLabs(#9)** | 필수 |
+| bgm_day_loop | 낮 거리 BGM (Morning·Day) | 60s · **플레이리스트 순환**(D-046) | **ElevenLabs(#9)** | **2곡 확정** |
+| bgm_night_loop | 밤 BGM (Evening·Night) | 60~180s · Evening 진입(17시) 3초 크로스페이드로 교대 | **ElevenLabs(#9)** | **3곡 확정** |
+| bgm_title | 타이틀(Main 씬) BGM | 〃 | **ElevenLabs(#9)** | **0곡 — 공백**(Director 보류). 빈 슬롯이면 낮곡이 이어진다 |
+
+- ~~`bgm_night_var`(낮 곡 + 로우패스/리버브 변주)~~ **폐기(D-040)**: sacrifice 근거였던 제작비가 소멸했고,
+  낮(major·105BPM)과 밤(minor·88BPM)은 BPM·조성이 달라 필터로 재현 불가. 전용 곡 = AudioMixer 불요.
+- source 전환: BGM도 **#9(ElevenLabs)** 에서 나왔다 — 원안의 Suno(#8)는 미사용. M0-06 #9 라인 실증.
+- ~~루프 이음새 크로스페이드~~ **불요(D-046)** — 플레이리스트가 같은 곡을 이어붙이지 않아 이음새가 생기지 않는다.
+  **볼륨 정규화만** 남는다 ([[orders/audio]] AU-003).
 
 ### SFX — WorldEvents 트리거 매핑 (Unity 소비 관점)
 
 | bom_id | 트리거 (실존 이벤트) | 소리 | JUICE 근거 | 상태 |
 |---|---|---|---|---|
-| sfx_delivery_ok | `DeliveryCompleted` | 딩동+동전 | ✓ 배송 완료 | 필수 |
-| sfx_late_buzzer | `DeliveryFailed` | 낮은 부저 | ✓ 시간초과 실패 | 필수 |
-| sfx_pickup | `PackagePickedUp` | 집는 소리 | ✓ 택배 픽업 | 필수 |
+| sfx_delivery_ok | `DeliveryCompleted` | 딩동+동전 | ✓ 배송 완료 | **연결됨 · 합성 플레이스홀더** |
+| sfx_late_buzzer | `DeliveryFailed` | 낮은 부저 | ✓ 시간초과 실패 | **연결됨 · 합성 플레이스홀더** |
+| sfx_pickup | `PackagePickedUp` | 집는 소리 | ✓ 택배 픽업 | **연결됨 · 합성 플레이스홀더** |
 | sfx_footstep | Locomotion 이동중 (도메인 내부 훅) | 발소리+숨소리(달리기 가중) | ✓ 계단 오르기 | 필수 |
 | sfx_deadline_warn | `DeadlineWarned` | 짧은 경고 틱 | ❌ **J-1 개정 필요** | 필수 — 마감 압박의 청각 축 |
 | sfx_phone_ring | `PhoneRang`(P3 예정) | 전화벨 (박말순) | ❌ J-1 | 필수 — must_have 이벤트인데 표에 없음 |
@@ -156,9 +179,11 @@
 | sfx_scene_whoosh | `SceneTransitionStarted` | 전환 휙 | ❌ J-1 | 선택 |
 | amb_night | `DayPhaseChanged(Night)` | 밤 환경음(귀뚜라미·먼 차소리) | ❌ J-1 | 선택 — sacrifice 후보 |
 
-- source 공통: ElevenLabs(#9 — MCP `text_to_sound_effects`, **0.5~5초 제한**이라 위 SFX는 전부 사정권)
-  또는 Freesound(#10 — CC0/CC-BY만, 표기 기록) · M0-06이 관통 관문.
-- 반입·후공정은 `scripts/audio/audio_pipeline.py` 가 집행 — BOM 밖 bom_id와 **JUICE 근거 ❌ 항목은 코드가 차단**한다.
+- **합성 플레이스홀더 3종 가동 (2026-07-21)**: `SfxSynthGenerator`가 코드로 합성(단순 파형 1~2겹,
+  JUICE "작은 순간 1~2레이어" 준수) → `Assets/Audio/SFX/<bom_id>.wav` · 총 **117KB**.
+  **실음원이 같은 파일명으로 들어오면 그대로 교체**된다(§8 스왑 계약) — 생성기는 파일이 있으면 덮지 않는다.
+  빌더가 자동 생성하므로 합성물은 커밋 대상이 아니다(실음원 확보 시 ignore 해제).
+- source 공통: ElevenLabs(#9) 또는 Freesound(#10 — CC0/CC-BY만, 표기 기록) · M0-06이 관통 관문.
 - ~~주차 성공(브레이크+성공음)~~ = 탑다운 잔재 → J-1에서 삭제.
 
 ### J-1 · JUICE 개정안 (동결 문서 — 사람 승인 게이트)

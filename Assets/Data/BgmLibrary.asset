@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 535cbc79c9d09da40b011161033ebf9f, type: 3}
+  m_Name: BgmLibrary
+  m_EditorClassIdentifier: Assembly-CSharp::DontLate.BgmLibrarySO
+  entries:
+  - clip: {fileID: 8300000, guid: 206ac241b55cee042b0d5b692026af25, type: 3}
+    slot: 2
+  - clip: {fileID: 8300000, guid: 1afe4b482e66957428cc7a58b44ee429, type: 3}
+    slot: 2
+  - clip: {fileID: 8300000, guid: f46012296b69e164bada021c6bfafe78, type: 3}
+    slot: 1
+  - clip: {fileID: 8300000, guid: 33f94e9cca12a55479e8737f0311d966, type: 3}
+    slot: 2
+  - clip: {fileID: 8300000, guid: ca1b70d78fd806d4aad3c6abe2659280, type: 3}
+    slot: 1

@@ -96,6 +96,11 @@ namespace DontLate
         public static event Action<float> StaminaChanged;
         /// <summary>상호작용 포커스 획득/해제. 대상이 바뀔 때만 발행 — 프레임 데이터 아님.</summary>
         public static event Action<bool> InteractionFocusChanged;
+        /// <summary>포커스 대상의 주소(배송지일 때만, 아니면 null) — HUD 풀해상 표시용 (S-021 ②).
+        /// InteractionFocusChanged와 같은 빈도로 같이 발행되므로 별도 로그는 달지 않는다.</summary>
+        public static event Action<string> FocusAddressChanged;
+
+        public static void RaiseFocusAddressChanged(string address) => FocusAddressChanged?.Invoke(address);
 
         public static void RaiseCarryStateChanged(bool isCarrying)
         {
@@ -110,5 +115,76 @@ namespace DontLate
         }
 
         public static void RaiseStaminaChanged(float normalized) => StaminaChanged?.Invoke(normalized);
+
+        // ── 상차 (바코드) ─────────────────────────────────────
+        /// <summary>폰으로 박스 송장을 스캔했을 때. PhoneView가 목록 갱신에 구독 (S-011).</summary>
+        public static event Action<DeliveryData> BarcodeScanned;
+
+        public static void RaiseBarcodeScanned(DeliveryData data)
+        {
+            Log("BarcodeScanned " + Describe(data));
+            BarcodeScanned?.Invoke(data);
+        }
+
+        // ── 정산 ──────────────────────────────────────────────
+        /// <summary>지각·미니게임 벌금으로 빚이 즉시 늘었을 때 (S-015). HUD 플로팅 표시가 구독.</summary>
+        public static event Action<int> DebtIncreased;
+
+        public static void RaiseDebtIncreased(int amount)
+        {
+            Log("DebtIncreased +" + amount);
+            DebtIncreased?.Invoke(amount);
+        }
+
+        /// <summary>Camp 복귀 정산 완료. WorldDebtManager가 발행, HUD·연출이 구독.</summary>
+        public static event Action<DebtSettlement> DebtSettled;
+
+        public static void RaiseDebtSettled(DebtSettlement s)
+        {
+            Log("DebtSettled 상환 " + s.Repaid + " · 벌금 " + s.Penalty + " → 잔액 " + s.Money + " / 빚 " + s.Debt);
+            DebtSettled?.Invoke(s);
+        }
+
+        // ── 진상 전화 미니게임 ────────────────────────────────
+        public static event Action<PhoneCall> PhoneRang;
+        public static event Action MinigameRequested;
+        public static event Action<MinigameResult> MinigameEnded;
+
+        public static void RaisePhoneRang(PhoneCall call)
+        {
+            Log("PhoneRang ← " + call.CallerName);
+            PhoneRang?.Invoke(call);
+        }
+
+        public static void RaiseMinigameRequested()
+        {
+            Log("MinigameRequested");
+            MinigameRequested?.Invoke();
+        }
+
+        public static void RaiseMinigameEnded(MinigameResult result)
+        {
+            Log("MinigameEnded " + (result.Success ? "성공" : "실패")
+                + " (" + result.HitCount + "/" + result.TotalCount + ")");
+            MinigameEnded?.Invoke(result);
+        }
+
+        // ── 대화 ──────────────────────────────────────────────
+        // 시작/종료만 저빈도 경계 이벤트로 발행한다. 라인 단위 통지는 준-고빈도라
+        // WorldDialogueManager의 C# 이벤트(LineChanged)로 UI에만 흘린다 (CODE_RULES §9.5).
+        public static event Action<string> DialogueStarted;
+        public static event Action<string> DialogueEnded;
+
+        public static void RaiseDialogueStarted(string scenarioName)
+        {
+            Log("DialogueStarted → " + scenarioName);
+            DialogueStarted?.Invoke(scenarioName);
+        }
+
+        public static void RaiseDialogueEnded(string scenarioName)
+        {
+            Log("DialogueEnded → " + scenarioName);
+            DialogueEnded?.Invoke(scenarioName);
+        }
     }
 }

@@ -1,0 +1,18 @@
+#!/bin/sh
+# pre-push — main 직접 push 차단 (D-055 · 3모드 규칙).
+# 공장(정수)·아트(민지) 모드는 브랜치→PR로만 main에 들어온다.
+# 관제(남규 PC)만 예외: `git config dontlate.role director` 1회 설정.
+# 서버 측 이중 방벽은 GitHub 브랜치 보호(INBOX H13 — 웹 설정).
+
+role=$(git config dontlate.role)
+[ "$role" = "director" ] && exit 0
+
+while read local_ref local_sha remote_ref remote_sha; do
+    if [ "$remote_ref" = "refs/heads/main" ]; then
+        echo "[pre-push] main 직접 push 금지 — 이 PC의 모드(role=${role:-미설정})는 브랜치→PR로만 반입한다."
+        echo "[pre-push] 브랜치를 만들어 push 후 PR을 열어라: git switch -c feature/<이름>"
+        echo "[pre-push] (관제 PC라면 1회: git config dontlate.role director)"
+        exit 1
+    fi
+done
+exit 0

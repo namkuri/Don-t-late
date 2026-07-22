@@ -1,0 +1,27 @@
+#!/bin/sh
+# post-commit — 발주·결과·INBOX 변경을 디스코드로 자동 알림 (S-018).
+# 웹훅 미설정 PC에선 아무 일도 안 한다. 알림 실패는 커밋에 영향 없음(항상 exit 0).
+
+command -v python >/dev/null 2>&1 || exit 0
+git config dontlate.webhook >/dev/null 2>&1 || exit 0
+
+diff=$(git diff HEAD~1..HEAD -- planning/orders/ planning/INBOX.md 2>/dev/null)
+[ -z "$diff" ] && exit 0
+
+orders=$(echo "$diff" | grep -E '^\+## [A-Z]+-[0-9]+ ·' | sed 's/^+## /📦 발주 /')
+results=$(echo "$diff" | grep -E '^\+### 결과 ·' | sed 's/^+### /✅ /' | head -5)
+inbox=$(echo "$diff" | grep -E '^\+\| (H|R|B)-?[0-9]+ \|' | sed 's/^+| /🔔 INBOX /' | cut -c1-120)
+
+msg=""
+[ -n "$orders" ] && msg="$msg$orders
+"
+[ -n "$results" ] && msg="$msg$results
+"
+[ -n "$inbox" ] && msg="$msg$inbox
+"
+[ -z "$msg" ] && exit 0
+
+subject=$(git log -1 --format=%s)
+python scripts/discord_notify.py "**[늦지마]** $subject
+$msg" >/dev/null 2>&1
+exit 0

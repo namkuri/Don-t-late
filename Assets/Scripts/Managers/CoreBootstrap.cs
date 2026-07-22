@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace DontLate
 {
@@ -21,6 +22,18 @@ namespace DontLate
                 return;
             }
 
+            // 씬 단독 Play(S-013): 콘텐츠 씬이 이미 떠 있는 상태로 Core가 사후 로드된 경우 —
+            // Main으로 끌고 가지 않고, 현재 씬 도착만 통지해 매니저들을 동기화한다.
+            if (SceneManager.sceneCount > 1)
+            {
+                if (System.Enum.TryParse(SceneManager.GetActiveScene().name, out GameScene current))
+                {
+                    WorldSceneFlowManager.Instance.AdoptCurrent(current); // 다음 전이에서 이 씬이 정상 언로드되게 (S-015)
+                    WorldEvents.RaiseSceneTransitionCompleted(current);
+                }
+                return;
+            }
+
             WorldSceneFlowManager.Instance.Request(_firstScene);
         }
 
@@ -31,8 +44,16 @@ namespace DontLate
             _gameState.money = _gameState.startMoney;
             _gameState.debt = _gameState.startDebt;
             _gameState.cargo.Clear();
+            _gameState.scannedOrderIds.Clear();
             _gameState.completedCount = 0;
             _gameState.lateCount = 0;
+            _gameState.currentDistrict = string.Empty;
+            _gameState.deliveryHistory.Clear();
+            _gameState.totalEarned = 0;
+            _gameState.ownedFurnitureIds.Clear();
+            _gameState.placedFurniture.Clear();
+            _gameState.coinUnits = 0f;
+            _gameState.nextOrderSerial = 200;
         }
     }
 }

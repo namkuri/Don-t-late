@@ -21,10 +21,29 @@ namespace DontLate
 
         [Header("스태미나")]
         public float staminaMax = 100f;
-        public float staminaDrainPerSecond = 2.5f;
-        public float staminaDrainCarryMultiplier = 2f;
+        /// <summary>걷기 소모/초 (S-019 ③).</summary>
+        public float staminaDrainPerSecond = 2f;
+        /// <summary>달리기 소모/초 — 걷기보다 크게.</summary>
+        public float staminaDrainRunPerSecond = 6f;
+        /// <summary>든 상자 1kg당 추가 소모/초.</summary>
+        public float staminaDrainPerKg = 0.35f;
+        public float staminaDrainCarryMultiplier = 2f; // (구) 무게 미지정 주문 폴백
         public float staminaRecoverPerSecond = 6f;
         public float energyDrinkRecover = 40f;
+
+        [Header("취급주의 상자 (S-019 ①)")]
+        public float boxMaxHp = 100f;
+        /// <summary>이 속도(m/s) 이하 충돌은 무피해.</summary>
+        public float boxSafeImpactSpeed = 5f;
+        /// <summary>안전 속도 초과 1m/s당 피해.</summary>
+        public float boxDamagePerSpeed = 8f;
+
+        [Header("자판기 (S-019 ②)")]
+        public int vendingPrice = 1000;
+
+        [Header("투자 (S-019 ⑥ 금융앱)")]
+        /// <summary>코인 가격 진폭(기준가 1,000원 대비).</summary>
+        public float coinVolatility = 0.35f;
 
         [Header("시계")]
         // 실시간 1초당 흐르는 게임 내 분.
@@ -40,5 +59,29 @@ namespace DontLate
 
         [Header("상호작용")]
         public float interactRadius = 1.6f;
+        /// <summary>캐리 중 좌클릭 던지기 속도 (S-016).</summary>
+        public float throwSpeed = 7f;
+
+        [Header("정산 (Camp)")]
+        /// <summary>지각 1건당 벌금.</summary>
+        public int latePenalty = 300;
+        /// <summary>미니게임(진상 전화) 실패 벌금.</summary>
+        public int minigamePenalty = 200;
+        /// <summary>한 번에 실을 수 있는 최대 적재 수.</summary>
+        public int maxCargo = 3;
+
+        [Header("이동맵 (Travel)")]
+        /// <summary>근거리 노드 이동에 소모되는 게임 분.</summary>
+        public float travelNearMinutes = 30f;
+        /// <summary>원거리 노드 이동에 소모되는 게임 분.</summary>
+        public float travelFarMinutes = 90f;
+
+        [Header("미니게임 (진상 전화)")]
+        /// <summary>District 도착 후 전화가 오기까지의 실초.</summary>
+        public float phoneCallDelaySeconds = 15f;
+        /// <summary>리듬 시퀀스 키 개수.</summary>
+        public int minigameKeyCount = 4;
+        /// <summary>키 하나당 입력 제한 실초.</summary>
+        public float minigameKeyStepSeconds = 1.2f;
     }
 }

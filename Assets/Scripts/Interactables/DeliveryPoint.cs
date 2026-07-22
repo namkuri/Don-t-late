@@ -15,10 +15,25 @@ namespace DontLate
         [SerializeField] private Material _highlightMaterial;
         [SerializeField] private Vector2 _padSize = new Vector2(1f, 1f);
         [SerializeField] private GameObject _riseEffect;
+        [Tooltip("패드 위 포커스 시 나타나는 주소 라벨(월드 텍스트) — S-016 ②.")]
+        [SerializeField] private TMPro.TMP_Text _addressLabel;
         [SerializeField] private float _idleAlpha = 1f;
         [SerializeField] private float _focusedAlpha = 0.3f;
 
         public Vector2 PadSize => _padSize;
+        /// <summary>HUD 풀해상 표시용 주소 (S-021 ② — 월드 텍스트는 픽셀레이트에 뭉개져 폐지).</summary>
+        public string Address => _expectedOrder != null ? _expectedOrder.address : string.Empty;
+
+        /// <summary>런타임 스폰 초기화 (S-015 — 비콘 프리팹 인스턴스에 주문 배정).</summary>
+        public void SetOrder(DeliveryOrderSO order)
+        {
+            _expectedOrder = order;
+            if (_addressLabel != null)
+            {
+                _addressLabel.text = order != null ? order.address : string.Empty;
+                _addressLabel.gameObject.SetActive(false); // 포커스 시에만 (S-016 ②)
+            }
+        }
 
         private bool _focused;
         private bool _isDestination;
@@ -41,11 +56,35 @@ namespace DontLate
         public void Interact(PlayerContext ctx)
         {
             DeliveryOrderSO carried = ctx.Player.Status.CarriedOrder;
-            if (carried == null) return;
-            if (_expectedOrder != null && carried != _expectedOrder) return;
+            if (carried == null) { Debug.Log("[DeliveryPoint] 빈손 — 상자를 들고 와야 인증된다."); return; }
+            if (_expectedOrder != null && carried != _expectedOrder)
+            {
+                Debug.Log("[DeliveryPoint] 주소 불일치 — 든 건 #" + carried.orderId + ", 이 문은 #" + _expectedOrder.orderId + ".");
+                return;
+            }
+            // 이미 실패(지각)로 적재에서 빠진 건이면 인증 불가 — 상자를 떨어뜨리지 않는다 (S-009 엣지).
+            if (!WorldDeliveryManager.Instance.IsInCargo(carried))
+            {
+                Debug.Log("[DeliveryPoint] #" + carried.orderId + " 은 적재 목록에 없다(지각 실패?) — 인증 불가.");
+                return;
+            }
 
             ctx.Player.Status.ReleaseCarry(dropAsPhysics: true);
             WorldDeliveryManager.Instance.CompleteDelivery(carried);
+        }
+
+        /// <summary>
+        /// 던져 넣기 (S-017 ②) — 물리로 굴러온 상자가 패드 트리거에 닿으면 배송 인증.
+        /// 손에 든 상자는 콜라이더가 꺼져 있어 여기 안 걸린다(E 인증 경로 그대로).
+        /// </summary>
+        private void OnTriggerEnter(Collider other)
+        {
+            if (_expectedOrder == null) return;
+            if (!other.TryGetComponent(out PickupBox box) || box.Order != _expectedOrder) return;
+            if (WorldDeliveryManager.Instance == null || !WorldDeliveryManager.Instance.IsInCargo(box.Order)) return;
+
+            Destroy(other.gameObject);
+            WorldDeliveryManager.Instance.CompleteDelivery(box.Order);
         }
 
         /// <summary>플레이어 XZ가 패드 사각형(_padSize) 안에 있을 때만 포커스 후보로 인정한다.</summary>
@@ -62,6 +101,7 @@ namespace DontLate
             _focused = on;
             ApplyHighlight();
             ApplyRiseAlpha(on);
+            if (_addressLabel != null) _addressLabel.gameObject.SetActive(on); // 패드 위 = 주소 표시 (S-016 ②)
         }
 
         private void OnPackagePickedUp(DeliveryData data)
@@ -75,8 +115,8 @@ namespace DontLate
         {
             if (_expectedOrder == null || data.OrderId != _expectedOrder.orderId) return;
             _isDestination = false;
-            ApplyHighlight();
-            if (_riseEffect != null) _riseEffect.SetActive(false);
+            // 처리된 배송지는 패드째 완전 소멸 (S-009) — 서 있어도 다시 빛나지 않는다.
+            gameObject.SetActive(false);
         }
 
         private void ApplyHighlight()

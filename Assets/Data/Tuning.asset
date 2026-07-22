@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Tuning
   m_EditorClassIdentifier: Assembly-CSharp::DontLate.TuningConfigSO
   moveSpeed: 4
+  runSpeed: 6
   depthSpeedRatio: 0.7
   carrySpeedPenalty: 0.75
   jumpHeight: 1.1
@@ -20,9 +21,16 @@ MonoBehaviour:
   turnSpeed: 720
   staminaMax: 100
   staminaDrainPerSecond: 2.5
+  staminaDrainRunPerSecond: 6
+  staminaDrainPerKg: 0.35
   staminaDrainCarryMultiplier: 2
   staminaRecoverPerSecond: 6
   energyDrinkRecover: 40
+  boxMaxHp: 100
+  boxSafeImpactSpeed: 5
+  boxDamagePerSpeed: 8
+  vendingPrice: 1000
+  coinVolatility: 0.35
   gameMinutesPerRealSecond: 2
   morningStartHour: 6
   dayStartHour: 10
@@ -30,3 +38,12 @@ MonoBehaviour:
   nightStartHour: 20
   deadlineWarnMinutes: 30
   interactRadius: 1.6
+  throwSpeed: 7
+  latePenalty: 300
+  minigamePenalty: 200
+  maxCargo: 3
+  travelNearMinutes: 30
+  travelFarMinutes: 90
+  phoneCallDelaySeconds: 15
+  minigameKeyCount: 4
+  minigameKeyStepSeconds: 1.2

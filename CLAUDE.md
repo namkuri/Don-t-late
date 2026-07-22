@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 프로젝트
 
 **늦지마 (Don't Late)** — Unity 6.5 (6000.5.3f1) / URP 3D / 2.5D 배송 게임.
-현재 상태 (2026-07-20 갱신): **매니페스트 34종 중 25종 납품 완료** (커밋 f2ff808 + `WalkableVolume`·`GreyboxStageBuilder`).
+현재 상태 (2026-07-22 갱신): **매니페스트 34종 중 31종 납품 완료** (S-005~007로 Debt·Minigame·LoadingZone·드링크·TravelMapView·리듬뷰 추가 — 잔여는 P4 3종: Audio 완료 제외 Juice·PlayerEffects + ArtAuditReport).
 `Assets/Scripts/` 아래 Events·SO·Managers·Player·Interactables·UI·Utils 전부 실재한다 — **새로 만들기 전에 먼저 읽어라.**
 미착수는 P3·P4 12종 + 임포터 2종. 남은 작업·블로커는 `docs/plan/remaining-work.md`, 발주 상태는 `planning/TASKS.md`.
 Core 씬·플레이어 프리팹은 **아직 미조립**이라 그레이박스 루프는 완주되지 않았다.
@@ -28,6 +28,7 @@ Unity 에디터가 **열려 있어야** 동작한다 (`com.youngwoocho02.unity-c
 unity-cli status                      # 에디터 상태 (ready / compiling)
 unity-cli editor refresh --compile    # 스크립트 재컴파일 후 완료까지 대기  ← 코드 수정 후 필수
 unity-cli console --type error,warning        # 콘솔 에러/워닝 읽기 (셀프검증 ②)
+unity-cli console --clear             # ⚠ 장시간 Play 관측 전 필수 — 버퍼 상한 차면 최신 로그가 조회 누락(거짓 음성, 2026-07-22 실측)
 unity-cli console --lines 20 --stacktrace full
 unity-cli editor play --wait          # 플레이모드 진입 후 대기 (셀프검증 ③)
 unity-cli editor stop
@@ -42,8 +43,8 @@ unity-cli screenshot --view game      # 결과 눈으로 확인
 
 ## Git 경계 (병합 지옥 방지 — 위반 주의)
 
-- **커밋 가능**: `Assets/**/*.cs`, SO 클래스, 문서.
-- **커밋 금지**: `.unity` 씬, `.prefab` 프리팹, `ProjectSettings/` — 씬·프리팹은 남규 독점. 컴포넌트 부착이 필요하면 코드만 납품하고 "어느 프리팹에 뭘 붙일지"를 보고에 적는다.
+- **커밋 가능**: `Assets/**/*.cs`, SO 클래스·에셋, 문서, **프리팹(빌더·팩토리 산출물 — D-061 개정)**, 씬 **`.meta`**, `Assets/Settings/`·`ProjectSettings/`(D-032, 수정은 남규만).
+- **커밋 금지**: `.unity` 씬 **본문** — 씬은 빌더가 정본, 각 PC에서 `DontLate/Build ...` 메뉴로 재현(병합 지옥 방지).
 - 커밋 메시지 형식: `[P2] PlayerLocomotionManager: Z레인 이동+캐리 페널티 (via ClaudeCode) [self-tested]`
 - 현재 브랜치 `feature/jjs`, 메인은 `main`.
 
@@ -58,10 +59,13 @@ unity-cli screenshot --view game      # 결과 눈으로 확인
 - `IInteractable` 시그니처는 동결 — 변경 필요하면 구현하지 말고 사람에게 묻는다.
 - YAGNI: 발주서에 없는 기능·추상화·방어코드를 덧붙이지 않는다.
 
-## 세션 분기 (킷 v1.9 편입 — 2026-07-20)
+## 세션 분기 — 3모드 (D-055 확정 · 2026-07-22)
 
-- **공장 세션 (정수 · 구현)**: 위 내용이 전부다. 아래 킷 문서는 신경 쓰지 않아도 된다.
-- **디렉터 세션 (남규 · 관제)**: 사람이 "관제 시작" 또는 "PRETASK 모드"를 선언하면 —
+- **공장 모드 (정수 · 코드+오디오)**: 위 내용 + `planning/guides/factory-mode.md`가 운영 규칙.
+  브랜치→PR로만 반입 (main 직접 push는 pre-push 훅이 차단 — `dontlate.role` 미설정 상태가 곧 공장).
+- **아트 모드 (민지 · 생성·반입)**: `planning/guides/art-mode.md`. Unity 불요 — 반입 PR을 열면
+  검역 리포트·프리뷰 스크린샷을 관제가 회신. 라이선스 기록 누락 = 반입 차단.
+- **관제 모드 (남규 · 디렉터)**: 사람이 "관제 시작" 또는 "PRETASK 모드"를 선언하면 —
   `PRETASK.md`(모드 헌장·이정표 M0~M6) → `PROCESS.md`(상태기계) → `HARNESS.md` → `CONNECTIONS.md` 로드,
   `.claude/agents/orchestrator.md` 역할로 가동. 상태는 `planning/STATUS.md`, 발주는 `planning/TASKS.md`
   (첫 관제 세션이 생성). 시뮬 기록은 `_sim/`(드라이런 — 실산출물 아님).

@@ -43,6 +43,13 @@ namespace DontLate
             if (Instance == this) Instance = null;
         }
 
+        /// <summary>씬 단독 Play(S-015): 이미 떠 있는 콘텐츠 씬을 현재 상태로 인계 — 다음 전이에서 정상 언로드되게.</summary>
+        public void AdoptCurrent(GameScene scene)
+        {
+            _current = scene;
+            _hasCurrent = true;
+        }
+
         public bool CanGoTo(GameScene next)
         {
             if (!_hasCurrent) return true;

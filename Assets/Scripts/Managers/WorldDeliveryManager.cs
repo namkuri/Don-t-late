@@ -26,6 +26,23 @@ namespace DontLate
         private void OnEnable() => WorldEvents.DeliveryFailed += OnDeliveryFailed;
         private void OnDisable() => WorldEvents.DeliveryFailed -= OnDeliveryFailed;
 
+        /// <summary>이동맵 노드 선택 시 목적 구역 기록 (S-015). District 스포너가 이 값으로 짐·비콘을 깐다.</summary>
+        public void SetDestination(string district)
+        {
+            _gameState.currentDistrict = district;
+        }
+
+        /// <summary>폰 바코드 스캔 등록 (S-011). 이미 등록된 건이면 false — 호출자가 경고 표시.</summary>
+        public bool RegisterBarcode(DeliveryOrderSO order)
+        {
+            if (_gameState.scannedOrderIds.Contains(order.orderId)) return false;
+            _gameState.scannedOrderIds.Add(order.orderId);
+            WorldEvents.RaiseBarcodeScanned(DeliveryData.From(order));
+            return true;
+        }
+
+        public bool IsScanned(DeliveryOrderSO order) => _gameState.scannedOrderIds.Contains(order.orderId);
+
         /// <summary>Camp에서 짐을 받는다.</summary>
         public void AcceptOrder(DeliveryOrderSO order)
         {
@@ -48,6 +65,15 @@ namespace DontLate
 
             _gameState.money += order.reward;
             _gameState.completedCount++;
+            _gameState.totalEarned += order.reward;
+            _gameState.deliveryHistory.Add(new DeliveryRecord // 택배앱 히스토리 (S-019)
+            {
+                orderId = order.orderId,
+                address = order.address,
+                reward = order.reward,
+                day = _gameState.day,
+                minuteOfDay = Mathf.FloorToInt(_gameState.minuteOfDay)
+            });
             WorldEvents.RaiseDeliveryCompleted(DeliveryData.From(order));
         }
 

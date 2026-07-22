@@ -7,7 +7,9 @@ namespace DontLate
     /// </summary>
     public class InteractionSensor : MonoBehaviour
     {
-        private const int MAX_HITS = 8;
+        // 8이면 District처럼 콜라이더가 많은 씬에서 버퍼가 비상호작용물로 차 비콘이 밀려난다
+        // (S-009 실측: "E가 거의 발동 안 됨"의 범인). 후보 수집은 넉넉히.
+        private const int MAX_HITS = 32;
 
         [SerializeField] private LayerMask _interactableMask = ~0;
 
@@ -57,6 +59,8 @@ namespace DontLate
             _current?.SetHighlight(true);
 
             WorldEvents.RaiseInteractionFocusChanged(_current != null);
+            // 배송지 포커스면 주소를 HUD로 (S-021 ② — 월드 텍스트는 픽셀화에 뭉개짐).
+            WorldEvents.RaiseFocusAddressChanged(_current is DeliveryPoint point ? point.Address : null);
         }
 
         private void OnDrawGizmosSelected()

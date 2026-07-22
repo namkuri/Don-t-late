@@ -49,11 +49,15 @@ namespace DontLate
         {
             WorldEvents.ClockTicked += OnClockTicked;
             WorldEvents.CarryStateChanged += OnCarryStateChanged;
+            WorldEvents.PackagePickedUp += OnPackagePickedUp;
             WorldEvents.DeadlineWarned += OnDeadlineWarned;
             WorldEvents.DeliveryCompleted += OnDeliveryCompleted;
             WorldEvents.DeliveryFailed += OnDeliveryFailed;
+            WorldEvents.DebtSettled += OnDebtSettled;
+            WorldEvents.DebtIncreased += OnDebtIncreased;
             WorldEvents.StaminaChanged += OnStaminaChanged;
             WorldEvents.InteractionFocusChanged += OnInteractionFocusChanged;
+            WorldEvents.FocusAddressChanged += OnFocusAddressChanged;
             WorldEvents.SceneTransitionCompleted += OnSceneTransitionCompleted;
         }
 
@@ -61,11 +65,15 @@ namespace DontLate
         {
             WorldEvents.ClockTicked -= OnClockTicked;
             WorldEvents.CarryStateChanged -= OnCarryStateChanged;
+            WorldEvents.PackagePickedUp -= OnPackagePickedUp;
             WorldEvents.DeadlineWarned -= OnDeadlineWarned;
             WorldEvents.DeliveryCompleted -= OnDeliveryCompleted;
             WorldEvents.DeliveryFailed -= OnDeliveryFailed;
+            WorldEvents.DebtSettled -= OnDebtSettled;
+            WorldEvents.DebtIncreased -= OnDebtIncreased;
             WorldEvents.StaminaChanged -= OnStaminaChanged;
             WorldEvents.InteractionFocusChanged -= OnInteractionFocusChanged;
+            WorldEvents.FocusAddressChanged -= OnFocusAddressChanged;
             WorldEvents.SceneTransitionCompleted -= OnSceneTransitionCompleted;
         }
 
@@ -95,15 +103,19 @@ namespace DontLate
         private void OnCarryStateChanged(bool isCarrying)
         {
             if (_cardRoot != null) _cardRoot.SetActive(isCarrying);
-            if (!isCarrying) { _hasCard = false; return; }
+            if (!isCarrying) _hasCard = false;
+            // 카드 내용은 PackagePickedUp(실제 든 건의 페이로드)이 채운다 (S-016 ① —
+            // 구현이 적재 첫 건을 읽던 결함 수리: 든 것과 다른 주소가 표시됐다).
+        }
 
-            // 캐리 시작 — 적재 목록(GameStateSO)에서 현재 배송의 주소·마감을 읽어 카드에 채운다(읽기만).
-            DeliveryOrderSO order = FirstCargo();
-            if (order == null) { _hasCard = false; return; }
-
-            _activeDeadline = order.deadlineMinuteOfDay;
+        private void OnPackagePickedUp(DeliveryData data)
+        {
+            _activeDeadline = data.DeadlineMinuteOfDay;
             _hasCard = true;
-            if (_addressLabel != null) _addressLabel.text = order.address;
+            if (_cardRoot != null) _cardRoot.SetActive(true);
+            if (_addressLabel != null)
+                _addressLabel.text = data.Address
+                    + (string.IsNullOrEmpty(data.District) ? "" : "  <size=70%><color=#8a93a8>" + data.District + "</color></size>");
             if (_cardBackground != null) _cardBackground.color = CardNormal;
 
             int remaining = Mathf.FloorToInt(_activeDeadline - _gameState.minuteOfDay);
@@ -121,12 +133,68 @@ namespace DontLate
             _hasCard = false;
             if (_cardRoot != null) _cardRoot.SetActive(false);
             RefreshEconomy();
+            // 보상 플로팅 (S-015) — 돈 라벨 곁 시안.
+            SpawnFloatingAmount("+₩" + data.Reward.ToString("N0"), new Color(0.208f, 0.878f, 0.784f), _moneyLabel);
         }
 
         private void OnDeliveryFailed(DeliveryData data)
         {
             _hasCard = false;
             if (_cardRoot != null) _cardRoot.SetActive(false);
+        }
+
+        // 정산 직후 즉시 반영 — 정산 중엔 시간이 멈춰(ClockTicked 없음) 이 경로가 유일하다 (S-010).
+        private void OnDebtSettled(DebtSettlement _) => RefreshEconomy();
+
+        // 벌금 즉시 가산 (S-015) — 빚 라벨 옆에 빨간 플로팅 금액.
+        private void OnDebtIncreased(int amount)
+        {
+            RefreshEconomy();
+            SpawnFloatingAmount("+₩" + amount.ToString("N0"), new Color(1f, 0.45f, 0.35f), _debtLabel);
+        }
+
+        // ── 플로팅 금액 (S-015) — 라벨 곁에서 떠올랐다 사라진다 ──
+        private void SpawnFloatingAmount(string text, Color color, TMP_Text anchorLabel)
+        {
+            if (anchorLabel == null) return;
+
+            GameObject go = new GameObject("FloatAmount", typeof(RectTransform));
+            go.transform.SetParent(anchorLabel.transform.parent, false);
+            TMP_Text label = go.AddComponent<TextMeshProUGUI>();
+            label.font = anchorLabel.font;
+            label.fontSize = anchorLabel.fontSize;
+            label.fontStyle = FontStyles.Bold;
+            label.color = color;
+            label.text = text;
+            label.alignment = TextAlignmentOptions.Right;
+            label.raycastTarget = false;
+            label.textWrappingMode = TextWrappingModes.NoWrap;
+
+            RectTransform rect = (RectTransform)go.transform;
+            RectTransform anchorRect = anchorLabel.rectTransform;
+            rect.anchorMin = anchorRect.anchorMin;
+            rect.anchorMax = anchorRect.anchorMax;
+            rect.pivot = anchorRect.pivot;
+            rect.sizeDelta = anchorRect.sizeDelta;
+            rect.anchoredPosition = anchorRect.anchoredPosition + new Vector2(-30f, -8f);
+
+            StartCoroutine(FloatAndFade(label, rect));
+        }
+
+        private System.Collections.IEnumerator FloatAndFade(TMP_Text label, RectTransform rect)
+        {
+            const float DURATION = 1.4f;
+            Vector2 start = rect.anchoredPosition;
+            Color baseColor = label.color;
+            float t = 0f;
+            while (t < 1f)
+            {
+                t += Time.unscaledDeltaTime / DURATION;
+                rect.anchoredPosition = start + new Vector2(0f, 46f * t);
+                label.color = new Color(baseColor.r, baseColor.g, baseColor.b, 1f - t * t);
+                yield return null;
+            }
+            Destroy(label.gameObject);
         }
 
         // ── 스태미나 ──────────────────────────────────────────
@@ -139,6 +207,17 @@ namespace DontLate
         private void OnInteractionFocusChanged(bool focused)
         {
             if (_ePrompt != null) _ePrompt.SetActive(focused);
+        }
+
+        // 배송지 포커스면 주소를 [E] 안내에 병기 — 풀해상 오버레이라 픽셀화에 안 뭉개진다 (S-021 ②).
+        private void OnFocusAddressChanged(string address)
+        {
+            if (_ePrompt == null) return;
+            TMP_Text label = _ePrompt.GetComponentInChildren<TMP_Text>(true);
+            if (label == null) return;
+            label.text = string.IsNullOrEmpty(address)
+                ? "[E] 상호작용"
+                : "[E] 배송 인증  <color=#ff9f45>" + address + "</color>";
         }
 
         // ── 씬별 가시성 ──────────────────────────────────────
@@ -155,12 +234,5 @@ namespace DontLate
             if (_debtLabel != null) _debtLabel.text = $"빚 ₩{_gameState.debt:N0}";
         }
 
-        private DeliveryOrderSO FirstCargo()
-        {
-            if (_gameState == null) return null;
-            foreach (DeliveryOrderSO o in _gameState.cargo)
-                if (o != null) return o;
-            return null;
-        }
     }
 }
