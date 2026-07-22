@@ -460,7 +460,7 @@
 
 수용기준: 메뉴가 DontLate/Build/ 아래로 통합 · All Scenes 1클릭으로 전 씬 재조립·빌드세팅 등록까지 완료 · 콘솔 0.
 
-### 결과 · 2026-07-22 19:06 (리드 8분)
+### 결과 · 2026-07-22 19:00 (리드 2분)
 - 메뉴 전면 재편: `DontLate/Build/` 카테고리로 통합 — ★ All Scenes(0) · Core(10) · Camp(12) · Home(13) · District(14) · Scene Flow UI(15) · Generate SFX는 상위 유지 · 최초 셋업(21) · Greybox 개발용/Clear(40·41).
 - **★ All Scenes 신설** — 씬 파일 확보 → Core → Camp/Home/District 무대 → 흐름 UI → 빌드 세팅 등록 → Core 복귀까지 1클릭. 관찰: 실행 후 활성 씬 Core·콘솔 0.
 - 검증: 컴파일 ○ 콘솔 0 ○. 빌드 원리 설명은 채팅 회신.
