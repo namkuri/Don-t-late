@@ -34,9 +34,9 @@ namespace DontLate
         [Header("취급주의 상자 (S-019 ①)")]
         public float boxMaxHp = 100f;
         /// <summary>이 속도(m/s) 이하 충돌은 무피해.</summary>
-        public float boxSafeImpactSpeed = 3f;
+        public float boxSafeImpactSpeed = 5f;
         /// <summary>안전 속도 초과 1m/s당 피해.</summary>
-        public float boxDamagePerSpeed = 12f;
+        public float boxDamagePerSpeed = 8f;
 
         [Header("자판기 (S-019 ②)")]
         public int vendingPrice = 1000;

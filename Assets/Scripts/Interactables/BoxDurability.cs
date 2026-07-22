@@ -69,7 +69,6 @@ namespace DontLate
             Object.Destroy(bg.GetComponent<Collider>());
             bg.SetParent(_barRoot, false);
             bg.localScale = new Vector3(0.8f, 0.1f, 1f);
-            bg.localRotation = Quaternion.Euler(0f, 180f, 0f);
             bg.GetComponent<Renderer>().material.color = new Color(0.05f, 0.05f, 0.08f, 1f);
 
             _barFill = GameObject.CreatePrimitive(PrimitiveType.Quad).transform;
@@ -77,7 +76,6 @@ namespace DontLate
             _barFill.SetParent(_barRoot, false);
             _barFill.localPosition = new Vector3(0f, 0f, -0.005f);
             _barFill.localScale = new Vector3(0.76f, 0.07f, 1f);
-            _barFill.localRotation = Quaternion.Euler(0f, 180f, 0f);
             _barFill.GetComponent<Renderer>().material.color = new Color(0.35f, 0.9f, 0.45f, 1f);
 
             _barRoot.gameObject.SetActive(false); // 무손상일 땐 숨김

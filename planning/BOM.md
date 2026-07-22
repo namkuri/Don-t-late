@@ -78,6 +78,8 @@
 | ui_rhythm_set | 리듬 미니게임: 방향키 4종+노트 트랙+판정선 | ~6 | MinigameRhythmView(P3) 소비 | generate |
 | ui_title | 타이틀 로고 "늦지마" | 1 | Main 씬 + itch/문서 재사용 | generate |
 | ui_cutin_late | "늦지마!" 컷인 그래픽 | 1 | FadeScreen._lateCutIn 소켓 (**코드 존재 — 즉시 소비 가능**) | generate |
+| ui_phone_wallpaper | 폰 배경화면 | 1 | `PhoneView._wallpaper` Sprite 슬롯 (S-020) — 폴백=코드 그라디언트. 세로 430×610 비율 | generate(이미지) |
+| ui_phone_icon_* | 폰 앱 아이콘 5종 (택배·음악·금융·은행·가구) | 5 | `PhoneView._appIcons[0..4]` Sprite 슬롯 — 폴백=라운드 색타일+이모지. 96×96 | generate(이미지) |
 
 ## 6.5 씬별 UI 구성 (조립 명세 — 씬 빌더·UI 뷰 발주서의 원본)
 

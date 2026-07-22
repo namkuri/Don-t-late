@@ -27,8 +27,8 @@ MonoBehaviour:
   staminaRecoverPerSecond: 6
   energyDrinkRecover: 40
   boxMaxHp: 100
-  boxSafeImpactSpeed: 3
-  boxDamagePerSpeed: 12
+  boxSafeImpactSpeed: 5
+  boxDamagePerSpeed: 8
   vendingPrice: 1000
   coinVolatility: 0.35
   gameMinutesPerRealSecond: 2

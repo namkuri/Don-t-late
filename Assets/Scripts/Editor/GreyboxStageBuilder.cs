@@ -843,7 +843,7 @@ namespace DontLate.EditorTools
             GameObject labelGo = new GameObject("AddressLabel");
             labelGo.transform.SetParent(root.transform, false);
             labelGo.transform.localPosition = new Vector3(0f, 1.7f, 0f);
-            labelGo.transform.localRotation = Quaternion.Euler(0f, 180f, 0f); // TMP 앞면이 -Z(카메라)를 보게
+            // 무회전 — TMP·쿼드의 앞면은 -Z(카메라 방향). 180° 돌리면 카메라 반대편을 봐서 안 보인다 (S-020 실사고).
             var label = labelGo.AddComponent<TMPro.TextMeshPro>();
             label.font = AssetDatabase.LoadAssetAtPath<TMPro.TMP_FontAsset>("Assets/Art/UI/Fonts/Pretendard-Regular SDF.asset");
             label.fontSize = 4f;

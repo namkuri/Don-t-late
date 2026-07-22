@@ -41,3 +41,11 @@
 - 2026-07-21 S-003 구역 배치 공간 정합 수정: DistrictLayoutGenerator.cs 건물 생성만 수정(BUILDING_FRONT_Z=3.0 상수 추가·floor 큐브 localPos.z에 centerZLocal 오프셋 — 전면 −Z면을 세계 Z=+3.0에 정렬, 깊이는 +Z로만 확장). 시드·슬롯·RNG 스트림 불변(오프셋은 추첨 후 위치계산). 실측(District Play, OnEnable→Generate): 건물12 전수 min.z=3.000(≥2.9 기준 충족)·max.z=8.000. 가로등8기 교차: 솔리드 포스트(LampModel, 뒷줄 max.z=2.93) 교차 0 — 건물전면3.0이 0.07u 클리어. 광원 Cone(라이트 빔 비주얼 max.z=3.60) 3기 겹침은 파묻힘 아님, 벽면 광투사 의도. 결정론: Generate() 재실행 후 fingerprint A==B True·roots=1(멱등). 콘솔 error 0·play stop·Main 재오픈. Main mtime 15:20(내 세션 이전·미수정)·_intake 불변. 스크린샷 Screenshots/district_spacefix.png(건물이 가로등 라인 뒤로 물러남·보도 전면 클리어·접지 정상). 커밋 안함(사람 게이트). (via ClaudeCode)
 - 2026-07-21 정수 PR(feature/jjs, 오디오 레인 4커밋 1,183줄) 관제 독립 재검증: 병합충돌 1건(CoreSceneBuilder — 대화·오디오 매니저 공존으로 해소) · 컴파일·콘솔 0 · 리스너 1개(D-041 구조 확인) · BGM 무파일 강등 정상 → ACCEPT, 충돌 해소본을 PR 브랜치에 push
 - 2026-07-21 정수 PR merge 실행(사람 구두 승인 위임) — main=e0535aa, 오디오 레인 편입. GitHub PR 자동 Merged 처리됨
+
+## 서명 정정 (2026-07-22 — 주체 표기 정확성)
+
+- 본 저장소의 2026-07-22 커밋들 중 `Co-Authored-By: Claude Opus 4.8` 표기는 **오기** — Claude Code
+  하네스의 기본 커밋 서명 템플릿이 실제 모델과 무관하게 찍힌 것이다. 실제 수행 모델은
+  **Claude Fable 5**(관제 세션 직접 수행 — 서브에이전트 아님. 서브에이전트 투입은 S-001~003 시기 unity-dev가 마지막).
+- 커밋 `0cfb978`부터 `Co-Authored-By: Claude Fable 5`로 정정. 과거 커밋은 히스토리 불변 원칙상
+  재작성하지 않고 이 기록으로 정정을 갈음한다 (사람 지시 — "커밋 내용에 솔직하게").

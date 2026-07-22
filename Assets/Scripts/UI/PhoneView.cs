@@ -31,6 +31,12 @@ namespace DontLate
         [SerializeField] private float _hiddenY = -640f;
         [SerializeField] private float _shownY = 24f;
 
+        [Header("아트 스왑 슬롯 (S-020 — 플레이스홀더 계약: 비면 코드 생성 폴백)")]
+        [Tooltip("배경화면. 실아트가 오면 여기 꽂는다 — bom_id: ui_phone_wallpaper")]
+        [SerializeField] private Sprite _wallpaper;
+        [Tooltip("앱 아이콘 5종 (택배·음악·금융·은행·가구 순) — bom_id: ui_phone_icon_*")]
+        [SerializeField] private Sprite[] _appIcons;
+
         private readonly List<DeliveryData> _scanned = new List<DeliveryData>();
         private readonly Dictionary<int, int> _status = new Dictionary<int, int>(); // 0진행 1완료 2지각
         private InputAction _toggle;
@@ -103,6 +109,8 @@ namespace DontLate
         private void OnClockTicked(GameClock clock)
         {
             _lastClockMinute = clock.MinuteOfDay;
+            if (_statusClock != null)
+                _statusClock.text = clock.Hour.ToString("00") + ":" + clock.Minute.ToString("00");
             if (_open) RefreshCurrent();
         }
 
@@ -138,11 +146,11 @@ namespace DontLate
             if (_titleLabel != null)
                 _titleLabel.text = screen switch
                 {
-                    Screen.Delivery => "📦 배송상차",
-                    Screen.Music => "🎵 음악",
-                    Screen.Invest => "📈 늦코인",
-                    Screen.Bank => "🏦 은행",
-                    Screen.Furniture => "🛋️ 가구",
+                    Screen.Delivery => "배송상차",
+                    Screen.Music => "음악",
+                    Screen.Invest => "늦코인",
+                    Screen.Bank => "은행",
+                    Screen.Furniture => "가구",
                     _ => "홈"
                 };
             RefreshCurrent();
@@ -162,6 +170,8 @@ namespace DontLate
 
         // ── UI 구축 (런타임) ─────────────────────────────────
 
+        private TMP_Text _statusClock;
+
         private void BuildUI()
         {
             Transform screenBg = _panel.Find("Screen");
@@ -170,14 +180,32 @@ namespace DontLate
             // 기존 빌더 산출물(구 배송상차 위젯)이 남아 있으면 청소 — v2는 전부 런타임 생성.
             for (int i = screenBg.childCount - 1; i >= 0; i--) Destroy(screenBg.GetChild(i).gameObject);
 
-            _titleLabel = MakeText(screenBg, "Title", "홈", 36f, new Color(1f, 0.62f, 0.27f), TextAlignmentOptions.Top);
-            Anchor(_titleLabel.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -18f), 48f);
+            // 배경화면 (S-020) — 실아트 스왑 슬롯, 폴백 = 남보라 세로 그라디언트.
+            GameObject wall = new GameObject("Wallpaper", typeof(RectTransform));
+            wall.transform.SetParent(screenBg, false);
+            Image wallImage = wall.AddComponent<Image>();
+            wallImage.sprite = _wallpaper != null ? _wallpaper : GradientSprite();
+            wallImage.color = Color.white;
+            wallImage.raycastTarget = false;
+            RectTransform wallRect = (RectTransform)wall.transform;
+            wallRect.anchorMin = Vector2.zero;
+            wallRect.anchorMax = Vector2.one;
+            wallRect.offsetMin = wallRect.offsetMax = Vector2.zero;
 
-            Button home = MakeButton(screenBg, "HomeBtn", "⌂", () => ShowScreen(Screen.Home));
+            // 상태바 — 시계·통신사·배터리 (실사 폰 감각).
+            _statusClock = MakeText(screenBg, "StatusClock", "--:--", 22f, Color.white, TextAlignmentOptions.TopLeft);
+            Anchor(_statusClock.rectTransform, new Vector2(0f, 1f), new Vector2(0.5f, 1f), new Vector2(18f, -8f), 28f);
+            TMP_Text carrier = MakeText(screenBg, "StatusRight", "LateTel LTE 100%", 20f, new Color(1f, 1f, 1f, 0.85f), TextAlignmentOptions.TopRight);
+            Anchor(carrier.rectTransform, new Vector2(0.5f, 1f), new Vector2(1f, 1f), new Vector2(-18f, -8f), 28f);
+
+            _titleLabel = MakeText(screenBg, "Title", "홈", 34f, Color.white, TextAlignmentOptions.Top);
+            Anchor(_titleLabel.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -38f), 44f);
+
+            Button home = MakeButton(screenBg, "HomeBtn", "홈", () => ShowScreen(Screen.Home));
             RectTransform homeRect = (RectTransform)home.transform;
             homeRect.anchorMin = homeRect.anchorMax = homeRect.pivot = new Vector2(1f, 1f);
             homeRect.sizeDelta = new Vector2(54f, 44f);
-            homeRect.anchoredPosition = new Vector2(-12f, -12f);
+            homeRect.anchoredPosition = new Vector2(-10f, -38f);
 
             _screenRoot = new GameObject("Screens", typeof(RectTransform)).transform;
             _screenRoot.SetParent(screenBg, false);
@@ -185,7 +213,7 @@ namespace DontLate
             rootRect.anchorMin = Vector2.zero;
             rootRect.anchorMax = Vector2.one;
             rootRect.offsetMin = new Vector2(16f, 14f);
-            rootRect.offsetMax = new Vector2(-16f, -70f);
+            rootRect.offsetMax = new Vector2(-16f, -88f); // 상태바+타이틀 아래부터
 
             BuildHomeScreen();
             BuildDeliveryScreen();
@@ -210,20 +238,93 @@ namespace DontLate
         private void BuildHomeScreen()
         {
             GameObject screen = NewScreen(Screen.Home);
-            (string label, Screen target)[] apps =
+            (string emoji, string label, Screen target, Color tint)[] apps =
             {
-                ("📦\n택배", Screen.Delivery), ("🎵\n음악", Screen.Music), ("📈\n금융", Screen.Invest),
-                ("🏦\n은행", Screen.Bank), ("🛋️\n가구", Screen.Furniture)
+                ("택", "택배", Screen.Delivery, new Color(0.95f, 0.62f, 0.25f)),
+                ("음", "음악", Screen.Music, new Color(0.62f, 0.45f, 0.95f)),
+                ("금", "금융", Screen.Invest, new Color(0.30f, 0.78f, 0.50f)),
+                ("은", "은행", Screen.Bank, new Color(0.32f, 0.56f, 0.92f)),
+                ("가", "가구", Screen.Furniture, new Color(0.75f, 0.52f, 0.35f)),
             };
             for (int i = 0; i < apps.Length; i++)
             {
                 Screen target = apps[i].target;
-                Button button = MakeButton(screen.transform, "App_" + target, apps[i].label, () => ShowScreen(target));
-                RectTransform rect = (RectTransform)button.transform;
+
+                // 아이콘 타일 — 라운드 사각 + 앱 색 (실아트 스왑 슬롯 _appIcons[i] 우선).
+                GameObject tile = new GameObject("App_" + target, typeof(RectTransform));
+                tile.transform.SetParent(screen.transform, false);
+                Image tileImage = tile.AddComponent<Image>();
+                if (_appIcons != null && i < _appIcons.Length && _appIcons[i] != null)
+                {
+                    tileImage.sprite = _appIcons[i];
+                    tileImage.color = Color.white;
+                }
+                else
+                {
+                    tileImage.sprite = RoundedSprite();
+                    tileImage.type = Image.Type.Sliced;
+                    tileImage.color = apps[i].tint;
+                }
+                Button button = tile.AddComponent<Button>();
+                button.targetGraphic = tileImage;
+                button.onClick.AddListener(() => ShowScreen(target));
+
+                RectTransform rect = (RectTransform)tile.transform;
                 rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0f, 1f);
-                rect.sizeDelta = new Vector2(116f, 108f);
-                rect.anchoredPosition = new Vector2(10f + (i % 3) * 128f, -14f - (i / 3) * 122f);
+                rect.sizeDelta = new Vector2(96f, 96f);
+                rect.anchoredPosition = new Vector2(22f + (i % 3) * 124f, -22f - (i / 3) * 138f);
+
+                TMP_Text emoji = MakeText(tile.transform, "Emoji", apps[i].emoji, 44f, Color.white, TextAlignmentOptions.Center);
+                RectTransform emojiRect = emoji.rectTransform;
+                emojiRect.anchorMin = Vector2.zero;
+                emojiRect.anchorMax = Vector2.one;
+                emojiRect.offsetMin = emojiRect.offsetMax = Vector2.zero;
+
+                TMP_Text name = MakeText(tile.transform, "Name", apps[i].label, 20f, Color.white, TextAlignmentOptions.Center);
+                RectTransform nameRect = name.rectTransform;
+                nameRect.anchorMin = new Vector2(0f, 0f);
+                nameRect.anchorMax = new Vector2(1f, 0f);
+                nameRect.pivot = new Vector2(0.5f, 1f);
+                nameRect.anchoredPosition = new Vector2(0f, -6f);
+                nameRect.sizeDelta = new Vector2(0f, 26f);
             }
+        }
+
+        // ── 코드 생성 폴백 스프라이트 (S-020 — 실아트 오면 인스펙터 슬롯이 대체) ──
+
+        private static Sprite _roundedCache;
+        private static Sprite _gradientCache;
+
+        private static Sprite RoundedSprite()
+        {
+            if (_roundedCache != null) return _roundedCache;
+            const int size = 64, radius = 18;
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    float dx = Mathf.Max(0, Mathf.Max(radius - x, x - (size - 1 - radius)));
+                    float dy = Mathf.Max(0, Mathf.Max(radius - y, y - (size - 1 - radius)));
+                    bool inside = dx * dx + dy * dy <= radius * radius;
+                    tex.SetPixel(x, y, inside ? Color.white : Color.clear);
+                }
+            tex.Apply();
+            _roundedCache = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f),
+                100f, 0, SpriteMeshType.FullRect, new Vector4(radius, radius, radius, radius));
+            return _roundedCache;
+        }
+
+        private static Sprite GradientSprite()
+        {
+            if (_gradientCache != null) return _gradientCache;
+            const int h = 128;
+            var tex = new Texture2D(1, h, TextureFormat.RGBA32, false);
+            Color bottom = new Color(0.05f, 0.06f, 0.12f);
+            Color top = new Color(0.14f, 0.10f, 0.24f);
+            for (int y = 0; y < h; y++) tex.SetPixel(0, y, Color.Lerp(bottom, top, (float)y / h));
+            tex.Apply();
+            _gradientCache = Sprite.Create(tex, new Rect(0, 0, 1, h), new Vector2(0.5f, 0.5f));
+            return _gradientCache;
         }
 
         private void BuildDeliveryScreen()
@@ -249,10 +350,10 @@ namespace DontLate
 
             (string label, System.Action act)[] controls =
             {
-                ("⏯", () => WorldAudioManager.Instance?.TogglePause()),
-                ("⏭", () => WorldAudioManager.Instance?.NextTrack()),
-                ("🔉", () => WorldAudioManager.Instance?.SetVolume(WorldAudioManager.Instance.Volume - 0.1f)),
-                ("🔊", () => WorldAudioManager.Instance?.SetVolume(WorldAudioManager.Instance.Volume + 0.1f)),
+                ("재생/정지", () => WorldAudioManager.Instance?.TogglePause()),
+                ("다음곡", () => WorldAudioManager.Instance?.NextTrack()),
+                ("볼륨-", () => WorldAudioManager.Instance?.SetVolume(WorldAudioManager.Instance.Volume - 0.1f)),
+                ("볼륨+", () => WorldAudioManager.Instance?.SetVolume(WorldAudioManager.Instance.Volume + 0.1f)),
             };
             for (int i = 0; i < controls.Length; i++)
             {
@@ -553,7 +654,9 @@ namespace DontLate
             GameObject go = new GameObject(name, typeof(RectTransform));
             go.transform.SetParent(parent, false);
             Image bg = go.AddComponent<Image>();
-            bg.color = new Color(0.10f, 0.14f, 0.20f, 1f);
+            bg.sprite = RoundedSprite();
+            bg.type = Image.Type.Sliced;
+            bg.color = new Color(0.13f, 0.18f, 0.26f, 0.95f);
             Button button = go.AddComponent<Button>();
             button.targetGraphic = bg;
             button.onClick.AddListener(() => onClick());
