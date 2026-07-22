@@ -15,8 +15,8 @@
 | 5 | **Blender headless** (bpy CLI) | 후처리: 폴리 축소·원점 교정·익스포트 | asset-3d | ⬜ | blender 설치 + CLI 경로 확인 | 🖐 사람 수동 Blender |
 | 6 | **Mixamo** | 자동리깅·애니 리타깃 | character-anim | 🖐 | API 없음 — 웹 업로드/다운로드 절차서 준비 | 애니 세트 축소·정적 캐릭터 |
 | 7 | **Cascadeur** | 애니 보정 | character-anim | 🖐 | 데스크톱 앱 설치 | Mixamo 프리셋 그대로 사용 |
-| 8 | **Suno** | BGM 루프 1곡 | audio | ⬜ | 웹/API | #10 Freesound 루프 |
-| 9 | **ElevenLabs** | SFX·보이스 | audio | ⬜ | API 키 | #10 Freesound |
+| 8 | **Suno** | BGM 루프 1곡 (보조) | audio | 🖐 | **공식 API 없음**(파트너 베타만) — 웹 UI 수동 생성뿐. **비공식 API 래퍼 사용 금지**(ToS 위반) | #9 ElevenLabs → #10 Freesound |
+| 9 | **ElevenLabs** | **BGM+SFX 겸용 (오디오 1순위)** | audio | ✅ | 완료 — 2026-07-21 관통(인증→구성계획→생성→WAV 착지). 키는 `ELEVENLABS_API_KEY` 환경변수뿐(REST 직호출·MCP 없음). 권한 3종: 뮤직 생성·효과음·사용자(읽음) | #10 Freesound → 무음+최소 신디 |
 | 10 | **Freesound** | SFX 라이브러리 | audio | ⬜ | 웹/API (라이선스 확인 필수) | 무음 + 최소 신디 |
 | 11 | **git + GitHub** | 소스·커밋 증거(제출 규정) | build-deploy | ✅ | 완료 — origin/main + `namkuri/dontlate-web` (2026-07-20) | 로컬 git만 |
 | 12 | **GitHub Pages** | WebGL 배포·공개 링크 | build-deploy | ✅ | 완료 — https://namkuri.github.io/dontlate-web/ 로드 확인 (Brotli+fallback) | 대안 정적 호스팅 |
@@ -29,7 +29,15 @@
       → `dontlate-web` 레포 → Pages 로드 확인. 잔여 1수: **폰 등 타 기기에서 열림 확인** 권장
 - [ ] #2/#3: 소품 1개 생성→#5 후처리→#1 임포트 전 구간 관통 + 소요시간 기록(eta_min 근거)
 - [ ] #6: Mixamo 수동 절차를 절차서로 문서화 (본선에서 헤매지 않게)
-- [ ] #8~10: 클립 1개 확보→라이선스 기록→임포트 관통
+- [x] **#9 관통 완료 (2026-07-21)** — `quota`(인증·creator·잔량) → `/v1/music/plan`(구성계획, 크레딧 0)
+      → `/v1/music?output_format=pcm_44100` 30초 생성 → **스테레오 2ch·44.1kHz·16bit WAV 착지** 실측.
+      크레딧 단가 **초당 13.7**(30s=412) → 200초 곡 ≈2,750, creator 주기당 약 47곡.
+      경로 실사: 구성계획은 문서 표기 2종이 전부 404였고 실제는 `/v1/music/plan`.
+- [ ] #8·#10: 클립 1개 확보→라이선스 기록→임포트 관통
+      (2026-07-21 실사: **#8 Suno 공식 API 부재 확인** → 1순위를 #9로 교체. #9가 **BGM·SFX를 하나로 덮는다.**
+      **MCP는 채택하지 않았다** — 공식 MCP의 `compose_music`은 출력 포맷 파라미터가 없어 mp3 고정이고,
+      그러면 심리스 루프도 후공정 정규화도 불가능해진다. REST `/v1/music?output_format=pcm_44100` 으로 일원화.
+      프롬프트 조립·반입·후공정 파이프라인 `scripts/audio/` 납품 완료 — **잔여는 API 키 발급뿐**)
 - [ ] 각 관통 결과를 skill-accumulation 트래젝토리에 기록 (속도·성공률 = 모델/도구 캘리브레이션)
 - [ ] **HARNESS §8 훅 5종 제작·테스트** (pre-commit 컴파일 · freeze-guard · 라이선스 대조 · dest 대조 · 커밋태그) — 본선 중 신축 금지이므로 반드시 준비기간에
 - [ ] **채점기 3종 제작** (HARNESS §8 하단: 팔레트 히스토그램 · 스크린샷 번들 · 씬 통계) — 사람 판정 예산을 아끼는 레일

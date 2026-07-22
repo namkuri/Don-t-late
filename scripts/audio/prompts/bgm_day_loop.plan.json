@@ -1,0 +1,48 @@
+{
+  "chunks": [
+    {
+      "text": "[Part A]",
+      "duration_ms": 30000,
+      "positive_styles": [
+        "105 BPM",
+        "major key city pop",
+        "retro 80s",
+        "crisp dry drum machine",
+        "steady clean rhythm",
+        "driving synth bass",
+        "bright FM electric piano",
+        "sparkling bell synth",
+        "glossy pads",
+        "sparse midrange",
+        "minimal arrangement",
+        "texture-driven background music"
+      ],
+      "negative_styles": [],
+      "context_adherence": "high",
+      "conditioning_ref": null,
+      "condition_strength": null
+    },
+    {
+      "text": "[Part B]",
+      "duration_ms": 30000,
+      "positive_styles": [
+        "105 BPM",
+        "major key",
+        "bright arpeggiated synth",
+        "clean bright synth lead",
+        "understated melody",
+        "continuous groove from start to finish",
+        "cozy old neighborhood vibe",
+        "breezy town stroll feel",
+        "consistent dynamics",
+        "steady level",
+        "unobtrusive background layer",
+        "leave space in the mids"
+      ],
+      "negative_styles": [],
+      "context_adherence": "high",
+      "conditioning_ref": null,
+      "condition_strength": null
+    }
+  ]
+}
