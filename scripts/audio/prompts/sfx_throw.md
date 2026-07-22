@@ -20,14 +20,14 @@
 ## 창작 태그 (사람이 고치는 유일한 칸)
 
 <!-- NOTE:BEGIN -->
-8-bit throw swish, one very short gritty noise sweep
+one quick soft airy toss swish, light
 <!-- NOTE:END -->
 
 ## 전송 프롬프트 (조립 결과 — 그대로 API에 투입)
 
 <!-- PROMPT:BEGIN -->
 ```
-8-bit throw swish, one very short gritty noise sweep. Duration about 0.6 seconds. Style: lo-fi 8-bit game sound, gritty square wave and noise channel, bit-crushed, punchy attack, mono. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
+one quick soft airy toss swish, light. Duration about 0.6 seconds. Style: cozy cute toy-like game sound, soft wooden marimba and rounded synth plucks, playful little pitch bends, gentle and warm, light and bouncy. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
 ```
 <!-- PROMPT:END -->
 
@@ -66,3 +66,4 @@ python scripts/audio/audio_pipeline.py intake --bom-id sfx_throw
 | 4 | 2026-07-22 | 재조립 |
 | 5 | 2026-07-22 | 재조립 |
 | 6 | 2026-07-22 | 재조립 |
+| 7 | 2026-07-22 | 재조립 |

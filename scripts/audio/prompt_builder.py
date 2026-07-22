@@ -50,8 +50,9 @@ SFX_REQUIRED = ["no background music", "no vocals"]
 # ⚠ API 상한: text ≤ 450자 — 앵커+제약+태그 합산이라 앵커는 짧게 유지한다 (2026-07-22 실측 400).
 # 4차(JRPG 샘플 — 기각, 미전개) → 5차 확정(Director 스펙 직지정 2026-07-22):
 # lo-fi 8-bit·gritty square·bit-crushed·punchy — bit-crush는 후처리(11kHz 홀드·8bit 양자화)가 보장.
-SFX_STYLE_EN = ("Style: lo-fi 8-bit game sound, gritty square wave and noise channel, "
-                "bit-crushed, punchy attack, mono.")
+# 6차(동물의 숲 참조 2026-07-22): 부드러운 마림바·토이 플럭·귀여운 피치 벤드 — bit-crush 후처리는 끔(톤 상극).
+SFX_STYLE_EN = ("Style: cozy cute toy-like game sound, soft wooden marimba and rounded synth plucks, "
+                "playful little pitch bends, gentle and warm, light and bouncy.")
 SFX_RANGE = (0.5, 5.0)          # text_to_sound_effects 제약
 DEFAULT_LENGTH = {"bgm": bgm_rules.DEFAULT_TRACK_SECONDS, "sfx": 2.0}   # BGM 기본 60초 (완화 정책)
 DEFAULT_LOOP_BARS = 16

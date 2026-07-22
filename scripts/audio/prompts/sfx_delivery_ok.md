@@ -20,14 +20,14 @@
 ## 창작 태그 (사람이 고치는 유일한 칸)
 
 <!-- NOTE:BEGIN -->
-8-bit success ding-dong, two gritty square notes with a tiny coin tick
+cheerful two-note toy doorbell, rounded marimba ding-dong with a tiny sparkle
 <!-- NOTE:END -->
 
 ## 전송 프롬프트 (조립 결과 — 그대로 API에 투입)
 
 <!-- PROMPT:BEGIN -->
 ```
-8-bit success ding-dong, two gritty square notes with a tiny coin tick. It plays when the game event DeliveryCompleted fires. Duration about 1.2 seconds. Style: lo-fi 8-bit game sound, gritty square wave and noise channel, bit-crushed, punchy attack, mono. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
+cheerful two-note toy doorbell, rounded marimba ding-dong with a tiny sparkle. It plays when the game event DeliveryCompleted fires. Duration about 1.2 seconds. Style: cozy cute toy-like game sound, soft wooden marimba and rounded synth plucks, playful little pitch bends, gentle and warm, light and bouncy. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
 ```
 <!-- PROMPT:END -->
 
@@ -66,3 +66,4 @@ python scripts/audio/audio_pipeline.py intake --bom-id sfx_delivery_ok
 | 4 | 2026-07-22 | 재조립 |
 | 5 | 2026-07-22 | 재조립 |
 | 6 | 2026-07-22 | 재조립 |
+| 7 | 2026-07-22 | 재조립 |

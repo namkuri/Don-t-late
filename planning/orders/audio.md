@@ -462,3 +462,10 @@ Morning  Seoul_Alley_Reflection   ← Day 순환
 - **비트크러시 후처리 신설**(bitcrush.py): 프롬프트 의존 대신 파형 보장 — 선두 무음 트림(펀치 어택) → 11kHz 홀드 다운샘플 → 8bit 양자화 → 모노 강제 → 피크 -1dB. dialogue_blip만 40ms 컷(+5ms 페이드). 이후 RMS -14dB 부스트(amb_night 제외).
 - 실수 1건 자가 발견·교정: sfx_phone이 생성 루프에서 누락돼 3세대본 잔존 → 보완 생성(seed 731912038).
 - 세대 이력 5회 — 스타일 탐색 비용 크레딧 ~66건. 샘플 우선 절차가 4세대 전개분 15건을 절약함.
+
+### 결과 6세대 · 2026-07-22 22:40 (5세대 기각 → 동물의 숲 참조)
+
+- 앵커 6차: `cozy cute toy-like · soft wooden marimba · rounded synth plucks · playful pitch bends · light and bouncy` (음향 특성 번역). **비트크러시 후처리 끔** — 토이 톤과 상극.
+- 절차: 샘플 4종 사람 승인("좋네") → 잔여 15종 일괄. 태그 19종 AC 재서술(코믹 실패음·토이 노크·마림바 트릴 등). 전건 --length 명시.
+- 후처리: 피크 -1dB → RMS -14dB(amb_night 피크만). dialogue_blip 40ms 컷은 5세대 스펙 전용이라 미적용(0.5s — 트림은 판정 후).
+- 재착지·CREDITS 6세대 표 완료. 세대 누적 6회 · 크레딧 총 ~85건 — 샘플 우선 절차 유지로 기각 세대 전개 손실 2회 방지(4·기타).

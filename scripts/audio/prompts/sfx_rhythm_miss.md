@@ -20,14 +20,14 @@
 ## 창작 태그 (사람이 고치는 유일한 칸)
 
 <!-- NOTE:BEGIN -->
-8-bit miss blip, one dull square note bending down, same family as the hit
+one muted toy pluck with a little downward bend, droopy, same family as the hit
 <!-- NOTE:END -->
 
 ## 전송 프롬프트 (조립 결과 — 그대로 API에 투입)
 
 <!-- PROMPT:BEGIN -->
 ```
-8-bit miss blip, one dull square note bending down, same family as the hit. Duration about 0.5 seconds. Style: lo-fi 8-bit game sound, gritty square wave and noise channel, bit-crushed, punchy attack, mono. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
+one muted toy pluck with a little downward bend, droopy, same family as the hit. Duration about 0.5 seconds. Style: cozy cute toy-like game sound, soft wooden marimba and rounded synth plucks, playful little pitch bends, gentle and warm, light and bouncy. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
 ```
 <!-- PROMPT:END -->
 
@@ -66,3 +66,4 @@ python scripts/audio/audio_pipeline.py intake --bom-id sfx_rhythm_miss
 | 4 | 2026-07-22 | 재조립 |
 | 5 | 2026-07-22 | 재조립 |
 | 6 | 2026-07-22 | 재조립 |
+| 7 | 2026-07-22 | 재조립 |

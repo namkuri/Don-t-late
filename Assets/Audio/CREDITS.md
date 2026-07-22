@@ -112,32 +112,34 @@ late-night introspective, hazy, instrumental, 88 BPM
 - 2세대(21:24~ · 8bit/chiptune 앵커) → 사람 판정: **전량 기각**.
 - 3세대(21:50~ · VA-11 HALL-A 소프트 신스) → 사람 판정: 기각.
 - 4세대(JRPG 벨·차임 — **샘플 4종만**, 미전개) → 사람 판정: 기각, Director가 스펙 직지정으로 전환.
-- **5세대 (현행 · 22:10~)**: Director 스펙 직지정 — `lo-fi 8-bit · gritty square wave ·
-  bit-crushed · punchy attack · mono`. **bit-crush는 후처리가 파형에서 보장**: 선두 무음 트림 →
-  11kHz 홀드 다운샘플 → 8bit 양자화 → 모노 → 피크 -1dBFS → RMS -14dB 부스트(amb_night 제외).
-  sfx_dialogue_blip은 스펙 원문("text scroll beep, 40ms")대로 40ms 컷 적용.
+- 5세대(22:10~ · Director 스펙 직지정 — lo-fi bit-crushed 8-bit + 비트크러시 후처리) → 사람 판정: 기각.
+- **6세대 (현행 · 22:30~)**: 동물의 숲 참조 — 음향 특성 번역: `cozy cute toy-like · soft wooden
+  marimba · rounded synth plucks · playful little pitch bends · light and bouncy`.
+  **비트크러시 후처리 끔**(토이 톤과 상극). 후처리 = 피크 -1dBFS → RMS -14dB 부스트(amb_night 제외).
+  샘플 4종(pickup·box_break·coin·barcode) 사람 승인 후 전량. dialogue_blip 40ms 컷은 5세대
+  스펙 전용이라 미적용(0.5s 원본 — 트림은 컷 판정 후 후공정).
 
 | bom_id | 요청 길이 | seed | 프롬프트 SHA1 |
 |---|---|---|---|
-| `sfx_pickup` | 1.0s | 923718829 | `20819b4f13f7` |
-| `sfx_delivery_ok` | 1.2s | 1097977072 | `3767a23d528d` |
-| `sfx_late_buzzer` | 1.0s | 1295605791 | `9720efd85305` |
-| `sfx_footstep` | 0.5s | 1281765728 | `36a1f8d09231` |
-| `sfx_deadline_warn` | 0.8s | 296531130 | `cfa599fa6d02` |
-| `sfx_phone_ring` | 1.2s | 1740691726 | `3966193dd2f8` |
-| `sfx_dialogue_blip` | 0.5s→40ms 컷 | 680360640 | `a07f9c4ed4f9` |
-| `sfx_rhythm_hit` | 0.5s | 1407635865 | `dcdfd6e96b78` |
-| `sfx_rhythm_miss` | 0.5s | 1086861172 | `3da935428135` |
-| `sfx_drink` | 1.2s | 1024232188 | `f1c708289cff` |
-| `sfx_scene_whoosh` | 1.0s | 4589556 | `5c7cd2718628` |
-| `amb_night` | 5.0s | 311503652 | `0432a5b87894` |
-| `sfx_box_break` | 1.0s | 2107073297 | `e80b48a8df1a` |
-| `sfx_vending` | 1.2s | 220823964 | `bd7d265aadb7` |
-| `sfx_throw` | 0.6s | 1571643646 | `2c143bd52c24` |
-| `sfx_barcode` | 0.5s | 383390556 | `25be4d4dd68f` |
-| `sfx_penalty` | 0.8s | 524810949 | `f3baa3a56628` |
-| `sfx_coin` | 0.6s | 1249944701 | `cfa256449ad1` |
-| `sfx_phone` | 0.5s | 731912038 | `7e25938bb37e` |
+| `sfx_pickup` | 1.0s | 29411712 | `ff8928525255` |
+| `sfx_delivery_ok` | 1.2s | 557024446 | `001aec94cbf0` |
+| `sfx_late_buzzer` | 1.0s | 1707186366 | `53b1cecac53f` |
+| `sfx_footstep` | 0.5s | 933899639 | `92dbd12fccdd` |
+| `sfx_deadline_warn` | 0.8s | 1323807017 | `711dcefc740d` |
+| `sfx_phone_ring` | 1.2s | 1978063182 | `8adaf71cc293` |
+| `sfx_dialogue_blip` | 0.5s | 351262149 | `293af4da85f5` |
+| `sfx_rhythm_hit` | 0.5s | 1869022787 | `2c31d316ad9d` |
+| `sfx_rhythm_miss` | 0.5s | 458265916 | `1b9e53299464` |
+| `sfx_drink` | 1.2s | 648434745 | `38a49260fea5` |
+| `sfx_scene_whoosh` | 1.0s | 1133156534 | `e3dc7048a0e2` |
+| `amb_night` | 5.0s | 2044289405 | `6ac7c35653fc` |
+| `sfx_box_break` | 1.0s | 776020186 | `a6af784b7149` |
+| `sfx_vending` | 1.2s | 125690113 | `9667ba987784` |
+| `sfx_throw` | 0.6s | 695468578 | `be51e1622dc0` |
+| `sfx_barcode` | 0.5s | 675090231 | `ef52b091a725` |
+| `sfx_penalty` | 0.8s | 1373751068 | `5c0ba190b293` |
+| `sfx_coin` | 0.6s | 142154480 | `58d0dce3f4fe` |
+| `sfx_phone` | 0.5s | 1784947598 | `c64ffd4c7fa0` |
 
 - AU-008 7종(`sfx_box_break`~`sfx_phone`)은 **BOM §8 미등재** — 발주서(AU-008 2026-07-22 19:10)가 근거.
   BOM·JUICE 행 추가는 관제 몫으로 위임(동결 문서 사람 게이트).
