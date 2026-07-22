@@ -3,37 +3,54 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 namespace DontLate
 {
     /// <summary>
-    /// 스마트폰 "배송상차" 화면(View) — S-011. Tab으로 좌하단에서 GTA식 슬라이드 개폐.
-    /// 열려 있는 동안 마우스가 가리키는 상자의 송장번호를 보여주고, 클릭하면 바코드 등록
-    /// (등록은 WorldDeliveryManager 몫 — 여기는 레이캐스트·표시만). 중복이면 경고.
-    /// 목록 컬럼: No · 운송장번호 · 배송순번(마감 빠른 순 제안) · 목적지.
+    /// 스마트폰 OS(View) — S-019 ⑥ 전면 개편. Tab으로 우하단 슬라이드, 홈 화면(앱 그리드)에서
+    /// 앱 진입: 택배(바코드 상차·히스토리·수익)/음악/금융(투자)/은행/가구(하우징).
+    /// 화면 위젯은 런타임 생성(폰 내부 UI는 씬 조립 대상이 아님 — 빌더는 본체 패널만).
+    /// 상태 변경은 전부 매니저 Instance 명령으로 위임 — 여기는 표시·입력 라우팅만.
     /// </summary>
     public class PhoneView : MonoBehaviour
     {
         private const float SLIDE_SECONDS = 0.22f;
 
+        public static bool IsOpen { get; private set; }
+        /// <summary>가구 배치 대기 id — Home 씬 HomeFurniturePlacer가 소비 (S-019 ④).</summary>
+        public static string PendingPlacementId;
+
+        private enum Screen { Home, Delivery, Music, Invest, Bank, Furniture }
+
         [SerializeField] private RectTransform _panel;
-        [SerializeField] private TMP_Text _hoverLabel;
-        [SerializeField] private TMP_Text _listLabel;
-        [SerializeField] private TMP_Text _warnLabel;
-        [Tooltip("닫힘/열림 anchoredPosition Y.")]
+        [SerializeField] private TMP_FontAsset _font;
+        [SerializeField] private TuningConfigSO _tuning;
+        [SerializeField] private GameStateSO _gameState;
+        [SerializeField] private FurnitureSO[] _furnitureCatalog;
         [SerializeField] private float _hiddenY = -640f;
         [SerializeField] private float _shownY = 24f;
 
-        /// <summary>폰이 열려 있는가 — 던지기 등 좌클릭 액션이 스캔 클릭과 겹치지 않게 참조 (S-016 ⑦).</summary>
-        public static bool IsOpen { get; private set; }
-
         private readonly List<DeliveryData> _scanned = new List<DeliveryData>();
-        // 운송장별 상태 (S-014): 0=진행 · 1=완료 · 2=지각 실패. 콘솔만 보던 지각을 폰에서 보이게.
-        private readonly Dictionary<int, int> _status = new Dictionary<int, int>();
+        private readonly Dictionary<int, int> _status = new Dictionary<int, int>(); // 0진행 1완료 2지각
         private InputAction _toggle;
         private bool _open;
+        private Screen _screen = Screen.Home;
         private Coroutine _slide;
-        private Coroutine _warnFade;
+        private int _lastClockMinute = -1;
+
+        private Transform _screenRoot;     // 화면 컨테이너들의 부모
+        private readonly Dictionary<Screen, GameObject> _screens = new Dictionary<Screen, GameObject>();
+        private TMP_Text _titleLabel;
+        private TMP_Text _deliveryHover;
+        private TMP_Text _deliveryList;
+        private TMP_Text _deliveryWarn;
+        private TMP_Text _musicLabel;
+        private TMP_Text _investLabel;
+        private TMP_Text _bankLabel;
+        private TMP_Text _furnitureLabel;
+
+        // ── 수명주기 ─────────────────────────────────────────
 
         private void Awake()
         {
@@ -61,35 +78,33 @@ namespace DontLate
             WorldEvents.ClockTicked -= OnClockTicked;
         }
 
-        private void OnDeliveryCompleted(DeliveryData data) { _status[data.OrderId] = 1; RefreshList(); }
-        private void OnDeliveryFailed(DeliveryData data) { _status[data.OrderId] = 2; RefreshList(); }
-
-        // 남은 시간 표시용 — 열려 있을 때만 분 단위로 갱신 (S-015).
-        private void OnClockTicked(GameClock clock)
-        {
-            _lastClockMinute = clock.MinuteOfDay;
-            if (_open) RefreshList();
-        }
-
-        private int _lastClockMinute = -1;
-
         private void OnDestroy() => _toggle.Dispose();
 
         private void Start()
         {
             if (_panel != null)
                 _panel.anchoredPosition = new Vector2(_panel.anchoredPosition.x, _hiddenY);
-            RefreshList();
-            if (_warnLabel != null) _warnLabel.text = string.Empty;
+            BuildUI();
+            ShowScreen(Screen.Home);
         }
 
         private void Update()
         {
             if (!_open) return;
-            ScanPointer();
+            if (_screen == Screen.Delivery) ScanPointer();
         }
 
-        // ── 개폐 ─────────────────────────────────────────────
+        // ── 이벤트 핸들러 ────────────────────────────────────
+
+        private void OnBarcodeScanned(DeliveryData data) { _scanned.Add(data); RefreshCurrent(); }
+        private void OnDeliveryCompleted(DeliveryData data) { _status[data.OrderId] = 1; RefreshCurrent(); }
+        private void OnDeliveryFailed(DeliveryData data) { _status[data.OrderId] = 2; RefreshCurrent(); }
+
+        private void OnClockTicked(GameClock clock)
+        {
+            _lastClockMinute = clock.MinuteOfDay;
+            if (_open) RefreshCurrent();
+        }
 
         private void OnToggle(InputAction.CallbackContext _)
         {
@@ -97,7 +112,7 @@ namespace DontLate
             IsOpen = _open;
             if (_slide != null) StopCoroutine(_slide);
             _slide = StartCoroutine(Slide(_open ? _shownY : _hiddenY));
-            if (!_open && _hoverLabel != null) _hoverLabel.text = "-";
+            if (_open) { ShowScreen(Screen.Home); }
         }
 
         private IEnumerator Slide(float targetY)
@@ -107,14 +122,363 @@ namespace DontLate
             while (t < 1f)
             {
                 t += Time.unscaledDeltaTime / SLIDE_SECONDS;
-                float y = Mathf.Lerp(startY, targetY, Mathf.SmoothStep(0f, 1f, t));
-                _panel.anchoredPosition = new Vector2(_panel.anchoredPosition.x, y);
+                _panel.anchoredPosition = new Vector2(
+                    _panel.anchoredPosition.x, Mathf.Lerp(startY, targetY, Mathf.SmoothStep(0f, 1f, t)));
                 yield return null;
             }
             _slide = null;
         }
 
-        // ── 스캔 (표시 계산 + 등록 위임) ─────────────────────
+        // ── 화면 전환 ────────────────────────────────────────
+
+        private void ShowScreen(Screen screen)
+        {
+            _screen = screen;
+            foreach (var pair in _screens) pair.Value.SetActive(pair.Key == screen);
+            if (_titleLabel != null)
+                _titleLabel.text = screen switch
+                {
+                    Screen.Delivery => "📦 배송상차",
+                    Screen.Music => "🎵 음악",
+                    Screen.Invest => "📈 늦코인",
+                    Screen.Bank => "🏦 은행",
+                    Screen.Furniture => "🛋️ 가구",
+                    _ => "홈"
+                };
+            RefreshCurrent();
+        }
+
+        private void RefreshCurrent()
+        {
+            switch (_screen)
+            {
+                case Screen.Delivery: RefreshDelivery(); break;
+                case Screen.Music: RefreshMusic(); break;
+                case Screen.Invest: RefreshInvest(); break;
+                case Screen.Bank: RefreshBank(); break;
+                case Screen.Furniture: RefreshFurniture(); break;
+            }
+        }
+
+        // ── UI 구축 (런타임) ─────────────────────────────────
+
+        private void BuildUI()
+        {
+            Transform screenBg = _panel.Find("Screen");
+            if (screenBg == null) return;
+
+            // 기존 빌더 산출물(구 배송상차 위젯)이 남아 있으면 청소 — v2는 전부 런타임 생성.
+            for (int i = screenBg.childCount - 1; i >= 0; i--) Destroy(screenBg.GetChild(i).gameObject);
+
+            _titleLabel = MakeText(screenBg, "Title", "홈", 36f, new Color(1f, 0.62f, 0.27f), TextAlignmentOptions.Top);
+            Anchor(_titleLabel.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -18f), 48f);
+
+            Button home = MakeButton(screenBg, "HomeBtn", "⌂", () => ShowScreen(Screen.Home));
+            RectTransform homeRect = (RectTransform)home.transform;
+            homeRect.anchorMin = homeRect.anchorMax = homeRect.pivot = new Vector2(1f, 1f);
+            homeRect.sizeDelta = new Vector2(54f, 44f);
+            homeRect.anchoredPosition = new Vector2(-12f, -12f);
+
+            _screenRoot = new GameObject("Screens", typeof(RectTransform)).transform;
+            _screenRoot.SetParent(screenBg, false);
+            RectTransform rootRect = (RectTransform)_screenRoot;
+            rootRect.anchorMin = Vector2.zero;
+            rootRect.anchorMax = Vector2.one;
+            rootRect.offsetMin = new Vector2(16f, 14f);
+            rootRect.offsetMax = new Vector2(-16f, -70f);
+
+            BuildHomeScreen();
+            BuildDeliveryScreen();
+            BuildMusicScreen();
+            BuildInvestScreen();
+            BuildBankScreen();
+            BuildFurnitureScreen();
+        }
+
+        private GameObject NewScreen(Screen key)
+        {
+            GameObject go = new GameObject(key.ToString(), typeof(RectTransform));
+            go.transform.SetParent(_screenRoot, false);
+            RectTransform rect = (RectTransform)go.transform;
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = rect.offsetMax = Vector2.zero;
+            _screens[key] = go;
+            return go;
+        }
+
+        private void BuildHomeScreen()
+        {
+            GameObject screen = NewScreen(Screen.Home);
+            (string label, Screen target)[] apps =
+            {
+                ("📦\n택배", Screen.Delivery), ("🎵\n음악", Screen.Music), ("📈\n금융", Screen.Invest),
+                ("🏦\n은행", Screen.Bank), ("🛋️\n가구", Screen.Furniture)
+            };
+            for (int i = 0; i < apps.Length; i++)
+            {
+                Screen target = apps[i].target;
+                Button button = MakeButton(screen.transform, "App_" + target, apps[i].label, () => ShowScreen(target));
+                RectTransform rect = (RectTransform)button.transform;
+                rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0f, 1f);
+                rect.sizeDelta = new Vector2(116f, 108f);
+                rect.anchoredPosition = new Vector2(10f + (i % 3) * 128f, -14f - (i / 3) * 122f);
+            }
+        }
+
+        private void BuildDeliveryScreen()
+        {
+            GameObject screen = NewScreen(Screen.Delivery);
+            _deliveryHover = MakeText(screen.transform, "Hover", "-", 28f, new Color(0.208f, 0.878f, 0.784f), TextAlignmentOptions.Top);
+            Anchor(_deliveryHover.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 0f), 38f);
+            _deliveryWarn = MakeText(screen.transform, "Warn", "", 22f, new Color(1f, 0.45f, 0.35f), TextAlignmentOptions.Top);
+            Anchor(_deliveryWarn.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -40f), 30f);
+            _deliveryList = MakeText(screen.transform, "List", "", 22f, Color.white, TextAlignmentOptions.TopLeft);
+            RectTransform listRect = _deliveryList.rectTransform;
+            listRect.anchorMin = Vector2.zero;
+            listRect.anchorMax = Vector2.one;
+            listRect.offsetMin = new Vector2(4f, 0f);
+            listRect.offsetMax = new Vector2(-4f, -76f);
+        }
+
+        private void BuildMusicScreen()
+        {
+            GameObject screen = NewScreen(Screen.Music);
+            _musicLabel = MakeText(screen.transform, "Info", "", 24f, Color.white, TextAlignmentOptions.TopLeft);
+            Anchor(_musicLabel.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 0f), 160f);
+
+            (string label, System.Action act)[] controls =
+            {
+                ("⏯", () => WorldAudioManager.Instance?.TogglePause()),
+                ("⏭", () => WorldAudioManager.Instance?.NextTrack()),
+                ("🔉", () => WorldAudioManager.Instance?.SetVolume(WorldAudioManager.Instance.Volume - 0.1f)),
+                ("🔊", () => WorldAudioManager.Instance?.SetVolume(WorldAudioManager.Instance.Volume + 0.1f)),
+            };
+            for (int i = 0; i < controls.Length; i++)
+            {
+                System.Action act = controls[i].act;
+                Button b = MakeButton(screen.transform, "Ctl" + i, controls[i].label, () => { act(); RefreshMusic(); });
+                RectTransform rect = (RectTransform)b.transform;
+                rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0f, 1f);
+                rect.sizeDelta = new Vector2(84f, 60f);
+                rect.anchoredPosition = new Vector2(6f + i * 96f, -170f);
+            }
+            // 곡선택 — 현재 슬롯 풀 1~4번
+            for (int i = 0; i < 4; i++)
+            {
+                int index = i;
+                Button b = MakeButton(screen.transform, "Track" + i, (i + 1) + "번", () =>
+                {
+                    WorldAudioManager.Instance?.PlayTrackAt(index);
+                    RefreshMusic();
+                });
+                RectTransform rect = (RectTransform)b.transform;
+                rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0f, 1f);
+                rect.sizeDelta = new Vector2(84f, 48f);
+                rect.anchoredPosition = new Vector2(6f + i * 96f, -244f);
+            }
+        }
+
+        private void BuildInvestScreen()
+        {
+            GameObject screen = NewScreen(Screen.Invest);
+            _investLabel = MakeText(screen.transform, "Info", "", 26f, Color.white, TextAlignmentOptions.TopLeft);
+            Anchor(_investLabel.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 0f), 220f);
+
+            Button buy = MakeButton(screen.transform, "Buy", "1,000원 매수", () =>
+            {
+                if (WorldDebtManager.Instance != null && !WorldDebtManager.Instance.BuyCoin(1000))
+                    _investLabel.text += "\n<color=#ff7359>잔액 부족</color>";
+                RefreshInvest();
+            });
+            RectTransform buyRect = (RectTransform)buy.transform;
+            buyRect.anchorMin = buyRect.anchorMax = buyRect.pivot = new Vector2(0f, 0f);
+            buyRect.sizeDelta = new Vector2(180f, 62f);
+            buyRect.anchoredPosition = new Vector2(6f, 8f);
+
+            Button sell = MakeButton(screen.transform, "Sell", "전량 매도", () =>
+            {
+                int gained = WorldDebtManager.Instance != null ? WorldDebtManager.Instance.SellAllCoin() : 0;
+                RefreshInvest();
+                if (gained > 0) _investLabel.text += "\n<color=#35e0c8>+₩" + gained.ToString("N0") + " 회수</color>";
+            });
+            RectTransform sellRect = (RectTransform)sell.transform;
+            sellRect.anchorMin = sellRect.anchorMax = sellRect.pivot = new Vector2(1f, 0f);
+            sellRect.sizeDelta = new Vector2(180f, 62f);
+            sellRect.anchoredPosition = new Vector2(-6f, 8f);
+        }
+
+        private void BuildBankScreen()
+        {
+            GameObject screen = NewScreen(Screen.Bank);
+            _bankLabel = MakeText(screen.transform, "Info", "", 26f, Color.white, TextAlignmentOptions.TopLeft);
+            RectTransform rect = _bankLabel.rectTransform;
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = rect.offsetMax = Vector2.zero;
+        }
+
+        private void BuildFurnitureScreen()
+        {
+            GameObject screen = NewScreen(Screen.Furniture);
+            _furnitureLabel = MakeText(screen.transform, "Info", "", 22f, Color.white, TextAlignmentOptions.TopLeft);
+            Anchor(_furnitureLabel.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 0f), 150f);
+
+            if (_furnitureCatalog == null) return;
+            for (int i = 0; i < _furnitureCatalog.Length && i < 4; i++)
+            {
+                FurnitureSO item = _furnitureCatalog[i];
+                if (item == null) continue;
+                Button buy = MakeButton(screen.transform, "Buy_" + item.furnitureId,
+                    item.displayName + "\n₩" + item.price.ToString("N0"), () => BuyFurniture(item));
+                RectTransform rect = (RectTransform)buy.transform;
+                rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0f, 1f);
+                rect.sizeDelta = new Vector2(184f, 66f);
+                rect.anchoredPosition = new Vector2(6f + (i % 2) * 196f, -158f - (i / 2) * 76f);
+            }
+
+            Button place = MakeButton(screen.transform, "Place", "보유 가구 배치 (집에서)", () => BeginPlacement());
+            RectTransform placeRect = (RectTransform)place.transform;
+            placeRect.anchorMin = placeRect.anchorMax = placeRect.pivot = new Vector2(0.5f, 0f);
+            placeRect.sizeDelta = new Vector2(300f, 56f);
+            placeRect.anchoredPosition = new Vector2(0f, 8f);
+        }
+
+        // ── 앱 로직 (표시 + 매니저 위임) ─────────────────────
+
+        private void BuyFurniture(FurnitureSO item)
+        {
+            if (WorldDebtManager.Instance == null) return;
+            if (!WorldDebtManager.Instance.TrySpend(item.price))
+            {
+                _furnitureLabel.text = "<color=#ff7359>잔액 부족 — " + item.displayName + "</color>";
+                return;
+            }
+            _gameState.ownedFurnitureIds.Add(item.furnitureId);
+            RefreshFurniture();
+        }
+
+        private void BeginPlacement()
+        {
+            if (_gameState.ownedFurnitureIds.Count == 0)
+            {
+                _furnitureLabel.text = "<color=#ff7359>보유 가구 없음 — 먼저 구매</color>";
+                return;
+            }
+            PendingPlacementId = _gameState.ownedFurnitureIds[0]; // 먼저 산 것부터
+            _furnitureLabel.text = "<color=#35e0c8>집 바닥을 클릭해 배치 — " + PendingPlacementId + "</color>";
+            OnToggle(default); // 폰 닫고 배치 모드
+        }
+
+        private void RefreshDelivery()
+        {
+            if (_deliveryList == null) return;
+            var sb = new System.Text.StringBuilder();
+
+            DeliveryData? urgent = null;
+            foreach (DeliveryData d in _scanned)
+            {
+                if (_status.TryGetValue(d.OrderId, out int st) && st != 0) continue;
+                if (urgent == null || d.DeadlineMinuteOfDay < urgent.Value.DeadlineMinuteOfDay) urgent = d;
+            }
+            if (urgent != null && !string.IsNullOrEmpty(urgent.Value.District))
+                sb.Append("가야 할 구역  <color=#ff9f45><b>").Append(urgent.Value.District).Append("</b></color>\n");
+
+            sb.Append("<color=#8a93a8>No 운송장     순번 목적지</color>\n");
+            var byDeadline = new List<DeliveryData>(_scanned);
+            byDeadline.Sort((a, b) => a.DeadlineMinuteOfDay.CompareTo(b.DeadlineMinuteOfDay));
+            for (int i = 0; i < _scanned.Count; i++)
+            {
+                DeliveryData d = _scanned[i];
+                int rank = byDeadline.FindIndex(x => x.OrderId == d.OrderId) + 1;
+                string row = (i + 1) + " " + Invoice(d.OrderId) + "  " + rank + "  " + d.Address;
+                int status = _status.TryGetValue(d.OrderId, out int s) ? s : 0;
+                if (status == 1) sb.Append("<color=#8a93a8>").Append(row).Append(" ✓</color>\n");
+                else if (status == 2) sb.Append("<color=#ff7359><s>").Append(row).Append("</s> 지각</color>\n");
+                else
+                {
+                    sb.Append(row).Append('\n');
+                    if (_lastClockMinute >= 0)
+                    {
+                        int remain = Mathf.RoundToInt(d.DeadlineMinuteOfDay) - _lastClockMinute;
+                        sb.Append("<size=78%><color=#8a93a8>  └ ").Append(d.District).Append(" · ")
+                          .Append(remain >= 0 ? "남은 " + remain + "분" : "마감 지남").Append("</color></size>\n");
+                    }
+                }
+            }
+            if (_scanned.Count == 0) sb.Append("<color=#8a93a8>박스를 클릭해 송장을 찍어라</color>\n");
+
+            // 히스토리·수익 (S-019 ⑥)
+            sb.Append("\n<color=#8a93a8>── 히스토리 (최근 4) ──</color>\n");
+            int from = Mathf.Max(0, _gameState.deliveryHistory.Count - 4);
+            for (int i = _gameState.deliveryHistory.Count - 1; i >= from; i--)
+            {
+                DeliveryRecord r = _gameState.deliveryHistory[i];
+                sb.Append("<size=82%>").Append(r.day).Append("일 ")
+                  .Append(r.minuteOfDay / 60).Append(':').Append((r.minuteOfDay % 60).ToString("00"))
+                  .Append("  ").Append(r.address).Append("  <color=#35e0c8>+₩").Append(r.reward.ToString("N0"))
+                  .Append("</color></size>\n");
+            }
+            if (_gameState.deliveryHistory.Count == 0) sb.Append("<size=82%><color=#8a93a8>아직 없음</color></size>\n");
+            sb.Append("누적 수익  <color=#35e0c8>₩").Append(_gameState.totalEarned.ToString("N0")).Append("</color>");
+
+            _deliveryList.text = sb.ToString();
+        }
+
+        private void RefreshMusic()
+        {
+            if (_musicLabel == null) return;
+            var audio = WorldAudioManager.Instance;
+            if (audio == null) { _musicLabel.text = "오디오 매니저 없음"; return; }
+
+            var sb = new System.Text.StringBuilder();
+            sb.Append("현재 곡\n<color=#35e0c8>")
+              .Append(audio.CurrentClip != null ? Shorten(audio.CurrentClip.name) : "(무음)")
+              .Append("</color>\n상태 ").Append(audio.IsPaused ? "⏸ 정지" : "▶ 재생")
+              .Append("   볼륨 ").Append(Mathf.RoundToInt(audio.Volume * 100)).Append("%\n\n곡 목록 (")
+              .Append(audio.CurrentSlot).Append(")\n");
+            List<string> names = audio.TrackNames();
+            for (int i = 0; i < names.Count; i++)
+                sb.Append("<size=80%>").Append(i + 1).Append(". ").Append(Shorten(names[i])).Append("</size>\n");
+            _musicLabel.text = sb.ToString();
+        }
+
+        private void RefreshInvest()
+        {
+            if (_investLabel == null || WorldDebtManager.Instance == null) return;
+            int price = WorldDebtManager.Instance.CoinPrice();
+            float held = _gameState.coinUnits;
+            _investLabel.text =
+                "늦코인 시세  <color=#ff9f45>₩" + price.ToString("N0") + "</color>\n" +
+                "보유  " + held.ToString("0.###") + "개  (평가 ₩" + Mathf.RoundToInt(held * price).ToString("N0") + ")\n" +
+                "잔액  ₩" + _gameState.money.ToString("N0") + "\n" +
+                "<size=76%><color=#8a93a8>시세는 시간에 따라 출렁인다 — 마감보다 빚이 먼저다</color></size>";
+        }
+
+        private void RefreshBank()
+        {
+            if (_bankLabel == null) return;
+            _bankLabel.text =
+                "잔고      <color=#35e0c8>₩" + _gameState.money.ToString("N0") + "</color>\n" +
+                "빚        <color=#ff7359>₩" + _gameState.debt.ToString("N0") + "</color>\n" +
+                "누적 수익  ₩" + _gameState.totalEarned.ToString("N0") + "\n\n" +
+                "오늘 완료  " + _gameState.completedCount + "건\n" +
+                "오늘 지각  " + _gameState.lateCount + "건\n" +
+                "코인 보유  " + _gameState.coinUnits.ToString("0.###") + "개";
+        }
+
+        private void RefreshFurniture()
+        {
+            if (_furnitureLabel == null) return;
+            var sb = new System.Text.StringBuilder("보유 인벤토리\n");
+            if (_gameState.ownedFurnitureIds.Count == 0) sb.Append("<color=#8a93a8>없음</color>\n");
+            foreach (string id in _gameState.ownedFurnitureIds) sb.Append("· ").Append(id).Append('\n');
+            sb.Append("배치됨 ").Append(_gameState.placedFurniture.Count).Append("개  잔액 ₩")
+              .Append(_gameState.money.ToString("N0"));
+            _furnitureLabel.text = sb.ToString();
+        }
+
+        // ── 바코드 스캔 (택배앱 화면에서만) ──────────────────
 
         private void ScanPointer()
         {
@@ -122,8 +486,6 @@ namespace DontLate
             Mouse mouse = Mouse.current;
             if (camera == null || mouse == null) return;
 
-            // 첫 히트만 보면 WalkableVolume(거리 전체를 덮는 트리거)이 상자를 가린다 —
-            // 전체 히트에서 PickupBox만 골라 가장 가까운 것을 취한다 (S-011 수정).
             PickupBox box = null;
             float nearest = float.MaxValue;
             Ray ray = camera.ScreenPointToRay(mouse.position.ReadValue());
@@ -135,103 +497,81 @@ namespace DontLate
                 box = candidate;
             }
 
-            if (_hoverLabel != null)
-                _hoverLabel.text = box != null && box.Order != null
-                    ? "송장 " + InvoiceNo(box.Order.orderId)
-                    : "-";
+            if (_deliveryHover != null)
+                _deliveryHover.text = box != null && box.Order != null ? "송장 " + Invoice(box.Order.orderId) : "-";
 
-            if (box == null || box.Order == null) return;
-            if (!mouse.leftButton.wasPressedThisFrame) return;
-
+            if (box == null || box.Order == null || !mouse.leftButton.wasPressedThisFrame) return;
             if (WorldDeliveryManager.Instance == null) return;
             if (!WorldDeliveryManager.Instance.RegisterBarcode(box.Order))
-                ShowWarn("⚠ " + InvoiceNo(box.Order.orderId) + " — 이미 등록된 운송장");
+                ShowWarn("⚠ " + Invoice(box.Order.orderId) + " — 이미 등록된 운송장");
         }
 
-        private void OnBarcodeScanned(DeliveryData data)
-        {
-            _scanned.Add(data);
-            RefreshList();
-        }
-
-        // ── 표시 ─────────────────────────────────────────────
-
-        private static string InvoiceNo(int orderId) => "DL-" + orderId.ToString("0000");
-
-        private void RefreshList()
-        {
-            if (_listLabel == null) return;
-
-            var sb = new System.Text.StringBuilder();
-
-            // 가야 할 구역 (S-016 ③) — 미처리 건 중 마감이 가장 급한 건의 구역.
-            DeliveryData? urgent = null;
-            foreach (DeliveryData d in _scanned)
-            {
-                if (_status.TryGetValue(d.OrderId, out int st) && st != 0) continue;
-                if (urgent == null || d.DeadlineMinuteOfDay < urgent.Value.DeadlineMinuteOfDay) urgent = d;
-            }
-            if (urgent != null && !string.IsNullOrEmpty(urgent.Value.District))
-                sb.Append("가야 할 구역  <color=#ff9f45><b>").Append(urgent.Value.District).Append("</b></color>\n\n");
-
-            sb.Append("<color=#8a93a8>No  운송장      순번  목적지</color>\n");
-
-            // 배송순번 = 마감 빠른 순 제안 순위.
-            var byDeadline = new List<DeliveryData>(_scanned);
-            byDeadline.Sort((a, b) => a.DeadlineMinuteOfDay.CompareTo(b.DeadlineMinuteOfDay));
-
-            for (int i = 0; i < _scanned.Count; i++)
-            {
-                DeliveryData d = _scanned[i];
-                int rank = byDeadline.FindIndex(x => x.OrderId == d.OrderId) + 1;
-                string row = (i + 1).ToString().PadRight(4)
-                    + InvoiceNo(d.OrderId).PadRight(12)
-                    + rank.ToString().PadRight(6)
-                    + d.Address;
-
-                int status = _status.TryGetValue(d.OrderId, out int s) ? s : 0;
-                if (status == 1) sb.Append("<color=#8a93a8>").Append(row).Append("  ✓완료</color>");
-                else if (status == 2) sb.Append("<color=#ff7359><s>").Append(row).Append("</s>  지각</color>");
-                else sb.Append(row);
-                sb.Append('\n');
-
-                // 구역·남은 시간 부제 줄 (S-015) — 어디로 가야 하고 얼마나 급한지.
-                if (status == 0)
-                {
-                    string where = string.IsNullOrEmpty(d.District) ? "구역 미지정" : d.District;
-                    if (_lastClockMinute >= 0)
-                    {
-                        int remain = Mathf.RoundToInt(d.DeadlineMinuteOfDay) - _lastClockMinute;
-                        string remainText = remain >= 0
-                            ? (remain <= 30 ? "<color=#ff9f45>남은 " + remain + "분</color>" : "남은 " + remain + "분")
-                            : "<color=#ff7359>마감 지남</color>";
-                        sb.Append("<size=80%><color=#8a93a8>    └ </color>").Append(where)
-                          .Append("<color=#8a93a8> · </color>").Append(remainText).Append("</size>\n");
-                    }
-                    else
-                    {
-                        sb.Append("<size=80%><color=#8a93a8>    └ </color>").Append(where).Append("</size>\n");
-                    }
-                }
-            }
-            if (_scanned.Count == 0) sb.Append("<color=#8a93a8>박스를 클릭해 송장을 찍어라</color>");
-
-            _listLabel.text = sb.ToString();
-        }
+        private Coroutine _warnFade;
 
         private void ShowWarn(string message)
         {
-            if (_warnLabel == null) return;
+            if (_deliveryWarn == null) return;
             if (_warnFade != null) StopCoroutine(_warnFade);
-            _warnLabel.text = message;
-            _warnFade = StartCoroutine(ClearWarnAfter(1.6f));
+            _deliveryWarn.text = message;
+            _warnFade = StartCoroutine(ClearWarn());
         }
 
-        private IEnumerator ClearWarnAfter(float seconds)
+        private IEnumerator ClearWarn()
         {
-            yield return new WaitForSecondsRealtime(seconds);
-            _warnLabel.text = string.Empty;
+            yield return new WaitForSecondsRealtime(1.6f);
+            _deliveryWarn.text = string.Empty;
             _warnFade = null;
+        }
+
+        // ── 위젯 헬퍼 ────────────────────────────────────────
+
+        private static string Invoice(int orderId) => "DL-" + orderId.ToString("0000");
+
+        private static string Shorten(string clipName)
+        {
+            int cut = clipName.IndexOf("_2026");
+            return cut > 0 ? clipName.Substring(0, cut).Replace('_', ' ') : clipName;
+        }
+
+        private TMP_Text MakeText(Transform parent, string name, string text, float size, Color color, TextAlignmentOptions align)
+        {
+            GameObject go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+            var label = go.AddComponent<TextMeshProUGUI>();
+            if (_font != null) label.font = _font;
+            label.text = text;
+            label.fontSize = size;
+            label.color = color;
+            label.alignment = align;
+            label.raycastTarget = false;
+            label.textWrappingMode = TextWrappingModes.Normal;
+            return label;
+        }
+
+        private Button MakeButton(Transform parent, string name, string label, System.Action onClick)
+        {
+            GameObject go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+            Image bg = go.AddComponent<Image>();
+            bg.color = new Color(0.10f, 0.14f, 0.20f, 1f);
+            Button button = go.AddComponent<Button>();
+            button.targetGraphic = bg;
+            button.onClick.AddListener(() => onClick());
+            TMP_Text text = MakeText(go.transform, "Label", label, 24f, new Color(0.208f, 0.878f, 0.784f), TextAlignmentOptions.Center);
+            RectTransform textRect = text.rectTransform;
+            textRect.anchorMin = Vector2.zero;
+            textRect.anchorMax = Vector2.one;
+            textRect.offsetMin = textRect.offsetMax = Vector2.zero;
+            return button;
+        }
+
+        private static void Anchor(RectTransform rect, Vector2 min, Vector2 max, Vector2 pos, float height)
+        {
+            rect.anchorMin = min;
+            rect.anchorMax = max;
+            rect.pivot = new Vector2(0.5f, 1f);
+            rect.anchoredPosition = pos;
+            rect.sizeDelta = new Vector2(0f, height);
         }
     }
 }

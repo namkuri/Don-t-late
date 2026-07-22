@@ -18,10 +18,15 @@ MonoBehaviour:
   debt: 10000
   cargo: []
   scannedOrderIds: 
-  currentDistrict: "\uB2EC\uBE5B\uB9E8\uC158 \uAD6C\uC5ED"
+  currentDistrict: 
+  deliveryHistory: []
+  totalEarned: 0
+  ownedFurnitureIds: []
+  placedFurniture: []
+  coinUnits: 0
   completedCount: 0
   lateCount: 0
-  currentScene: 4
+  currentScene: 1
   startDay: 1
   startMinuteOfDay: 480
   startMoney: 0

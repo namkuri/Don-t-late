@@ -26,6 +26,20 @@ namespace DontLate
         public List<int> scannedOrderIds = new List<int>();
         /// <summary>이동맵에서 고른 목적 구역 (S-015) — District 도착 시 이 구역의 짐·비콘만 스폰.</summary>
         public string currentDistrict;
+
+        // ── S-019: 폰 앱·하우징·투자 ──
+        /// <summary>완료 배송 기록 (택배앱 히스토리).</summary>
+        public List<DeliveryRecord> deliveryHistory = new List<DeliveryRecord>();
+        /// <summary>누적 수익 (택배앱 수익 탭 — money와 달리 지출로 줄지 않는다).</summary>
+        public int totalEarned;
+        /// <summary>보유 가구 id (구매 후 미배치 인벤토리).</summary>
+        public List<string> ownedFurnitureIds = new List<string>();
+        /// <summary>배치된 가구 (Home 씬 재생성용 — 세션제).</summary>
+        public List<PlacedFurniture> placedFurniture = new List<PlacedFurniture>();
+        /// <summary>보유 코인 수량 (금융앱).</summary>
+        public float coinUnits;
+
+        [Header("통계")]
         public int completedCount;
         public int lateCount;
 
@@ -37,5 +51,22 @@ namespace DontLate
         public float startMinuteOfDay = 8f * 60f;
         public int startMoney;
         public int startDebt = 10000;
+    }
+
+    [System.Serializable]
+    public struct DeliveryRecord
+    {
+        public int orderId;
+        public string address;
+        public int reward;
+        public int day;
+        public int minuteOfDay;
+    }
+
+    [System.Serializable]
+    public struct PlacedFurniture
+    {
+        public string furnitureId;
+        public Vector3 position;
     }
 }

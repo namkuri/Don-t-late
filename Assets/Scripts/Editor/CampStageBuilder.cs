@@ -37,8 +37,9 @@ namespace DontLate.EditorTools
             GreyboxStageBuilder.BuildWalkableVolume();
             GreyboxStageBuilder.BuildGroundMist();
             BuildTruck(truck, box, highlight);
-            BuildPickupBoxes(box, highlight);
+            BuildPickupBoxes(box, highlight, tuning);
             BuildDrink(drink, highlight);
+            BuildVendingMachine(tuning, drink, highlight);
             GreyboxStageBuilder.BuildPlayer(gameState, tuning);
             GreyboxStageBuilder.BuildPostVolume();
             GreyboxStageBuilder.ConfigureCamera();
@@ -93,14 +94,18 @@ namespace DontLate.EditorTools
         }
 
         // 대기 물량 = 손에 집히는 박스(PickupBox) — 주문 1건씩. E로 들고 트럭으로 나른다 (S-009).
-        private static void BuildPickupBoxes(Material material, Material highlight)
+        private static void BuildPickupBoxes(Material material, Material highlight, TuningConfigSO tuning)
         {
             for (int i = 0; i < LOAD_ZONE_COUNT; i++)
             {
+                // 피라미드 스택 — 콜라이더(0.7u)가 겹치면 스폰 순간 물리 밀어내기로 자폭한다 (S-019 실측).
                 var (boxGo, _, _) = GreyboxStageBuilder.CreateParcelBox(
                     "CampBox_" + (i + 1).ToString("00"),
-                    new Vector3(-7f + (i % 2) * 1f, (i / 2) * 0.75f, 1.5f + i * 0.15f), material,
+                    new Vector3(-7f + (i % 2) * 0.9f, (i / 2) * 0.72f, 1.5f), material,
                     physical: true); // 실물 스택 (S-016 ⑥) — 아래 상자를 빼면 위가 떨어진다
+
+                BoxDurability durability = boxGo.AddComponent<BoxDurability>(); // 취급주의 (S-019 ①)
+                GreyboxStageBuilder.SetReference(durability, "_tuning", tuning);
 
                 PickupBox pickup = boxGo.AddComponent<PickupBox>();
                 GreyboxStageBuilder.SetReference(pickup, "_order", GetOrCreateCampOrder(i));
@@ -133,6 +138,23 @@ namespace DontLate.EditorTools
             AssetDatabase.CreateAsset(order, path);
             AssetDatabase.SaveAssets();
             return order;
+        }
+
+        // 자판기 (S-019 ②) — E=결제 배출, 상자 투척 명중도 배출.
+        private static void BuildVendingMachine(TuningConfigSO tuning, Material drinkMaterial, Material highlight)
+        {
+            Material body = GreyboxStageBuilder.GetOrCreateMaterial("Vending", new Color(0.85f, 0.3f, 0.3f), false);
+
+            GameObject go = GreyboxStageBuilder.CreatePrimitive(
+                PrimitiveType.Cube, "Vending", new Vector3(4.5f, 1.0f, 2.2f));
+            go.transform.localScale = new Vector3(1.0f, 2.0f, 0.7f);
+            // 실물 콜라이더(비트리거) — 상자 투척 충돌 감지 겸 벽 역할.
+
+            VendingMachine vending = go.AddComponent<VendingMachine>();
+            GreyboxStageBuilder.SetReference(vending, "_tuning", tuning);
+            GreyboxStageBuilder.SetReference(vending, "_drinkMaterial", drinkMaterial);
+            GreyboxStageBuilder.SetReference(vending, "_highlightMaterial", highlight);
+            GreyboxStageBuilder.SetReference(vending, "_renderer", go.GetComponent<Renderer>());
         }
 
         // 에너지드링크 — E로 회복(EnergyDrinkPickup — S-005).

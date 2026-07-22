@@ -21,10 +21,29 @@ namespace DontLate
 
         [Header("스태미나")]
         public float staminaMax = 100f;
-        public float staminaDrainPerSecond = 2.5f;
-        public float staminaDrainCarryMultiplier = 2f;
+        /// <summary>걷기 소모/초 (S-019 ③).</summary>
+        public float staminaDrainPerSecond = 2f;
+        /// <summary>달리기 소모/초 — 걷기보다 크게.</summary>
+        public float staminaDrainRunPerSecond = 6f;
+        /// <summary>든 상자 1kg당 추가 소모/초.</summary>
+        public float staminaDrainPerKg = 0.35f;
+        public float staminaDrainCarryMultiplier = 2f; // (구) 무게 미지정 주문 폴백
         public float staminaRecoverPerSecond = 6f;
         public float energyDrinkRecover = 40f;
+
+        [Header("취급주의 상자 (S-019 ①)")]
+        public float boxMaxHp = 100f;
+        /// <summary>이 속도(m/s) 이하 충돌은 무피해.</summary>
+        public float boxSafeImpactSpeed = 3f;
+        /// <summary>안전 속도 초과 1m/s당 피해.</summary>
+        public float boxDamagePerSpeed = 12f;
+
+        [Header("자판기 (S-019 ②)")]
+        public int vendingPrice = 1000;
+
+        [Header("투자 (S-019 ⑥ 금융앱)")]
+        /// <summary>코인 가격 진폭(기준가 1,000원 대비).</summary>
+        public float coinVolatility = 0.35f;
 
         [Header("시계")]
         // 실시간 1초당 흐르는 게임 내 분.

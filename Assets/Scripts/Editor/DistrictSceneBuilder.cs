@@ -68,6 +68,8 @@ namespace DontLate.EditorTools
                 GreyboxStageBuilder.GetOrCreateMaterial("Highlight", GreyboxStageBuilder.ParseColor("#35e0c8"), true);
             serialized.FindProperty("_boxFallback").objectReferenceValue =
                 GreyboxStageBuilder.GetOrCreateMaterial("Box", GreyboxStageBuilder.ParseColor("#ff9f45"), false);
+            serialized.FindProperty("_tuning").objectReferenceValue =
+                AssetDatabase.LoadAssetAtPath<TuningConfigSO>("Assets/Data/Tuning.asset"); // 취급주의 HP (S-019)
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 

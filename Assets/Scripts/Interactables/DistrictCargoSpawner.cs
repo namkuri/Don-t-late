@@ -16,6 +16,7 @@ namespace DontLate
         [SerializeField] private GameObject _beaconPrefab;
         [SerializeField] private Material _boxHighlight;
         [SerializeField] private Material _boxFallback;
+        [SerializeField] private TuningConfigSO _tuning;
 
         private void Start()
         {
@@ -42,9 +43,11 @@ namespace DontLate
             GameObject root = new GameObject("SpawnedBox_" + order.orderId);
             root.transform.position = groundPosition;
             BoxCollider collider = root.AddComponent<BoxCollider>();
-            collider.isTrigger = true;
+            collider.isTrigger = false; // 실물 — 던지기·취급주의 파손 (S-019 ①)
             collider.size = Vector3.one * 0.7f;
             collider.center = new Vector3(0f, 0.35f, 0f);
+            root.AddComponent<Rigidbody>().mass = 2f;
+            root.AddComponent<BoxDurability>().Initialize(_tuning);
 
             if (_boxVisualPrefab != null)
             {

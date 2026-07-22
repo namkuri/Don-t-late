@@ -59,6 +59,55 @@ namespace DontLate
 
         public AudioClip CurrentClip => _active != null ? _active.clip : null;
 
+        // ── 폰 음악앱 API (S-019 ⑤ — View가 Instance 명령으로 호출) ──
+        public bool IsPaused { get; private set; }
+        public float Volume => _volume;
+        public BgmSlot CurrentSlot => _slot;
+
+        public void TogglePause()
+        {
+            if (_active == null) return;
+            if (IsPaused) _active.UnPause();
+            else _active.Pause();
+            IsPaused = !IsPaused;
+        }
+
+        public void SetVolume(float value)
+        {
+            _volume = Mathf.Clamp01(value);
+            if (_active != null) _active.volume = _volume;
+        }
+
+        /// <summary>현재 슬롯 풀의 다음 곡으로 즉시 전환.</summary>
+        public void NextTrack()
+        {
+            if (_slot == BgmSlot.Unsorted) return;
+            _entered.Add(_slot); // 재진입 규칙 재사용 — 다음 곡 선택
+            AudioClip clip = SelectForSlot(_slot);
+            if (clip == null) return;
+            SyncDebugIndex(_slot, clip);
+            Crossfade(clip);
+        }
+
+        /// <summary>현재 슬롯 풀의 곡 이름 목록 (곡선택 UI용).</summary>
+        public List<string> TrackNames()
+        {
+            var names = new List<string>();
+            if (_pools.TryGetValue(_slot, out List<AudioClip> pool))
+                foreach (AudioClip clip in pool) names.Add(clip.name);
+            return names;
+        }
+
+        /// <summary>풀 인덱스로 곡 직접 선택.</summary>
+        public void PlayTrackAt(int index)
+        {
+            if (!_pools.TryGetValue(_slot, out List<AudioClip> pool)) return;
+            if (index < 0 || index >= pool.Count) return;
+            _picked[_slot] = pool[index];
+            SyncDebugIndex(_slot, pool[index]);
+            Crossfade(pool[index]);
+        }
+
         private void Awake()
         {
             if (Instance != null) { Destroy(gameObject); return; }

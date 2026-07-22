@@ -47,6 +47,12 @@ namespace DontLate
             _gameState.scannedOrderIds.Clear();
             _gameState.completedCount = 0;
             _gameState.lateCount = 0;
+            _gameState.currentDistrict = string.Empty;
+            _gameState.deliveryHistory.Clear();
+            _gameState.totalEarned = 0;
+            _gameState.ownedFurnitureIds.Clear();
+            _gameState.placedFurniture.Clear();
+            _gameState.coinUnits = 0f;
         }
     }
 }

@@ -47,8 +47,14 @@ namespace DontLate
 
             if (moving)
             {
-                float drain = tuning.staminaDrainPerSecond;
-                if (IsCarrying) drain *= tuning.staminaDrainCarryMultiplier;
+                // S-019 ③: 걷기 < 달리기, 든 상자는 무게(kg)만큼 가중.
+                float drain = _hub.Input.RunHeld ? tuning.staminaDrainRunPerSecond : tuning.staminaDrainPerSecond;
+                if (IsCarrying)
+                {
+                    drain += CarriedOrder.weight > 0f
+                        ? CarriedOrder.weight * tuning.staminaDrainPerKg
+                        : drain * (tuning.staminaDrainCarryMultiplier - 1f); // 무게 미지정 주문 폴백
+                }
                 Stamina -= drain * Time.deltaTime;
             }
             else

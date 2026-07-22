@@ -65,6 +65,15 @@ namespace DontLate
 
             _gameState.money += order.reward;
             _gameState.completedCount++;
+            _gameState.totalEarned += order.reward;
+            _gameState.deliveryHistory.Add(new DeliveryRecord // 택배앱 히스토리 (S-019)
+            {
+                orderId = order.orderId,
+                address = order.address,
+                reward = order.reward,
+                day = _gameState.day,
+                minuteOfDay = Mathf.FloorToInt(_gameState.minuteOfDay)
+            });
             WorldEvents.RaiseDeliveryCompleted(DeliveryData.From(order));
         }
 

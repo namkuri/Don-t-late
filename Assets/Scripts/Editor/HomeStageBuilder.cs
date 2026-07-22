@@ -28,6 +28,7 @@ namespace DontLate.EditorTools
             BuildRoom(floor, wall, door);
             BuildBed(bed);
             BuildSky();
+            BuildFurniturePlacer();
             GreyboxStageBuilder.BuildPostVolume();
             GreyboxStageBuilder.ConfigureCamera();
             PullCameraIntoRoom();
@@ -108,6 +109,25 @@ namespace DontLate.EditorTools
                 so.FindProperty("_radiusY").floatValue = 7.5f; // 정점 y≈1.5 — 창 대역 안
                 so.ApplyModifiedPropertiesWithoutUndo();
             }
+        }
+
+        // 가구 배치기 (S-019 ④) — 폰 가구앱의 배치 대기를 바닥 클릭으로 소비.
+        private static void BuildFurniturePlacer()
+        {
+            GameObject go = GreyboxStageBuilder.CreateEmpty("FurniturePlacer", Vector3.zero);
+            HomeFurniturePlacer placer = go.AddComponent<HomeFurniturePlacer>();
+            GreyboxStageBuilder.SetReference(placer, "_gameState",
+                AssetDatabase.LoadAssetAtPath<GameStateSO>("Assets/Data/GameState.asset"));
+
+            var catalog = new System.Collections.Generic.List<FurnitureSO>();
+            foreach (string guid in AssetDatabase.FindAssets("t:FurnitureSO", new[] { "Assets/Data/Furniture" }))
+                catalog.Add(AssetDatabase.LoadAssetAtPath<FurnitureSO>(AssetDatabase.GUIDToAssetPath(guid)));
+            SerializedObject serialized = new SerializedObject(placer);
+            SerializedProperty prop = serialized.FindProperty("_catalog");
+            prop.arraySize = catalog.Count;
+            for (int i = 0; i < catalog.Count; i++)
+                prop.GetArrayElementAtIndex(i).objectReferenceValue = catalog[i];
+            serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
         // 방은 거리 무대보다 훨씬 작다 — 표준 리그(FOV 22·y8.1·z-40)로는 방이 점이 된다.

@@ -479,6 +479,10 @@ namespace DontLate.EditorTools
             scaler.matchWidthOrHeight = 0.5f;
 
             PhoneView view = canvasGo.AddComponent<PhoneView>();
+            SetField(view, "_font", font);
+            SetField(view, "_tuning", AssetDatabase.LoadAssetAtPath<TuningConfigSO>(DATA_ROOT + "/Tuning.asset"));
+            SetField(view, "_gameState", AssetDatabase.LoadAssetAtPath<GameStateSO>(DATA_ROOT + "/GameState.asset"));
+            SetField(view, "_furnitureCatalog", GetOrCreateFurnitureCatalog()); // S-019 ④
 
             // 폰 본체 — 우하단 앵커(사람 요청 S-011 후속), 시안 테두리 + 네이비 스크린.
             GameObject panel = CreateImage(canvasGo.transform, "Panel", CYAN).gameObject;
@@ -496,47 +500,45 @@ namespace DontLate.EditorTools
             screenRect.offsetMin = new Vector2(4f, 4f);
             screenRect.offsetMax = new Vector2(-4f, -4f);
             screen.raycastTarget = true; // 폰 위 클릭이 월드 스캔으로 새지 않게
-
-            TMP_Text title = CreateText(screen.transform, "Title", "배송상차", font,
-                40f, AMBER, TextAlignmentOptions.Top);
-            RectTransform titleRect = title.rectTransform;
-            titleRect.anchorMin = new Vector2(0f, 1f);
-            titleRect.anchorMax = new Vector2(1f, 1f);
-            titleRect.pivot = new Vector2(0.5f, 1f);
-            titleRect.anchoredPosition = new Vector2(0f, -22f);
-            titleRect.sizeDelta = new Vector2(0f, 52f);
-
-            TMP_Text hover = CreateText(screen.transform, "HoverInvoice", "-", font,
-                32f, CYAN, TextAlignmentOptions.Top);
-            RectTransform hoverRect = hover.rectTransform;
-            hoverRect.anchorMin = new Vector2(0f, 1f);
-            hoverRect.anchorMax = new Vector2(1f, 1f);
-            hoverRect.pivot = new Vector2(0.5f, 1f);
-            hoverRect.anchoredPosition = new Vector2(0f, -84f);
-            hoverRect.sizeDelta = new Vector2(0f, 44f);
-            SetField(view, "_hoverLabel", hover);
-
-            TMP_Text warn = CreateText(screen.transform, "Warn", string.Empty, font,
-                24f, new Color(1f, 0.45f, 0.35f), TextAlignmentOptions.Top);
-            RectTransform warnRect = warn.rectTransform;
-            warnRect.anchorMin = new Vector2(0f, 1f);
-            warnRect.anchorMax = new Vector2(1f, 1f);
-            warnRect.pivot = new Vector2(0.5f, 1f);
-            warnRect.anchoredPosition = new Vector2(0f, -132f);
-            warnRect.sizeDelta = new Vector2(0f, 36f);
-            SetField(view, "_warnLabel", warn);
-
-            TMP_Text list = CreateText(screen.transform, "InvoiceList", string.Empty, font,
-                24f, Color.white, TextAlignmentOptions.TopLeft);
-            list.textWrappingMode = TextWrappingModes.Normal;
-            RectTransform listRect = list.rectTransform;
-            listRect.anchorMin = Vector2.zero;
-            listRect.anchorMax = Vector2.one;
-            listRect.offsetMin = new Vector2(24f, 20f);
-            listRect.offsetMax = new Vector2(-24f, -176f);
-            SetField(view, "_listLabel", list);
+            // 화면 내부 위젯은 PhoneView v2가 런타임 생성 (S-019 ⑥ — 홈+앱 6종).
 
             EditorUtility.SetDirty(view);
+        }
+
+        // 가구 카탈로그 4종 (S-019 ④ — 그레이박스 색박스, 실모델은 prefab 스왑 계약).
+        private static FurnitureSO[] GetOrCreateFurnitureCatalog()
+        {
+            (string id, string label, int price, Vector3 size, Color color)[] items =
+            {
+                ("fur_plant", "화분", 2000, new Vector3(0.4f, 0.7f, 0.4f), new Color(0.35f, 0.75f, 0.4f)),
+                ("fur_lamp", "스탠드", 3500, new Vector3(0.35f, 1.4f, 0.35f), new Color(1f, 0.85f, 0.55f)),
+                ("fur_rug", "러그", 4000, new Vector3(2.0f, 0.05f, 1.4f), new Color(0.7f, 0.35f, 0.35f)),
+                ("fur_tv", "TV", 8000, new Vector3(1.6f, 1.0f, 0.25f), new Color(0.15f, 0.15f, 0.2f)),
+            };
+
+            string folder = DATA_ROOT + "/Furniture";
+            if (!AssetDatabase.IsValidFolder(folder))
+                AssetDatabase.CreateFolder(DATA_ROOT, "Furniture");
+
+            var catalog = new FurnitureSO[items.Length];
+            for (int i = 0; i < items.Length; i++)
+            {
+                string path = folder + "/" + items[i].id + ".asset";
+                FurnitureSO so = AssetDatabase.LoadAssetAtPath<FurnitureSO>(path);
+                if (so == null)
+                {
+                    so = ScriptableObject.CreateInstance<FurnitureSO>();
+                    so.furnitureId = items[i].id;
+                    so.displayName = items[i].label;
+                    so.price = items[i].price;
+                    so.size = items[i].size;
+                    so.color = items[i].color;
+                    AssetDatabase.CreateAsset(so, path);
+                }
+                catalog[i] = so;
+            }
+            AssetDatabase.SaveAssets();
+            return catalog;
         }
 
         // ── 블립 합성 (없을 때만 — 진짜 SFX 스왑 계약) ───────
