@@ -46,7 +46,7 @@ namespace DontLate.EditorTools
 
         // ── 메뉴 ─────────────────────────────────────────────
 
-        [MenuItem("DontLate/Build Core Scene", priority = 10)]
+        [MenuItem("DontLate/Build/Core Scene", priority = 10)]
         public static void BuildCoreScene()
         {
             GameStateSO gameState = AssetDatabase.LoadAssetAtPath<GameStateSO>(DATA_ROOT + "/GameState.asset");
@@ -74,12 +74,30 @@ namespace DontLate.EditorTools
             Debug.Log("[CoreSceneBuilder] Core.unity 조립 완료 — Managers(Sun 포함)·Core·FadeCanvas·HUDCanvas·EventSystem 구성.");
         }
 
-        [MenuItem("DontLate/Build Core + Content Scenes", priority = 11)]
+        [MenuItem("DontLate/Build/Core + Content Scenes (최초 셋업)", priority = 21)]
         public static void BuildAll()
         {
             CreateContentScenes();
             BuildCoreScene();
             RegisterBuildSettings();
+        }
+
+        /// <summary>
+        /// 전 씬 일괄 재조립 (S-022) — clone 직후든 규칙 변경 후든 이 하나로 프로젝트가 완성 상태가 된다.
+        /// 순서: 씬 파일 확보 → Core(매니저·캔버스) → 무대 3종 → 흐름 UI → 빌드 세팅 → Core 열기.
+        /// </summary>
+        [MenuItem("DontLate/Build/★ All Scenes", priority = 0)]
+        public static void BuildAllScenes()
+        {
+            CreateContentScenes();          // 씬 파일이 없으면 빈 씬부터 생성 (멱등)
+            BuildCoreScene();               // 매니저·HUD·대화·미니게임·폰 캔버스
+            CampStageBuilder.BuildCampStage();
+            HomeStageBuilder.BuildHomeStage();
+            DistrictSceneBuilder.BuildDistrictStage();
+            SceneFlowUIBuilder.BuildSceneFlowUI();  // 씬별 전환 UI + 정산 패널 (무대 뒤에 얹는다)
+            RegisterBuildSettings();
+            EditorSceneManager.OpenScene(CORE_PATH); // Play 시작점으로 복귀
+            Debug.Log("[Build All] 전 씬 재조립 완료 — Core에서 Play.");
         }
 
         // ── Core 씬 구성 ─────────────────────────────────────

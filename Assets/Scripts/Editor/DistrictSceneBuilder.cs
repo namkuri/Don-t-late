@@ -24,7 +24,7 @@ namespace DontLate.EditorTools
         private const float BUILDING_Z = 2.6f;
         private const float PROP_Z = -2.6f;
 
-        [MenuItem("DontLate/Build District Stage", priority = 12)]
+        [MenuItem("DontLate/Build/District Stage", priority = 14)]
         public static void BuildDistrictStage()
         {
             Scene scene = EditorSceneManager.OpenScene(DISTRICT_PATH, OpenSceneMode.Single);

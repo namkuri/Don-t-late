@@ -24,7 +24,7 @@ namespace DontLate.EditorTools
         private static readonly Color CYAN = new Color(0.208f, 0.878f, 0.784f, 1f);   // #35e0c8 상호작용
         private static readonly Color NAVY = new Color(0.039f, 0.051f, 0.086f, 1f);   // #0a0d16 배경
 
-        [MenuItem("DontLate/Build Scene Flow UI", priority = 13)]
+        [MenuItem("DontLate/Build/Scene Flow UI", priority = 15)]
         public static void BuildSceneFlowUI()
         {
             TMP_FontAsset font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FONT_PATH);

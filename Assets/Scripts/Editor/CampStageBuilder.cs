@@ -17,7 +17,7 @@ namespace DontLate.EditorTools
         private const string CAMP_PATH = "Assets/Scenes/Camp.unity";
         private const int LOAD_ZONE_COUNT = 3;
 
-        [MenuItem("DontLate/Build Camp Stage", priority = 13)]
+        [MenuItem("DontLate/Build/Camp Stage", priority = 12)]
         public static void BuildCampStage()
         {
             Scene scene = EditorSceneManager.OpenScene(CAMP_PATH, OpenSceneMode.Single);

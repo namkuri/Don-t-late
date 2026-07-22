@@ -19,7 +19,7 @@ namespace DontLate.EditorTools
         private const string LAMP_PREFAB_PATH = "Assets/Prefabs/Hand/StreetLamp.prefab";
         private const string LAMP_LIGHT_PREFAB_PATH = "Assets/Prefabs/Hand/StreetLampLight.prefab";
 
-        [MenuItem("DontLate/Build Greybox Stage", priority = 0)]
+        [MenuItem("DontLate/Build/Greybox Stage (개발용)", priority = 40)]
         public static void Build()
         {
             Clear();
@@ -86,7 +86,7 @@ namespace DontLate.EditorTools
             SetReference(follow, "_target", player.transform);
         }
 
-        [MenuItem("DontLate/Clear Greybox Stage", priority = 1)]
+        [MenuItem("DontLate/Build/Clear Greybox Stage", priority = 41)]
         public static void Clear()
         {
             foreach (GameObject go in Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include))

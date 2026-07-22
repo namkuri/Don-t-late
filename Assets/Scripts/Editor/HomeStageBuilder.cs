@@ -14,7 +14,7 @@ namespace DontLate.EditorTools
     {
         private const string HOME_PATH = "Assets/Scenes/Home.unity";
 
-        [MenuItem("DontLate/Build Home Stage", priority = 14)]
+        [MenuItem("DontLate/Build/Home Stage", priority = 13)]
         public static void BuildHomeStage()
         {
             Scene scene = EditorSceneManager.OpenScene(HOME_PATH, OpenSceneMode.Single);
