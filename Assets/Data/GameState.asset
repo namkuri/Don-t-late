@@ -18,8 +18,8 @@ MonoBehaviour:
   debt: 10000
   cargo: []
   scannedOrderIds: 
-  currentDistrict: 
-  completedCount: 1
+  currentDistrict: "\uB2EC\uBE5B\uB9E8\uC158 \uAD6C\uC5ED"
+  completedCount: 0
   lateCount: 0
   currentScene: 4
   startDay: 1
