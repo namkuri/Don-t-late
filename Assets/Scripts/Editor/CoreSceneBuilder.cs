@@ -477,6 +477,7 @@ namespace DontLate.EditorTools
             scaler.referenceResolution = new Vector2(1920f, 1080f);
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
             scaler.matchWidthOrHeight = 0.5f;
+            canvasGo.AddComponent<GraphicRaycaster>(); // 없으면 폰 버튼 클릭이 전부 무시된다 (실사고 2026-07-22)
 
             PhoneView view = canvasGo.AddComponent<PhoneView>();
             SetField(view, "_font", font);
