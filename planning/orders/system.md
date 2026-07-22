@@ -504,3 +504,15 @@
 수용기준: ① 컴파일 ② `unity-cli test` 전체 green ③ 테스트가 실제 경계값을 물어뜯는지(항상 통과하는 무의미 검증 금지 — CODE_RULES §8 위장 금지) ④ freeze-guard 통과.
 
 실패시: [BLOCKED].
+
+### 결과 · 2026-07-22 20:39 (리드 10분 · 정수 공장)
+
+- **테스트 4모듈 23케이스 — `unity-cli test --filter DontLate.Tests` 전체 green (23/23·failed 0)**.
+  - WorldDebtSettleTests 4: 잔액<빚 전액 상환 · 잔액>빚 초과 보존 · 0원 무변 · DebtSettled 페이로드=반환값 일치.
+  - WorldDebtCoinTests 7: CoinPrice 결정론 · **변동성 100배에서도 바닥 100원 클램프 실발동 검증**(min==100 확인) · BuyCoin 잔액부족/0원이하 거부+상태불변 · 매수 수량 수식 일치 · SellAllCoin 0보유/전량매도.
+  - CampOrderBoardTests 8: IsConsumed 분기 5(완료/마감경과+스캔=소진/**미접촉=유지**/적재중=유지/마감전=유지) · GenerateOrder 시리얼 증가(200→201, nextOrderSerial 202) · 마감 1435 캡+240분 최소 오프셋 · 목적지 풀.
+  - DeliveryBarcodeTests 4: 첫 스캔 등록 · 중복 거부+목록 불변 · **이벤트 중복 발행 금지**(2회 스캔에 1회 발행) · IsScanned 정합.
+- **경로 편차 (기술적 강제)**: 발주서 지정 `Scripts/Tests/EditMode/`+asmdef는 **불성립** — 게임 코드가 전부 predefined `Assembly-CSharp`(프로젝트 asmdef 0개)이고 asmdef는 predefined 어셈블리를 참조할 수 없다. 대체 = `Scripts/Editor/Tests/` 무asmdef → `Assembly-CSharp-Editor`(게임 코드 자동 참조·nunit 자동 참조·에디터 전용=빌드 제외 규칙도 충족). Scripts 전체 asmdef화는 구조 변경이라 관제 게이트로 넘김.
+- private 접근: `TestSupport` 리플렉션 헬퍼 1파일(필드 주입·메서드 호출). 에디터 모드는 Awake/OnEnable 미실행 — 싱글톤·이벤트 구독 간섭 없음(이벤트 검증은 구독 후 finally 해제).
+- **TECH_SPEC 오디오 절 추가** — 표 7행(믹스 0.5/0.7 · BGM: Vorbis q30+Compressed In Memory / SFX: q70+**Decompress On Load**+모노 · Streaming 금지 · 리스너 Core 소유 · BGM 슬롯/플레이리스트 · 반입 계약). 기존 줄 무수정(직교 추가만). 로드타입은 `AudioImportPostprocessor` 실코드 대조로 확정(초안에서 SFX를 Compressed In Memory로 잘못 적었다가 교정).
+- 컴파일 통과 · 콘솔 에러/워닝 0.
