@@ -16,6 +16,7 @@
 ## ③ 손 작업·외부 대기
 
 | # | 작업 | 누구 | 참조 |
+| H13 | **GitHub 브랜치 보호 켜기** (1분, 웹) — repo Settings→Branches→Add rule: 패턴 `main`, ☑ Require a pull request before merging(승인 1), "Include administrators"는 **체크 안 함**(님 direct push 유지). 로컬 훅과 이중 방벽 | 님 | [decisions.md](decisions.md) D-055 |
 |---|---|---|---|
 | H12 | **Trellis2 반입물 2종 마감질** — 편의점 store_2(485,891→<3,000 tris)·가로등(95,724→<1,500) 데시메이트 + 텍스처 포함 재출력 (현재 회백색) | 민지 | [orders/art.md](orders/art.md) A-001 결과 |
 | H8 | 텍스처 재전송 2건: ~~가로등~~(Trellis2로 대체됨)·캐릭터 — FBX **Embed Media** 켜기 (캐릭터는 쿠팡 로고 제거 겸) | 민지 | [assets_manifest.md](assets_manifest.md) |

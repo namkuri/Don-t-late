@@ -59,10 +59,13 @@ unity-cli screenshot --view game      # 결과 눈으로 확인
 - `IInteractable` 시그니처는 동결 — 변경 필요하면 구현하지 말고 사람에게 묻는다.
 - YAGNI: 발주서에 없는 기능·추상화·방어코드를 덧붙이지 않는다.
 
-## 세션 분기 (킷 v1.9 편입 — 2026-07-20)
+## 세션 분기 — 3모드 (D-055 확정 · 2026-07-22)
 
-- **공장 세션 (정수 · 구현)**: 위 내용이 전부다. 아래 킷 문서는 신경 쓰지 않아도 된다.
-- **디렉터 세션 (남규 · 관제)**: 사람이 "관제 시작" 또는 "PRETASK 모드"를 선언하면 —
+- **공장 모드 (정수 · 코드+오디오)**: 위 내용 + `planning/guides/factory-mode.md`가 운영 규칙.
+  브랜치→PR로만 반입 (main 직접 push는 pre-push 훅이 차단 — `dontlate.role` 미설정 상태가 곧 공장).
+- **아트 모드 (민지 · 생성·반입)**: `planning/guides/art-mode.md`. Unity 불요 — 반입 PR을 열면
+  검역 리포트·프리뷰 스크린샷을 관제가 회신. 라이선스 기록 누락 = 반입 차단.
+- **관제 모드 (남규 · 디렉터)**: 사람이 "관제 시작" 또는 "PRETASK 모드"를 선언하면 —
   `PRETASK.md`(모드 헌장·이정표 M0~M6) → `PROCESS.md`(상태기계) → `HARNESS.md` → `CONNECTIONS.md` 로드,
   `.claude/agents/orchestrator.md` 역할로 가동. 상태는 `planning/STATUS.md`, 발주는 `planning/TASKS.md`
   (첫 관제 세션이 생성). 시뮬 기록은 `_sim/`(드라이런 — 실산출물 아님).
