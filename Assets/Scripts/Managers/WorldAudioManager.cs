@@ -33,6 +33,17 @@ namespace DontLate
         [SerializeField] private AudioClip _sfxCoin;
         [SerializeField] private AudioClip _sfxPhone;
 
+        [Header("SFX — 잔여 배선 8종 (AU-009)")]
+        [SerializeField] private AudioClip _sfxDeadlineWarn;
+        [SerializeField] private AudioClip _sfxPhoneRing;
+        [SerializeField] private AudioClip _sfxRhythmHit;
+        [SerializeField] private AudioClip _sfxRhythmMiss;
+        [SerializeField] private AudioClip _sfxSceneWhoosh;
+        [SerializeField] private AudioClip _sfxFootstep;
+        [SerializeField] private AudioClip _sfxDrink;
+        [SerializeField] private AudioClip _ambNight;
+        [SerializeField, Range(0f, 1f)] private float _ambVolume = 0.35f; // 배경 앰비언스 — SFX보다 낮게
+
         [Header("믹스")]
         [SerializeField, Range(0f, 1f)] private float _volume = 0.5f;
         [SerializeField, Range(0f, 1f)] private float _sfxVolume = 0.7f;
@@ -55,6 +66,7 @@ namespace DontLate
         private AudioSource _sourceB;
         private AudioSource _active;
         private AudioSource _sfxSource;
+        private AudioSource _ambSource; // amb_night 루프 전용 (AU-009)
         private Coroutine _fade;
 
         private BgmSlot _slot = BgmSlot.Unsorted;
@@ -128,6 +140,10 @@ namespace DontLate
             _sfxSource = CreateSource(); // 원샷 전용 — BGM 소스와 분리해 페이드에 휘둘리지 않게 한다
             _sfxSource.volume = _sfxVolume;
 
+            _ambSource = CreateSource(); // amb_night 루프 전용 (AU-009)
+            _ambSource.loop = true;
+            _ambSource.volume = _ambVolume;
+
             BuildPools();
             PickForSession();
         }
@@ -143,6 +159,9 @@ namespace DontLate
             WorldEvents.PackageDestroyed += OnPackageDestroyed;
             WorldEvents.BarcodeScanned += OnBarcodeScanned;
             WorldEvents.DebtIncreased += OnDebtIncreased;
+            WorldEvents.DeadlineWarned += OnDeadlineWarned;
+            WorldEvents.PhoneRang += OnPhoneRang;
+            WorldEvents.SceneTransitionStarted += OnSceneTransitionStarted;
         }
 
         private void OnDisable()
@@ -156,6 +175,9 @@ namespace DontLate
             WorldEvents.PackageDestroyed -= OnPackageDestroyed;
             WorldEvents.BarcodeScanned -= OnBarcodeScanned;
             WorldEvents.DebtIncreased -= OnDebtIncreased;
+            WorldEvents.DeadlineWarned -= OnDeadlineWarned;
+            WorldEvents.PhoneRang -= OnPhoneRang;
+            WorldEvents.SceneTransitionStarted -= OnSceneTransitionStarted;
         }
 
         private void OnDestroy()
@@ -228,12 +250,33 @@ namespace DontLate
         {
             _phase = phase;
             ApplySlot();
+            UpdateAmbient();
         }
 
         private void OnSceneTransitionCompleted(GameScene scene)
         {
             _titleScene = scene == GameScene.Main;
             ApplySlot();
+            UpdateAmbient();
+        }
+
+        /// <summary>amb_night 루프 — 저녁·밤에만, 타이틀 씬 제외 (AU-009).</summary>
+        private void UpdateAmbient()
+        {
+            if (_ambNight == null) return; // 음원 미확보 = 무음 (폴백 원칙)
+
+            bool night = (_phase == DayPhase.Evening || _phase == DayPhase.Night) && !_titleScene;
+            if (night && !_ambSource.isPlaying)
+            {
+                _ambSource.clip = _ambNight;
+                _ambSource.volume = _ambVolume;
+                _ambSource.Play();
+            }
+            else if (!night && _ambSource.isPlaying)
+            {
+                _ambSource.Stop();
+                _ambSource.clip = null;
+            }
         }
 
         // ── SFX ──────────────────────────────────────────────
@@ -245,6 +288,9 @@ namespace DontLate
         private void OnPackageDestroyed() => PlaySfx(_sfxBoxBreak);                 // AU-008
         private void OnBarcodeScanned(DeliveryData data) => PlaySfx(_sfxBarcode);   // AU-008
         private void OnDebtIncreased(int amount) => PlaySfx(_sfxPenalty);           // AU-008
+        private void OnDeadlineWarned(DeliveryData data) => PlaySfx(_sfxDeadlineWarn); // AU-009
+        private void OnPhoneRang(PhoneCall call) => PlaySfx(_sfxPhoneRing);            // AU-009
+        private void OnSceneTransitionStarted(GameScene scene) => PlaySfx(_sfxSceneWhoosh); // AU-009
 
         // 이벤트 없는 지점(자판기·던지기·코인·폰 개폐)의 Instance 명령 API (AU-008).
         // 컴포넌트가 클립을 들지 않게 해 배선을 빌더 한 곳(Core)으로 모은다.
@@ -252,6 +298,12 @@ namespace DontLate
         public void PlayThrowSfx() => PlaySfx(_sfxThrow);
         public void PlayCoinSfx() => PlaySfx(_sfxCoin);
         public void PlayPhoneToggleSfx() => PlaySfx(_sfxPhone);
+
+        // AU-009 — 리듬 판정(노트당 1회)·드링크·발소리(고빈도라 이벤트 금지, PlayThrowSfx 선례).
+        public void PlayRhythmHitSfx() => PlaySfx(_sfxRhythmHit);
+        public void PlayRhythmMissSfx() => PlaySfx(_sfxRhythmMiss);
+        public void PlayDrinkSfx() => PlaySfx(_sfxDrink);
+        public void PlayFootstepSfx() => PlaySfx(_sfxFootstep);
 
         private void PlaySfx(AudioClip clip)
         {

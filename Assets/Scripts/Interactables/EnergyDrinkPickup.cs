@@ -16,6 +16,7 @@ namespace DontLate
         public void Interact(PlayerContext ctx)
         {
             ctx.Player.Status.RecoverStamina(ctx.Player.Tuning.energyDrinkRecover);
+            WorldAudioManager.Instance?.PlayDrinkSfx(); // AU-009 — Instance 명령 (이벤트 없는 지점)
             Destroy(gameObject);
         }
 

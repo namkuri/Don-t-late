@@ -58,12 +58,21 @@ namespace DontLate
                     int pressed = ReadArrowPressed();
                     if (pressed >= 0)
                     {
-                        if (pressed == sequence[i]) hit++;
+                        if (pressed == sequence[i])
+                        {
+                            hit++;
+                            WorldAudioManager.Instance?.PlayRhythmHitSfx(); // AU-009 — 노트당 1회
+                        }
+                        else
+                        {
+                            WorldAudioManager.Instance?.PlayRhythmMissSfx(); // AU-009
+                        }
                         judged = true;
                     }
                     remain -= Time.deltaTime;
                     yield return null;
                 }
+                if (!judged) WorldAudioManager.Instance?.PlayRhythmMissSfx(); // AU-009 — 타임아웃도 미스
             }
 
             _panel.SetActive(false);

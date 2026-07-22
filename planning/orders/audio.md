@@ -497,3 +497,13 @@ Morning  Seoul_Alley_Reflection   ← Day 순환
 수용기준: ① 컴파일 ② 콘솔 0 ③ Play — 이동 발소리·T 시각점프 amb 루프 on/off·씬 전환 whoosh·전화 ring·리듬 hit/miss·드링크·마감 warn 각 발화 실측 ④ 감각값(보폭·amb 볼륨) [SerializeField] 노출.
 
 실패시: [BLOCKED].
+
+### 결과 · 2026-07-22 23:55 (리드 20분 · 정수 공장)
+
+- **8종 배선 완료** — 19종 전체가 인게임 트리거 보유.
+  - 구독 3 (WorldAudioManager · OnEnable/OnDisable 짝): `DeadlineWarned`→warn · `PhoneRang`→ring · `SceneTransitionStarted`→whoosh.
+  - amb_night: 전용 루프 소스(`_ambSource`) 신설 — Evening·Night 재생 / Morning·Day 정지 / **타이틀 씬 억제**. `_ambVolume=0.35` [SerializeField].
+  - Instance API 4: RhythmHit/RhythmMiss(MinigameRhythmView 판정 3지점 — 정타·오타·타임아웃) · Drink(EnergyDrinkPickup.Interact) · Footstep(PlayerLocomotionManager 보폭 누적 — `_footstepStride=1.4m` [SerializeField], 접지+이동 시만, 정지 시 리셋).
+- CoreSceneBuilder SetField 8건 + Core 재조립 — **씬 YAML guid 8/8 검증** (⚠ 실측: S-022 메뉴 재편으로 경로가 `DontLate/Build/Core Scene` — 구경로 ExecuteMenuItem은 조용히 실패, 반환값 확인 필수).
+- 검증: ① 컴파일 통과 ② 콘솔 에러 0 (워닝 2건 CS0618 = main pull분 기존 · "Creating missing PlayerEffectsManager" 1건 = S-023 프리팹 미부착 기존 — AU-009 범위 외) ③ Play 실측 — 동일 프레임 exec: warn/ring/whoosh/hit/miss/drink/foot 7종 발화 `isPlaying=True` + amb 4분기(밤 on·아침 stop·저녁 on·타이틀 억제) 전부 기대 일치. 클립 주입 8/8 실음원 길이(0.48~5.00s).
+- 발소리 실걸음·귀 판정 = 사람 몫 (플레이 시 자동 청취됨).
