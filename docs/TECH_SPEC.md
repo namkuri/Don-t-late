@@ -31,3 +31,14 @@ ingame_time: {game_min_per_real_sec: 4}
 | 택배상자 (중) | 0.4~0.75 |
 | 가로등 | 4.0 |
 | 박말순 초상 (대화 UI) | Tier H — 2D 일러스트 유지 |
+
+## 오디오 (직교 추가 2026-07-22 · S-024 — D-039~043·D-046 확정분 요약 전재)
+| 항목 | 규격 | 근거 |
+|---|---|---|
+| 믹스 기준 | BGM 볼륨 0.5 · SFX 볼륨 0.7 · 전부 2D(spatialBlend 0 — 리스너 위치 무관) | AU-001 · BOM §8 |
+| BGM 압축 | Vorbis q30(~118kbps) · Load Type = Compressed In Memory · 스테레오 | D-043 · D-040 |
+| SFX 압축 | Vorbis q70 · Load Type = **Decompress On Load**(짧은 원샷 — 지연 최소) · 모노 강제 | D-043 · 임포터 실측 |
+| Streaming | **금지** — WebGL(Web Audio API)이 미지원. DecompressOnLoad도 금지(60초 스테레오 1곡 = 생PCM 11.5MB) | D-040 |
+| AudioListener | **Core 씬 소유 1개** — 콘텐츠 씬 배치 금지 (D-021 태양 소유와 동형) | D-041 |
+| BGM 구동 | 슬롯 3종(Day/Night/Title) · 세션 추첨 = 시작 곡(no-repeat) · 플레이리스트 크로스페이드 3s · 낮→밤 전환 = Evening 진입(17시) | D-039 · D-046 |
+| 반입 계약 | `_intake/ElevenLabs/{BGM,SFX}/` → SFX 파일명=bom_id 스왑 · BGM 원제 유지(BgmLibrary SO가 계약) · CREDITS.md 기록 누락 = 반입 차단 | 공장 가이드 §3 |
