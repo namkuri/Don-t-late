@@ -260,6 +260,10 @@ namespace DontLate.EditorTools
                 TextAlignmentOptions.Center, FontStyles.Bold);
             StretchFull(endLabel.rectTransform);
 
+            // S-028 ③: 다른 구역 이동 — 집 강제 복귀는 루프상 안 맞음. Travel(구역 선택)로 재진입.
+            CreateButton(root, "TravelButton", "다른 구역으로", GameScene.Travel, font, AMBER,
+                new Vector2(1f, 1f), new Vector2(-40f, -310f), new Vector2(380f, 74f), 30f);
+
             // 정산 패널 — 시안 테두리 + 네이비 내부 + 확인 버튼.
             GameObject panel = CreateImage(root, "SettlementPanel", CYAN).gameObject;
             RectTransform panelRect = panel.GetComponent<RectTransform>();

@@ -92,6 +92,9 @@ namespace DontLate
             if (_clockLabel != null)
                 _clockLabel.text = $"Day {clock.Day} · {clock.Hour:00}:{clock.Minute:00}";
 
+            // S-028 ④: 이벤트 없는 지출·입금(자판기·은행 테스트 버튼)도 시계 틱에서 캐치업.
+            RefreshEconomy();
+
             if (_hasCard && _remainingLabel != null)
             {
                 int remaining = Mathf.FloorToInt(_activeDeadline - clock.MinuteOfDay);

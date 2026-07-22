@@ -86,34 +86,40 @@ namespace DontLate
         private void OnDialogueStarted(string scenarioName)
         {
             _boxActive = true;
-            if (_box != null) _box.SetActive(true);
-            // 아트팀 발주 (S-026→S-027 ③ 강화): 대화 시작("어이 총각!!") 시 셰이크 — 5px는 육안 확인 불가 판정.
-            if (_box != null) StartCoroutine(ShakeBox());
+            if (_box != null)
+            {
+                _box.SetActive(true);
+                _boxOrigin = _box.GetComponent<RectTransform>().anchoredPosition;
+            }
         }
 
-        private IEnumerator ShakeBox()
+        /// <summary>
+        /// S-028 ①: 박말순(주인공 아닌 화자) 대사가 타이핑되는 동안 계속 흔든다. 주인공 라인은 무셰이크.
+        /// 타이핑이 끝나면(스킵 포함) 원위치로 복귀.
+        /// </summary>
+        private IEnumerator ShakeWhileTyping()
         {
             RectTransform rect = _box.GetComponent<RectTransform>();
-            Vector2 origin = rect.anchoredPosition;
-            const float DURATION = 0.5f;
-            const float STRENGTH = 18f; // px — S-027 ③: 5→18 (민지 예시보다는 절제, 육안 확인은 되게)
+            const float STRENGTH = 12f; // px — 지속형이라 S-027 단발(18px)보다 소폭 절제
+            const float FREQUENCY = 14f;
             float t = 0f;
-            while (t < 1f && _boxActive)
+            while (_boxActive && _isTyping)
             {
-                t += Time.unscaledDeltaTime / DURATION;
-                float falloff = 1f - t;
-                rect.anchoredPosition = origin + new Vector2(
-                    (Mathf.PerlinNoise(t * 40f, 0.3f) - 0.5f) * 2f * STRENGTH * falloff,
-                    (Mathf.PerlinNoise(0.7f, t * 40f) - 0.5f) * 2f * STRENGTH * falloff);
+                t += Time.unscaledDeltaTime * FREQUENCY;
+                rect.anchoredPosition = _boxOrigin + new Vector2(
+                    (Mathf.PerlinNoise(t, 0.3f) - 0.5f) * 2f * STRENGTH,
+                    (Mathf.PerlinNoise(0.7f, t) - 0.5f) * 2f * STRENGTH);
                 yield return null;
             }
-            rect.anchoredPosition = origin;
+            rect.anchoredPosition = _boxOrigin;
+            _shakeRoutine = null;
         }
 
         private void OnDialogueEnded(string scenarioName)
         {
             _boxActive = false;
             StopTyping();
+            StopShake();
             StopArrow();
             if (_box != null) _box.SetActive(false);
         }
@@ -128,6 +134,21 @@ namespace DontLate
 
             if (_typeRoutine != null) StopCoroutine(_typeRoutine);
             _typeRoutine = StartCoroutine(TypeRoutine());
+
+            // S-028 ①: 주인공이 아닌 화자(박말순)의 라인은 타이핑 내내 셰이크.
+            StopShake();
+            if (_box != null && line.speaker != "주인공")
+                _shakeRoutine = StartCoroutine(ShakeWhileTyping());
+        }
+
+        private Coroutine _shakeRoutine;
+        private Vector2 _boxOrigin;
+
+        private void StopShake()
+        {
+            if (_shakeRoutine != null) { StopCoroutine(_shakeRoutine); _shakeRoutine = null; }
+            if (_box != null && _box.activeSelf)
+                _box.GetComponent<RectTransform>().anchoredPosition = _boxOrigin;
         }
 
         private IEnumerator TypeRoutine()
