@@ -478,3 +478,22 @@ Morning  Seoul_Alley_Reflection   ← Day 순환
 - 배선 현황 실측(체크리스트 작성 중 확인): **11종 인게임 배선** (WorldAudioManager 10 + DialogueView blip) · **8종 미배선**(deadline_warn·phone_ring·rhythm_hit/miss·scene_whoosh·footstep·drink·amb_night) — AU-007 카드1 선택분, 배선은 관제 몫 유지.
 - R16 잔여 = 관제 ③ BOM §8 신규 7종 행 추가+JUICE 대응 ④ GAME-SFX-RULES §1 앵커 개정(동결 게이트 문서 — 공장 권한 밖).
 - 반입 PR: #11 (2~6세대 델타 + 본 승격 커밋).
+
+---
+
+## AU-009 · 발주 2026-07-22 23:35 → 정수 (미배선 SFX 8종 배선 — Director 세션 내 승인)
+
+목표: 6세대 통과 판정 후 잔여 미배선 8종을 인게임 트리거에 연결 — 19종 전체가 플레이 중 울리게 한다.
+
+입력:
+- 미배선 8종: deadline_warn·phone_ring·rhythm_hit·rhythm_miss·scene_whoosh·footstep·drink·amb_night (AU-007 카드1 잔여 — R16 부기를 Director가 공장으로 재발주).
+- 기존 패턴: WorldAudioManager 구독(저빈도 이벤트) / Instance 명령 API(이벤트 없는 지점) — AU-008 선례.
+- 배선 설계:
+  - 구독 3: `DeadlineWarned`→warn · `PhoneRang`→ring · `SceneTransitionStarted`→whoosh (전부 기존 저빈도 경계 이벤트).
+  - amb_night: 기존 `OnDayPhaseChanged` 확장 — Evening·Night 진입 시 전용 루프 소스 재생, 낮·타이틀 정지.
+  - Instance API 4: `PlayRhythmHitSfx/PlayRhythmMissSfx`(MinigameRhythmView 판정 지점 — 노트당 1회) · `PlayDrinkSfx`(EnergyDrinkPickup.Interact) · `PlayFootstepSfx`(PlayerLocomotionManager 보폭 누적 — 고빈도라 이벤트 금지, PlayThrowSfx 선례).
+  - CoreSceneBuilder SetField 8건 추가 + Core 씬 재조립.
+
+수용기준: ① 컴파일 ② 콘솔 0 ③ Play — 이동 발소리·T 시각점프 amb 루프 on/off·씬 전환 whoosh·전화 ring·리듬 hit/miss·드링크·마감 warn 각 발화 실측 ④ 감각값(보폭·amb 볼륨) [SerializeField] 노출.
+
+실패시: [BLOCKED].
