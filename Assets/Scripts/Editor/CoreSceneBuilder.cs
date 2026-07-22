@@ -396,7 +396,9 @@ namespace DontLate.EditorTools
             if (boxArt != null) borderImage.sprite = boxArt;
             GameObject border = borderImage.gameObject;
             RectTransform borderRect = border.GetComponent<RectTransform>();
-            AnchorMiddleBottom(borderRect, new Vector2(0f, 40f), new Vector2(1720f, 260f));
+            // S-027 ①: 실아트 원본 비율(크롭 후 1612×477 ≈ 3.38:1) 그대로 — 찌그러짐 금지.
+            AnchorMiddleBottom(borderRect, new Vector2(0f, 50f),
+                boxArt != null ? new Vector2(1350f, 400f) : new Vector2(1720f, 260f));
             SetField(view, "_box", border);
 
             // 네이비 반투명 내부 (테두리보다 3px 안쪽) — 클릭 진행용 Button 타겟.
@@ -413,22 +415,26 @@ namespace DontLate.EditorTools
             advanceButton.targetGraphic = inner;
             SetField(view, "_advanceButton", advanceButton);
 
-            // 이름표 — 실아트 박스는 좌상 명찰 탭이 그림에 있음: 그 안에 어두운 글자로 (S-026).
+            // 이름표 — 실아트 좌상 명찰 탭 중앙에 (탭 위치 = 크롭 아트 좌표 ×0.8375 스케일 환산, S-027).
             TMP_Text nameLabel = CreateText(inner.transform, "Name", "박말순", font,
-                34f, boxArt != null ? new Color(0.10f, 0.30f, 0.22f) : AMBER, TextAlignmentOptions.TopLeft);
+                34f, boxArt != null ? new Color(0.10f, 0.30f, 0.22f) : AMBER,
+                boxArt != null ? TextAlignmentOptions.Center : TextAlignmentOptions.TopLeft);
+            nameLabel.fontStyle = FontStyles.Bold; // S-027 ② (민지: 이름·내용 볼드)
             AnchorCorner(nameLabel.rectTransform, new Vector2(0f, 1f),
-                boxArt != null ? new Vector2(120f, -30f) : new Vector2(44f, -18f), new Vector2(600f, 46f));
+                boxArt != null ? new Vector2(60f, -8f) : new Vector2(44f, -18f),
+                boxArt != null ? new Vector2(450f, 115f) : new Vector2(600f, 46f));
             SetField(view, "_nameLabel", nameLabel);
 
-            // 본문 — 실아트 내부가 밝아서 어두운 글자 (흰 글자는 소실).
+            // 본문 — 실아트 내부가 밝아서 어두운 글자 (흰 글자는 소실). 흰 영역은 명찰 탭 아래부터.
             TMP_Text body = CreateText(inner.transform, "Body", string.Empty, font,
                 40f, boxArt != null ? new Color(0.12f, 0.14f, 0.18f) : Color.white, TextAlignmentOptions.TopLeft);
+            body.fontStyle = FontStyles.Bold; // S-027 ②
             body.textWrappingMode = TextWrappingModes.Normal;
             RectTransform bodyRect = body.rectTransform;
             bodyRect.anchorMin = Vector2.zero;
             bodyRect.anchorMax = Vector2.one;
-            bodyRect.offsetMin = new Vector2(44f, 24f);
-            bodyRect.offsetMax = new Vector2(-44f, -74f);
+            bodyRect.offsetMin = boxArt != null ? new Vector2(80f, 55f) : new Vector2(44f, 24f);
+            bodyRect.offsetMax = boxArt != null ? new Vector2(-80f, -150f) : new Vector2(-44f, -74f);
             SetField(view, "_bodyLabel", body);
 
             // 대기 화살표 (우하, 기본 숨김) — 실아트(ui_dialogue_arrow) 있으면 이미지, 없으면 "▼" 텍스트 (S-025).
@@ -439,7 +445,8 @@ namespace DontLate.EditorTools
                 Image arrowImage = CreateImage(inner.transform, "Arrow", Color.white);
                 arrowImage.sprite = arrowArt;
                 arrowImage.preserveAspect = true;
-                AnchorCorner(arrowImage.rectTransform, new Vector2(1f, 0f), new Vector2(-30f, 18f), new Vector2(64f, 64f));
+                // S-027 ⑤: 테두리 안쪽 흰 영역 우하단에 (민지 목업 배치). 크롭 아트 비율 0.75.
+                AnchorCorner(arrowImage.rectTransform, new Vector2(1f, 0f), new Vector2(-95f, 62f), new Vector2(78f, 104f));
                 arrowImage.gameObject.AddComponent<UIPulse>().Configure(0.3f, 1f, 5f); // "▼ 대신 박스 깜박" (아트팀)
                 arrowGo = arrowImage.gameObject;
             }

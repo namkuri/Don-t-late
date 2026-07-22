@@ -36,7 +36,9 @@ unity-cli test                        # EditMode 테스트
 unity-cli test --mode PlayMode
 unity-cli test --filter <namespace|class|full-test-name>   # 단일 테스트
 unity-cli exec "return Time.time;"    # 에디터 안에서 C# 즉시 실행
-unity-cli screenshot --view game      # 결과 눈으로 확인
+unity-cli screenshot --view game      # 결과 눈으로 확인 (⚠ 오버레이 UI 비포착 — 카메라 렌더만)
+# 오버레이 UI 포함 캡처 (S-027 확립): Play 중에 실행 — 프로젝트루트/Screenshots/에 떨어진다.
+unity-cli exec 'UnityEngine.ScreenCapture.CaptureScreenshot("Screenshots/x.png"); return "ok";'
 ```
 
 **셀프 검증 3종**(CODE_RULES §8)의 실제 명령 = `editor refresh --compile` → `console` 0건 → `editor play --wait` + `screenshot`. 이 3종 통과 전에는 push 금지.

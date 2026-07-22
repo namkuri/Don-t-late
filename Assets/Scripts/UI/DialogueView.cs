@@ -87,7 +87,7 @@ namespace DontLate
         {
             _boxActive = true;
             if (_box != null) _box.SetActive(true);
-            // 아트팀 발주 (S-026): 대화 시작("어이 총각!!") 시 은은한 셰이크 — "예시는 너무 과격함" 반영해 소폭.
+            // 아트팀 발주 (S-026→S-027 ③ 강화): 대화 시작("어이 총각!!") 시 셰이크 — 5px는 육안 확인 불가 판정.
             if (_box != null) StartCoroutine(ShakeBox());
         }
 
@@ -95,16 +95,16 @@ namespace DontLate
         {
             RectTransform rect = _box.GetComponent<RectTransform>();
             Vector2 origin = rect.anchoredPosition;
-            const float DURATION = 0.28f;
-            const float STRENGTH = 5f; // px — 과격 금지
+            const float DURATION = 0.5f;
+            const float STRENGTH = 18f; // px — S-027 ③: 5→18 (민지 예시보다는 절제, 육안 확인은 되게)
             float t = 0f;
             while (t < 1f && _boxActive)
             {
                 t += Time.unscaledDeltaTime / DURATION;
                 float falloff = 1f - t;
                 rect.anchoredPosition = origin + new Vector2(
-                    (Mathf.PerlinNoise(t * 30f, 0.3f) - 0.5f) * 2f * STRENGTH * falloff,
-                    (Mathf.PerlinNoise(0.7f, t * 30f) - 0.5f) * 2f * STRENGTH * falloff);
+                    (Mathf.PerlinNoise(t * 40f, 0.3f) - 0.5f) * 2f * STRENGTH * falloff,
+                    (Mathf.PerlinNoise(0.7f, t * 40f) - 0.5f) * 2f * STRENGTH * falloff);
                 yield return null;
             }
             rect.anchoredPosition = origin;

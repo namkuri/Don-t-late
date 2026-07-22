@@ -60,7 +60,8 @@ namespace DontLate.EditorTools
                 Image logo = CreateImage(root, "Title", Color.white);
                 logo.sprite = logoArt;
                 logo.preserveAspect = true;
-                AnchorCentered(logo.rectTransform, new Vector2(0f, 150f), new Vector2(1100f, 340f));
+                // S-027 ⑥: 민지 목업 점유율 — 로고 폭 ≈ 화면 46% (크롭 아트 1.74:1이라 렉트=실표시).
+                AnchorCentered(logo.rectTransform, new Vector2(0f, 240f), new Vector2(900f, 518f));
             }
             else
             {
@@ -76,8 +77,9 @@ namespace DontLate.EditorTools
                 Image sub = CreateImage(root, "Subtitle", Color.white);
                 sub.sprite = subArt;
                 sub.preserveAspect = true;
-                AnchorCentered(sub.rectTransform, new Vector2(0f, -60f), new Vector2(760f, 110f));
-                sub.gameObject.AddComponent<UIPulse>().Configure(0.55f, 1f, 2.2f); // "지각압박 반짝" (아트팀)
+                // S-027 ⑥⑦: 목업 폭 ≈ 43% + 알파 펄스 폐지 → 사선 광 좌→우 시머 스윕(UIShine).
+                AnchorCentered(sub.rectTransform, new Vector2(0f, -80f), new Vector2(830f, 104f));
+                sub.gameObject.AddComponent<UIShine>();
             }
             else
             {
@@ -95,7 +97,7 @@ namespace DontLate.EditorTools
                 man.preserveAspect = true;
                 RectTransform manRect = man.rectTransform;
                 manRect.anchorMin = manRect.anchorMax = manRect.pivot = new Vector2(0f, 0f);
-                manRect.sizeDelta = new Vector2(430f, 560f);
+                manRect.sizeDelta = new Vector2(380f, 576f); // 크롭 아트 0.66:1 정합 (S-027 ⑥)
                 manRect.anchoredPosition = new Vector2(60f, 40f);
             }
 
@@ -110,8 +112,8 @@ namespace DontLate.EditorTools
                 startImage.preserveAspect = true;
                 RectTransform startRect = (RectTransform)startGo.transform;
                 startRect.anchorMin = startRect.anchorMax = startRect.pivot = new Vector2(0.5f, 0f);
-                startRect.sizeDelta = new Vector2(430f, 190f);
-                startRect.anchoredPosition = new Vector2(0f, 130f);
+                startRect.sizeDelta = new Vector2(460f, 222f); // 목업 폭 ≈ 23%, 크롭 아트 2.07:1 (S-027 ⑥)
+                startRect.anchoredPosition = new Vector2(0f, 90f);
                 Button startButton = startGo.AddComponent<Button>();
                 startButton.targetGraphic = startImage;
                 SceneAdvanceButton advance = startGo.AddComponent<SceneAdvanceButton>();
