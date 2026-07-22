@@ -43,8 +43,8 @@ unity-cli screenshot --view game      # 결과 눈으로 확인
 
 ## Git 경계 (병합 지옥 방지 — 위반 주의)
 
-- **커밋 가능**: `Assets/**/*.cs`, SO 클래스, 문서.
-- **커밋 금지**: `.unity` 씬, `.prefab` 프리팹, `ProjectSettings/` — 씬·프리팹은 남규 독점. 컴포넌트 부착이 필요하면 코드만 납품하고 "어느 프리팹에 뭘 붙일지"를 보고에 적는다.
+- **커밋 가능**: `Assets/**/*.cs`, SO 클래스·에셋, 문서, **프리팹(빌더·팩토리 산출물 — D-061 개정)**, 씬 **`.meta`**, `Assets/Settings/`·`ProjectSettings/`(D-032, 수정은 남규만).
+- **커밋 금지**: `.unity` 씬 **본문** — 씬은 빌더가 정본, 각 PC에서 `DontLate/Build ...` 메뉴로 재현(병합 지옥 방지).
 - 커밋 메시지 형식: `[P2] PlayerLocomotionManager: Z레인 이동+캐리 페널티 (via ClaudeCode) [self-tested]`
 - 현재 브랜치 `feature/jjs`, 메인은 `main`.
 
