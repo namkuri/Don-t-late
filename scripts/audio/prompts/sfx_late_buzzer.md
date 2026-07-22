@@ -14,20 +14,20 @@
 | 종류 | SFX |
 | 트리거 | `DeliveryFailed` |
 | 소리 | 낮은 부저 |
-| 요청 길이 | 1.5s |
+| 요청 길이 | 1.0s |
 | dest | `Assets/Audio/SFX/sfx_late_buzzer.wav` |
 
 ## 창작 태그 (사람이 고치는 유일한 칸)
 
 <!-- NOTE:BEGIN -->
-A short low dull buzzer, deflating and unpleasant, like a failed game show answer.
+soft comical fail tone, two drooping toy notes bending down, deflated but cute
 <!-- NOTE:END -->
 
 ## 전송 프롬프트 (조립 결과 — 그대로 API에 투입)
 
 <!-- PROMPT:BEGIN -->
 ```
-A short low dull buzzer, deflating and unpleasant, like a failed game show answer. It plays when the game event DeliveryFailed fires. Duration about 1.5 seconds. Style: retro pixel-art game sound design, dark comedy tone, clean and readable in a busy mix. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
+soft comical fail tone, two drooping toy notes bending down, deflated but cute. It plays when the game event DeliveryFailed fires. Duration about 1.0 seconds. Style: cozy cute toy-like game sound, soft wooden marimba and rounded synth plucks, playful little pitch bends, gentle and warm, light and bouncy. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
 ```
 <!-- PROMPT:END -->
 
@@ -61,3 +61,9 @@ python scripts/audio/audio_pipeline.py intake --bom-id sfx_late_buzzer
 | gen | 일자 | 변경 |
 |---|---|---|
 | 1 | 2026-07-21 | 최초 조립 |
+| 2 | 2026-07-22 | 재조립 |
+| 3 | 2026-07-22 | 재조립 |
+| 4 | 2026-07-22 | 재조립 |
+| 5 | 2026-07-22 | 재조립 |
+| 6 | 2026-07-22 | 재조립 |
+| 7 | 2026-07-22 | 재조립 |

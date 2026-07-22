@@ -7,6 +7,7 @@
 
 | # | 항목 | 상태 | 참조 |
 |---|---|---|---|
+| R16 | **SFX 6세대(동물의 숲 토이 톤) 19종** — ①② 완료 (2026-07-22 23:20): ① Director 청취 판정 **19종 통과**("검증결과 괜찮네" — 체크리스트 청취) ② `Assets/Audio/SFX/` 6세대 승격 커밋(PR #11, main .meta 보존). **잔여 = 관제 ③④**: ③ BOM §8 신규 7종 행 추가+JUICE 대응(AU-008 근거) ④ GAME-SFX-RULES §1 앵커 개정("retro pixel-art" → 토이 톤). 부기: 미배선 8종(deadline_warn·phone_ring·rhythm_hit/miss·scene_whoosh·footstep·drink·amb_night) 배선은 AU-007 카드1대로 관제 몫 | [orders/audio.md](orders/audio.md) AU-007/008 결과 7 · PR #11 |
 | R11 | 간판 발광판 | **재발주됨** (2026-07-22) — 처방 확정 [decisions.md](decisions.md) D-051: 발광판 폐지 → 간판 머티리얼 이미시브 스왑(S-004, 시스템) + 간판 분리 익스포트(아트 공통 규격 승격) | [orders/system.md](orders/system.md) S-004 |
 | R12 | **묶음 플레이 검증 메뉴** (한 번의 플레이로 4건 마감): ① 하우징 — 폰 가구 앱에서 1개 구매·바닥 클릭 배치 ② 늦코인 — 매수→매도 1왕복 ③ 전화 미니게임 1판 ④ S-027 모션 축 — 대화 시작 셰이크·타이틀 서브 로고 시머가 눈에 들어오는지 | 대기 (2026-07-22 회고 §4-3 — 기계 검증은 끝났으나 재미·감각 판정 미실행) | [retrospective-2026-07-22.md](retrospective-2026-07-22.md) §2 매트릭스 🔴 3건 |
 

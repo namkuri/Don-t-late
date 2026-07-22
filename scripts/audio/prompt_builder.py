@@ -44,7 +44,15 @@ SFX_CONSTRAINTS = (
     "Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail."
 )
 SFX_REQUIRED = ["no background music", "no vocals"]
-SFX_STYLE_EN = "Style: retro pixel-art game sound design, dark comedy tone, clean and readable in a busy mix."
+# 사람 판정 이력: 1차(음량↓·과장·8bit 부족)→8bit. 2차(기각)→VA-11 HALL-A 소프트 신스.
+# 3차(기각)→JRPG 참조: 16-bit 시대 밝은 벨·차임·크리스프 어택 — 게임명 대신 음향 특성 번역(규칙 원칙).
+# ⚠ 'melody/jingle'은 금지 태그(규칙 §3 — 음악화 방지) — 차임/벨/N-note 표현으로 우회한다.
+# ⚠ API 상한: text ≤ 450자 — 앵커+제약+태그 합산이라 앵커는 짧게 유지한다 (2026-07-22 실측 400).
+# 4차(JRPG 샘플 — 기각, 미전개) → 5차 확정(Director 스펙 직지정 2026-07-22):
+# lo-fi 8-bit·gritty square·bit-crushed·punchy — bit-crush는 후처리(11kHz 홀드·8bit 양자화)가 보장.
+# 6차(동물의 숲 참조 2026-07-22): 부드러운 마림바·토이 플럭·귀여운 피치 벤드 — bit-crush 후처리는 끔(톤 상극).
+SFX_STYLE_EN = ("Style: cozy cute toy-like game sound, soft wooden marimba and rounded synth plucks, "
+                "playful little pitch bends, gentle and warm, light and bouncy.")
 SFX_RANGE = (0.5, 5.0)          # text_to_sound_effects 제약
 DEFAULT_LENGTH = {"bgm": bgm_rules.DEFAULT_TRACK_SECONDS, "sfx": 2.0}   # BGM 기본 60초 (완화 정책)
 DEFAULT_LOOP_BARS = 16

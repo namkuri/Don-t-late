@@ -14,20 +14,20 @@
 | 종류 | SFX |
 | 트리거 | `PackagePickedUp` |
 | 소리 | 집는 소리 |
-| 요청 길이 | 1.5s |
+| 요청 길이 | 1.0s |
 | dest | `Assets/Audio/SFX/sfx_pickup.wav` |
 
 ## 창작 태그 (사람이 고치는 유일한 칸)
 
 <!-- NOTE:BEGIN -->
-A cardboard box being grabbed and lifted, light paper scuff and a soft thud.
+soft toy pluck pickup, two rounded wooden marimba notes hopping up, cute
 <!-- NOTE:END -->
 
 ## 전송 프롬프트 (조립 결과 — 그대로 API에 투입)
 
 <!-- PROMPT:BEGIN -->
 ```
-A cardboard box being grabbed and lifted, light paper scuff and a soft thud. It plays when the game event PackagePickedUp fires. Duration about 1.5 seconds. Style: retro pixel-art game sound design, dark comedy tone, clean and readable in a busy mix. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
+soft toy pluck pickup, two rounded wooden marimba notes hopping up, cute. It plays when the game event PackagePickedUp fires. Duration about 1.0 seconds. Style: cozy cute toy-like game sound, soft wooden marimba and rounded synth plucks, playful little pitch bends, gentle and warm, light and bouncy. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
 ```
 <!-- PROMPT:END -->
 
@@ -61,3 +61,10 @@ python scripts/audio/audio_pipeline.py intake --bom-id sfx_pickup
 | gen | 일자 | 변경 |
 |---|---|---|
 | 1 | 2026-07-21 | 최초 조립 |
+| 2 | 2026-07-22 | 재조립 |
+| 3 | 2026-07-22 | 재조립 |
+| 4 | 2026-07-22 | 재조립 |
+| 5 | 2026-07-22 | 재조립 |
+| 6 | 2026-07-22 | 재조립 |
+| 7 | 2026-07-22 | 재조립 |
+| 8 | 2026-07-22 | 재조립 |

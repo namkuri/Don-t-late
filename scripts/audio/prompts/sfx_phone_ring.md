@@ -14,20 +14,20 @@
 | 종류 | SFX |
 | 트리거 | `PhoneRang`(P3 예정) |
 | 소리 | 전화벨 (박말순) |
-| 요청 길이 | 1.5s |
+| 요청 길이 | 1.2s |
 | dest | `Assets/Audio/SFX/sfx_phone_ring.wav` |
 
 ## 창작 태그 (사람이 고치는 유일한 칸)
 
 <!-- NOTE:BEGIN -->
-An old mobile phone ringing once, loud shrill retro electronic ringtone burst
+cute toy phone ring, soft bouncy marimba trill, one ring
 <!-- NOTE:END -->
 
 ## 전송 프롬프트 (조립 결과 — 그대로 API에 투입)
 
 <!-- PROMPT:BEGIN -->
 ```
-An old mobile phone ringing once, loud shrill retro electronic ringtone burst. It plays when the game event PhoneRang fires. Duration about 1.5 seconds. Style: retro pixel-art game sound design, dark comedy tone, clean and readable in a busy mix. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
+cute toy phone ring, soft bouncy marimba trill, one ring. It plays when the game event PhoneRang fires. Duration about 1.2 seconds. Style: cozy cute toy-like game sound, soft wooden marimba and rounded synth plucks, playful little pitch bends, gentle and warm, light and bouncy. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
 ```
 <!-- PROMPT:END -->
 
@@ -61,3 +61,9 @@ python scripts/audio/audio_pipeline.py intake --bom-id sfx_phone_ring
 | gen | 일자 | 변경 |
 |---|---|---|
 | 1 | 2026-07-22 | 최초 조립 |
+| 2 | 2026-07-22 | 재조립 |
+| 3 | 2026-07-22 | 재조립 |
+| 4 | 2026-07-22 | 재조립 |
+| 5 | 2026-07-22 | 재조립 |
+| 6 | 2026-07-22 | 재조립 |
+| 7 | 2026-07-22 | 재조립 |

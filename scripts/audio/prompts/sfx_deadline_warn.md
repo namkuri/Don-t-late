@@ -20,14 +20,14 @@
 ## 창작 태그 (사람이 고치는 유일한 칸)
 
 <!-- NOTE:BEGIN -->
-Two quick urgent electronic warning ticks from a delivery scanner device, tense and dry
+two gentle urgent toy knocks, rounded wooden ticks, worried but cute
 <!-- NOTE:END -->
 
 ## 전송 프롬프트 (조립 결과 — 그대로 API에 투입)
 
 <!-- PROMPT:BEGIN -->
 ```
-Two quick urgent electronic warning ticks from a delivery scanner device, tense and dry. It plays when the game event DeadlineWarned fires. Duration about 0.8 seconds. Style: retro pixel-art game sound design, dark comedy tone, clean and readable in a busy mix. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
+two gentle urgent toy knocks, rounded wooden ticks, worried but cute. It plays when the game event DeadlineWarned fires. Duration about 0.8 seconds. Style: cozy cute toy-like game sound, soft wooden marimba and rounded synth plucks, playful little pitch bends, gentle and warm, light and bouncy. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
 ```
 <!-- PROMPT:END -->
 
@@ -61,3 +61,7 @@ python scripts/audio/audio_pipeline.py intake --bom-id sfx_deadline_warn
 | gen | 일자 | 변경 |
 |---|---|---|
 | 1 | 2026-07-22 | 최초 조립 |
+| 2 | 2026-07-22 | 재조립 |
+| 3 | 2026-07-22 | 재조립 |
+| 4 | 2026-07-22 | 재조립 |
+| 5 | 2026-07-22 | 재조립 |

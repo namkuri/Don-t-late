@@ -10,10 +10,14 @@ namespace DontLate
     [RequireComponent(typeof(CharacterController))]
     public class PlayerLocomotionManager : MonoBehaviour
     {
+        // AU-009 — 발소리 보폭(m). 이동 거리 누적이 보폭을 넘을 때마다 1발.
+        [SerializeField] private float _footstepStride = 1.4f;
+
         private PlayerManager _hub;
         private CharacterController _cc;
         private readonly HashSet<WalkableVolume> _volumes = new HashSet<WalkableVolume>();
         private float _verticalVelocity;
+        private float _strideAccum;
 
         /// <summary>수평 속도(월드). 애니메이션·회전이 읽는다.</summary>
         public Vector3 PlanarVelocity { get; private set; }
@@ -49,6 +53,24 @@ namespace DontLate
             Vector3 delta = (PlanarVelocity + Vector3.up * _verticalVelocity) * Time.deltaTime;
             delta.z = ResolveDepth(transform.position + delta) - transform.position.z;
             _cc.Move(delta);
+
+            TickFootstep();
+        }
+
+        /// <summary>접지 이동 거리를 누적해 보폭마다 발소리 1발 (AU-009 — 고빈도라 이벤트 금지, Instance 선례).</summary>
+        private void TickFootstep()
+        {
+            if (!_cc.isGrounded || PlanarVelocity.sqrMagnitude < 0.01f)
+            {
+                _strideAccum = 0f; // 멈추면 리셋 — 재출발은 한 보폭 걸은 뒤 첫발
+                return;
+            }
+
+            _strideAccum += PlanarVelocity.magnitude * Time.deltaTime;
+            if (_strideAccum < _footstepStride) return;
+
+            _strideAccum -= _footstepStride;
+            WorldAudioManager.Instance?.PlayFootstepSfx();
         }
 
         /// <summary>목표 위치의 Z를 걷기 가능 구간 안으로 되돌린다.</summary>

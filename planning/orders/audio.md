@@ -435,3 +435,75 @@ Morning  Seoul_Alley_Reflection   ← Day 순환
   - 호출 지점: VendingMachine.DispenseDrink(결제·명중 공용) · PlayerStatusManager.ThrowCarryTowardsMouse · PhoneView OnToggle/매수성공/매도성공 (PhoneView는 최소 diff 3줄 — 발주 경고 준수).
 - 검증: ① 컴파일 통과 ② 콘솔 에러·워닝 0 ③ Play 실측 — 7종 전 트리거 발화 시 `_sfxSource.isPlaying=True` + 클립 주입 10종 전부 실음원 길이 확인(`BoxBreak=1.00s·Barcode=0.48s·Penalty=0.80s·Vending=1.20s·Throw=0.60s·Coin=0.60s·Phone=0.48s`). **소리 자체의 귀 판정은 사람 몫** — 관제 청취 요청.
 - BOM §8 미등재 7종 — 발주서(본 절)가 근거. BOM·JUICE 행 추가는 동결 게이트라 관제 위임.
+
+### 결과 2세대 · 2026-07-22 21:35 (사람 판정 반영 — 볼륨·톤 개정)
+
+- 1세대 사람 판정: **음량 낮음 · 과장됨 · 8bit 부족** (3축).
+- 대응: ① 스타일 앵커 개정 `retro pixel-art` → `8-bit, chiptune sound chip, square wave and noise channel, subtle and understated` (prompt_builder SFX_STYLE_EN — 과장 억제 포함) ② 태그 19종 8bit 재서술 ③ 후처리 2단 신설: 피크 -1dBFS 정규화 → **RMS -14dB 부스트**(클립 ≤1% 자동 감쇠 · amb_night는 배경이라 피크만).
+- 절차: 대표 4종(pickup·box_break·coin·barcode) 샘플 → 사람 청취 2회(1차 "볼륨만 올려줘" → RMS 부스트 후 "좋네" 승인) → 잔여 15종 일괄 재생성·처리·재착지.
+- RMS 실측(부스트 전): coin **-26dB** · drink **-33dB** · throw -28 · rhythm_hit -25 — "음량 낮음" 지적 정량 확인.
+- 부산물 실측 2건: ① ElevenLabs SFX 프롬프트 **450자 상한**(API 400 — 앵커 축약으로 해소, 조립기 주석) ② `prompt_builder build`가 `--length` 생략 시 일부 기본값 2.0s로 리셋 — 13종이 2.0s로 생성됨(여분 꼬리 = 컷 판정 후 트림 대상, md 요청 길이는 원복).
+- CREDITS 2세대 표 갱신(신규 seed 전건). 1세대 seed는 git 이력 보존.
+
+### 결과 3세대 · 2026-07-22 21:55 (사람 판정 — 2세대 전량 기각 → VA-11 HALL-A 참조 재생성)
+
+- 2세대(8bit) 사람 판정: **전량 기각**. 참조 지정 = VA-11 HALL-A (Cyberpunk Bartender Action).
+- 앵커 3차 개정 — 게임명 대신 음향 특성 번역(규칙 원칙): `soft rounded FM synth tones · warm analog character · smooth attack · subtle and cozy`. 태그 19종 소프트 신스 재서술.
+- 절차: 샘플 4종(pickup·box_break·coin·barcode) 사람 승인 → 잔여 15종 일괄. 이번엔 **전건 --length 명시** — 2세대의 2.0s 리셋 실수 재발 방지, 19종 전부 요청 길이 일치(0.48~5.0s).
+- 후처리 동일(피크 -1dB → RMS -14dB·클립 ≤1%·amb_night 피크만). 재착지 완료(_intake + 로컬 스왑).
+- 구세대 파일은 동일 파일명 덮어쓰기로 제거(git 이력에만 보존). CREDITS 3세대 표 갱신.
+- ⚠ 규칙 문서 후속: GAME-SFX-RULES §1 스타일 앵커가 "retro pixel-art"로 남아 있음 — 3세대 앵커와 불일치, 개정은 Director 문서라 위임(PR #9 참고).
+
+### 결과 4·5세대 · 2026-07-22 22:15 (스타일 탐색 종결 — Director 스펙 직지정)
+
+- 4세대: JRPG 참조(밝은 벨·차임) 샘플 4종 → 기각 (미전개, 크레딧 4건).
+- **5세대 확정**: Director가 프롬프트 스펙 직지정 — `lo-fi 8-bit text scroll beep, gritty square wave, bit-crushed 8-bit 11kHz, 40ms, punchy attack, mono` (dialogue_blip 사양 원문).
+- 앵커 이식: `lo-fi 8-bit · gritty square wave and noise channel · bit-crushed · punchy attack · mono`. 태그 19종 재서술 후 전량 재생성.
+- **비트크러시 후처리 신설**(bitcrush.py): 프롬프트 의존 대신 파형 보장 — 선두 무음 트림(펀치 어택) → 11kHz 홀드 다운샘플 → 8bit 양자화 → 모노 강제 → 피크 -1dB. dialogue_blip만 40ms 컷(+5ms 페이드). 이후 RMS -14dB 부스트(amb_night 제외).
+- 실수 1건 자가 발견·교정: sfx_phone이 생성 루프에서 누락돼 3세대본 잔존 → 보완 생성(seed 731912038).
+- 세대 이력 5회 — 스타일 탐색 비용 크레딧 ~66건. 샘플 우선 절차가 4세대 전개분 15건을 절약함.
+
+### 결과 6세대 · 2026-07-22 22:40 (5세대 기각 → 동물의 숲 참조)
+
+- 앵커 6차: `cozy cute toy-like · soft wooden marimba · rounded synth plucks · playful pitch bends · light and bouncy` (음향 특성 번역). **비트크러시 후처리 끔** — 토이 톤과 상극.
+- 절차: 샘플 4종 사람 승인("좋네") → 잔여 15종 일괄. 태그 19종 AC 재서술(코믹 실패음·토이 노크·마림바 트릴 등). 전건 --length 명시.
+- 후처리: 피크 -1dB → RMS -14dB(amb_night 피크만). dialogue_blip 40ms 컷은 5세대 스펙 전용이라 미적용(0.5s — 트림은 판정 후).
+- 재착지·CREDITS 6세대 표 완료. 세대 누적 6회 · 크레딧 총 ~85건 — 샘플 우선 절차 유지로 기각 세대 전개 손실 2회 방지(4·기타).
+
+### 결과 7 · 2026-07-22 23:20 (6세대 사람 청취 판정 통과 → 승격)
+
+- **Director 청취 판정: 19종 통과** ("검증결과 괜찮네") — 판정 도구 = 플레이 체크리스트(인게임 트리거 11종 동선 + 미배선 8종 exec 재생·amb_night 루프 청취, GAME-SFX-RULES §6 5축 기준).
+- 승격 실행: origin/main 병합(충돌 0 — merge-tree 사전 검사 일치) → `Assets/Audio/SFX/` 19종을 1세대→6세대 교체(관제 ignore 해제 커밋 승계 · **main .meta 보존 = guid 안정**) → 해시 19/19 = `_intake` 일치 실측.
+- 병합 후 재컴파일 통과 · 콘솔 에러 0 (워닝 2건 = SceneFlowUIBuilder CS0618, main pull분 기존).
+- 배선 현황 실측(체크리스트 작성 중 확인): **11종 인게임 배선** (WorldAudioManager 10 + DialogueView blip) · **8종 미배선**(deadline_warn·phone_ring·rhythm_hit/miss·scene_whoosh·footstep·drink·amb_night) — AU-007 카드1 선택분, 배선은 관제 몫 유지.
+- R16 잔여 = 관제 ③ BOM §8 신규 7종 행 추가+JUICE 대응 ④ GAME-SFX-RULES §1 앵커 개정(동결 게이트 문서 — 공장 권한 밖).
+- 반입 PR: #11 (2~6세대 델타 + 본 승격 커밋).
+
+---
+
+## AU-009 · 발주 2026-07-22 23:35 → 정수 (미배선 SFX 8종 배선 — Director 세션 내 승인)
+
+목표: 6세대 통과 판정 후 잔여 미배선 8종을 인게임 트리거에 연결 — 19종 전체가 플레이 중 울리게 한다.
+
+입력:
+- 미배선 8종: deadline_warn·phone_ring·rhythm_hit·rhythm_miss·scene_whoosh·footstep·drink·amb_night (AU-007 카드1 잔여 — R16 부기를 Director가 공장으로 재발주).
+- 기존 패턴: WorldAudioManager 구독(저빈도 이벤트) / Instance 명령 API(이벤트 없는 지점) — AU-008 선례.
+- 배선 설계:
+  - 구독 3: `DeadlineWarned`→warn · `PhoneRang`→ring · `SceneTransitionStarted`→whoosh (전부 기존 저빈도 경계 이벤트).
+  - amb_night: 기존 `OnDayPhaseChanged` 확장 — Evening·Night 진입 시 전용 루프 소스 재생, 낮·타이틀 정지.
+  - Instance API 4: `PlayRhythmHitSfx/PlayRhythmMissSfx`(MinigameRhythmView 판정 지점 — 노트당 1회) · `PlayDrinkSfx`(EnergyDrinkPickup.Interact) · `PlayFootstepSfx`(PlayerLocomotionManager 보폭 누적 — 고빈도라 이벤트 금지, PlayThrowSfx 선례).
+  - CoreSceneBuilder SetField 8건 추가 + Core 씬 재조립.
+
+수용기준: ① 컴파일 ② 콘솔 0 ③ Play — 이동 발소리·T 시각점프 amb 루프 on/off·씬 전환 whoosh·전화 ring·리듬 hit/miss·드링크·마감 warn 각 발화 실측 ④ 감각값(보폭·amb 볼륨) [SerializeField] 노출.
+
+실패시: [BLOCKED].
+
+### 결과 · 2026-07-22 23:55 (리드 20분 · 정수 공장)
+
+- **8종 배선 완료** — 19종 전체가 인게임 트리거 보유.
+  - 구독 3 (WorldAudioManager · OnEnable/OnDisable 짝): `DeadlineWarned`→warn · `PhoneRang`→ring · `SceneTransitionStarted`→whoosh.
+  - amb_night: 전용 루프 소스(`_ambSource`) 신설 — Evening·Night 재생 / Morning·Day 정지 / **타이틀 씬 억제**. `_ambVolume=0.35` [SerializeField].
+  - Instance API 4: RhythmHit/RhythmMiss(MinigameRhythmView 판정 3지점 — 정타·오타·타임아웃) · Drink(EnergyDrinkPickup.Interact) · Footstep(PlayerLocomotionManager 보폭 누적 — `_footstepStride=1.4m` [SerializeField], 접지+이동 시만, 정지 시 리셋).
+- CoreSceneBuilder SetField 8건 + Core 재조립 — **씬 YAML guid 8/8 검증** (⚠ 실측: S-022 메뉴 재편으로 경로가 `DontLate/Build/Core Scene` — 구경로 ExecuteMenuItem은 조용히 실패, 반환값 확인 필수).
+- 검증: ① 컴파일 통과 ② 콘솔 에러 0 (워닝 2건 CS0618 = main pull분 기존 · "Creating missing PlayerEffectsManager" 1건 = S-023 프리팹 미부착 기존 — AU-009 범위 외) ③ Play 실측 — 동일 프레임 exec: warn/ring/whoosh/hit/miss/drink/foot 7종 발화 `isPlaying=True` + amb 4분기(밤 on·아침 stop·저녁 on·타이틀 억제) 전부 기대 일치. 클립 주입 8/8 실음원 길이(0.48~5.00s).
+- 발소리 실걸음·귀 판정 = 사람 몫 (플레이 시 자동 청취됨).
