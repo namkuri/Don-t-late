@@ -390,14 +390,18 @@ namespace DontLate.EditorTools
             SetField(view, "_blipSource", blipSource);
             SetField(view, "_blipClip", blip);
 
-            // 박스 루트 (평소 숨김). 하단 가로 박스 — 시안 테두리 프레임.
-            GameObject border = CreateImage(canvasGo.transform, "Box", CYAN).gameObject;
+            // 박스 루트 (평소 숨김). 하단 가로 박스 — 실아트(ui_dialogue_box) 있으면 사용, 없으면 시안 테두리 폴백 (S-025).
+            Sprite boxArt = LoadUISprite("ui_dialogue_box");
+            Image borderImage = CreateImage(canvasGo.transform, "Box", boxArt != null ? Color.white : CYAN);
+            if (boxArt != null) borderImage.sprite = boxArt;
+            GameObject border = borderImage.gameObject;
             RectTransform borderRect = border.GetComponent<RectTransform>();
             AnchorMiddleBottom(borderRect, new Vector2(0f, 40f), new Vector2(1720f, 260f));
             SetField(view, "_box", border);
 
             // 네이비 반투명 내부 (테두리보다 3px 안쪽) — 클릭 진행용 Button 타겟.
-            Image inner = CreateImage(border.transform, "Inner", NAVY);
+            // 실아트가 배경을 가지므로 그때는 투명(클릭 타겟 역할만).
+            Image inner = CreateImage(border.transform, "Inner", boxArt != null ? Color.clear : NAVY);
             inner.raycastTarget = true;
             RectTransform innerRect = inner.rectTransform;
             innerRect.anchorMin = Vector2.zero;
@@ -426,12 +430,26 @@ namespace DontLate.EditorTools
             bodyRect.offsetMax = new Vector2(-44f, -74f);
             SetField(view, "_bodyLabel", body);
 
-            // 대기 화살표 "▼" (시안, 우하). 기본 숨김.
-            TMP_Text arrow = CreateText(inner.transform, "Arrow", "▼", font,
-                40f, CYAN, TextAlignmentOptions.BottomRight);
-            AnchorCorner(arrow.rectTransform, new Vector2(1f, 0f), new Vector2(-30f, 18f), new Vector2(60f, 60f));
-            arrow.gameObject.SetActive(false);
-            SetField(view, "_arrow", arrow.gameObject);
+            // 대기 화살표 (우하, 기본 숨김) — 실아트(ui_dialogue_arrow) 있으면 이미지, 없으면 "▼" 텍스트 (S-025).
+            Sprite arrowArt = LoadUISprite("ui_dialogue_arrow");
+            GameObject arrowGo;
+            if (arrowArt != null)
+            {
+                Image arrowImage = CreateImage(inner.transform, "Arrow", Color.white);
+                arrowImage.sprite = arrowArt;
+                arrowImage.preserveAspect = true;
+                AnchorCorner(arrowImage.rectTransform, new Vector2(1f, 0f), new Vector2(-30f, 18f), new Vector2(64f, 64f));
+                arrowGo = arrowImage.gameObject;
+            }
+            else
+            {
+                TMP_Text arrow = CreateText(inner.transform, "Arrow", "▼", font,
+                    40f, CYAN, TextAlignmentOptions.BottomRight);
+                AnchorCorner(arrow.rectTransform, new Vector2(1f, 0f), new Vector2(-30f, 18f), new Vector2(60f, 60f));
+                arrowGo = arrow.gameObject;
+            }
+            arrowGo.SetActive(false);
+            SetField(view, "_arrow", arrowGo);
         }
 
         // 진상 전화 리듬 오버레이 (S-007). 대화 캔버스보다 위(sortOrder 95) — 평소 패널 숨김.
@@ -568,6 +586,26 @@ namespace DontLate.EditorTools
             }
             AssetDatabase.SaveAssets();
             return catalog;
+        }
+
+        /// <summary>
+        /// UI 실아트 로더 (S-025 스왑 계약) — `Assets/Art/UI/<bomId>.png`가 있으면 스프라이트로,
+        /// 없으면 null(호출부가 코드 폴백). 텍스처가 Sprite 타입이 아니면 임포터를 교정한다.
+        /// </summary>
+        internal static Sprite LoadUISprite(string bomId)
+        {
+            string path = "Assets/Art/UI/" + bomId + ".png";
+            if (AssetDatabase.LoadAssetAtPath<Texture2D>(path) == null) return null;
+
+            Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+            if (sprite == null)
+            {
+                var importer = (TextureImporter)AssetImporter.GetAtPath(path);
+                importer.textureType = TextureImporterType.Sprite;
+                importer.SaveAndReimport();
+                sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+            }
+            return sprite;
         }
 
         // ── 블립 합성 (없을 때만 — 진짜 SFX 스왑 계약) ───────

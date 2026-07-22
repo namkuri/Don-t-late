@@ -52,13 +52,50 @@ namespace DontLate.EditorTools
             StretchFull(bg.rectTransform);
             bg.raycastTarget = true; // 타이틀 배경 — 뒤 씬으로의 클릭 통과 차단
 
-            TMP_Text title = CreateText(root, "Title", "늦지마!!", font, 180f, AMBER,
-                TextAlignmentOptions.Center, FontStyles.Bold);
-            AnchorCentered(title.rectTransform, new Vector2(0f, 130f), new Vector2(1500f, 280f));
+            // 타이틀 로고 — 실아트(ui_title) 있으면 이미지, 없으면 TMP 폴백 (S-025 스왑 계약).
+            Sprite logoArt = CoreSceneBuilder.LoadUISprite("ui_title");
+            if (logoArt != null)
+            {
+                Image logo = CreateImage(root, "Title", Color.white);
+                logo.sprite = logoArt;
+                logo.preserveAspect = true;
+                AnchorCentered(logo.rectTransform, new Vector2(0f, 150f), new Vector2(1100f, 340f));
+            }
+            else
+            {
+                TMP_Text title = CreateText(root, "Title", "늦지마!!", font, 180f, AMBER,
+                    TextAlignmentOptions.Center, FontStyles.Bold);
+                AnchorCentered(title.rectTransform, new Vector2(0f, 130f), new Vector2(1500f, 280f));
+            }
 
-            TMP_Text sub = CreateText(root, "Subtitle", "지각 압박 배달 생존기", font, 48f, Color.white,
-                TextAlignmentOptions.Center, FontStyles.Normal);
-            AnchorCentered(sub.rectTransform, new Vector2(0f, -30f), new Vector2(1200f, 80f));
+            // 서브 로고 — ui_title_sub.
+            Sprite subArt = CoreSceneBuilder.LoadUISprite("ui_title_sub");
+            if (subArt != null)
+            {
+                Image sub = CreateImage(root, "Subtitle", Color.white);
+                sub.sprite = subArt;
+                sub.preserveAspect = true;
+                AnchorCentered(sub.rectTransform, new Vector2(0f, -60f), new Vector2(760f, 110f));
+            }
+            else
+            {
+                TMP_Text sub = CreateText(root, "Subtitle", "지각 압박 배달 생존기", font, 48f, Color.white,
+                    TextAlignmentOptions.Center, FontStyles.Normal);
+                AnchorCentered(sub.rectTransform, new Vector2(0f, -30f), new Vector2(1200f, 80f));
+            }
+
+            // 늦지마맨 일러스트 — ui_title_man (좌하, 시작 버튼과 비겹침). 없으면 요소 자체 생략.
+            Sprite manArt = CoreSceneBuilder.LoadUISprite("ui_title_man");
+            if (manArt != null)
+            {
+                Image man = CreateImage(root, "TitleMan", Color.white);
+                man.sprite = manArt;
+                man.preserveAspect = true;
+                RectTransform manRect = man.rectTransform;
+                manRect.anchorMin = manRect.anchorMax = manRect.pivot = new Vector2(0f, 0f);
+                manRect.sizeDelta = new Vector2(430f, 560f);
+                manRect.anchoredPosition = new Vector2(60f, 40f);
+            }
 
             CreateButton(root, "StartButton", "시작", GameScene.Home, font, CYAN,
                 new Vector2(0.5f, 0f), new Vector2(0f, 170f), new Vector2(440f, 118f), 48f);
