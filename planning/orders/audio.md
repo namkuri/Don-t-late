@@ -401,3 +401,20 @@ Morning  Seoul_Alley_Reflection   ← Day 순환
 ```
 
 채택 5곡이 슬롯 전환만으로 전부 노출된다.
+
+---
+
+## AU-008 · 발주 2026-07-22 19:10 → 정수 (신기능 SFX 일괄 + 훅 연결)
+
+목표: S-019~021로 추가된 기능들이 전부 무음 — SFX 7종을 제작(ElevenLabs)해 반입하고 이벤트 훅을 연결한다. (AU-007 SFX 11종은 기존 발주 그대로 유효 — 이번 세션에 같이 처리 권장.)
+
+입력:
+- `Assets/Scripts/Managers/WorldAudioManager.cs` — SFX 훅 패턴(OnPackagePickedUp → PlaySfx) 참조. 새 구독 추가 시 OnEnable/OnDisable 짝.
+- 대상 이벤트: 상자 파손(BoxDurability.Explode — 이벤트 없음, `PackageDestroyed` 신설 필요 시 §9.5 로그 동반) · 자판기(VendingMachine — 결제/배출) · 던지기(PlayerStatusManager.ThrowCarryTowardsMouse) · `BarcodeScanned` · `DebtIncreased` · 코인 매수/매도(WorldDebtManager) · 폰 개폐(PhoneView.OnToggle).
+- 반입: `Assets/_intake/ElevenLabs/SFX/` · **파일명=bom_id**(sfx_box_break·sfx_vending·sfx_throw·sfx_barcode·sfx_penalty·sfx_coin·sfx_phone) · CREDITS.md 즉시 기록(실격 사유 영역).
+
+기대: 각 이벤트 발생 시 대응 SFX 1회 재생. 이벤트가 없는 지점(자판기·던지기·폰)은 컴포넌트가 로컬 AudioSource로 직접 재생해도 무방(2D·SFX 볼륨 준수) — WorldEvents 신설은 저빈도·경계 통신일 때만.
+
+수용기준: ① 컴파일 ② 콘솔 0 ③ Play에서 파손·자판기 E·던지기·스캔·폰 Tab 각각 소리 확인(관찰 기록) ④ CREDITS 기록 완비.
+
+실패시: [BLOCKED]. ⚠ PhoneView·PickupBox는 관제가 활발히 수정 중 — pull 최신화 후 시작하고, 해당 파일 수정은 최소 diff로.

@@ -464,3 +464,43 @@
 - 메뉴 전면 재편: `DontLate/Build/` 카테고리로 통합 — ★ All Scenes(0) · Core(10) · Camp(12) · Home(13) · District(14) · Scene Flow UI(15) · Generate SFX는 상위 유지 · 최초 셋업(21) · Greybox 개발용/Clear(40·41).
 - **★ All Scenes 신설** — 씬 파일 확보 → Core → Camp/Home/District 무대 → 흐름 UI → 빌드 세팅 등록 → Core 복귀까지 1클릭. 관찰: 실행 후 활성 씬 Core·콘솔 0.
 - 검증: 컴파일 ○ 콘솔 0 ○. 빌드 원리 설명은 채팅 회신.
+
+---
+
+## S-023 · 발주 2026-07-22 19:10 → 정수 (Juice 레인 — P4 3종, 매니페스트 완주)
+
+목표: 매니페스트 잔여 P4 3종 납품 — `WorldJuiceManager` · FadeScreen "늦지마!" 컷인 발동 배선 · `PlayerEffectsManager`. 완료 시 34/34 완주.
+
+입력:
+- `docs/JUICE.md` — 이벤트→연출 매핑 표(정본). 구현 범위는 표에 있는 행만(YAGNI).
+- `Assets/Scripts/UI/FadeScreen.cs` — `_lateCutIn` 소켓 실재(코드 존재·발동 배선 없음).
+- `Assets/Scripts/Events/WorldEvents.cs` — DeadlineWarned·DeliveryCompleted·DeliveryFailed·DebtIncreased 등 구독 지점.
+- 카메라 셰이크는 `CameraFollowX`와 충돌 주의 — LateUpdate 이후 오프셋 방식 권장.
+
+기대:
+1. `Managers/WorldJuiceManager.cs`: Core 상주 싱글톤, JUICE 표의 연출(펀치 스케일·셰이크·플래시 등)을 이벤트 구독으로 발동. 감각값은 전부 [SerializeField] 노출(사람 튜닝 대상 — 하드코딩 금지).
+2. FadeScreen: DeadlineWarned(또는 JUICE 표 지정 이벤트) 시 "늦지마!" 컷인 발동.
+3. `Player/PlayerEffectsManager.cs`: 이동 먼지·드링크 음용 이펙트(그레이박스 파티클 수준).
+4. CoreSceneBuilder에 Juice 매니저 등록 추가(빌더 배선 — 관제 파일이지만 BuildManagers 1블록 추가는 허용, 충돌 시 관제 우선).
+
+수용기준: ① 컴파일 ② 콘솔 0 ③ Play 관찰 — 배송 완료/지각/경고 각각에서 연출 발동 확인 ④ 매니페스트 직교·감각값 노출 여부 기록.
+
+실패시: [BLOCKED]. JUICE 표에 없는 연출을 창작하지 않는다(사람 감각 영역).
+
+---
+
+## S-024 · 발주 2026-07-22 19:10 → 정수 (품질 레인 — EditMode 테스트 + TECH_SPEC 오디오 절)
+
+목표: 회귀 방지 인프라 개통 — 순수 로직 EditMode 테스트 4종 + TECH_SPEC 오디오 절 신설(D-041 파생 공백).
+
+입력:
+- 테스트 대상(전부 순수 로직 — 씬 불요): `WorldDebtManager.SettleNow`(상환 수식)·`CoinPrice/BuyCoin/SellAllCoin`(경계값: 잔액 부족·0원) · `CampOrderBoard.IsConsumed/GenerateOrder`(완료/마감경과/미접촉 3분기·시리얼 증가) · `WorldDeliveryManager.RegisterBarcode`(중복 거부).
+- 테스트 어셈블리: `Assets/Scripts/Tests/EditMode/` + asmdef(Editor 플랫폼) — 매니페스트 외 직교 추가로 D-기록.
+- 매니저가 MonoBehaviour라 인스턴스화는 `new GameObject().AddComponent<>` + 리플렉션으로 _gameState/_tuning 주입(런타임 SO는 CreateInstance).
+- TECH_SPEC은 **동결 문서** — 기존 줄 수정 금지(freeze-guard 차단), **새 절 추가(직교)만**: 믹스 기준(BGM 0.5·SFX 0.7)·압축 규격(Vorbis q30/q70·Compressed In Memory·Streaming 금지)·리스너 소유(Core) — 기존 결정(D-039~043) 요약 전재.
+
+기대: `unity-cli test` 통과 4모듈+ · TECH_SPEC에 오디오 절.
+
+수용기준: ① 컴파일 ② `unity-cli test` 전체 green ③ 테스트가 실제 경계값을 물어뜯는지(항상 통과하는 무의미 검증 금지 — CODE_RULES §8 위장 금지) ④ freeze-guard 통과.
+
+실패시: [BLOCKED].
