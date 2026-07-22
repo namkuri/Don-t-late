@@ -13,20 +13,37 @@ MonoBehaviour:
   m_Name: GameState
   m_EditorClassIdentifier: Assembly-CSharp::DontLate.GameStateSO
   day: 1
-  minuteOfDay: 818.87726
+  minuteOfDay: 1125.739
   money: 0
-  debt: 10000
+  debt: 7131
   cargo: []
-  scannedOrderIds: 
-  currentDistrict: 
-  deliveryHistory: []
-  totalEarned: 0
+  scannedOrderIds: 6500000066000000c8000000
+  currentDistrict: "\uB2EC\uBE5B\uB9E8\uC158 \uAD6C\uC5ED"
+  deliveryHistory:
+  - orderId: 200
+    address: "\uC740\uD558\uBE4C\uB77C 202\uD638"
+    reward: 900
+    day: 1
+    minuteOfDay: 1065
+  - orderId: 102
+    address: "\uB2EC\uBE5B\uB9E8\uC158 502\uD638"
+    reward: 1400
+    day: 1
+    minuteOfDay: 1073
+  totalEarned: 2300
   ownedFurnitureIds: []
-  placedFurniture: []
+  placedFurniture:
+  - furnitureId: fur_bed
+    position: {x: -2.5, y: 0, z: 2}
+    rotationY: 0
+  bedSeeded: 1
+  wallpaperIndex: 0
+  floorIndex: 0
   coinUnits: 0
-  nextOrderSerial: 200
-  completedCount: 0
-  lateCount: 0
+  coinCostBasis: 0
+  nextOrderSerial: 201
+  completedCount: 2
+  lateCount: 1
   currentScene: 1
   startDay: 1
   startMinuteOfDay: 480

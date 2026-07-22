@@ -478,46 +478,77 @@ namespace DontLate
             sellAllRect.anchoredPosition = new Vector2(0f, 10f);
         }
 
-        // 차트 그리기 - 어두운 바탕에 시세 폴리라인 + 현재가 점 (S-032 5).
+        // 차트 그리기 (S-032 ⑤ → S-033 ② 캔들 개편) — 15게임분 캔들 16개 + 평단가 수평 점선.
         private void RedrawChart()
         {
             if (_chartTexture == null || WorldDebtManager.Instance == null) return;
             var debt = WorldDebtManager.Instance;
             float now = _gameState.day * 1440f + _gameState.minuteOfDay;
-            const float SPAN = 240f; // 과거 4게임시간
+            const int CANDLES = 16;
+            const float CANDLE_MIN = 15f; // 캔들당 15게임분 (총 4게임시간)
 
-            var prices = new int[CHART_W];
+            // OHLC 수집 — 결정론 시세식이라 분 단위 재계산으로 고가·저가를 얻는다.
+            var open = new int[CANDLES]; var close = new int[CANDLES];
+            var high = new int[CANDLES]; var low = new int[CANDLES];
             int min = int.MaxValue, max = int.MinValue;
-            for (int x = 0; x < CHART_W; x++)
+            for (int c = 0; c < CANDLES; c++)
             {
-                prices[x] = debt.CoinPriceAt(now - SPAN + SPAN * x / (CHART_W - 1));
-                if (prices[x] < min) min = prices[x];
-                if (prices[x] > max) max = prices[x];
+                float start = now - CANDLE_MIN * (CANDLES - c);
+                open[c] = debt.CoinPriceAt(start);
+                close[c] = debt.CoinPriceAt(start + CANDLE_MIN);
+                high[c] = int.MinValue; low[c] = int.MaxValue;
+                for (int m = 0; m <= 15; m++)
+                {
+                    int p = debt.CoinPriceAt(start + m);
+                    if (p > high[c]) high[c] = p;
+                    if (p < low[c]) low[c] = p;
+                }
+                if (low[c] < min) min = low[c];
+                if (high[c] > max) max = high[c];
+            }
+
+            // 평단가 — 보유가 있으면 범위에 포함해 선이 화면 안에 오게 한다.
+            float avgCost = _gameState.coinUnits > 0f ? _gameState.coinCostBasis / _gameState.coinUnits : -1f;
+            if (avgCost > 0f)
+            {
+                if (avgCost < min) min = Mathf.FloorToInt(avgCost);
+                if (avgCost > max) max = Mathf.CeilToInt(avgCost);
             }
             if (max == min) max = min + 1;
 
             Color bg = new Color(0.05f, 0.07f, 0.11f, 0.95f);
-            Color line = new Color(1f, 0.62f, 0.27f); // 앰버
+            Color up = new Color(1f, 0.35f, 0.35f);   // 양봉 = 빨강 (국장)
+            Color down = new Color(0.35f, 0.55f, 1f); // 음봉 = 파랑
             var pixels = new Color[CHART_W * CHART_H];
             for (int i = 0; i < pixels.Length; i++) pixels[i] = bg;
 
-            int prevY = -1;
-            for (int x = 0; x < CHART_W; x++)
+            int Y(float price) => 3 + Mathf.RoundToInt((price - min) / (max - min) * (CHART_H - 7));
+
+            int slot = CHART_W / CANDLES; // 12px — 몸통 8 + 여백
+            for (int c = 0; c < CANDLES; c++)
             {
-                int y = 4 + Mathf.RoundToInt((float)(prices[x] - min) / (max - min) * (CHART_H - 9));
-                if (prevY < 0) prevY = y;
-                for (int yy = Mathf.Min(y, prevY); yy <= Mathf.Max(y, prevY); yy++)
-                    pixels[yy * CHART_W + x] = line;
-                prevY = y;
+                Color color = close[c] >= open[c] ? up : down;
+                int x0 = c * slot + 2;
+                int xMid = x0 + slot / 2 - 1;
+
+                for (int y = Y(low[c]); y <= Y(high[c]); y++)             // 꼬리 (1px)
+                    pixels[y * CHART_W + xMid] = color;
+                int bodyTop = Y(Mathf.Max(open[c], close[c]));
+                int bodyBottom = Y(Mathf.Min(open[c], close[c]));
+                for (int y = bodyBottom; y <= bodyTop; y++)               // 몸통 (slot-4 px)
+                    for (int x = x0; x < x0 + slot - 4; x++)
+                        pixels[y * CHART_W + x] = color;
             }
-            // 현재가 점 (우측 끝 3x3 흰색)
-            int cy = 4 + Mathf.RoundToInt((float)(prices[CHART_W - 1] - min) / (max - min) * (CHART_H - 9));
-            for (int dx = -2; dx <= 0; dx++)
-                for (int dy = -1; dy <= 1; dy++)
-                {
-                    int px = CHART_W - 1 + dx, py = Mathf.Clamp(cy + dy, 0, CHART_H - 1);
-                    pixels[py * CHART_W + px] = Color.white;
-                }
+
+            // S-033 ②: 평단가 수평 점선 (시안 — 4px on / 3px off).
+            if (avgCost > 0f)
+            {
+                int ay = Y(avgCost);
+                Color avgLine = new Color(0.208f, 0.878f, 0.784f);
+                for (int x = 0; x < CHART_W; x++)
+                    if (x % 7 < 4) pixels[ay * CHART_W + x] = avgLine;
+            }
+
             _chartTexture.SetPixels(pixels);
             _chartTexture.Apply();
         }

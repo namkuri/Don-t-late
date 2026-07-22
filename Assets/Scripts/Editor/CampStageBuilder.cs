@@ -36,6 +36,7 @@ namespace DontLate.EditorTools
             GreyboxStageBuilder.BuildGround(ground, lane);
             GreyboxStageBuilder.BuildWalkableVolume();
             GreyboxStageBuilder.BuildGroundMist();
+            GreyboxStageBuilder.BuildStarField(); // S-033 ① — 캠프 밤하늘 별 (밤 페이드는 StarField.cs 공용)
             BuildTruck(truck, box, highlight);
             System.Collections.Generic.List<PickupBox> boxes = BuildPickupBoxes(box, highlight, tuning);
             BuildOrderBoard(gameState, boxes);

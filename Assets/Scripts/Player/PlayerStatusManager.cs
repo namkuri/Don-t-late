@@ -188,6 +188,7 @@ namespace DontLate
                 direction = direction.sqrMagnitude < 0.01f ? Vector3.up : direction.normalized;
             }
             body.linearVelocity = direction * speed + Vector3.up * 1.5f;
+            body.angularVelocity = Random.insideUnitSphere * 25f; // S-033 ③ — 캔 팽글팽글
             WorldAudioManager.Instance?.PlayThrowSfx();
             Debug.Log("[드링크] 던짐 (좌클릭) — E로 다시 주울 수 있다");
         }
