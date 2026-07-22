@@ -7,6 +7,7 @@
 
 | # | 항목 | 상태 | 참조 |
 |---|---|---|---|
+| R12 | **SFX 6세대(동물의 숲 토이 톤) 19종 — 관제 컷 판정 요청** (2026-07-22 정수). Director 톤 확정("이걸로 확정"). 착지 `Assets/_intake/ElevenLabs/SFX/` · CREDITS·seed 완비 · PR #10. 판정 후 절차: ① GAME-SFX-RULES §6 체크리스트 청취 ② 통과분 `Assets/Audio/SFX/` 승격+ignore 해제 커밋(D-042) ③ BOM §8 신규 7종 행 추가+JUICE 대응(AU-008 근거) ④ GAME-SFX-RULES §1 앵커 개정(현행 "retro pixel-art" → 토이 톤) | [orders/audio.md](orders/audio.md) AU-007/008 · PR #10 |
 | R11 | 간판 발광판 | **재발주됨** (2026-07-22) — 처방 확정 [decisions.md](decisions.md) D-051: 발광판 폐지 → 간판 머티리얼 이미시브 스왑(S-004, 시스템) + 간판 분리 익스포트(아트 공통 규격 승격) | [orders/system.md](orders/system.md) S-004 |
 
 ## ② 결정 대기
