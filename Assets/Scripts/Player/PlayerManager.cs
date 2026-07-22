@@ -9,6 +9,7 @@ namespace DontLate
     [RequireComponent(typeof(PlayerInputHandler))]
     [RequireComponent(typeof(PlayerLocomotionManager))]
     [RequireComponent(typeof(PlayerStatusManager))]
+    [RequireComponent(typeof(PlayerEffectsManager))]
     public class PlayerManager : MonoBehaviour
     {
         [SerializeField] private TuningConfigSO _tuning;
@@ -21,6 +22,7 @@ namespace DontLate
         public PlayerLocomotionManager Locomotion { get; private set; }
         public PlayerAnimationManager Animation { get; private set; }
         public PlayerStatusManager Status { get; private set; }
+        public PlayerEffectsManager Effects { get; private set; }
         public InteractionSensor Sensor { get; private set; }
 
         private void Awake()
@@ -29,6 +31,7 @@ namespace DontLate
             Locomotion = GetComponent<PlayerLocomotionManager>();
             Animation = GetComponent<PlayerAnimationManager>();
             Status = GetComponent<PlayerStatusManager>();
+            Effects = GetComponent<PlayerEffectsManager>();
             Sensor = GetComponentInChildren<InteractionSensor>();
         }
     }

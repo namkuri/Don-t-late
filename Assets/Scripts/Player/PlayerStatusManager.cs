@@ -151,6 +151,7 @@ namespace DontLate
         {
             Stamina = Mathf.Clamp(Stamina + amount, 0f, _hub.Tuning.staminaMax);
             NotifyStamina(force: true);
+            if (_hub.Effects != null) _hub.Effects.PlayDrinkEffect(); // S-023 드링크 버스트 (재조립 전 씬 대비 가드)
         }
 
         private void NotifyStamina(bool force)
