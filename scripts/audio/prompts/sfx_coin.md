@@ -14,20 +14,20 @@
 | 종류 | SFX |
 | 트리거 | (BOM 미등재) |
 | 소리 | (BOM 미등재 — 생성은 규격만으로 진행) |
-| 요청 길이 | 2.0s |
+| 요청 길이 | 0.6s |
 | dest | `Assets/Audio/SFX/sfx_coin.wav` |
 
 ## 창작 태그 (사람이 고치는 유일한 칸)
 
 <!-- NOTE:BEGIN -->
-8-bit coins, three quick bright square-wave clinks
+three quick soft synth coin clinks, rounded bell-like tones, warm
 <!-- NOTE:END -->
 
 ## 전송 프롬프트 (조립 결과 — 그대로 API에 투입)
 
 <!-- PROMPT:BEGIN -->
 ```
-8-bit coins, three quick bright square-wave clinks. Duration about 2.0 seconds. Style: 8-bit retro game sound design, chiptune sound chip, square wave and noise channel, subtle and understated, dark comedy tone, readable in a busy mix. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
+three quick soft synth coin clinks, rounded bell-like tones, warm. Duration about 0.6 seconds. Style: retro-futuristic cyberpunk bar game sound, soft rounded FM synth tones, warm analog character, smooth attack, subtle and cozy, clean in a busy mix. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
 ```
 <!-- PROMPT:END -->
 
@@ -63,3 +63,4 @@ python scripts/audio/audio_pipeline.py intake --bom-id sfx_coin
 | 1 | 2026-07-22 | 최초 조립 |
 | 2 | 2026-07-22 | 재조립 |
 | 3 | 2026-07-22 | 재조립 |
+| 4 | 2026-07-22 | 재조립 |

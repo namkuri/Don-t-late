@@ -444,3 +444,12 @@ Morning  Seoul_Alley_Reflection   ← Day 순환
 - RMS 실측(부스트 전): coin **-26dB** · drink **-33dB** · throw -28 · rhythm_hit -25 — "음량 낮음" 지적 정량 확인.
 - 부산물 실측 2건: ① ElevenLabs SFX 프롬프트 **450자 상한**(API 400 — 앵커 축약으로 해소, 조립기 주석) ② `prompt_builder build`가 `--length` 생략 시 일부 기본값 2.0s로 리셋 — 13종이 2.0s로 생성됨(여분 꼬리 = 컷 판정 후 트림 대상, md 요청 길이는 원복).
 - CREDITS 2세대 표 갱신(신규 seed 전건). 1세대 seed는 git 이력 보존.
+
+### 결과 3세대 · 2026-07-22 21:55 (사람 판정 — 2세대 전량 기각 → VA-11 HALL-A 참조 재생성)
+
+- 2세대(8bit) 사람 판정: **전량 기각**. 참조 지정 = VA-11 HALL-A (Cyberpunk Bartender Action).
+- 앵커 3차 개정 — 게임명 대신 음향 특성 번역(규칙 원칙): `soft rounded FM synth tones · warm analog character · smooth attack · subtle and cozy`. 태그 19종 소프트 신스 재서술.
+- 절차: 샘플 4종(pickup·box_break·coin·barcode) 사람 승인 → 잔여 15종 일괄. 이번엔 **전건 --length 명시** — 2세대의 2.0s 리셋 실수 재발 방지, 19종 전부 요청 길이 일치(0.48~5.0s).
+- 후처리 동일(피크 -1dB → RMS -14dB·클립 ≤1%·amb_night 피크만). 재착지 완료(_intake + 로컬 스왑).
+- 구세대 파일은 동일 파일명 덮어쓰기로 제거(git 이력에만 보존). CREDITS 3세대 표 갱신.
+- ⚠ 규칙 문서 후속: GAME-SFX-RULES §1 스타일 앵커가 "retro pixel-art"로 남아 있음 — 3세대 앵커와 불일치, 개정은 Director 문서라 위임(PR #9 참고).

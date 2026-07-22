@@ -20,14 +20,14 @@
 ## 창작 태그 (사람이 고치는 유일한 칸)
 
 <!-- NOTE:BEGIN -->
-8-bit rendition of a box being grabbed, short noise-channel scuff with one soft square-wave thump
+soft synth pickup tone, two rounded FM notes rising gently, warm and mellow
 <!-- NOTE:END -->
 
 ## 전송 프롬프트 (조립 결과 — 그대로 API에 투입)
 
 <!-- PROMPT:BEGIN -->
 ```
-8-bit rendition of a box being grabbed, short noise-channel scuff with one soft square-wave thump. It plays when the game event PackagePickedUp fires. Duration about 1.0 seconds. Style: 8-bit retro game sound design, chiptune sound chip, square wave and noise channel, subtle and understated, dark comedy tone, readable in a busy mix. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
+soft synth pickup tone, two rounded FM notes rising gently, warm and mellow. It plays when the game event PackagePickedUp fires. Duration about 1.0 seconds. Style: retro-futuristic cyberpunk bar game sound, soft rounded FM synth tones, warm analog character, smooth attack, subtle and cozy, clean in a busy mix. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
 ```
 <!-- PROMPT:END -->
 
@@ -64,3 +64,4 @@ python scripts/audio/audio_pipeline.py intake --bom-id sfx_pickup
 | 2 | 2026-07-22 | 재조립 |
 | 3 | 2026-07-22 | 재조립 |
 | 4 | 2026-07-22 | 재조립 |
+| 5 | 2026-07-22 | 재조립 |

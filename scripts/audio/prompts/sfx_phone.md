@@ -20,14 +20,14 @@
 ## 창작 태그 (사람이 고치는 유일한 칸)
 
 <!-- NOTE:BEGIN -->
-8-bit phone slide click, one short soft square-wave pop
+one soft synth pop click, rounded gentle UI tone
 <!-- NOTE:END -->
 
 ## 전송 프롬프트 (조립 결과 — 그대로 API에 투입)
 
 <!-- PROMPT:BEGIN -->
 ```
-8-bit phone slide click, one short soft square-wave pop. Duration about 0.5 seconds. Style: 8-bit retro game sound design, chiptune console sound chip, square wave and noise channel, subtle and understated, small scale, dark comedy tone, clean and readable in a busy mix. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
+one soft synth pop click, rounded gentle UI tone. Duration about 0.5 seconds. Style: retro-futuristic cyberpunk bar game sound, soft rounded FM synth tones, warm analog character, smooth attack, subtle and cozy, clean in a busy mix. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
 ```
 <!-- PROMPT:END -->
 
@@ -62,3 +62,4 @@ python scripts/audio/audio_pipeline.py intake --bom-id sfx_phone
 |---|---|---|
 | 1 | 2026-07-22 | 최초 조립 |
 | 2 | 2026-07-22 | 재조립 |
+| 3 | 2026-07-22 | 재조립 |

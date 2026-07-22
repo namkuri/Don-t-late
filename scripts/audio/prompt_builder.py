@@ -44,11 +44,11 @@ SFX_CONSTRAINTS = (
     "Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail."
 )
 SFX_REQUIRED = ["no background music", "no vocals"]
-# 사람 판정 1차 (2026-07-22): 음량 낮음(→후공정 정규화)·과장됨·8bit 부족 → 앵커 개정.
+# 사람 판정 이력: 1차(음량↓·과장·8bit 부족)→8bit 앵커. 2차(전량 기각)→VA-11 HALL-A 참조로 재개정:
+# 하드 스퀘어가 아니라 부드러운 FM/사인 신스·따뜻한 로파이·절제 — 게임명 대신 음향 특성으로 번역(규칙 원칙).
 # ⚠ API 상한: text ≤ 450자 — 앵커+제약+태그 합산이라 앵커는 짧게 유지한다 (2026-07-22 실측 400).
-SFX_STYLE_EN = ("Style: 8-bit retro game sound design, chiptune sound chip, "
-                "square wave and noise channel, subtle and understated, "
-                "dark comedy tone, readable in a busy mix.")
+SFX_STYLE_EN = ("Style: retro-futuristic cyberpunk bar game sound, soft rounded FM synth tones, "
+                "warm analog character, smooth attack, subtle and cozy, clean in a busy mix.")
 SFX_RANGE = (0.5, 5.0)          # text_to_sound_effects 제약
 DEFAULT_LENGTH = {"bgm": bgm_rules.DEFAULT_TRACK_SECONDS, "sfx": 2.0}   # BGM 기본 60초 (완화 정책)
 DEFAULT_LOOP_BARS = 16

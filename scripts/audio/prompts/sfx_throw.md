@@ -20,14 +20,14 @@
 ## 창작 태그 (사람이 고치는 유일한 칸)
 
 <!-- NOTE:BEGIN -->
-8-bit throw, one very short noise-channel swish
+one quick soft airy swish, filtered noise sweep
 <!-- NOTE:END -->
 
 ## 전송 프롬프트 (조립 결과 — 그대로 API에 투입)
 
 <!-- PROMPT:BEGIN -->
 ```
-8-bit throw, one very short noise-channel swish. Duration about 0.6 seconds. Style: 8-bit retro game sound design, chiptune sound chip, square wave and noise channel, subtle and understated, dark comedy tone, readable in a busy mix. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
+one quick soft airy swish, filtered noise sweep. Duration about 0.6 seconds. Style: retro-futuristic cyberpunk bar game sound, soft rounded FM synth tones, warm analog character, smooth attack, subtle and cozy, clean in a busy mix. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
 ```
 <!-- PROMPT:END -->
 
@@ -64,3 +64,4 @@ python scripts/audio/audio_pipeline.py intake --bom-id sfx_throw
 | 2 | 2026-07-22 | 재조립 |
 | 3 | 2026-07-22 | 재조립 |
 | 4 | 2026-07-22 | 재조립 |
+| 5 | 2026-07-22 | 재조립 |
