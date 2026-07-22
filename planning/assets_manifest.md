@@ -92,3 +92,38 @@
 | bom_id | 원파일명 | dest | tris | 상태 |
 |---|---|---|---|---|
 | prop_box_parcel | box.fbx | `Art/Props/prop_box_parcel.fbx` | **106 ✓**(상한 1,500 — 첫 예산 통과 반입) | 원크기 2.48u→0.7u 정규화, 머티리얼 컬러 포함(테이프 디테일). Camp 3·District 1·트럭 적재 스택에 배선 |
+
+## ElevenLabs SFX INTAKE (AU-007·008) — 2026-07-22
+
+> 출처 = **ElevenLabs SFX** · 정수 Creator 플랜($22/월, 유료 — D-049 확인) 생성물. 상업 사용 가능·표기 의무 없음.
+> 상세(프롬프트·생성 파라미터)는 `Assets/Audio/CREDITS.md` — 정수 PR#10 기록.
+
+| bom_id | dest | 용도 | 반입일 |
+|---|---|---|---|
+| sfx_pickup·sfx_delivery_ok·sfx_late_buzzer·sfx_dialogue_blip | `Assets/Audio/SFX/` | 합성 플레이스홀더 → **실음원 교체**(스왑 계약) | 2026-07-22 |
+| sfx_footstep·sfx_scene_whoosh·sfx_rhythm_hit·sfx_rhythm_miss·sfx_phone_ring·sfx_drink·sfx_deadline_warn·amb_night | 〃 | AU-007 11종분 | 〃 |
+| sfx_box_break·sfx_barcode·sfx_penalty·sfx_vending·sfx_throw·sfx_coin·sfx_phone | 〃 | AU-008 신기능 7종 | 〃 |
+
+### 파일별 등재 (훅 대조용 — 파일명 전체)
+
+| 파일 | dest | 출처 | 라이선스 | 반입일 |
+|---|---|---|---|---|
+| amb_night.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) | 상업 가능·표기 불요 | 2026-07-22 |
+| sfx_barcode.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) | 상업 가능·표기 불요 | 2026-07-22 |
+| sfx_box_break.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) | 상업 가능·표기 불요 | 2026-07-22 |
+| sfx_coin.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) | 상업 가능·표기 불요 | 2026-07-22 |
+| sfx_deadline_warn.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) | 상업 가능·표기 불요 | 2026-07-22 |
+| sfx_delivery_ok.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) | 상업 가능·표기 불요 | 2026-07-22 |
+| sfx_dialogue_blip.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) | 상업 가능·표기 불요 | 2026-07-22 |
+| sfx_drink.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) | 상업 가능·표기 불요 | 2026-07-22 |
+| sfx_footstep.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) | 상업 가능·표기 불요 | 2026-07-22 |
+| sfx_late_buzzer.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) | 상업 가능·표기 불요 | 2026-07-22 |
+| sfx_penalty.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) | 상업 가능·표기 불요 | 2026-07-22 |
+| sfx_phone.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) | 상업 가능·표기 불요 | 2026-07-22 |
+| sfx_phone_ring.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) | 상업 가능·표기 불요 | 2026-07-22 |
+| sfx_pickup.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) | 상업 가능·표기 불요 | 2026-07-22 |
+| sfx_rhythm_hit.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) | 상업 가능·표기 불요 | 2026-07-22 |
+| sfx_rhythm_miss.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) | 상업 가능·표기 불요 | 2026-07-22 |
+| sfx_scene_whoosh.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) | 상업 가능·표기 불요 | 2026-07-22 |
+| sfx_throw.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) | 상업 가능·표기 불요 | 2026-07-22 |
+| sfx_vending.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) | 상업 가능·표기 불요 | 2026-07-22 |
