@@ -453,3 +453,12 @@ Morning  Seoul_Alley_Reflection   ← Day 순환
 - 후처리 동일(피크 -1dB → RMS -14dB·클립 ≤1%·amb_night 피크만). 재착지 완료(_intake + 로컬 스왑).
 - 구세대 파일은 동일 파일명 덮어쓰기로 제거(git 이력에만 보존). CREDITS 3세대 표 갱신.
 - ⚠ 규칙 문서 후속: GAME-SFX-RULES §1 스타일 앵커가 "retro pixel-art"로 남아 있음 — 3세대 앵커와 불일치, 개정은 Director 문서라 위임(PR #9 참고).
+
+### 결과 4·5세대 · 2026-07-22 22:15 (스타일 탐색 종결 — Director 스펙 직지정)
+
+- 4세대: JRPG 참조(밝은 벨·차임) 샘플 4종 → 기각 (미전개, 크레딧 4건).
+- **5세대 확정**: Director가 프롬프트 스펙 직지정 — `lo-fi 8-bit text scroll beep, gritty square wave, bit-crushed 8-bit 11kHz, 40ms, punchy attack, mono` (dialogue_blip 사양 원문).
+- 앵커 이식: `lo-fi 8-bit · gritty square wave and noise channel · bit-crushed · punchy attack · mono`. 태그 19종 재서술 후 전량 재생성.
+- **비트크러시 후처리 신설**(bitcrush.py): 프롬프트 의존 대신 파형 보장 — 선두 무음 트림(펀치 어택) → 11kHz 홀드 다운샘플 → 8bit 양자화 → 모노 강제 → 피크 -1dB. dialogue_blip만 40ms 컷(+5ms 페이드). 이후 RMS -14dB 부스트(amb_night 제외).
+- 실수 1건 자가 발견·교정: sfx_phone이 생성 루프에서 누락돼 3세대본 잔존 → 보완 생성(seed 731912038).
+- 세대 이력 5회 — 스타일 탐색 비용 크레딧 ~66건. 샘플 우선 절차가 4세대 전개분 15건을 절약함.

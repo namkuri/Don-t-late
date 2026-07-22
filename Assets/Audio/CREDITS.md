@@ -109,33 +109,35 @@ late-night introspective, hazy, instrumental, 88 BPM
 
 **세대 이력** (구세대 seed는 git 이력에 보존):
 - 1세대(2026-07-22 21:01 · retro pixel-art 앵커) → 사람 판정: 음량 낮음·과장·8bit 부족.
-- 2세대(21:24~ · 8bit/chiptune 앵커) → 사람 판정: **전량 기각** ("기존 효과음이 다 별로").
-- **3세대 (현행 · 21:50~)**: VA-11 HALL-A 참조 — 게임명 대신 음향 특성으로 번역(규칙 원칙):
-  부드러운 FM/사인 신스 · 따뜻한 아날로그 · 스무스 어택 · 절제 (`soft rounded FM synth tones,
-  warm analog character, smooth attack, subtle and cozy`). 후처리 = 피크 -1dBFS 정규화 →
-  RMS -14dB 부스트(클립 ≤1% 자동 감쇠 · amb_night는 배경이라 피크만). 샘플 4종 사람 승인 후 전량.
+- 2세대(21:24~ · 8bit/chiptune 앵커) → 사람 판정: **전량 기각**.
+- 3세대(21:50~ · VA-11 HALL-A 소프트 신스) → 사람 판정: 기각.
+- 4세대(JRPG 벨·차임 — **샘플 4종만**, 미전개) → 사람 판정: 기각, Director가 스펙 직지정으로 전환.
+- **5세대 (현행 · 22:10~)**: Director 스펙 직지정 — `lo-fi 8-bit · gritty square wave ·
+  bit-crushed · punchy attack · mono`. **bit-crush는 후처리가 파형에서 보장**: 선두 무음 트림 →
+  11kHz 홀드 다운샘플 → 8bit 양자화 → 모노 → 피크 -1dBFS → RMS -14dB 부스트(amb_night 제외).
+  sfx_dialogue_blip은 스펙 원문("text scroll beep, 40ms")대로 40ms 컷 적용.
 
-| bom_id | 길이(요청/실측) | seed | 프롬프트 SHA1 |
+| bom_id | 요청 길이 | seed | 프롬프트 SHA1 |
 |---|---|---|---|
-| `sfx_pickup` | 1.0s / 1.0s | 1192838450 | `9277097e5ced` |
-| `sfx_delivery_ok` | 1.2s / 1.2s | 763709928 | `2f2cd01620f2` |
-| `sfx_late_buzzer` | 1.0s / 1.0s | 1243415279 | `69a82f6828fd` |
-| `sfx_footstep` | 0.5s / 0.48s | 1167136852 | `be049ed5f31a` |
-| `sfx_deadline_warn` | 0.8s / 0.8s | 1889167787 | `17e976f9ecc6` |
-| `sfx_phone_ring` | 1.2s / 1.2s | 147621690 | `8b81322fe51f` |
-| `sfx_dialogue_blip` | 0.5s / 0.48s | 1514695822 | `862836787f11` |
-| `sfx_rhythm_hit` | 0.5s / 0.48s | 1514912338 | `5bf456368de2` |
-| `sfx_rhythm_miss` | 0.5s / 0.48s | 1780856249 | `3bf435d2d6f9` |
-| `sfx_drink` | 1.2s / 1.2s | 798895164 | `c5c5b6838aa3` |
-| `sfx_scene_whoosh` | 1.0s / 1.0s | 209807256 | `d027dc2fc61e` |
-| `amb_night` | 5.0s / 5.0s | 1628889698 | `31e87e144868` |
-| `sfx_box_break` | 1.0s / 1.0s | 350026503 | `304985480243` |
-| `sfx_vending` | 1.2s / 1.2s | 880771008 | `12521a90f8b8` |
-| `sfx_throw` | 0.6s / 0.6s | 882657182 | `2e51394bb1ba` |
-| `sfx_barcode` | 0.5s / 0.48s | 1970173720 | `d22ea4566443` |
-| `sfx_penalty` | 0.8s / 0.8s | 1013973289 | `7eb5768042ed` |
-| `sfx_coin` | 0.6s / 0.6s | 2048373313 | `2a4fa36409e0` |
-| `sfx_phone` | 0.5s / 0.48s | 1799996461 | `ae25e7075c02` |
+| `sfx_pickup` | 1.0s | 923718829 | `20819b4f13f7` |
+| `sfx_delivery_ok` | 1.2s | 1097977072 | `3767a23d528d` |
+| `sfx_late_buzzer` | 1.0s | 1295605791 | `9720efd85305` |
+| `sfx_footstep` | 0.5s | 1281765728 | `36a1f8d09231` |
+| `sfx_deadline_warn` | 0.8s | 296531130 | `cfa599fa6d02` |
+| `sfx_phone_ring` | 1.2s | 1740691726 | `3966193dd2f8` |
+| `sfx_dialogue_blip` | 0.5s→40ms 컷 | 680360640 | `a07f9c4ed4f9` |
+| `sfx_rhythm_hit` | 0.5s | 1407635865 | `dcdfd6e96b78` |
+| `sfx_rhythm_miss` | 0.5s | 1086861172 | `3da935428135` |
+| `sfx_drink` | 1.2s | 1024232188 | `f1c708289cff` |
+| `sfx_scene_whoosh` | 1.0s | 4589556 | `5c7cd2718628` |
+| `amb_night` | 5.0s | 311503652 | `0432a5b87894` |
+| `sfx_box_break` | 1.0s | 2107073297 | `e80b48a8df1a` |
+| `sfx_vending` | 1.2s | 220823964 | `bd7d265aadb7` |
+| `sfx_throw` | 0.6s | 1571643646 | `2c143bd52c24` |
+| `sfx_barcode` | 0.5s | 383390556 | `25be4d4dd68f` |
+| `sfx_penalty` | 0.8s | 524810949 | `f3baa3a56628` |
+| `sfx_coin` | 0.6s | 1249944701 | `cfa256449ad1` |
+| `sfx_phone` | 0.5s | 731912038 | `7e25938bb37e` |
 
 - AU-008 7종(`sfx_box_break`~`sfx_phone`)은 **BOM §8 미등재** — 발주서(AU-008 2026-07-22 19:10)가 근거.
   BOM·JUICE 행 추가는 관제 몫으로 위임(동결 문서 사람 게이트).

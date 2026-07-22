@@ -20,14 +20,14 @@
 ## 창작 태그 (사람이 고치는 유일한 칸)
 
 <!-- NOTE:BEGIN -->
-one soft short synth text blip, rounded sine tick, gentle
+lo-fi 8-bit text scroll beep, gritty square wave, bit-crushed 8-bit 11kHz sample rate, punchy attack, mono
 <!-- NOTE:END -->
 
 ## 전송 프롬프트 (조립 결과 — 그대로 API에 투입)
 
 <!-- PROMPT:BEGIN -->
 ```
-one soft short synth text blip, rounded sine tick, gentle. Duration about 0.5 seconds. Style: retro-futuristic cyberpunk bar game sound, soft rounded FM synth tones, warm analog character, smooth attack, subtle and cozy, clean in a busy mix. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
+lo-fi 8-bit text scroll beep, gritty square wave, bit-crushed 8-bit 11kHz sample rate, punchy attack, mono. Duration about 0.5 seconds. Style: classic 16-bit era JRPG game sound, bright crisp synth chimes and bells, clean quick attack, nostalgic and polished, subtle in a busy mix. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
 ```
 <!-- PROMPT:END -->
 
@@ -65,3 +65,4 @@ python scripts/audio/audio_pipeline.py intake --bom-id sfx_dialogue_blip
 | 3 | 2026-07-22 | 재조립 |
 | 4 | 2026-07-22 | 재조립 |
 | 5 | 2026-07-22 | 재조립 |
+| 6 | 2026-07-22 | 재조립 |

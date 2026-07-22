@@ -20,14 +20,14 @@
 ## 창작 태그 (사람이 고치는 유일한 칸)
 
 <!-- NOTE:BEGIN -->
-quiet night city ambience, soft distant hum with faint warm synth pad air, seamless loop, ambient bed, distant
+quiet 8-bit night ambience, sparse gritty square cricket chirps over a soft noise floor, seamless loop, ambient bed, distant
 <!-- NOTE:END -->
 
 ## 전송 프롬프트 (조립 결과 — 그대로 API에 투입)
 
 <!-- PROMPT:BEGIN -->
 ```
-quiet night city ambience, soft distant hum with faint warm synth pad air, seamless loop, ambient bed, distant. Duration about 5.0 seconds. Style: retro-futuristic cyberpunk bar game sound, soft rounded FM synth tones, warm analog character, smooth attack, subtle and cozy, clean in a busy mix. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
+quiet 8-bit night ambience, sparse gritty square cricket chirps over a soft noise floor, seamless loop, ambient bed, distant. Duration about 5.0 seconds. Style: lo-fi 8-bit game sound, gritty square wave and noise channel, bit-crushed, punchy attack, mono. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
 ```
 <!-- PROMPT:END -->
 
@@ -65,3 +65,4 @@ python scripts/audio/audio_pipeline.py intake --bom-id amb_night
 | 3 | 2026-07-22 | 재조립 |
 | 4 | 2026-07-22 | 재조립 |
 | 5 | 2026-07-22 | 재조립 |
+| 6 | 2026-07-22 | 재조립 |
