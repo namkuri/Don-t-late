@@ -10,24 +10,21 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a5e3ef5ec1efc4b4397e1c503ec59084, type: 3}
-  m_Name: Scenario_ParkMalsoon_Intro
+  m_Name: Scenario_ParkMalsoon_LateScold
   m_EditorClassIdentifier: Assembly-CSharp::DontLate.DialogueScenarioSO
   lines:
   - speaker: "\uBC15\uB9D0\uC21C"
-    text: "\uC5EC\uBCF4\uC138\u2014 \uCD1D\uAC01! \uC790? \uC9C0\uAE08 \uC790\uB0D0\uACE0!!
-      \uD574\uAC00 \uC911\uCC9C\uC774\uC57C!"
+    text: "\uB2A6\uC5C8\uC796\uC544!! \uB0B4\uAC00 \uBB50\uB7AC\uC5B4, \uB2A6\uC9C0
+      \uB9D0\uB7AC\uC9C0!!"
     portrait: {fileID: 0}
   - speaker: "\uBC15\uB9D0\uC21C"
-    text: "\uC624\uB298 \uBB3C\uB7C9 \uBC00\uB838\uC5B4. \uCEA0\uD504\uB85C \uD280\uC5B4\uC640.
+    text: "\uACE0\uAC1D\uB2D8 \uC5BC\uAD74\uC774 \uAE40\uCE58\uCC98\uB7FC \uBC8C\uAC8C\uC84C\uC5B4.
+      \uBC8C\uAE08 \uAC01\uC624\uD574."
+    portrait: {fileID: 0}
+  - speaker: "\uBC15\uB9D0\uC21C"
+    text: "\uB2E4\uC74C \uAC74 \uB6F0\uC5B4. \uBB34\uB98E\uC774 \uAC08\uB9AC\uB3C4\uB85D
       \uB6F0\uC5B4!"
     portrait: {fileID: 0}
-  - speaker: "\uBC15\uB9D0\uC21C"
-    text: "\uBE5A \uB9CC \uC6D0 \uAC1A\uAE30 \uC804\uC5D4 \uB2A6\uC7A0\uB3C4 \uC0AC\uCE58\uC778
-      \uAC70 \uC54C\uC9C0?"
-    portrait: {fileID: 0}
   - speaker: "\uC8FC\uC778\uACF5"
-    text: "(\u2026\uB610 \uC2DC\uC791\uC774\uB2E4. \uC624\uB298\uB3C4 \uB2EC\uB824\uC57C\uC9C0.)"
-    portrait: {fileID: 0}
-  - speaker: "\uBC15\uB9D0\uC21C"
-    text: "\uB04A\uB294\uB2E4! \uB2A6\uC9C0\uB9C8!!"
+    text: "(\u2026\uBE5A\uC774 \uB610 \uB298\uC5C8\uB2E4.)"
     portrait: {fileID: 0}

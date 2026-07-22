@@ -18,3 +18,11 @@
 수용기준: ① 에셋 4본 유효(빈 라인 없음) ② 인트로 교체분 Play 확인 ③ 대사 톤 샘플을 PR 본문에 인용(사람 감수 근거).
 
 실패시: [BLOCKED]. 욕설·실존 상표 금지.
+
+### 결과 · 2026-07-22 20:43 (리드 8분 · 정수 공장)
+
+- **SO 에셋 4본** (`Assets/Data/Dialogue/`): ① `Scenario_ParkMalsoon_Intro` 5줄(교체) ② `Scenario_ParkMalsoon_PhoneNag` 3줄 ③ `Scenario_ParkMalsoon_DeliveryStart` 3줄 ④ `Scenario_ParkMalsoon_LateScold` 4줄. 전량 빈 라인 0 검증(스크립트 검사).
+- Play 확인: Home 도착 발화 → `PhoneRang ← 박말순` 이벤트 로그 + 재생 실측 `playing=True scenario=Scenario_ParkMalsoon_Intro line0=[박말순: 여보세— 총각! 자? 지금 자냐고!! 해가 중천이야!]`.
+- 톤: "늦지마" 후렴 3회(①⑤줄·③3줄·④1줄) · 짧은 호흡 · 욕설/상표 없음 · 게임 맥락 반영(빚 만 원·던지기·취급주의·벌금).
+- **PhoneRang 배선 안 함** — 발주서 "배선 포함 시 WorldMinigameManager와 협의" 조건부라 콘텐츠만 납품. ②~④ 재생 지점 배선은 관제 몫으로 넘김(어느 이벤트에 걸지 = 설계 판단).
+- 참고: 콘솔 워닝 1건 "referenced script missing"은 브랜치 전환 잔여(로컬 씬이 S-023 컴포넌트 참조 — PR #5 머지+재조립 시 해소), 본 발주 무관.
