@@ -11,8 +11,7 @@ session_host: WINDOWS_LOCAL   # unity-cli 직접 실행 가능 (2026-07-20 17:23
 pending_decisions:
   - "B-4 캐릭터 도구·리그 — M0-04 Meshy 관통 실측 후에 결정 (그 전엔 보류)"
   - "Q2 게이트: BOM 동결 (fab 태그 보완+eta 합산) — 발주 전량 완료로 사거리 진입"
-blocked:
-  - "M0-03 WebGL→Pages 관통 미검증 (제출 규정 직결 · 긴급도: 높음) — ⚠ 회고 2회 연속 1순위 백로그"
+blocked: []   # M0-03 WebGL→Pages 해소 (2026-07-22 S-028 — https://namkuri.github.io/Don-t-late/ 실기동 확인)
 last_checkpoint: "2026-07-22 22:33 — 중간점검 2차 (retrospective-2026-07-22.md — 백로그 델타 5✅1△1🔴)"
 clock_note: "정상 — 제출까지 21일"
 ```
