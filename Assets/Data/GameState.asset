@@ -19,7 +19,7 @@ MonoBehaviour:
   cargo: []
   scannedOrderIds: 
   currentDistrict: 
-  completedCount: 0
+  completedCount: 1
   lateCount: 0
   currentScene: 4
   startDay: 1

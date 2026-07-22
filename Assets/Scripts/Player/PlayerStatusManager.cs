@@ -84,12 +84,13 @@ namespace DontLate
             return released;
         }
 
-        /// <summary>든 물건을 마지막 월드 위치·회전 그대로 손에서 놓아 물리로 떨어뜨린다(재픽업 불가).</summary>
+        /// <summary>
+        /// 든 물건을 손에서 놓아 물리로 떨어뜨린다. S-017: PickupBox를 살려 두므로 **다시 주울 수 있고**,
+        /// 굴러가 비콘 패드에 닿으면 DeliveryPoint 트리거가 배송으로 인증한다(던져 넣기).
+        /// </summary>
         private void DropVisualAsPhysics(Transform visual)
         {
             visual.SetParent(null, worldPositionStays: true);
-
-            if (visual.TryGetComponent(out PickupBox pickup)) Destroy(pickup);
 
             if (visual.TryGetComponent(out Collider collider))
             {

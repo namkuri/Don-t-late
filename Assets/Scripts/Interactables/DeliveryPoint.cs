@@ -71,6 +71,20 @@ namespace DontLate
             WorldDeliveryManager.Instance.CompleteDelivery(carried);
         }
 
+        /// <summary>
+        /// 던져 넣기 (S-017 ②) — 물리로 굴러온 상자가 패드 트리거에 닿으면 배송 인증.
+        /// 손에 든 상자는 콜라이더가 꺼져 있어 여기 안 걸린다(E 인증 경로 그대로).
+        /// </summary>
+        private void OnTriggerEnter(Collider other)
+        {
+            if (_expectedOrder == null) return;
+            if (!other.TryGetComponent(out PickupBox box) || box.Order != _expectedOrder) return;
+            if (WorldDeliveryManager.Instance == null || !WorldDeliveryManager.Instance.IsInCargo(box.Order)) return;
+
+            Destroy(other.gameObject);
+            WorldDeliveryManager.Instance.CompleteDelivery(box.Order);
+        }
+
         /// <summary>플레이어 XZ가 패드 사각형(_padSize) 안에 있을 때만 포커스 후보로 인정한다.</summary>
         public bool AllowsFocus(Vector3 playerPosition)
         {
