@@ -22,11 +22,10 @@ namespace DontLate.EditorTools
 
             Material floor = GreyboxStageBuilder.GetOrCreateMaterial("HomeFloor", new Color(0.42f, 0.35f, 0.27f), false);
             Material wall = GreyboxStageBuilder.GetOrCreateMaterial("HomeWall", new Color(0.55f, 0.52f, 0.46f), false);
-            Material bed = GreyboxStageBuilder.GetOrCreateMaterial("HomeBed", new Color(0.30f, 0.42f, 0.55f), false);
             Material door = GreyboxStageBuilder.GetOrCreateMaterial("Door", new Color(0.45f, 0.38f, 0.32f), false);
 
             BuildRoom(floor, wall, door);
-            BuildBed(bed);
+            // 침대는 S-031 ③부터 가구(fur_bed 시드) — 무대 고정물로 만들지 않는다.
             BuildSky();
             BuildFurniturePlacer();
             GreyboxStageBuilder.BuildPostVolume();
@@ -69,25 +68,7 @@ namespace DontLate.EditorTools
             go.GetComponent<Renderer>().sharedMaterial = material;
         }
 
-        private static void BuildBed(Material material)
-        {
-            GameObject root = GreyboxStageBuilder.CreateEmpty("Bed", new Vector3(-2.4f, 0f, 1.8f));
-
-            GameObject frame = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            frame.name = "Frame";
-            frame.transform.SetParent(root.transform, false);
-            frame.transform.localPosition = new Vector3(0f, 0.25f, 0f);
-            frame.transform.localScale = new Vector3(2.2f, 0.5f, 1.4f);
-            Object.DestroyImmediate(frame.GetComponent<BoxCollider>());
-            frame.GetComponent<Renderer>().sharedMaterial = material;
-
-            GameObject pillow = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            pillow.name = "Pillow";
-            pillow.transform.SetParent(root.transform, false);
-            pillow.transform.localPosition = new Vector3(-0.8f, 0.58f, 0f);
-            pillow.transform.localScale = new Vector3(0.5f, 0.16f, 0.7f);
-            Object.DestroyImmediate(pillow.GetComponent<BoxCollider>());
-        }
+        // (구 BuildBed는 S-031 ③에서 은퇴 — 침대는 HomeFurniturePlacer가 fur_bed로 시드한다.)
 
         // 창밖 하늘 (S-015) — 별밭·달·해를 거리 무대와 같은 원경(z≈69)에 깔되,
         // 방 창(개구부)에서 보이는 대역이 낮아(y -5~3) 해·달 궤도를 낮춰 재조정한다.
@@ -112,12 +93,14 @@ namespace DontLate.EditorTools
         }
 
         // 가구 배치기 (S-019 ④) — 폰 가구앱의 배치 대기를 바닥 클릭으로 소비.
+        // + 데코레이터 (S-031 ④) — 벽·바닥 렌더러를 수집해 팔레트 적용기를 배선.
         private static void BuildFurniturePlacer()
         {
+            GameStateSO gameState = AssetDatabase.LoadAssetAtPath<GameStateSO>("Assets/Data/GameState.asset");
+
             GameObject go = GreyboxStageBuilder.CreateEmpty("FurniturePlacer", Vector3.zero);
             HomeFurniturePlacer placer = go.AddComponent<HomeFurniturePlacer>();
-            GreyboxStageBuilder.SetReference(placer, "_gameState",
-                AssetDatabase.LoadAssetAtPath<GameStateSO>("Assets/Data/GameState.asset"));
+            GreyboxStageBuilder.SetReference(placer, "_gameState", gameState);
 
             var catalog = new System.Collections.Generic.List<FurnitureSO>();
             foreach (string guid in AssetDatabase.FindAssets("t:FurnitureSO", new[] { "Assets/Data/Furniture" }))
@@ -128,6 +111,31 @@ namespace DontLate.EditorTools
             for (int i = 0; i < catalog.Count; i++)
                 prop.GetArrayElementAtIndex(i).objectReferenceValue = catalog[i];
             serialized.ApplyModifiedPropertiesWithoutUndo();
+
+            HomeDecorator decorator = go.AddComponent<HomeDecorator>();
+            GreyboxStageBuilder.SetReference(decorator, "_gameState", gameState);
+            var walls = new System.Collections.Generic.List<Renderer>();
+            var floors = new System.Collections.Generic.List<Renderer>();
+            foreach (GameObject root in go.scene.GetRootGameObjects())
+            {
+                if (root.name.Contains("Wall") || root.name.Contains("Ceiling"))
+                    walls.Add(root.GetComponent<Renderer>());
+                else if (root.name.Contains("HomeFloor"))
+                    floors.Add(root.GetComponent<Renderer>());
+            }
+            SerializedObject decoratorSerialized = new SerializedObject(decorator);
+            FillRendererArray(decoratorSerialized, "_wallRenderers", walls);
+            FillRendererArray(decoratorSerialized, "_floorRenderers", floors);
+            decoratorSerialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void FillRendererArray(SerializedObject serialized, string field,
+            System.Collections.Generic.List<Renderer> renderers)
+        {
+            SerializedProperty prop = serialized.FindProperty(field);
+            prop.arraySize = renderers.Count;
+            for (int i = 0; i < renderers.Count; i++)
+                prop.GetArrayElementAtIndex(i).objectReferenceValue = renderers[i];
         }
 
         // 방은 거리 무대보다 훨씬 작다 — 표준 리그(FOV 22·y8.1·z-40)로는 방이 점이 된다.

@@ -47,8 +47,18 @@ namespace DontLate
             yield return new WaitForSeconds(_tuning.phoneCallDelaySeconds);
             _pending = null;
 
+            // S-031 ⑧: 울리기만 한다 — 미니게임은 폰 수신 화면(받기)이 AcceptCall로 개시.
             WorldEvents.RaisePhoneRang(new PhoneCall { CallerName = "박말순", ScenarioId = "phone_grumpy" });
-            WorldEvents.RaiseMinigameRequested();
+        }
+
+        /// <summary>폰 수신 화면 "받기" (S-031 ⑧) — 리듬 오버레이 개시.</summary>
+        public void AcceptCall() => WorldEvents.RaiseMinigameRequested();
+
+        /// <summary>폰 수신 화면 "거절" — 진상 응대 거부 = 실패 판정과 동일(벌금은 Debt가 MinigameEnded로 처리).</summary>
+        public void DeclineCall()
+        {
+            Debug.Log("[전화] 거절 — 진상 응대 거부, 실패 처리.");
+            WorldEvents.RaiseMinigameEnded(new MinigameResult { Success = false, HitCount = 0, TotalCount = 0, Accuracy = 0f });
         }
 
         /// <summary>오버레이(MinigameRhythmView)가 판정을 마치면 호출한다.</summary>

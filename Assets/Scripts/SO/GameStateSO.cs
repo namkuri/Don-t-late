@@ -36,6 +36,9 @@ namespace DontLate
         public List<string> ownedFurnitureIds = new List<string>();
         /// <summary>배치된 가구 (Home 씬 재생성용 — 세션제).</summary>
         public List<PlacedFurniture> placedFurniture = new List<PlacedFurniture>();
+        public bool bedSeeded;      // S-031 ③ — 세션당 1회 침대를 placedFurniture로 시드
+        public int wallpaperIndex;  // S-031 ④ — 벽지 팔레트 (HomeDecorator)
+        public int floorIndex;      // S-031 ④ — 바닥 팔레트
         /// <summary>보유 코인 수량 (금융앱).</summary>
         public float coinUnits;
         /// <summary>런타임 생성 주문의 다음 일련번호 (S-021 ③ — 캠프 주문 갱신).</summary>

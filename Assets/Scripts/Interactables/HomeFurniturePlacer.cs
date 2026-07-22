@@ -4,12 +4,16 @@ using UnityEngine.InputSystem;
 namespace DontLate
 {
     /// <summary>
-    /// Home 가구 배치 (S-019 ④ → S-030 ③ 개편). 세션 데이터(GameState.placedFurniture)로 배치분을 재생성하고,
-    /// 폰 가구앱이 걸어둔 배치 대기(PendingPlacementId)를 처리한다:
-    /// 마우스 위치에 반투명 블루프린트(고스트)를 띄우고 — 클릭=확정 · R=45° 회전 · ESC=취소.
+    /// Home 가구 배치 (S-019 ④ → S-030 ③ → S-031 개편). 세션 데이터(GameState.placedFurniture)로
+    /// 배치분을 재생성하고, 폰 가구앱의 배치 대기(PendingPlacementId)를 처리한다.
+    /// 블루프린트: 클릭=확정 · R=45° 회전 · ESC=취소 · **0.5u 그리드 스냅**(S-031 ②).
+    /// 배치된 가구 클릭 = 집어 들어 재배치(S-031 ①). TV는 벽에도 붙는다(S-031 ⑤).
+    /// 침대는 세션당 1회 시드되는 기본 가구다(S-031 ③ — 무대 고정물에서 강등).
     /// </summary>
     public class HomeFurniturePlacer : MonoBehaviour
     {
+        private const float GRID = 0.5f; // S-031 ② 스냅 간격
+
         [SerializeField] private GameStateSO _gameState;
         [SerializeField] private FurnitureSO[] _catalog;
 
@@ -18,9 +22,22 @@ namespace DontLate
         private GameObject _ghost;
         private string _ghostId;
         private float _ghostYaw;
+        private bool _ghostOnWall;
 
         private void Start()
         {
+            // S-031 ③: 침대 시드 — 세션 최초 1회만 (이후엔 플레이어가 옮긴 위치가 정본).
+            if (!_gameState.bedSeeded)
+            {
+                _gameState.bedSeeded = true;
+                _gameState.placedFurniture.Add(new PlacedFurniture
+                {
+                    furnitureId = "fur_bed",
+                    position = new Vector3(-2.5f, 0f, 2f),
+                    rotationY = 0f,
+                });
+            }
+
             foreach (PlacedFurniture placed in _gameState.placedFurniture)
                 SpawnVisual(placed.furnitureId, placed.position, placed.rotationY);
         }
@@ -29,12 +46,18 @@ namespace DontLate
 
         private void Update()
         {
-            if (string.IsNullOrEmpty(PhoneView.PendingPlacementId)) { ClearGhost(); return; }
-
             Mouse mouse = Mouse.current;
-            Keyboard keyboard = Keyboard.current;
             Camera camera = Camera.main;
             if (mouse == null || camera == null) return;
+
+            if (string.IsNullOrEmpty(PhoneView.PendingPlacementId))
+            {
+                ClearGhost();
+                HandleRepick(mouse, camera); // S-031 ① — 배치된 가구 클릭 = 집기
+                return;
+            }
+
+            Keyboard keyboard = Keyboard.current;
 
             // ESC = 취소 — 블루프린트 삭제 + 배치 대기 해제 (가구는 인벤토리에 남는다).
             if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame)
@@ -45,18 +68,33 @@ namespace DontLate
                 return;
             }
 
-            // R = 45° 회전.
-            if (keyboard != null && keyboard.rKey.wasPressedThisFrame)
+            // R = 45° 회전 (벽 부착 중엔 벽 법선이 방향을 소유).
+            if (keyboard != null && keyboard.rKey.wasPressedThisFrame && !_ghostOnWall)
                 _ghostYaw = Mathf.Repeat(_ghostYaw + 45f, 360f);
 
-            // 마우스 → 바닥 평면 투영 (방 안으로 클램프).
+            FurnitureSO so = Find(PhoneView.PendingPlacementId);
             Ray ray = camera.ScreenPointToRay(mouse.position.ReadValue());
-            Plane floor = new Plane(Vector3.up, Vector3.zero);
-            if (!floor.Raycast(ray, out float enter)) return;
-            Vector3 pos = ray.GetPoint(enter);
-            pos.x = Mathf.Clamp(pos.x, -3.5f, 3.5f);
-            pos.z = Mathf.Clamp(pos.z, -2.4f, 2.4f);
-            pos.y = 0f;
+
+            // S-031 ⑤: 벽 설치 가능 가구는 벽 히트를 우선 시도.
+            Vector3 pos;
+            _ghostOnWall = false;
+            if (so != null && so.wallMountable && TryWallPoint(ray, so, out Vector3 wallPos, out float wallYaw))
+            {
+                pos = wallPos;
+                _ghostYaw = wallYaw;
+                _ghostOnWall = true;
+            }
+            else
+            {
+                Plane floor = new Plane(Vector3.up, Vector3.zero);
+                if (!floor.Raycast(ray, out float enter)) return;
+                pos = ray.GetPoint(enter);
+                pos.x = Mathf.Clamp(pos.x, -3.5f, 3.5f);
+                pos.z = Mathf.Clamp(pos.z, -2.4f, 2.4f);
+                pos.y = 0f;
+                pos.x = Mathf.Round(pos.x / GRID) * GRID; // S-031 ② 그리드 스냅
+                pos.z = Mathf.Round(pos.z / GRID) * GRID;
+            }
 
             // 블루프린트 갱신 (대기 id가 바뀌면 재생성).
             if (_ghost == null || _ghostId != PhoneView.PendingPlacementId)
@@ -80,6 +118,50 @@ namespace DontLate
             Debug.Log("[하우징] " + id + " 배치 — " + pos + " yaw " + _ghostYaw);
         }
 
+        // ── 재배치 (S-031 ①) — 배치된 가구 클릭 = 집어서 배치 모드 재진입 ──
+        private void HandleRepick(Mouse mouse, Camera camera)
+        {
+            if (!mouse.leftButton.wasPressedThisFrame || PhoneView.IsOpen) return;
+
+            Ray ray = camera.ScreenPointToRay(mouse.position.ReadValue());
+            if (!Physics.Raycast(ray, out RaycastHit hit, 100f)) return;
+            PlacedFurnitureVisual visual = hit.collider.GetComponentInParent<PlacedFurnitureVisual>();
+            if (visual == null) return;
+
+            for (int i = 0; i < _gameState.placedFurniture.Count; i++)
+            {
+                PlacedFurniture placed = _gameState.placedFurniture[i];
+                if (placed.furnitureId != visual.FurnitureId) continue;
+                if ((placed.position - visual.PlacedPosition).sqrMagnitude > 0.01f) continue;
+
+                _gameState.placedFurniture.RemoveAt(i);
+                _gameState.ownedFurnitureIds.Add(placed.furnitureId); // ESC로 취소해도 인벤에 남게
+                PhoneView.PendingPlacementId = placed.furnitureId;
+                _ghostYaw = placed.rotationY; // 집을 때 각도 유지
+                Destroy(visual.gameObject);
+                Debug.Log("[하우징] " + placed.furnitureId + " 집음 — 재배치 모드");
+                return;
+            }
+        }
+
+        // ── 벽 부착 (S-031 ⑤) — 벽 콜라이더 히트 → 벽면 중심 배치 + 법선 방향 ──
+        private bool TryWallPoint(Ray ray, FurnitureSO so, out Vector3 position, out float yaw)
+        {
+            position = default;
+            yaw = 0f;
+            if (!Physics.Raycast(ray, out RaycastHit hit, 100f)) return false;
+            if (!hit.collider.name.Contains("Wall")) return false;
+            if (Mathf.Abs(hit.normal.y) > 0.3f) return false; // 천장·바닥면 제외
+
+            // 부착점: 벽면에서 법선 방향으로 두께 절반 — position 규약은 "바닥 기준"이라 y를 절반 낮춰 저장.
+            Vector3 center = hit.point + hit.normal * (so.size.z * 0.5f + 0.01f);
+            center.y = Mathf.Max(so.size.y * 0.5f + 0.4f, Mathf.Round(hit.point.y / GRID) * GRID); // 그리드 스냅(높이)
+            position = center - Vector3.up * (so.size.y * 0.5f);
+            position.x = Mathf.Round(position.x / GRID) * GRID;
+            yaw = Quaternion.LookRotation(hit.normal).eulerAngles.y;
+            return true;
+        }
+
         private FurnitureSO Find(string furnitureId)
         {
             if (_catalog != null)
@@ -92,20 +174,25 @@ namespace DontLate
         {
             FurnitureSO so = Find(furnitureId);
             Quaternion rotation = Quaternion.Euler(0f, rotationY, 0f);
+            GameObject visual;
 
             if (so != null && so.prefab != null)
             {
-                Instantiate(so.prefab, position, rotation);
-                return;
+                visual = Instantiate(so.prefab, position, rotation);
+            }
+            else
+            {
+                visual = GameObject.CreatePrimitive(PrimitiveType.Cube); // 콜라이더 보존 — 클릭 재배치 판정용 (S-031 ①)
+                Vector3 size = so != null ? so.size : Vector3.one * 0.8f;
+                visual.transform.SetPositionAndRotation(position + Vector3.up * (size.y * 0.5f), rotation);
+                visual.transform.localScale = size;
+                visual.GetComponent<Renderer>().material.color = so != null ? so.color : Color.gray;
             }
 
-            GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            cube.name = "Furniture_" + furnitureId;
-            Vector3 size = so != null ? so.size : Vector3.one * 0.8f;
-            cube.transform.SetPositionAndRotation(position + Vector3.up * (size.y * 0.5f), rotation);
-            cube.transform.localScale = size;
-            Object.Destroy(cube.GetComponent<Collider>());
-            cube.GetComponent<Renderer>().material.color = so != null ? so.color : Color.gray;
+            visual.name = "Furniture_" + furnitureId;
+            if (visual.GetComponentInChildren<Collider>() == null)
+                visual.AddComponent<BoxCollider>(); // 프리팹에 콜라이더가 없으면 클릭 판정용 부여
+            visual.AddComponent<PlacedFurnitureVisual>().Bind(furnitureId, position, rotationY);
         }
 
         // ── 블루프린트 (반투명 시안 고스트) ──────────────────
@@ -126,7 +213,7 @@ namespace DontLate
                 Object.Destroy(ghost.GetComponent<Collider>());
                 Vector3 size = so != null ? so.size : Vector3.one * 0.8f;
                 ghost.transform.localScale = size;
-                // 큐브 폴백은 피벗이 중심이라 바닥 기준으로 올린다 — 자식 없이 단일 메시.
+                // 큐브 폴백은 피벗이 중심이라 바닥 기준으로 올린다.
                 GameObject root = new GameObject("Ghost_" + furnitureId);
                 ghost.transform.SetParent(root.transform, false);
                 ghost.transform.localPosition = Vector3.up * (size.y * 0.5f);
@@ -157,6 +244,7 @@ namespace DontLate
             Destroy(_ghost);
             _ghost = null;
             _ghostId = null;
+            _ghostOnWall = false;
         }
     }
 }

@@ -39,13 +39,17 @@ namespace DontLate
             }
         }
 
-        /// <summary>완료됐거나(히스토리), 마감이 지났는데 적재도 안 된 주문 = 소진.</summary>
+        /// <summary>S-031 ⑦: 캠프 도착 시점에 적재 여유가 없는 미적재 주문도 소진으로 본다 —
+        /// "싣는 중에 마감"이 나던 원흉(마감 경과·임박 주문이 상자에 그대로 남던 것).</summary>
+        private const float MIN_SLACK_MINUTES = 120f;
+
         private bool IsConsumed(DeliveryOrderSO order)
         {
             foreach (DeliveryRecord record in _gameState.deliveryHistory)
                 if (record.orderId == order.orderId) return true;
-            if (_gameState.minuteOfDay > order.deadlineMinuteOfDay && !_gameState.cargo.Contains(order))
-                return _gameState.scannedOrderIds.Contains(order.orderId); // 손도 안 댄 건은 그대로 둔다
+            if (!_gameState.cargo.Contains(order)
+                && order.deadlineMinuteOfDay - _gameState.minuteOfDay < MIN_SLACK_MINUTES)
+                return true;
             return false;
         }
 
@@ -62,7 +66,7 @@ namespace DontLate
             order.floor = pick.floor;
             order.reward = 900 + (serial % 4) * 400;
             order.weight = 2f + serial % 5;
-            order.deadlineMinuteOfDay = Mathf.Min(1435f, _gameState.minuteOfDay + 240f + (serial % 3) * 90f);
+            order.deadlineMinuteOfDay = Mathf.Min(1435f, _gameState.minuteOfDay + 300f + (serial % 3) * 90f); // S-031 ⑦ 최소 여유 240→300분
             return order;
         }
     }

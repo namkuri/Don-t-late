@@ -14,5 +14,7 @@ namespace DontLate
         public Color color = Color.white;
         [Tooltip("실모델 프리팹 — 비면 색 박스 폴백 (스왑 계약).")]
         public GameObject prefab;
+        [Tooltip("벽 설치 허용 (S-031 ⑤ — TV).")]
+        public bool wallMountable;
     }
 }

@@ -15,7 +15,7 @@ namespace DontLate
         [SerializeField] private Color _dustColor = new Color(0.75f, 0.72f, 0.68f, 0.6f);
 
         [Header("드링크 버스트")]
-        [SerializeField] private int _drinkBurstCount = 18;
+        [SerializeField] private int _drinkBurstCount = 32; // S-031 ⑨ — 18로는 힐이 안 읽힘, 강화
         [SerializeField] private Color _drinkColor = new Color(0.28f, 0.9f, 0.55f, 0.9f);
 
         private PlayerManager _hub;

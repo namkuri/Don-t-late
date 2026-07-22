@@ -38,9 +38,14 @@ namespace DontLate
         {
             TuningConfigSO tuning = _hub.Tuning;
 
-            // 던지기 (S-016 ⑦) — 캐리 중 좌클릭이면 마우스 방향으로. 폰이 열려 있으면 스캔 클릭에 양보.
             var mouse = UnityEngine.InputSystem.Mouse.current;
-            if (IsCarrying && mouse != null && mouse.leftButton.wasPressedThisFrame && !PhoneView.IsOpen)
+            bool click = mouse != null && mouse.leftButton.wasPressedThisFrame && !PhoneView.IsOpen;
+
+            // 드링크 섭취 (S-031 ⑩) — 손에 든 드링크가 있으면 좌클릭 = 마신다 (던지기보다 우선).
+            if (click && _heldDrink != null)
+                ConsumeHeldDrink();
+            // 던지기 (S-016 ⑦) — 캐리 중 좌클릭이면 마우스 방향으로. 폰이 열려 있으면 스캔 클릭에 양보.
+            else if (click && IsCarrying)
                 ThrowCarryTowardsMouse(tuning.throwSpeed);
 
             bool moving = _hub.Locomotion.PlanarVelocity.sqrMagnitude > 0.01f;
@@ -130,6 +135,28 @@ namespace DontLate
             if (visual.TryGetComponent(out Rigidbody body))
                 body.linearVelocity = direction * speed + Vector3.up * 1.5f; // 살짝 포물선
             WorldAudioManager.Instance?.PlayThrowSfx(); // AU-008 — Instance 명령 (이벤트 없는 지점)
+        }
+
+        // ── 드링크 들기·섭취 (S-031 ⑩) ──────────────────────
+        private Transform _heldDrink;
+
+        /// <summary>드링크를 손(캐리 앵커 곁)에 붙인다. 이미 들고 있으면 거절.</summary>
+        public bool TryHoldDrink(Transform visual)
+        {
+            if (_heldDrink != null) return false;
+            _heldDrink = visual;
+            visual.SetParent(_carryAnchor, false);
+            visual.localPosition = new Vector3(0.35f, -0.15f, 0f); // 상자와 공존 — 옆손
+            visual.localRotation = Quaternion.identity;
+            return true;
+        }
+
+        private void ConsumeHeldDrink()
+        {
+            Destroy(_heldDrink.gameObject);
+            _heldDrink = null;
+            RecoverStamina(_hub.Tuning.energyDrinkRecover); // 내부에서 힐 이펙트(PlayDrinkEffect)까지 발화
+            WorldAudioManager.Instance?.PlayDrinkSfx();     // AU-009
         }
 
         /// <summary>든 물건의 겉모습을 캐리 앵커에 붙인다. 내려놓을 때 함께 사라진다.</summary>

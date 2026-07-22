@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7f6a0c1b9f648f4438cdcdcd90fa1963, type: 3}
-  m_Name: fur_rug
+  m_Name: fur_bed
   m_EditorClassIdentifier: Assembly-CSharp::DontLate.FurnitureSO
-  furnitureId: fur_rug
-  displayName: "\uB7EC\uADF8"
-  price: 4000
-  size: {x: 2, y: 0.05, z: 1.4}
-  color: {r: 0.7, g: 0.35, b: 0.35, a: 1}
+  furnitureId: fur_bed
+  displayName: "\uCE68\uB300"
+  price: 15000
+  size: {x: 2.2, y: 0.5, z: 1.4}
+  color: {r: 0.3, g: 0.42, b: 0.55, a: 1}
   prefab: {fileID: 0}
   wallMountable: 0

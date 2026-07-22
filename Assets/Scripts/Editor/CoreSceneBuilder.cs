@@ -488,13 +488,14 @@ namespace DontLate.EditorTools
             MinigameRhythmView view = canvasGo.AddComponent<MinigameRhythmView>();
             SetField(view, "_tuning", tuning);
 
-            // 중앙 상단 패널 — 시안 테두리 + 네이비 내부.
+            // S-031 ⑧: 패널을 폰 열림 위치(우하단 430×610)에 정합 — "폰 화면 안에서 진행"으로 읽히게.
+            // 폰 캔버스(sort ?) 위에 얹힌다(sort 95).
             GameObject panel = CreateImage(canvasGo.transform, "Panel", CYAN).gameObject;
             RectTransform panelRect = panel.GetComponent<RectTransform>();
-            panelRect.anchorMin = panelRect.anchorMax = new Vector2(0.5f, 1f);
-            panelRect.pivot = new Vector2(0.5f, 1f);
-            panelRect.anchoredPosition = new Vector2(0f, -120f);
-            panelRect.sizeDelta = new Vector2(760f, 220f);
+            panelRect.anchorMin = panelRect.anchorMax = new Vector2(1f, 0f);
+            panelRect.pivot = new Vector2(1f, 0f);
+            panelRect.anchoredPosition = new Vector2(-28f, 24f);
+            panelRect.sizeDelta = new Vector2(430f, 610f);
             SetField(view, "_panel", panel);
 
             Image inner = CreateImage(panel.transform, "Inner", NAVY);
@@ -572,12 +573,14 @@ namespace DontLate.EditorTools
         // 가구 카탈로그 4종 (S-019 ④ — 그레이박스 색박스, 실모델은 prefab 스왑 계약).
         private static FurnitureSO[] GetOrCreateFurnitureCatalog()
         {
-            (string id, string label, int price, Vector3 size, Color color)[] items =
+            // 앞 4종 = 구매 그리드 노출분. fur_bed(S-031 ③)는 시드 전용 — 목록·배치 조회에만 잡힌다.
+            (string id, string label, int price, Vector3 size, Color color, bool wall)[] items =
             {
-                ("fur_plant", "화분", 2000, new Vector3(0.4f, 0.7f, 0.4f), new Color(0.35f, 0.75f, 0.4f)),
-                ("fur_lamp", "스탠드", 3500, new Vector3(0.35f, 1.4f, 0.35f), new Color(1f, 0.85f, 0.55f)),
-                ("fur_rug", "러그", 4000, new Vector3(2.0f, 0.05f, 1.4f), new Color(0.7f, 0.35f, 0.35f)),
-                ("fur_tv", "TV", 8000, new Vector3(1.6f, 1.0f, 0.25f), new Color(0.15f, 0.15f, 0.2f)),
+                ("fur_plant", "화분", 2000, new Vector3(0.4f, 0.7f, 0.4f), new Color(0.35f, 0.75f, 0.4f), false),
+                ("fur_lamp", "스탠드", 3500, new Vector3(0.35f, 1.4f, 0.35f), new Color(1f, 0.85f, 0.55f), false),
+                ("fur_rug", "러그", 4000, new Vector3(2.0f, 0.05f, 1.4f), new Color(0.7f, 0.35f, 0.35f), false),
+                ("fur_tv", "TV", 8000, new Vector3(1.6f, 1.0f, 0.25f), new Color(0.15f, 0.15f, 0.2f), true),
+                ("fur_bed", "침대", 15000, new Vector3(2.2f, 0.5f, 1.4f), new Color(0.30f, 0.42f, 0.55f), false),
             };
 
             string folder = DATA_ROOT + "/Furniture";
@@ -592,13 +595,16 @@ namespace DontLate.EditorTools
                 if (so == null)
                 {
                     so = ScriptableObject.CreateInstance<FurnitureSO>();
-                    so.furnitureId = items[i].id;
-                    so.displayName = items[i].label;
-                    so.price = items[i].price;
-                    so.size = items[i].size;
-                    so.color = items[i].color;
                     AssetDatabase.CreateAsset(so, path);
                 }
+                // 필드는 매 조립마다 표와 동기화 (멱등 — wallMountable 같은 신설 필드 소급 주입).
+                so.furnitureId = items[i].id;
+                so.displayName = items[i].label;
+                so.price = items[i].price;
+                so.size = items[i].size;
+                so.color = items[i].color;
+                so.wallMountable = items[i].wall;
+                EditorUtility.SetDirty(so);
                 catalog[i] = so;
             }
             AssetDatabase.SaveAssets();

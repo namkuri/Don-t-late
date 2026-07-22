@@ -21,7 +21,7 @@ namespace DontLate
         /// <summary>가구 배치 대기 id — Home 씬 HomeFurniturePlacer가 소비 (S-019 ④).</summary>
         public static string PendingPlacementId;
 
-        private enum Screen { Home, Delivery, Music, Invest, Bank, Furniture }
+        private enum Screen { Home, Delivery, Music, Invest, Bank, Furniture, Call }
 
         [SerializeField] private RectTransform _panel;
         [SerializeField] private TMP_FontAsset _font;
@@ -56,6 +56,9 @@ namespace DontLate
         private TMP_Text _bankLabel;
         private TMP_Text _furnitureLabel;
         private RectTransform _furnitureListContent; // S-030 ③ 인벤토리 스크롤 내용
+        private TMP_Text _callLabel;                 // S-031 ⑧ 전화 수신 화면
+        private Button _wallpaperButton;             // S-031 ④ 벽지 순환
+        private Button _floorButton;                 // S-031 ④ 바닥 순환
         private string _furnitureInvSignature;       // 행 재구축 판정 (스크롤 리셋 방지)
 
         // ── 수명주기 ─────────────────────────────────────────
@@ -74,6 +77,7 @@ namespace DontLate
             WorldEvents.DeliveryCompleted += OnDeliveryCompleted;
             WorldEvents.DeliveryFailed += OnDeliveryFailed;
             WorldEvents.ClockTicked += OnClockTicked;
+            WorldEvents.PhoneRang += OnPhoneRang; // S-031 ⑧ — 진상 전화 수신 화면
         }
 
         private void OnDisable()
@@ -84,6 +88,7 @@ namespace DontLate
             WorldEvents.DeliveryCompleted -= OnDeliveryCompleted;
             WorldEvents.DeliveryFailed -= OnDeliveryFailed;
             WorldEvents.ClockTicked -= OnClockTicked;
+            WorldEvents.PhoneRang -= OnPhoneRang;
         }
 
         private void OnDestroy() => _toggle.Dispose();
@@ -153,6 +158,7 @@ namespace DontLate
                     Screen.Music => "음악",
                     Screen.Invest => "늦코인",
                     Screen.Bank => "은행",
+                    Screen.Call => "전화",
                     Screen.Furniture => "가구",
                     _ => "홈"
                 };
@@ -167,6 +173,7 @@ namespace DontLate
                 case Screen.Music: RefreshMusic(); break;
                 case Screen.Invest: RefreshInvest(); break;
                 case Screen.Bank: RefreshBank(); break;
+                case Screen.Call: RefreshCall(); break;
                 case Screen.Furniture: RefreshFurniture(); break;
             }
         }
@@ -223,6 +230,7 @@ namespace DontLate
             BuildMusicScreen();
             BuildInvestScreen();
             BuildBankScreen();
+            BuildCallScreen(); // S-031 ⑧
             BuildFurnitureScreen();
         }
 
@@ -418,6 +426,52 @@ namespace DontLate
             sellRect.anchoredPosition = new Vector2(-6f, 8f);
         }
 
+        // ── 전화 수신 (S-031 ⑧) — PhoneRang(진상 전화)이 오면 폰이 열리며 이 화면이 뜬다 ──
+
+        private void OnPhoneRang(PhoneCall call)
+        {
+            if (call.ScenarioId != "phone_grumpy") return; // Home 인트로 전화(자동 대화)는 제외
+            if (!_open) OnToggle(default);
+            ShowScreen(Screen.Call);
+        }
+
+        private void BuildCallScreen()
+        {
+            GameObject screen = NewScreen(Screen.Call);
+
+            TMP_Text caller = MakeText(screen.transform, "Caller", "", 30f, Color.white, TextAlignmentOptions.Center);
+            Anchor(caller.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -60f), 140f);
+            _callLabel = caller;
+
+            Button accept = MakeButton(screen.transform, "Accept", "받기", () =>
+            {
+                ShowScreen(Screen.Home);
+                WorldMinigameManager.Instance?.AcceptCall(); // 미니게임 패널이 폰 위로 뜬다
+            });
+            RectTransform acceptRect = (RectTransform)accept.transform;
+            acceptRect.anchorMin = acceptRect.anchorMax = acceptRect.pivot = new Vector2(0.5f, 0f);
+            acceptRect.sizeDelta = new Vector2(170f, 70f);
+            acceptRect.anchoredPosition = new Vector2(-95f, 60f);
+            accept.GetComponentInChildren<TMP_Text>().color = new Color(0.3f, 0.95f, 0.5f);
+
+            Button decline = MakeButton(screen.transform, "Decline", "거절", () =>
+            {
+                if (_open) OnToggle(default);
+                WorldMinigameManager.Instance?.DeclineCall();
+            });
+            RectTransform declineRect = (RectTransform)decline.transform;
+            declineRect.anchorMin = declineRect.anchorMax = declineRect.pivot = new Vector2(0.5f, 0f);
+            declineRect.sizeDelta = new Vector2(170f, 70f);
+            declineRect.anchoredPosition = new Vector2(95f, 60f);
+            decline.GetComponentInChildren<TMP_Text>().color = new Color(1f, 0.45f, 0.35f);
+        }
+
+        private void RefreshCall()
+        {
+            if (_callLabel != null)
+                _callLabel.text = "☎ 수신 중\n\n<size=140%><b>박말순</b></size>\n<color=#8a93a8>진상 기류의 냄새가 난다…</color>";
+        }
+
         private void BuildBankScreen()
         {
             GameObject screen = NewScreen(Screen.Bank);
@@ -449,7 +503,7 @@ namespace DontLate
             GameObject viewport = new GameObject("InvViewport", typeof(RectTransform));
             viewport.transform.SetParent(screen.transform, false);
             RectTransform vpRect = (RectTransform)viewport.transform;
-            vpRect.anchorMin = new Vector2(0f, 0.4f);
+            vpRect.anchorMin = new Vector2(0f, 0.46f);
             vpRect.anchorMax = new Vector2(1f, 1f);
             vpRect.offsetMin = new Vector2(4f, 0f);
             vpRect.offsetMax = new Vector2(-4f, -70f);
@@ -482,8 +536,41 @@ namespace DontLate
                 RectTransform rect = (RectTransform)buy.transform;
                 rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0f, 0f);
                 rect.sizeDelta = new Vector2(184f, 66f);
-                rect.anchoredPosition = new Vector2(6f + (i % 2) * 196f, 84f - (i / 2) * 76f);
+                rect.anchoredPosition = new Vector2(6f + (i % 2) * 196f, 160f - (i / 2) * 76f);
             }
+
+            // S-031 ④: 벽지·바닥 팔레트 순환 (무료 — 팔레트는 HomeDecorator와 공유).
+            _wallpaperButton = MakeButton(screen.transform, "Wallpaper", "", () =>
+            {
+                _gameState.wallpaperIndex = (_gameState.wallpaperIndex + 1) % HomeDecorator.WallPalette.Length;
+                RefreshDecorButtons();
+            });
+            RectTransform wallRect = (RectTransform)_wallpaperButton.transform;
+            wallRect.anchorMin = wallRect.anchorMax = wallRect.pivot = new Vector2(0f, 0f);
+            wallRect.sizeDelta = new Vector2(184f, 66f);
+            wallRect.anchoredPosition = new Vector2(6f, 8f);
+
+            _floorButton = MakeButton(screen.transform, "Floor", "", () =>
+            {
+                _gameState.floorIndex = (_gameState.floorIndex + 1) % HomeDecorator.FloorPalette.Length;
+                RefreshDecorButtons();
+            });
+            RectTransform floorRect = (RectTransform)_floorButton.transform;
+            floorRect.anchorMin = floorRect.anchorMax = floorRect.pivot = new Vector2(0f, 0f);
+            floorRect.sizeDelta = new Vector2(184f, 66f);
+            floorRect.anchoredPosition = new Vector2(202f, 8f);
+
+            RefreshDecorButtons();
+        }
+
+        private void RefreshDecorButtons()
+        {
+            if (_wallpaperButton != null)
+                _wallpaperButton.GetComponentInChildren<TMP_Text>().text =
+                    "벽지 ▶ " + HomeDecorator.WallPalette[_gameState.wallpaperIndex % HomeDecorator.WallPalette.Length].name;
+            if (_floorButton != null)
+                _floorButton.GetComponentInChildren<TMP_Text>().text =
+                    "바닥 ▶ " + HomeDecorator.FloorPalette[_gameState.floorIndex % HomeDecorator.FloorPalette.Length].name;
         }
 
         // ── 앱 로직 (표시 + 매니저 위임) ─────────────────────

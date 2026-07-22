@@ -51,16 +51,18 @@ namespace DontLate
         private void DispenseDrink()
         {
             WorldAudioManager.Instance?.PlayVendingSfx(); // AU-008 — 결제·명중 배출 공용
+            // S-031 ⑩: 물리로 굴러떨어진다 → E로 잡고 → 좌클릭으로 마신다 (EnergyDrinkPickup).
             GameObject drink = GameObject.CreatePrimitive(PrimitiveType.Capsule);
             drink.name = "VendedDrink";
-            drink.transform.position = transform.position + new Vector3(0f, 0.3f, -0.8f);
+            drink.transform.position = transform.position + new Vector3(0f, 0.7f, -0.7f);
             drink.transform.localScale = new Vector3(0.22f, 0.25f, 0.22f);
-            var collider = drink.GetComponent<Collider>();
-            collider.isTrigger = true;
             if (_drinkMaterial != null) drink.GetComponent<Renderer>().sharedMaterial = _drinkMaterial;
 
-            var pickup = drink.AddComponent<EnergyDrinkPickup>();
-            // 드링크 하이라이트는 머티리얼 스왑 — 배출품이라 리플렉션 배선 대신 그대로 둔다(포커스 시 무변화 허용).
+            Rigidbody body = drink.AddComponent<Rigidbody>();
+            body.mass = 0.3f;
+            body.linearVelocity = new Vector3(Random.Range(-0.4f, 0.4f), 0.5f, -1.6f); // 배출구에서 톡 굴러나옴
+
+            drink.AddComponent<EnergyDrinkPickup>();
         }
     }
 }
