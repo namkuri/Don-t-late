@@ -27,9 +27,15 @@ def webhook_url() -> str | None:
         return None
 
 
+# ⚠ User-Agent 필수 — 파이썬 기본 UA는 디스코드(Cloudflare)가 차단한다 (실측 403, 2026-07-22).
+UA = "DontLate-Harness/1.0"
+
+
 def post_text(url: str, content: str) -> None:
     body = json.dumps({"content": content[:1900]}).encode("utf-8")  # 디스코드 2000자 상한
-    req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"})
+    req = urllib.request.Request(
+        url, data=body,
+        headers={"Content-Type": "application/json", "User-Agent": UA})
     urllib.request.urlopen(req, timeout=10).read()
 
 
@@ -43,7 +49,7 @@ def post_file(url: str, content: str, path: Path) -> None:
     ).encode("utf-8") + path.read_bytes() + f"\r\n--{boundary}--\r\n".encode("utf-8")
     req = urllib.request.Request(
         url, data=data,
-        headers={"Content-Type": f"multipart/form-data; boundary={boundary}"})
+        headers={"Content-Type": f"multipart/form-data; boundary={boundary}", "User-Agent": UA})
     urllib.request.urlopen(req, timeout=30).read()
 
 
