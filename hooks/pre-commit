@@ -69,4 +69,17 @@ if [ -n "$staged_cs" ]; then
   fi
 fi
 
+# 대장 표 무결성 (D-060) — 표 행 사이 빈 줄은 markdown 표를 두 동강 낸다 (실사고: D-043~059 렌더 깨짐).
+for f in $(git diff --cached --name-only | grep -E '^planning/(decisions\.md|orders/.*\.md)$'); do
+  [ -f "$f" ] || continue
+  if python -c "
+import re, sys
+t = open('$f', encoding='utf-8').read()
+sys.exit(1 if re.search(r'\|[^\n]*\n\n+\|', t) else 0)
+" ; then :; else
+    echo "[pre-commit] $f — 표 행 사이에 빈 줄이 있다 (표가 깨진다). 빈 줄을 지우고 다시 커밋하라."
+    exit 1
+  fi
+done
+
 exit 0
