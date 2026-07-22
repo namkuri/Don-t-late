@@ -413,15 +413,16 @@ namespace DontLate.EditorTools
             advanceButton.targetGraphic = inner;
             SetField(view, "_advanceButton", advanceButton);
 
-            // 이름표 (앰버, 좌상).
+            // 이름표 — 실아트 박스는 좌상 명찰 탭이 그림에 있음: 그 안에 어두운 글자로 (S-026).
             TMP_Text nameLabel = CreateText(inner.transform, "Name", "박말순", font,
-                34f, AMBER, TextAlignmentOptions.TopLeft);
-            AnchorCorner(nameLabel.rectTransform, new Vector2(0f, 1f), new Vector2(44f, -18f), new Vector2(600f, 46f));
+                34f, boxArt != null ? new Color(0.10f, 0.30f, 0.22f) : AMBER, TextAlignmentOptions.TopLeft);
+            AnchorCorner(nameLabel.rectTransform, new Vector2(0f, 1f),
+                boxArt != null ? new Vector2(120f, -30f) : new Vector2(44f, -18f), new Vector2(600f, 46f));
             SetField(view, "_nameLabel", nameLabel);
 
-            // 본문 (흰색, Pretendard).
+            // 본문 — 실아트 내부가 밝아서 어두운 글자 (흰 글자는 소실).
             TMP_Text body = CreateText(inner.transform, "Body", string.Empty, font,
-                40f, Color.white, TextAlignmentOptions.TopLeft);
+                40f, boxArt != null ? new Color(0.12f, 0.14f, 0.18f) : Color.white, TextAlignmentOptions.TopLeft);
             body.textWrappingMode = TextWrappingModes.Normal;
             RectTransform bodyRect = body.rectTransform;
             bodyRect.anchorMin = Vector2.zero;
@@ -439,6 +440,7 @@ namespace DontLate.EditorTools
                 arrowImage.sprite = arrowArt;
                 arrowImage.preserveAspect = true;
                 AnchorCorner(arrowImage.rectTransform, new Vector2(1f, 0f), new Vector2(-30f, 18f), new Vector2(64f, 64f));
+                arrowImage.gameObject.AddComponent<UIPulse>().Configure(0.3f, 1f, 5f); // "▼ 대신 박스 깜박" (아트팀)
                 arrowGo = arrowImage.gameObject;
             }
             else
@@ -602,6 +604,7 @@ namespace DontLate.EditorTools
             {
                 var importer = (TextureImporter)AssetImporter.GetAtPath(path);
                 importer.textureType = TextureImporterType.Sprite;
+                importer.spriteImportMode = SpriteImportMode.Single; // Multiple+슬라이스 0 = 서브에셋 없음 (실사고)
                 importer.SaveAndReimport();
                 sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
             }

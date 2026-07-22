@@ -48,7 +48,8 @@ namespace DontLate.EditorTools
             Scene scene = EditorSceneManager.OpenScene(SCENES_ROOT + "/Main.unity", OpenSceneMode.Single);
             Transform root = CreateFlowCanvas().transform;
 
-            Image bg = CreateImage(root, "Bg", NAVY);
+            // 아트팀 발주 (S-026): "배경이 뭐든 로고보다 명도 50% 낮게" — 반투명 검정 스크림.
+            Image bg = CreateImage(root, "Bg", new Color(0f, 0f, 0f, 0.5f));
             StretchFull(bg.rectTransform);
             bg.raycastTarget = true; // 타이틀 배경 — 뒤 씬으로의 클릭 통과 차단
 
@@ -76,6 +77,7 @@ namespace DontLate.EditorTools
                 sub.sprite = subArt;
                 sub.preserveAspect = true;
                 AnchorCentered(sub.rectTransform, new Vector2(0f, -60f), new Vector2(760f, 110f));
+                sub.gameObject.AddComponent<UIPulse>().Configure(0.55f, 1f, 2.2f); // "지각압박 반짝" (아트팀)
             }
             else
             {
@@ -97,8 +99,30 @@ namespace DontLate.EditorTools
                 manRect.anchoredPosition = new Vector2(60f, 40f);
             }
 
-            CreateButton(root, "StartButton", "시작", GameScene.Home, font, CYAN,
-                new Vector2(0.5f, 0f), new Vector2(0f, 170f), new Vector2(440f, 118f), 48f);
+            // 시작 버튼 — 실아트(ui_start_button — "▶시작" 자체 텍스트 포함) 있으면 이미지 버튼 (S-026).
+            Sprite startArt = CoreSceneBuilder.LoadUISprite("ui_start_button");
+            if (startArt != null)
+            {
+                GameObject startGo = new GameObject("StartButton", typeof(RectTransform));
+                startGo.transform.SetParent(root, false);
+                Image startImage = startGo.AddComponent<Image>();
+                startImage.sprite = startArt;
+                startImage.preserveAspect = true;
+                RectTransform startRect = (RectTransform)startGo.transform;
+                startRect.anchorMin = startRect.anchorMax = startRect.pivot = new Vector2(0.5f, 0f);
+                startRect.sizeDelta = new Vector2(430f, 190f);
+                startRect.anchoredPosition = new Vector2(0f, 130f);
+                Button startButton = startGo.AddComponent<Button>();
+                startButton.targetGraphic = startImage;
+                SceneAdvanceButton advance = startGo.AddComponent<SceneAdvanceButton>();
+                SetField(advance, "_target", GameScene.Home);
+                EditorUtility.SetDirty(advance);
+            }
+            else
+            {
+                CreateButton(root, "StartButton", "시작", GameScene.Home, font, CYAN,
+                    new Vector2(0.5f, 0f), new Vector2(0f, 170f), new Vector2(440f, 118f), 48f);
+            }
 
             EditorSceneManager.SaveScene(scene, SCENES_ROOT + "/Main.unity");
         }
