@@ -29,6 +29,13 @@ namespace DontLate
                 _originalMaterials[i] = _renderers[i].sharedMaterials;
         }
 
+        /// <summary>주문 교체 (S-021 ③ — 캠프 주문 갱신. 소진된 건을 새 목적지로).</summary>
+        public void SetOrder(DeliveryOrderSO order)
+        {
+            _order = order;
+            GetComponent<Collider>().enabled = true; // 소진으로 꺼졌던 픽업도 재활성
+        }
+
         /// <summary>런타임 스폰 초기화 (S-015 — DistrictCargoSpawner). AddComponent 직후 호출.</summary>
         public void Initialize(DeliveryOrderSO order, Material highlight, bool requireInCargo, bool requireScanned)
         {

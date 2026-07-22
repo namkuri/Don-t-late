@@ -38,6 +38,8 @@ namespace DontLate
         public List<PlacedFurniture> placedFurniture = new List<PlacedFurniture>();
         /// <summary>보유 코인 수량 (금융앱).</summary>
         public float coinUnits;
+        /// <summary>런타임 생성 주문의 다음 일련번호 (S-021 ③ — 캠프 주문 갱신).</summary>
+        public int nextOrderSerial = 200;
 
         [Header("통계")]
         public int completedCount;

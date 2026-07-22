@@ -96,6 +96,11 @@ namespace DontLate
         public static event Action<float> StaminaChanged;
         /// <summary>상호작용 포커스 획득/해제. 대상이 바뀔 때만 발행 — 프레임 데이터 아님.</summary>
         public static event Action<bool> InteractionFocusChanged;
+        /// <summary>포커스 대상의 주소(배송지일 때만, 아니면 null) — HUD 풀해상 표시용 (S-021 ②).
+        /// InteractionFocusChanged와 같은 빈도로 같이 발행되므로 별도 로그는 달지 않는다.</summary>
+        public static event Action<string> FocusAddressChanged;
+
+        public static void RaiseFocusAddressChanged(string address) => FocusAddressChanged?.Invoke(address);
 
         public static void RaiseCarryStateChanged(bool isCarrying)
         {

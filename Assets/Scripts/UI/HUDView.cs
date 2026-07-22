@@ -57,6 +57,7 @@ namespace DontLate
             WorldEvents.DebtIncreased += OnDebtIncreased;
             WorldEvents.StaminaChanged += OnStaminaChanged;
             WorldEvents.InteractionFocusChanged += OnInteractionFocusChanged;
+            WorldEvents.FocusAddressChanged += OnFocusAddressChanged;
             WorldEvents.SceneTransitionCompleted += OnSceneTransitionCompleted;
         }
 
@@ -72,6 +73,7 @@ namespace DontLate
             WorldEvents.DebtIncreased -= OnDebtIncreased;
             WorldEvents.StaminaChanged -= OnStaminaChanged;
             WorldEvents.InteractionFocusChanged -= OnInteractionFocusChanged;
+            WorldEvents.FocusAddressChanged -= OnFocusAddressChanged;
             WorldEvents.SceneTransitionCompleted -= OnSceneTransitionCompleted;
         }
 
@@ -205,6 +207,17 @@ namespace DontLate
         private void OnInteractionFocusChanged(bool focused)
         {
             if (_ePrompt != null) _ePrompt.SetActive(focused);
+        }
+
+        // 배송지 포커스면 주소를 [E] 안내에 병기 — 풀해상 오버레이라 픽셀화에 안 뭉개진다 (S-021 ②).
+        private void OnFocusAddressChanged(string address)
+        {
+            if (_ePrompt == null) return;
+            TMP_Text label = _ePrompt.GetComponentInChildren<TMP_Text>(true);
+            if (label == null) return;
+            label.text = string.IsNullOrEmpty(address)
+                ? "[E] 상호작용"
+                : "[E] 배송 인증  <color=#ff9f45>" + address + "</color>";
         }
 
         // ── 씬별 가시성 ──────────────────────────────────────

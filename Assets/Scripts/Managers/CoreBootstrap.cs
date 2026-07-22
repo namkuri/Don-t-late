@@ -53,6 +53,7 @@ namespace DontLate
             _gameState.ownedFurnitureIds.Clear();
             _gameState.placedFurniture.Clear();
             _gameState.coinUnits = 0f;
+            _gameState.nextOrderSerial = 200;
         }
     }
 }

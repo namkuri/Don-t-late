@@ -59,6 +59,8 @@ namespace DontLate
             _current?.SetHighlight(true);
 
             WorldEvents.RaiseInteractionFocusChanged(_current != null);
+            // 배송지 포커스면 주소를 HUD로 (S-021 ② — 월드 텍스트는 픽셀화에 뭉개짐).
+            WorldEvents.RaiseFocusAddressChanged(_current is DeliveryPoint point ? point.Address : null);
         }
 
         private void OnDrawGizmosSelected()

@@ -37,7 +37,8 @@ namespace DontLate.EditorTools
             GreyboxStageBuilder.BuildWalkableVolume();
             GreyboxStageBuilder.BuildGroundMist();
             BuildTruck(truck, box, highlight);
-            BuildPickupBoxes(box, highlight, tuning);
+            System.Collections.Generic.List<PickupBox> boxes = BuildPickupBoxes(box, highlight, tuning);
+            BuildOrderBoard(gameState, boxes);
             BuildDrink(drink, highlight);
             BuildVendingMachine(tuning, drink, highlight);
             GreyboxStageBuilder.BuildPlayer(gameState, tuning);
@@ -94,8 +95,9 @@ namespace DontLate.EditorTools
         }
 
         // 대기 물량 = 손에 집히는 박스(PickupBox) — 주문 1건씩. E로 들고 트럭으로 나른다 (S-009).
-        private static void BuildPickupBoxes(Material material, Material highlight, TuningConfigSO tuning)
+        private static System.Collections.Generic.List<PickupBox> BuildPickupBoxes(Material material, Material highlight, TuningConfigSO tuning)
         {
+            var built = new System.Collections.Generic.List<PickupBox>();
             for (int i = 0; i < LOAD_ZONE_COUNT; i++)
             {
                 // 피라미드 스택 — 콜라이더(0.7u)가 겹치면 스폰 순간 물리 밀어내기로 자폭한다 (S-019 실측).
@@ -115,7 +117,23 @@ namespace DontLate.EditorTools
                 var serialized = new UnityEditor.SerializedObject(pickup);
                 serialized.FindProperty("_requireScanned").boolValue = true;
                 serialized.ApplyModifiedPropertiesWithoutUndo();
+                built.Add(pickup);
             }
+            return built;
+        }
+
+        // 주문판 (S-021 ③) — 캠프 복귀 시 소진 주문을 새 목적지로 교체.
+        private static void BuildOrderBoard(GameStateSO gameState, System.Collections.Generic.List<PickupBox> boxes)
+        {
+            GameObject go = GreyboxStageBuilder.CreateEmpty("OrderBoard", Vector3.zero);
+            CampOrderBoard board = go.AddComponent<CampOrderBoard>();
+            SerializedObject serialized = new SerializedObject(board);
+            serialized.FindProperty("_gameState").objectReferenceValue = gameState;
+            SerializedProperty prop = serialized.FindProperty("_boxes");
+            prop.arraySize = boxes.Count;
+            for (int i = 0; i < boxes.Count; i++)
+                prop.GetArrayElementAtIndex(i).objectReferenceValue = boxes[i];
+            serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
         // 패드별 배송 건. 1번은 그레이박스 기존 건(행복빌라)을 재사용해 District 무대와 이어진다.

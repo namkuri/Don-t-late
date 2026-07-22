@@ -25,6 +25,14 @@ namespace DontLate
             BuildBar();
         }
 
+        // 상자가 물리로 구르면 자식인 바도 같이 기운다 — 매 프레임 세계 기준으로 세운다 (S-021 ①).
+        private void LateUpdate()
+        {
+            if (_barRoot == null || !_barRoot.gameObject.activeSelf) return;
+            _barRoot.position = transform.position + Vector3.up * 0.95f;
+            _barRoot.rotation = Quaternion.identity; // 카메라(-Z 고정 시선) 정면
+        }
+
         private void OnCollisionEnter(Collision collision)
         {
             if (_tuning == null) return;

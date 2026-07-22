@@ -21,6 +21,8 @@ namespace DontLate
         [SerializeField] private float _focusedAlpha = 0.3f;
 
         public Vector2 PadSize => _padSize;
+        /// <summary>HUD 풀해상 표시용 주소 (S-021 ② — 월드 텍스트는 픽셀레이트에 뭉개져 폐지).</summary>
+        public string Address => _expectedOrder != null ? _expectedOrder.address : string.Empty;
 
         /// <summary>런타임 스폰 초기화 (S-015 — 비콘 프리팹 인스턴스에 주문 배정).</summary>
         public void SetOrder(DeliveryOrderSO order)

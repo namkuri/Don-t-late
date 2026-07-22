@@ -839,21 +839,7 @@ namespace DontLate.EditorTools
             CreateFxQuad(fx.transform, "FxNX", new Vector3(-hw, fxHeight * 0.5f, 0f), new Vector3(padSize.y, fxHeight, 1f), new Vector3(0f, 90f, 0f), rise);
             SetReference(point, "_riseEffect", fx);
 
-            // 주소 라벨 — 패드 위 1.6u 월드 텍스트, 카메라(-Z) 방향. 포커스 시에만 켜진다 (S-016 ②).
-            GameObject labelGo = new GameObject("AddressLabel");
-            labelGo.transform.SetParent(root.transform, false);
-            labelGo.transform.localPosition = new Vector3(0f, 1.7f, 0f);
-            // 무회전 — TMP·쿼드의 앞면은 -Z(카메라 방향). 180° 돌리면 카메라 반대편을 봐서 안 보인다 (S-020 실사고).
-            var label = labelGo.AddComponent<TMPro.TextMeshPro>();
-            label.font = AssetDatabase.LoadAssetAtPath<TMPro.TMP_FontAsset>("Assets/Art/UI/Fonts/Pretendard-Regular SDF.asset");
-            label.fontSize = 4f;
-            label.color = ParseColor("#35e0c8");
-            label.alignment = TMPro.TextAlignmentOptions.Center;
-            label.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
-            var labelRect = labelGo.GetComponent<RectTransform>();
-            labelRect.sizeDelta = new Vector2(6f, 1f);
-            SetReference(point, "_addressLabel", label);
-            labelGo.SetActive(false);
+            // 주소 표시는 월드 텍스트 대신 HUD 풀해상([E] 안내 병기 — S-021 ②): 픽셀레이트에 안 뭉개진다.
 
             GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
             Object.DestroyImmediate(root);
