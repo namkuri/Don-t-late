@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: GameState
   m_EditorClassIdentifier: Assembly-CSharp::DontLate.GameStateSO
   day: 1
-  minuteOfDay: 480
+  minuteOfDay: 818.87726
   money: 0
   debt: 10000
   cargo: []

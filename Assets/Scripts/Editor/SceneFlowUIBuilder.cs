@@ -137,8 +137,8 @@ namespace DontLate.EditorTools
             Transform root = CreateFlowCanvas().transform;
 
             TMP_Text label = CreateText(root, "Label", labelText, font, 46f, Color.white,
-                TextAlignmentOptions.TopLeft, FontStyles.Normal);
-            AnchorCorner(label.rectTransform, new Vector2(0f, 1f), new Vector2(48f, -44f), new Vector2(1000f, 72f));
+                TextAlignmentOptions.Top, FontStyles.Normal);
+            AnchorCorner(label.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -78f), new Vector2(1000f, 72f)); // S-030 ②: 상단 중앙 — HUD 카드(좌상)와 중첩 소멸
 
             CreateButton(root, "AdvanceButton", buttonText, target, font, CYAN,
                 new Vector2(0.5f, 0f), new Vector2(0f, 150f), new Vector2(600f, 104f), 40f);
@@ -153,8 +153,8 @@ namespace DontLate.EditorTools
             Transform root = CreateFlowCanvas().transform;
 
             TMP_Text label = CreateText(root, "Label", "집 — 아침", font, 46f, Color.white,
-                TextAlignmentOptions.TopLeft, FontStyles.Normal);
-            AnchorCorner(label.rectTransform, new Vector2(0f, 1f), new Vector2(48f, -44f), new Vector2(1000f, 72f));
+                TextAlignmentOptions.Top, FontStyles.Normal);
+            AnchorCorner(label.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -78f), new Vector2(1000f, 72f)); // S-030 ②: 상단 중앙 — HUD 카드(좌상)와 중첩 소멸
 
             CreateButton(root, "AdvanceButton", "하루 시작 → 물류캠프", GameScene.Camp, font, CYAN,
                 new Vector2(0.5f, 0f), new Vector2(0f, 150f), new Vector2(600f, 104f), 40f);
@@ -189,8 +189,8 @@ namespace DontLate.EditorTools
             Transform root = CreateFlowCanvas().transform;
 
             TMP_Text label = CreateText(root, "Label", "이동 — 배송 구역을 골라라 (멀수록 시간을 먹는다)", font,
-                46f, Color.white, TextAlignmentOptions.TopLeft, FontStyles.Normal);
-            AnchorCorner(label.rectTransform, new Vector2(0f, 1f), new Vector2(48f, -44f), new Vector2(1400f, 72f));
+                46f, Color.white, TextAlignmentOptions.Top, FontStyles.Normal);
+            AnchorCorner(label.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -78f), new Vector2(1400f, 72f)); // S-030 ②
 
             CreateTravelNode(root, "NodeNear", "행복빌라 구역", "행복빌라 구역 (가까움)", false, tuning, font,
                 new Vector2(-360f, 40f));
@@ -335,7 +335,7 @@ namespace DontLate.EditorTools
         // 씬 단독 Play 지원(S-013) — 콘텐츠 씬마다 Core 사후 로더 1개 보장(멱등).
         private static void EnsureCoreLoader()
         {
-            foreach (EnsureCoreLoaded existing in Object.FindObjectsByType<EnsureCoreLoaded>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            foreach (EnsureCoreLoaded existing in Object.FindObjectsByType<EnsureCoreLoaded>(FindObjectsInactive.Include))
                 Object.DestroyImmediate(existing.gameObject);
 
             GameObject go = new GameObject("__ui_EnsureCore");

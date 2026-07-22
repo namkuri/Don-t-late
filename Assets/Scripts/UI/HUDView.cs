@@ -55,6 +55,7 @@ namespace DontLate
             WorldEvents.DeliveryFailed += OnDeliveryFailed;
             WorldEvents.DebtSettled += OnDebtSettled;
             WorldEvents.DebtIncreased += OnDebtIncreased;
+            WorldEvents.MoneySpent += OnMoneySpent;
             WorldEvents.StaminaChanged += OnStaminaChanged;
             WorldEvents.InteractionFocusChanged += OnInteractionFocusChanged;
             WorldEvents.FocusAddressChanged += OnFocusAddressChanged;
@@ -71,6 +72,7 @@ namespace DontLate
             WorldEvents.DeliveryFailed -= OnDeliveryFailed;
             WorldEvents.DebtSettled -= OnDebtSettled;
             WorldEvents.DebtIncreased -= OnDebtIncreased;
+            WorldEvents.MoneySpent -= OnMoneySpent;
             WorldEvents.StaminaChanged -= OnStaminaChanged;
             WorldEvents.InteractionFocusChanged -= OnInteractionFocusChanged;
             WorldEvents.FocusAddressChanged -= OnFocusAddressChanged;
@@ -150,6 +152,13 @@ namespace DontLate
         private void OnDebtSettled(DebtSettlement _) => RefreshEconomy();
 
         // 벌금 즉시 가산 (S-015) — 빚 라벨 옆에 빨간 플로팅 금액.
+        // S-030 ③: 지출 차감 연출 — 잔액 라벨에서 붉은 플로팅.
+        private void OnMoneySpent(int amount)
+        {
+            RefreshEconomy();
+            SpawnFloatingAmount("-₩" + amount.ToString("N0"), new Color(1f, 0.45f, 0.35f), _moneyLabel);
+        }
+
         private void OnDebtIncreased(int amount)
         {
             RefreshEconomy();

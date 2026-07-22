@@ -159,6 +159,7 @@ namespace DontLate
             WorldEvents.PackageDestroyed += OnPackageDestroyed;
             WorldEvents.BarcodeScanned += OnBarcodeScanned;
             WorldEvents.DebtIncreased += OnDebtIncreased;
+            WorldEvents.MoneySpent += OnMoneySpent;
             WorldEvents.DeadlineWarned += OnDeadlineWarned;
             WorldEvents.PhoneRang += OnPhoneRang;
             WorldEvents.SceneTransitionStarted += OnSceneTransitionStarted;
@@ -175,6 +176,7 @@ namespace DontLate
             WorldEvents.PackageDestroyed -= OnPackageDestroyed;
             WorldEvents.BarcodeScanned -= OnBarcodeScanned;
             WorldEvents.DebtIncreased -= OnDebtIncreased;
+            WorldEvents.MoneySpent -= OnMoneySpent;
             WorldEvents.DeadlineWarned -= OnDeadlineWarned;
             WorldEvents.PhoneRang -= OnPhoneRang;
             WorldEvents.SceneTransitionStarted -= OnSceneTransitionStarted;
@@ -288,6 +290,7 @@ namespace DontLate
         private void OnPackageDestroyed() => PlaySfx(_sfxBoxBreak);                 // AU-008
         private void OnBarcodeScanned(DeliveryData data) => PlaySfx(_sfxBarcode);   // AU-008
         private void OnDebtIncreased(int amount) => PlaySfx(_sfxPenalty);           // AU-008
+        private void OnMoneySpent(int amount) => PlaySfx(_sfxCoin);                 // S-030 ③ 지출 효과음
         private void OnDeadlineWarned(DeliveryData data) => PlaySfx(_sfxDeadlineWarn); // AU-009
         private void OnPhoneRang(PhoneCall call) => PlaySfx(_sfxPhoneRing);            // AU-009
         private void OnSceneTransitionStarted(GameScene scene) => PlaySfx(_sfxSceneWhoosh); // AU-009

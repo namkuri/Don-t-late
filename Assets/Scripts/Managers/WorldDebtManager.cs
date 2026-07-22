@@ -82,11 +82,12 @@ namespace DontLate
             return gained;
         }
 
-        /// <summary>일반 지출(자판기·가구) — 잔액 부족이면 false.</summary>
+        /// <summary>일반 지출(자판기·가구) — 잔액 부족이면 false. 성공 시 MoneySpent 통지 (S-030 ③ 차감 연출).</summary>
         public bool TrySpend(int won)
         {
             if (won <= 0 || _gameState.money < won) return false;
             _gameState.money -= won;
+            WorldEvents.RaiseMoneySpent(won);
             return true;
         }
 

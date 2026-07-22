@@ -70,5 +70,6 @@ namespace DontLate
     {
         public string furnitureId;
         public Vector3 position;
+        public float rotationY; // S-030 ③ — R 회전 각도 보존
     }
 }

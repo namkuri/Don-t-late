@@ -55,6 +55,8 @@ namespace DontLate
         private TMP_Text _investLabel;
         private TMP_Text _bankLabel;
         private TMP_Text _furnitureLabel;
+        private RectTransform _furnitureListContent; // S-030 ③ 인벤토리 스크롤 내용
+        private string _furnitureInvSignature;       // 행 재구축 판정 (스크롤 리셋 방지)
 
         // ── 수명주기 ─────────────────────────────────────────
 
@@ -441,8 +443,35 @@ namespace DontLate
         {
             GameObject screen = NewScreen(Screen.Furniture);
             _furnitureLabel = MakeText(screen.transform, "Info", "", 22f, Color.white, TextAlignmentOptions.TopLeft);
-            Anchor(_furnitureLabel.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 0f), 150f);
+            Anchor(_furnitureLabel.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 0f), 64f);
 
+            // S-030 ③: 보유 인벤토리 스크롤 영역 — 늘어나도 하단 구매 버튼과 안 겹친다.
+            GameObject viewport = new GameObject("InvViewport", typeof(RectTransform));
+            viewport.transform.SetParent(screen.transform, false);
+            RectTransform vpRect = (RectTransform)viewport.transform;
+            vpRect.anchorMin = new Vector2(0f, 0.4f);
+            vpRect.anchorMax = new Vector2(1f, 1f);
+            vpRect.offsetMin = new Vector2(4f, 0f);
+            vpRect.offsetMax = new Vector2(-4f, -70f);
+            Image vpBg = viewport.AddComponent<Image>(); // 스크롤 드래그 타겟
+            vpBg.color = new Color(1f, 1f, 1f, 0.03f);
+            viewport.AddComponent<RectMask2D>();
+
+            GameObject content = new GameObject("InvContent", typeof(RectTransform));
+            content.transform.SetParent(viewport.transform, false);
+            _furnitureListContent = (RectTransform)content.transform;
+            _furnitureListContent.anchorMin = new Vector2(0f, 1f);
+            _furnitureListContent.anchorMax = new Vector2(1f, 1f);
+            _furnitureListContent.pivot = new Vector2(0.5f, 1f);
+            _furnitureListContent.sizeDelta = new Vector2(0f, 10f);
+
+            ScrollRect scroll = viewport.AddComponent<ScrollRect>();
+            scroll.viewport = vpRect;
+            scroll.content = _furnitureListContent;
+            scroll.horizontal = false;
+            scroll.scrollSensitivity = 24f;
+
+            // 구매 버튼 — 하단 고정 2×2 (스크롤 영역 밖).
             if (_furnitureCatalog == null) return;
             for (int i = 0; i < _furnitureCatalog.Length && i < 4; i++)
             {
@@ -451,16 +480,10 @@ namespace DontLate
                 Button buy = MakeButton(screen.transform, "Buy_" + item.furnitureId,
                     item.displayName + "\n₩" + item.price.ToString("N0"), () => BuyFurniture(item));
                 RectTransform rect = (RectTransform)buy.transform;
-                rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0f, 1f);
+                rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0f, 0f);
                 rect.sizeDelta = new Vector2(184f, 66f);
-                rect.anchoredPosition = new Vector2(6f + (i % 2) * 196f, -158f - (i / 2) * 76f);
+                rect.anchoredPosition = new Vector2(6f + (i % 2) * 196f, 84f - (i / 2) * 76f);
             }
-
-            Button place = MakeButton(screen.transform, "Place", "보유 가구 배치 (집에서)", () => BeginPlacement());
-            RectTransform placeRect = (RectTransform)place.transform;
-            placeRect.anchorMin = placeRect.anchorMax = placeRect.pivot = new Vector2(0.5f, 0f);
-            placeRect.sizeDelta = new Vector2(300f, 56f);
-            placeRect.anchoredPosition = new Vector2(0f, 8f);
         }
 
         // ── 앱 로직 (표시 + 매니저 위임) ─────────────────────
@@ -477,16 +500,21 @@ namespace DontLate
             RefreshFurniture();
         }
 
-        private void BeginPlacement()
+        // S-030 ③: 인벤토리에서 고른 가구로 배치 개시 — 고스트·R회전·ESC취소는 HomeFurniturePlacer 몫.
+        private void BeginPlacement(string furnitureId)
         {
-            if (_gameState.ownedFurnitureIds.Count == 0)
-            {
-                _furnitureLabel.text = "<color=#ff7359>보유 가구 없음 — 먼저 구매</color>";
-                return;
-            }
-            PendingPlacementId = _gameState.ownedFurnitureIds[0]; // 먼저 산 것부터
-            _furnitureLabel.text = "<color=#35e0c8>집 바닥을 클릭해 배치 — " + PendingPlacementId + "</color>";
-            OnToggle(default); // 폰 닫고 배치 모드
+            PendingPlacementId = furnitureId;
+            _furnitureLabel.text = "<color=#35e0c8>집 바닥 클릭=배치 · R=회전 · ESC=취소 — "
+                + KoreanName(furnitureId) + "</color>";
+            if (_open) OnToggle(default); // 폰 닫고 배치 모드
+        }
+
+        private string KoreanName(string furnitureId)
+        {
+            if (_furnitureCatalog != null)
+                foreach (FurnitureSO item in _furnitureCatalog)
+                    if (item != null && item.furnitureId == furnitureId) return item.displayName;
+            return furnitureId;
         }
 
         private void RefreshDelivery()
@@ -589,12 +617,49 @@ namespace DontLate
         private void RefreshFurniture()
         {
             if (_furnitureLabel == null) return;
-            var sb = new System.Text.StringBuilder("보유 인벤토리\n");
-            if (_gameState.ownedFurnitureIds.Count == 0) sb.Append("<color=#8a93a8>없음</color>\n");
-            foreach (string id in _gameState.ownedFurnitureIds) sb.Append("· ").Append(id).Append('\n');
-            sb.Append("배치됨 ").Append(_gameState.placedFurniture.Count).Append("개  잔액 ₩")
-              .Append(_gameState.money.ToString("N0"));
-            _furnitureLabel.text = sb.ToString();
+            _furnitureLabel.text = "보유 인벤토리 <color=#8a93a8>(클릭=배치)</color>\n배치됨 "
+                + _gameState.placedFurniture.Count + "개  잔액 <color=#35e0c8>₩"
+                + _gameState.money.ToString("N0") + "</color>";
+
+            // S-030 ③: 보유분을 종류별 묶음(한글명 ×개수) 행으로 재구축 — 클릭하면 그 가구로 배치 개시.
+            // 시계 틱마다 RefreshCurrent가 도는데 매번 재구축하면 스크롤이 리셋된다 — 변화 시에만.
+            if (_furnitureListContent == null) return;
+            string signature = string.Join(",", _gameState.ownedFurnitureIds);
+            if (signature == _furnitureInvSignature) return;
+            _furnitureInvSignature = signature;
+            for (int i = _furnitureListContent.childCount - 1; i >= 0; i--)
+                Destroy(_furnitureListContent.GetChild(i).gameObject);
+
+            var counts = new System.Collections.Generic.Dictionary<string, int>();
+            foreach (string id in _gameState.ownedFurnitureIds)
+                counts[id] = counts.TryGetValue(id, out int c) ? c + 1 : 1;
+
+            int row = 0;
+            foreach (var pair in counts)
+            {
+                string id = pair.Key;
+                Button rowButton = MakeButton(_furnitureListContent, "Inv_" + id,
+                    KoreanName(id) + " ×" + pair.Value + "   —   배치", () => BeginPlacement(id));
+                RectTransform rect = (RectTransform)rowButton.transform;
+                rect.anchorMin = new Vector2(0f, 1f);
+                rect.anchorMax = new Vector2(1f, 1f);
+                rect.pivot = new Vector2(0.5f, 1f);
+                rect.sizeDelta = new Vector2(-8f, 48f);
+                rect.anchoredPosition = new Vector2(0f, -4f - row * 54f);
+                row++;
+            }
+            if (row == 0)
+            {
+                TMP_Text empty = MakeText(_furnitureListContent, "Empty",
+                    "<color=#8a93a8>보유 가구 없음 — 아래에서 구매</color>", 22f, Color.white, TextAlignmentOptions.TopLeft);
+                RectTransform rect = empty.rectTransform;
+                rect.anchorMin = new Vector2(0f, 1f);
+                rect.anchorMax = new Vector2(1f, 1f);
+                rect.pivot = new Vector2(0.5f, 1f);
+                rect.sizeDelta = new Vector2(-16f, 40f);
+                rect.anchoredPosition = new Vector2(0f, -8f);
+            }
+            _furnitureListContent.sizeDelta = new Vector2(0f, 12f + row * 54f);
         }
 
         // ── 바코드 스캔 (택배앱 화면에서만) ──────────────────

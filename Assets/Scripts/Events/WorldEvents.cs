@@ -146,6 +146,15 @@ namespace DontLate
             DebtIncreased?.Invoke(amount);
         }
 
+        /// <summary>돈을 실제로 지출했을 때 (S-030 ③ — 자판기·가구 등 TrySpend 공용). HUD 플로팅·코인 SFX가 구독.</summary>
+        public static event Action<int> MoneySpent;
+
+        public static void RaiseMoneySpent(int amount)
+        {
+            Log("MoneySpent -" + amount);
+            MoneySpent?.Invoke(amount);
+        }
+
         /// <summary>Camp 복귀 정산 완료. WorldDebtManager가 발행, HUD·연출이 구독.</summary>
         public static event Action<DebtSettlement> DebtSettled;
 

@@ -1,11 +1,12 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace DontLate
 {
     /// <summary>
     /// 취급주의 상자 내구도 (S-019 ①). 낙하·투척 충돌 속도가 안전치를 넘으면 HP가 닳고,
     /// 0이 되면 파편 이펙트와 함께 터진다(주문은 cargo에 남아 구역 재진입 시 재스폰 — 파손 페널티는 시간).
-    /// 머리 위 HP바(월드 쿼드 2장)는 피해를 입은 뒤에만 보인다.
+    /// HP바는 풀해상 오버레이 캔버스(S-030 ① — 월드 쿼드는 480×270 픽셀화에 뭉개짐. S-021 주소 라벨과 동일 처방).
     /// </summary>
     [RequireComponent(typeof(Rigidbody))]
     public class BoxDurability : MonoBehaviour
@@ -16,8 +17,11 @@ namespace DontLate
         public void Initialize(TuningConfigSO tuning) => _tuning = tuning;
 
         private float _hp;
-        private Transform _barRoot;
-        private Transform _barFill;
+        private GameObject _barCanvas;
+        private RectTransform _barRoot;
+        private Image _barFill;
+        private const float BAR_W = 96f;
+        private const float FILL_W = 88f;
 
         private void Start()
         {
@@ -25,12 +29,21 @@ namespace DontLate
             BuildBar();
         }
 
-        // 상자가 물리로 구르면 자식인 바도 같이 기운다 — 매 프레임 세계 기준으로 세운다 (S-021 ①).
+        // 상자 머리 위 월드점을 스크린 좌표로 투영해 오버레이 바를 따라붙인다 (S-030 ①).
         private void LateUpdate()
         {
-            if (_barRoot == null || !_barRoot.gameObject.activeSelf) return;
-            _barRoot.position = transform.position + Vector3.up * 0.95f;
-            _barRoot.rotation = Quaternion.identity; // 카메라(-Z 고정 시선) 정면
+            if (_barCanvas == null || !_barCanvas.activeSelf) return;
+            Camera camera = Camera.main;
+            if (camera == null) return;
+            Vector3 screen = camera.WorldToScreenPoint(transform.position + Vector3.up * 0.95f);
+            if (screen.z < 0f) { _barRoot.gameObject.SetActive(false); return; }
+            _barRoot.gameObject.SetActive(true);
+            _barRoot.position = new Vector3(screen.x, screen.y, 0f);
+        }
+
+        private void OnDestroy()
+        {
+            if (_barCanvas != null) Destroy(_barCanvas);
         }
 
         private void OnCollisionEnter(Collision collision)
@@ -66,39 +79,49 @@ namespace DontLate
             Destroy(gameObject);
         }
 
-        // ── HP바 (월드 쿼드 — 카메라 -Z 고정이라 빌보드 불필요) ──
+        // ── HP바 (풀해상 오버레이 — 상자당 소형 캔버스, HUD(sort 10)보다 아래) ──
 
         private void BuildBar()
         {
-            _barRoot = new GameObject("HpBar").transform;
-            _barRoot.SetParent(transform, false);
-            _barRoot.localPosition = new Vector3(0f, 0.95f, 0f);
+            _barCanvas = new GameObject("HpBarCanvas");
+            Canvas canvas = _barCanvas.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 5;
 
-            Transform bg = GameObject.CreatePrimitive(PrimitiveType.Quad).transform;
-            Object.Destroy(bg.GetComponent<Collider>());
-            bg.SetParent(_barRoot, false);
-            bg.localScale = new Vector3(0.8f, 0.1f, 1f);
-            bg.GetComponent<Renderer>().material.color = new Color(0.05f, 0.05f, 0.08f, 1f);
+            _barRoot = new GameObject("HpBar", typeof(RectTransform)).GetComponent<RectTransform>();
+            _barRoot.SetParent(_barCanvas.transform, false);
+            _barRoot.sizeDelta = new Vector2(BAR_W, 12f);
 
-            _barFill = GameObject.CreatePrimitive(PrimitiveType.Quad).transform;
-            Object.Destroy(_barFill.GetComponent<Collider>());
-            _barFill.SetParent(_barRoot, false);
-            _barFill.localPosition = new Vector3(0f, 0f, -0.005f);
-            _barFill.localScale = new Vector3(0.76f, 0.07f, 1f);
-            _barFill.GetComponent<Renderer>().material.color = new Color(0.35f, 0.9f, 0.45f, 1f);
+            Image bg = new GameObject("Bg", typeof(RectTransform)).AddComponent<Image>();
+            bg.transform.SetParent(_barRoot, false);
+            bg.color = new Color(0.05f, 0.05f, 0.08f, 0.9f);
+            bg.raycastTarget = false;
+            RectTransform bgRect = bg.rectTransform;
+            bgRect.anchorMin = Vector2.zero;
+            bgRect.anchorMax = Vector2.one;
+            bgRect.offsetMin = bgRect.offsetMax = Vector2.zero;
 
-            _barRoot.gameObject.SetActive(false); // 무손상일 땐 숨김
+            _barFill = new GameObject("Fill", typeof(RectTransform)).AddComponent<Image>();
+            _barFill.transform.SetParent(_barRoot, false);
+            _barFill.color = new Color(0.35f, 0.9f, 0.45f, 1f);
+            _barFill.raycastTarget = false;
+            RectTransform fillRect = _barFill.rectTransform;
+            fillRect.anchorMin = new Vector2(0f, 0.5f);
+            fillRect.anchorMax = new Vector2(0f, 0.5f);
+            fillRect.pivot = new Vector2(0f, 0.5f);
+            fillRect.sizeDelta = new Vector2(FILL_W, 6f);
+            fillRect.anchoredPosition = new Vector2((BAR_W - FILL_W) * 0.5f, 0f);
+
+            _barCanvas.SetActive(false); // 무손상일 땐 숨김
         }
 
         private void RefreshBar()
         {
-            if (_barRoot == null) return;
+            if (_barCanvas == null) return;
             float ratio = Mathf.Clamp01(_hp / (_tuning != null ? _tuning.boxMaxHp : 100f));
-            _barRoot.gameObject.SetActive(true);
-            _barFill.localScale = new Vector3(0.76f * ratio, 0.07f, 1f);
-            _barFill.localPosition = new Vector3(-0.38f * (1f - ratio), 0f, -0.005f);
-            var renderer = _barFill.GetComponent<Renderer>();
-            renderer.material.color = ratio > 0.5f
+            _barCanvas.SetActive(true);
+            _barFill.rectTransform.sizeDelta = new Vector2(FILL_W * ratio, 6f);
+            _barFill.color = ratio > 0.5f
                 ? new Color(0.35f, 0.9f, 0.45f) : ratio > 0.25f
                     ? new Color(1f, 0.62f, 0.27f) : new Color(1f, 0.35f, 0.3f);
         }
