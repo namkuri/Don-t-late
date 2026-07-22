@@ -36,10 +36,16 @@ unity-cli test                        # EditMode 테스트
 unity-cli test --mode PlayMode
 unity-cli test --filter <namespace|class|full-test-name>   # 단일 테스트
 unity-cli exec "return Time.time;"    # 에디터 안에서 C# 즉시 실행
-unity-cli screenshot --view game      # 결과 눈으로 확인
+unity-cli screenshot --view game      # 결과 눈으로 확인 (⚠ 오버레이 UI 비포착 — 카메라 렌더만)
+# 오버레이 UI 포함 캡처 (S-027 확립): Play 중에 실행 — 프로젝트루트/Screenshots/에 떨어진다.
+unity-cli exec 'UnityEngine.ScreenCapture.CaptureScreenshot("Screenshots/x.png"); return "ok";'
 ```
 
 **셀프 검증 3종**(CODE_RULES §8)의 실제 명령 = `editor refresh --compile` → `console` 0건 → `editor play --wait` + `screenshot`. 이 3종 통과 전에는 push 금지.
+
+**시각 산출물 납품 규칙 (D-063)**: 아트 반입·UI·연출·씬 룩 등 눈으로 판정하는 납품은 검증 캡처를
+`python scripts/discord_notify.py "S-0XX 설명" --file Screenshots/x.png`로 #클로드 채널에 첨부 발신한다
+(팀원이 Unity 없이 결과를 본다). 커밋 시 발주📦·결과✅·INBOX🔔 텍스트 알림은 post-commit 훅이 자동 발신.
 
 ## Git 경계 (병합 지옥 방지 — 위반 주의)
 

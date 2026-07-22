@@ -487,6 +487,19 @@
 
 실패시: [BLOCKED]. JUICE 표에 없는 연출을 창작하지 않는다(사람 감각 영역).
 
+### 결과 · 2026-07-22 20:28 (리드 15분 · 정수 공장)
+
+- **WorldJuiceManager 신규** — DeliveryCompleted: 플래시(α0.35→0 · 0.18s)+체크팝 "✓ +₩5,000" 펀치스케일+히트스톱 0.05s+미세 셰이크 / DeliveryFailed: 레드 비네트 2펄스(0.7s)+히트스톱 0.1s+셰이크(소). 오버레이 캔버스는 런타임 자체 조립(sortOrder 80 — PhoneView 방식, 빌더 diff 최소화).
+- Play 실측(발화 프레임 동기 관찰): 완료 → `flashAlpha=0.333 popActive=True popText=[✓ +₩5,000] timeScale=0` · 2초 후 `flashAlpha=0 popActive=False timeScale=1` 복원. 실패 → `vignetteAlpha 램프업 timeScale=0 shakeApplied=-0.0252` · 종료 후 `shakeTarget=cleared camY=1.0000` 원위치.
+- **셰이크는 Y축 전용** — CameraFollowX가 X만 쓰고 Y·Z를 보존하므로 충돌이 구조적으로 없음(발주서의 "LateUpdate 이후 오프셋" 취지를 실행 순서 무관 방식으로 충족).
+- **FadeScreen** — DeadlineWarned 구독 추가, 발화 시 컷인 `before=False → after=True` 실측. 기존 DeliveryFailed 배선은 유지(최소 diff).
+- **PlayerEffectsManager 신규** — 이동 먼지(이동+접지 시 rate 8)·드링크 버스트(RecoverStamina 훅, 허브 경유). 파티클 코드 조립(프리팹 없음). 재조립 후 District·Camp 씬 직렬화 확인(guid 각 1건) — Home·Travel은 플레이어 자체가 없어 해당 없음.
+- CoreSceneBuilder BuildManagers 1블록 추가(Juice + 폰트 주입) — Core.unity 직렬화 확인.
+- 감각값 전부 [SerializeField](완료 7·실패 6·먼지 4·버스트 2). 매니페스트 직교: 두 파일 다 매니페스트 P4 기재분 — 신규 발명 없음.
+- **스킵 2건(사람 게이트)**: ① "미세 줌인" — ARCHITECTURE §2 동결 "줌 변경 금지(밀도 붕괴)"와 충돌 ② "진동" — 게임패드 럼블인데 키보드/WebGL 타겟에 장치 없음.
+- 콘솔 에러·워닝 0. 기존 워닝 2건(SceneFlowUIBuilder.cs:271 CS0618 — main pull분, 본 발주 범위 외). 참고: Overlay 캔버스는 unity-cli 스크린샷(카메라 캡처)에 안 찍혀 시각 확인은 상태 실측으로 대체.
+- 참고: 로컬에서 Unity가 `Greybox.unity.meta`를 자동 삭제함(씬 본문 없는 meta — 커밋 정책 D-061 후속 검토 대상, 본 커밋에 포함 안 함).
+
 ---
 
 ## S-024 · 발주 2026-07-22 19:10 → 정수 (품질 레인 — EditMode 테스트 + TECH_SPEC 오디오 절)
@@ -504,3 +517,74 @@
 수용기준: ① 컴파일 ② `unity-cli test` 전체 green ③ 테스트가 실제 경계값을 물어뜯는지(항상 통과하는 무의미 검증 금지 — CODE_RULES §8 위장 금지) ④ freeze-guard 통과.
 
 실패시: [BLOCKED].
+
+### 결과 · 2026-07-22 20:39 (리드 10분 · 정수 공장)
+
+- **테스트 4모듈 23케이스 — `unity-cli test --filter DontLate.Tests` 전체 green (23/23·failed 0)**.
+  - WorldDebtSettleTests 4: 잔액<빚 전액 상환 · 잔액>빚 초과 보존 · 0원 무변 · DebtSettled 페이로드=반환값 일치.
+  - WorldDebtCoinTests 7: CoinPrice 결정론 · **변동성 100배에서도 바닥 100원 클램프 실발동 검증**(min==100 확인) · BuyCoin 잔액부족/0원이하 거부+상태불변 · 매수 수량 수식 일치 · SellAllCoin 0보유/전량매도.
+  - CampOrderBoardTests 8: IsConsumed 분기 5(완료/마감경과+스캔=소진/**미접촉=유지**/적재중=유지/마감전=유지) · GenerateOrder 시리얼 증가(200→201, nextOrderSerial 202) · 마감 1435 캡+240분 최소 오프셋 · 목적지 풀.
+  - DeliveryBarcodeTests 4: 첫 스캔 등록 · 중복 거부+목록 불변 · **이벤트 중복 발행 금지**(2회 스캔에 1회 발행) · IsScanned 정합.
+- **경로 편차 (기술적 강제)**: 발주서 지정 `Scripts/Tests/EditMode/`+asmdef는 **불성립** — 게임 코드가 전부 predefined `Assembly-CSharp`(프로젝트 asmdef 0개)이고 asmdef는 predefined 어셈블리를 참조할 수 없다. 대체 = `Scripts/Editor/Tests/` 무asmdef → `Assembly-CSharp-Editor`(게임 코드 자동 참조·nunit 자동 참조·에디터 전용=빌드 제외 규칙도 충족). Scripts 전체 asmdef화는 구조 변경이라 관제 게이트로 넘김.
+- private 접근: `TestSupport` 리플렉션 헬퍼 1파일(필드 주입·메서드 호출). 에디터 모드는 Awake/OnEnable 미실행 — 싱글톤·이벤트 구독 간섭 없음(이벤트 검증은 구독 후 finally 해제).
+- **TECH_SPEC 오디오 절 추가** — 표 7행(믹스 0.5/0.7 · BGM: Vorbis q30+Compressed In Memory / SFX: q70+**Decompress On Load**+모노 · Streaming 금지 · 리스너 Core 소유 · BGM 슬롯/플레이리스트 · 반입 계약). 기존 줄 무수정(직교 추가만). 로드타입은 `AudioImportPostprocessor` 실코드 대조로 확정(초안에서 SFX를 Compressed In Memory로 잘못 적었다가 교정).
+- 컴파일 통과 · 콘솔 에러/워닝 0.
+
+---
+
+## S-025 · 발주 2026-07-22 21:42 → ClaudeCode (본 세션 실행 — UI 실아트 5종 스왑 소켓)
+
+요구 (님 원문 요약): 민지 UI 이미지 5종(chat_box·chat_box_box·logo·man·sub_logo) 도착 — 플레이스홀더 적용. 드라이브 직접 다운로드 승인(권한 401로 대기 — 소켓 선시공). 라이선스 = 전량 ChatGPT 생성(민지 구두 계약).
+
+수용기준: Art/UI에 bom_id 파일이 있으면 빌더가 스프라이트 사용·없으면 현행 코드 폴백(다이얼로그 박스·화살표, 타이틀 로고·맨·서브) · 파일 도착 후 재조립로 즉시 반영 · 라이선스 등재.
+
+### 결과 · 2026-07-22 21:44 (리드 2분 — 소켓분 선납품, 실아트 대기)
+- 스왑 소켓 5종 시공: `CoreSceneBuilder.LoadUISprite(bomId)` 공용 로더(Art/UI/<bomId>.png — Sprite 타입 자동 교정) 신설.
+  다이얼로그 박스(ui_dialogue_box — 실아트 시 테두리·네이비 폴백 은퇴, 내부는 투명 클릭 타겟화) · 진행 화살표(ui_dialogue_arrow — ▼ 텍스트 폴백) · 타이틀 로고(ui_title)·서브(ui_title_sub)·늦지마맨(ui_title_man — 좌하 배치, 없으면 요소 생략).
+- 드라이브 다운로드 2회 시도 **401** — 폴더가 "링크 공개"가 아님. 공유 변경 대기(파일 도착 → Art/UI 배치 → ★ All Scenes 재조립이면 반영 완료).
+- 라이선스 접수: UI 전량 ChatGPT 생성(민지 구두 계약) — 반입 시 등재 예정.
+- 검증: 컴파일 ○ 콘솔 0 ○ (폴백 경로라 현행 화면 무변화 확인).
+
+---
+
+## S-026 · 발주 2026-07-22 21:53 → ClaudeCode (본 세션 실행 — 아트팀 발주 4건 + UI 실아트 적용)
+
+요구 (민지 원문 — 디스코드):
+- 배경이 뭐든 로고에 비해서 명도 50% 낮추기
+- 첫 채팅 ui (어이 총각!!) 할 때 흔들리는 효과 (예시는 너무 과격함)
+- 채팅바 ui ▼ 대신 박스 깜박거리게
+- 인트로에서 지각압박 어쩌고 반짝이는 효과
++ 님: 드라이브 UI 6종(chat_box·chat_box_box·logo·man·sub_logo·run_button) 다운로드·적용. 라이선스 = ChatGPT 생성(민지 구두 계약).
+
+수용기준: 타이틀 배경 50% 스크림 · 대화 시작 시 은은한 셰이크 · 진행 표시 = 상자 아이콘 깜박 · 서브 로고 반짝 · 실아트 6종 반영 스크린샷.
+
+### 결과 · 2026-07-22 21:59 (리드 6분)
+- 실아트 6종 반입·적용: 로고·서브·늦지마맨·시작 버튼(타이틀 4종 art 확인) + 다이얼로그 박스·진행 상자(art 확인). 라이선스 = ChatGPT 생성(민지 구두 계약) — assets_manifest 파일별 등재.
+- 아트팀 발주 4건: ① 타이틀 배경 = 검정 50% 스크림(로고 대비 명도 하향) ② 대화 시작 시 **은은한 셰이크**(5px·0.28초 펄린 감쇠 — "과격 금지" 반영) ③ 진행 표시 = ▼ 폐지 → **상자 아이콘 알파 깜박**(UIPulse 0.3~1·5Hz) ④ 서브 로고 **반짝**(0.55~1·2.2Hz).
+- 실사고 2건 회수: cp 반입 후 Refresh 없이 재조립하면 미임포트로 폴백 잔존 · textureType=Sprite여도 **spriteImportMode=Multiple+슬라이스 0이면 서브에셋 없음** → 로더가 Single까지 교정.
+- 직교 추가: `UI/UIPulse.cs`. 검증: 컴파일 ○ 콘솔 0 ○ (오버레이 UI는 스크린샷 비포착 — 오브젝트 검증, 시각 확인은 님 Play).
+
+---
+
+## S-027 · 발주 2026-07-22 22:11 → ClaudeCode (본 세션 실행 — UI 피드백 7건 + 민지 볼드 요청)
+
+요구 (님 원문):
+1. 대화창 찌그러짐 — 이미지 원본 비율을 살리는 쪽으로 맞출 것
+2. 대화창 이름·텍스트 볼드 처리 (민지: "이름이랑 내용 볼드처리랑 타이핑처리하고싶어요" — 타이핑은 기시공)
+3. 흔들림 효과 너무 미미해서 육안 확인 안 됨 — 강화
+4. 오버레이 UI도 스크린샷 도구에 찍을 방법 없는지?
+5. 진행 표시 상자가 대화창 밖에 있음 — 민지 목업처럼 안쪽 배치
+6. 시작화면 로고·버튼 등 화면 점유 비율을 민지 목업처럼
+7. "지각 압박 배달 생존기" — 알파 반짝이 아니라 **사선 광이 왼쪽→오른쪽으로 흘러가는** 효과
+
+수용기준: 대화창 원본 비율 · 이름+본문 Bold · 셰이크 육안 확인 가능 · 오버레이 포함 스크린샷 확보 방법 확립 · 상자 아이콘 대화창 테두리 안쪽 · 타이틀 점유율 목업 근사 · 서브 로고 사선 시머 스윕.
+
+### 결과 · 2026-07-22 22:23 (리드 12분)
+- ① 원본 비율: 원흉 = 아트 png의 **투명 여백**(다이얼로그 박스는 1672×941 캔버스 중 실내용 1612×477) — 6종 전부 알파 바운즈로 크롭 후, 박스 렉트를 크롭 비율(3.38:1) 그대로 1350×400으로 재시공. 찌그러짐 소멸 확인.
+- ② 볼드: 이름·본문 `FontStyles.Bold` + 이름은 명찰 탭 정중앙 정렬(탭 좌표를 크롭 아트에서 환산). 민지 요청분 중 타이핑은 기시공.
+- ③ 셰이크: 5px·0.28s → **18px·0.5s** (민지 예시보다 절제, 육안 확인 가능선).
+- ④ 오버레이 캡처 방법 확립: Play 중 `ScreenCapture.CaptureScreenshot` exec — 오버레이 포함 풀 게임뷰가 찍힌다. CLAUDE.md unity-cli 블록에 영구 등재. 본 건 검증도 이 방법으로 수행(타이틀·대화창 캡처 확보).
+- ⑤ 상자 아이콘: 테두리 안쪽 흰 영역 우하단(-95, 62)으로 — 줌 캡처로 민지 목업 배치 일치 확인.
+- ⑥ 타이틀 점유율: 목업 실측(로고 46%·서브 43%·버튼 23% 폭) 반영 — 크롭 덕에 렉트=실표시 크기. 캡처로 목업 근사 확인.
+- ⑦ 시머 스윕: `UI/UIShine.cs` 신설 — Mask 알파 클립 스텐실로 **로고 픽셀 위로만** 사선(18°) 광 스트립이 좌→우로 0.9s 스윕, 1.6s 간격 반복. 알파 펄스(UIPulse)는 서브 로고에서 은퇴. 캡처에 "지각" 글자 위를 지나는 광 포착.
+- 검증: 컴파일 ○ 콘솔 0 ○ Play 캡처 3장(타이틀·대화창·상자 줌). 직교 추가: `UI/UIShine.cs`.

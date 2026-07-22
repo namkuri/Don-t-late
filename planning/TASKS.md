@@ -1,5 +1,10 @@
 # TASKS.md — 발주 대장 (mode: PRETASK · milestone: M1 뼈대)
 
+> ⚠ 실태 공지 (2026-07-22 회고 [retrospective-2026-07-22.md](retrospective-2026-07-22.md) §4-1):
+> 실발주 대장은 [orders/](orders/) 도메인 파일(system·audio·art·content)로 이동했다 — 36건 전량 완료,
+> 집계는 [calibration.md](calibration.md). 아래 M1 표의 todo 다수는 이미 실태 해소됨(예: M1-11 씬 단독
+> Play → EnsureCoreLoaded.cs로 구조 해결). 행별 done 전이는 판정 주체 확인 후 처리 — 이 표는 이력으로만 유지.
+
 > 상태: `todo` → `doing` → `review` → `done` / `blocked(원인)` / `hold(의존)`
 > **review→done 전이는 판정 주체만** (기계 기준·reviewer·사람 — HARNESS §6). 작성자 자기보고는 제출일 뿐.
 > WIP(doing) ≤ 5.

@@ -48,20 +48,83 @@ namespace DontLate.EditorTools
             Scene scene = EditorSceneManager.OpenScene(SCENES_ROOT + "/Main.unity", OpenSceneMode.Single);
             Transform root = CreateFlowCanvas().transform;
 
-            Image bg = CreateImage(root, "Bg", NAVY);
+            // 아트팀 발주 (S-026): "배경이 뭐든 로고보다 명도 50% 낮게" — 반투명 검정 스크림.
+            Image bg = CreateImage(root, "Bg", new Color(0f, 0f, 0f, 0.5f));
             StretchFull(bg.rectTransform);
             bg.raycastTarget = true; // 타이틀 배경 — 뒤 씬으로의 클릭 통과 차단
 
-            TMP_Text title = CreateText(root, "Title", "늦지마!!", font, 180f, AMBER,
-                TextAlignmentOptions.Center, FontStyles.Bold);
-            AnchorCentered(title.rectTransform, new Vector2(0f, 130f), new Vector2(1500f, 280f));
+            // 타이틀 로고 — 실아트(ui_title) 있으면 이미지, 없으면 TMP 폴백 (S-025 스왑 계약).
+            Sprite logoArt = CoreSceneBuilder.LoadUISprite("ui_title");
+            if (logoArt != null)
+            {
+                Image logo = CreateImage(root, "Title", Color.white);
+                logo.sprite = logoArt;
+                logo.preserveAspect = true;
+                // S-027 ⑥: 민지 목업 점유율 — 로고 폭 ≈ 화면 46% (크롭 아트 1.74:1이라 렉트=실표시).
+                AnchorCentered(logo.rectTransform, new Vector2(0f, 240f), new Vector2(900f, 518f));
+            }
+            else
+            {
+                TMP_Text title = CreateText(root, "Title", "늦지마!!", font, 180f, AMBER,
+                    TextAlignmentOptions.Center, FontStyles.Bold);
+                AnchorCentered(title.rectTransform, new Vector2(0f, 130f), new Vector2(1500f, 280f));
+            }
 
-            TMP_Text sub = CreateText(root, "Subtitle", "지각 압박 배달 생존기", font, 48f, Color.white,
-                TextAlignmentOptions.Center, FontStyles.Normal);
-            AnchorCentered(sub.rectTransform, new Vector2(0f, -30f), new Vector2(1200f, 80f));
+            // 서브 로고 — ui_title_sub.
+            Sprite subArt = CoreSceneBuilder.LoadUISprite("ui_title_sub");
+            if (subArt != null)
+            {
+                Image sub = CreateImage(root, "Subtitle", Color.white);
+                sub.sprite = subArt;
+                sub.preserveAspect = true;
+                // S-027 ⑥⑦: 목업 폭 ≈ 43% + 알파 펄스 폐지 → 사선 광 좌→우 시머 스윕(UIShine).
+                AnchorCentered(sub.rectTransform, new Vector2(0f, -80f), new Vector2(830f, 104f));
+                sub.gameObject.AddComponent<UIShine>();
+            }
+            else
+            {
+                TMP_Text sub = CreateText(root, "Subtitle", "지각 압박 배달 생존기", font, 48f, Color.white,
+                    TextAlignmentOptions.Center, FontStyles.Normal);
+                AnchorCentered(sub.rectTransform, new Vector2(0f, -30f), new Vector2(1200f, 80f));
+            }
 
-            CreateButton(root, "StartButton", "시작", GameScene.Home, font, CYAN,
-                new Vector2(0.5f, 0f), new Vector2(0f, 170f), new Vector2(440f, 118f), 48f);
+            // 늦지마맨 일러스트 — ui_title_man (좌하, 시작 버튼과 비겹침). 없으면 요소 자체 생략.
+            Sprite manArt = CoreSceneBuilder.LoadUISprite("ui_title_man");
+            if (manArt != null)
+            {
+                Image man = CreateImage(root, "TitleMan", Color.white);
+                man.sprite = manArt;
+                man.preserveAspect = true;
+                RectTransform manRect = man.rectTransform;
+                manRect.anchorMin = manRect.anchorMax = manRect.pivot = new Vector2(0f, 0f);
+                manRect.sizeDelta = new Vector2(380f, 576f); // 크롭 아트 0.66:1 정합 (S-027 ⑥)
+                manRect.anchoredPosition = new Vector2(60f, 40f);
+            }
+
+            // 시작 버튼 — 실아트(ui_start_button — "▶시작" 자체 텍스트 포함) 있으면 이미지 버튼 (S-026).
+            Sprite startArt = CoreSceneBuilder.LoadUISprite("ui_start_button");
+            if (startArt != null)
+            {
+                GameObject startGo = new GameObject("StartButton", typeof(RectTransform));
+                startGo.transform.SetParent(root, false);
+                Image startImage = startGo.AddComponent<Image>();
+                startImage.sprite = startArt;
+                startImage.preserveAspect = true;
+                RectTransform startRect = (RectTransform)startGo.transform;
+                startRect.anchorMin = startRect.anchorMax = startRect.pivot = new Vector2(0.5f, 0f);
+                startRect.sizeDelta = new Vector2(460f, 222f); // 목업 폭 ≈ 23%, 크롭 아트 2.07:1 (S-027 ⑥)
+                startRect.anchoredPosition = new Vector2(0f, 90f);
+                Button startButton = startGo.AddComponent<Button>();
+                startButton.targetGraphic = startImage;
+                SceneAdvanceButton advance = startGo.AddComponent<SceneAdvanceButton>();
+                SetField(advance, "_target", GameScene.Home);
+                EditorUtility.SetDirty(advance);
+            }
+            else
+            {
+                CreateButton(root, "StartButton", "시작", GameScene.Home, font, CYAN,
+                    new Vector2(0.5f, 0f), new Vector2(0f, 170f), new Vector2(440f, 118f), 48f);
+            }
 
             EditorSceneManager.SaveScene(scene, SCENES_ROOT + "/Main.unity");
         }

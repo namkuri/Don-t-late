@@ -1,7 +1,7 @@
 # INBOX.md — 남규 처리함 (사람이 볼 파일은 이거 하나)
 
 > 규칙: 관제가 사람 손이 필요한 모든 것을 여기 모아 유지. 처리하면 답만 주면 됨 — 정리는 관제가.
-> 해설: [open-questions.md](open-questions.md) · 갱신: 2026-07-21 19:06 (표 깨짐 수리 + 판정 대반영).
+> 해설: [open-questions.md](open-questions.md) · 갱신: 2026-07-22 22:35 (중간점검 2차 — [retrospective-2026-07-22.md](retrospective-2026-07-22.md) · R12 묶음 검증 메뉴 신설).
 
 ## ① 판정 대기 (review)
 
@@ -9,6 +9,7 @@
 |---|---|---|---|
 | R16 | **SFX 6세대(동물의 숲 토이 톤) 19종 — 관제 컷 판정 요청** (2026-07-22 정수). Director 톤 확정("이걸로 확정"). 착지 `Assets/_intake/ElevenLabs/SFX/` · CREDITS·seed 완비 · 반입 PR은 feature/jjs-sfx (2~6세대 — PR #10은 1세대에서 조기 머지됨). 판정 후 절차: ① GAME-SFX-RULES §6 체크리스트 청취 ② 통과분 `Assets/Audio/SFX/` 승격+ignore 해제 커밋(D-042 — 현 main 승격분은 1세대라 교체 필요) ③ BOM §8 신규 7종 행 추가+JUICE 대응(AU-008 근거) ④ GAME-SFX-RULES §1 앵커 개정(현행 "retro pixel-art" → 토이 톤) | [orders/audio.md](orders/audio.md) AU-007/008 |
 | R11 | 간판 발광판 | **재발주됨** (2026-07-22) — 처방 확정 [decisions.md](decisions.md) D-051: 발광판 폐지 → 간판 머티리얼 이미시브 스왑(S-004, 시스템) + 간판 분리 익스포트(아트 공통 규격 승격) | [orders/system.md](orders/system.md) S-004 |
+| R12 | **묶음 플레이 검증 메뉴** (한 번의 플레이로 4건 마감): ① 하우징 — 폰 가구 앱에서 1개 구매·바닥 클릭 배치 ② 늦코인 — 매수→매도 1왕복 ③ 전화 미니게임 1판 ④ S-027 모션 축 — 대화 시작 셰이크·타이틀 서브 로고 시머가 눈에 들어오는지 | 대기 (2026-07-22 회고 §4-3 — 기계 검증은 끝났으나 재미·감각 판정 미실행) | [retrospective-2026-07-22.md](retrospective-2026-07-22.md) §2 매트릭스 🔴 3건 |
 
 ## ② 결정 대기
 

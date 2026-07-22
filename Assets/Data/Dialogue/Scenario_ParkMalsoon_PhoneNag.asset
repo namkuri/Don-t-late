@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a5e3ef5ec1efc4b4397e1c503ec59084, type: 3}
+  m_Name: Scenario_ParkMalsoon_PhoneNag
+  m_EditorClassIdentifier: Assembly-CSharp::DontLate.DialogueScenarioSO
+  lines:
+  - speaker: "\uBC15\uB9D0\uC21C"
+    text: "\uCD1D\uAC01!! \uACE0\uAC1D\uB2D8 \uB610 \uB178\uBC1C\uB300\uBC1C\uC774\uC57C!
+      \uC9C0\uAE08 \uC5B4\uB514\uCBE4\uC774\uC57C?!"
+    portrait: {fileID: 0}
+  - speaker: "\uBC15\uB9D0\uC21C"
+    text: "\uB0B4\uAC00 \uB2EC\uB798\uBCFC \uD14C\uB2C8\uAE4C \uC606\uC5D0\uC11C
+      \uC7A5\uB2E8 \uC798 \uB9DE\uCDB0!"
+    portrait: {fileID: 0}
+  - speaker: "\uBC15\uB9D0\uC21C"
+    text: "\uBC15\uC790 \uB193\uCE58\uBA74 \uBC8C\uAE08\uC774\uC57C! \uC900\uBE44\uD574!"
+    portrait: {fileID: 0}

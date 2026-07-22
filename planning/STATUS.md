@@ -6,15 +6,14 @@ t0: "2026-07-20 17:09"     # 1차 관제 세션 기동 (KST)
 deadline: "2026-08-10"     # M5 제출 마감 (D-21)
 milestone: M2              # 🔒 Q1 동결 선언(D-037, 2026-07-21) — 국면 1 공식 종료
 phase: 2                   # PROCESS 국면 2 · 양산 — 다음 게이트 Q2(BOM 동결: fab 태그 보완+eta 합산)
-stage: "M2 진입 — 민지 물량 대기(H7·A-001·텍스처·idle) + P3 스크립트 잔여 8종 + S-003 공간 정합 수정"
+stage: "M2 — 매니페스트 34/34 완주 · 발주 36건 전량 완료(S-027까지) · PR#4~10 머지 · 잔여=민지 반입 대기(H8·H9·H12)+WebGL 회귀"
 session_host: WINDOWS_LOCAL   # unity-cli 직접 실행 가능 (2026-07-20 17:23 전환)
 pending_decisions:
-  - "Q1 게이트: ARCH/STYLE/TECH_SPEC 동결 승인 — 루프 완주했으므로 사거리 진입"
   - "B-4 캐릭터 도구·리그 — M0-04 Meshy 관통 실측 후에 결정 (그 전엔 보류)"
+  - "Q2 게이트: BOM 동결 (fab 태그 보완+eta 합산) — 발주 전량 완료로 사거리 진입"
 blocked:
-  - "M0-03 WebGL→Pages 관통 미검증 (제출 규정 직결 · 긴급도: 높음)"
-  - "CONNECTIONS #2~#10 미검증 — M2 양산 진입 전 관통 필요"
-last_checkpoint: "2026-07-20 17:4x — 그레이박스 루프 완주 검증"
+  - "M0-03 WebGL→Pages 관통 미검증 (제출 규정 직결 · 긴급도: 높음) — ⚠ 회고 2회 연속 1순위 백로그"
+last_checkpoint: "2026-07-22 22:33 — 중간점검 2차 (retrospective-2026-07-22.md — 백로그 델타 5✅1△1🔴)"
 clock_note: "정상 — 제출까지 21일"
 ```
 

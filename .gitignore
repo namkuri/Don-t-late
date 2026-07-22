@@ -125,6 +125,14 @@ InitTestScene*.unity*
 !/[Aa]ssets/[Aa]udio/BGM/Seoul_Pixel_Breeze_2026-07-19T103406.wav
 !/[Aa]ssets/[Aa]udio/BGM/Seoul_Pixel_Breeze_2026-07-19T103406.wav.meta
 
+# 오디오 반입 격리 (HARNESS §9 착지) — 검역 전 원본은 저장소에 넣지 않는다.
+# 재현 정보는 planning/assets_manifest.md + scripts/audio/prompts/ 가 보유.
+/_audio_intake/
+
+# Python 스크립트 캐시 (scripts/)
+__pycache__/
+*.pyc
+
 # npx skills 로컬 설치물 (mattpocock/skills — grilling 계열)
 /.agents/
 /.claude/skills/grilling/
@@ -140,3 +148,7 @@ __pycache__/
 
 # local secrets
 .elevenlabs_key
+
+# AU-007·008 판정 통과 SFX — 실음원 전량 커밋 (D-042 절차: 통과분만 해제)
+!/[Aa]ssets/[Aa]udio/SFX/*.wav
+!/[Aa]ssets/[Aa]udio/SFX/*.wav.meta
