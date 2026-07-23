@@ -9,16 +9,10 @@
 |---|---|---|---|
 | R16 | **SFX 6세대(동물의 숲 토이 톤) 19종** — ①② 완료 (2026-07-22 23:20): ① Director 청취 판정 **19종 통과**("검증결과 괜찮네" — 체크리스트 청취) ② `Assets/Audio/SFX/` 6세대 승격 커밋(PR #11, main .meta 보존). **잔여 = 관제 ③④**: ③ BOM §8 신규 7종 행 추가+JUICE 대응(AU-008 근거) ④ GAME-SFX-RULES §1 앵커 개정("retro pixel-art" → 토이 톤). 부기: 미배선 8종(deadline_warn·phone_ring·rhythm_hit/miss·scene_whoosh·footstep·drink·amb_night) 배선은 AU-007 카드1대로 관제 몫 | [orders/audio.md](orders/audio.md) AU-007/008 결과 7 · PR #11 |
 | R11 | 간판 발광판 | **재발주됨** (2026-07-22) — 처방 확정 [decisions.md](decisions.md) D-051: 발광판 폐지 → 간판 머티리얼 이미시브 스왑(S-004, 시스템) + 간판 분리 익스포트(아트 공통 규격 승격) | [orders/system.md](orders/system.md) S-004 |
-| R12 | **묶음 플레이 검증 메뉴** (한 번의 플레이로 4건 마감): ① 하우징 — 폰 가구 앱에서 1개 구매·바닥 클릭 배치 ② 늦코인 — 매수→매도 1왕복 ③ 전화 미니게임 1판 ④ S-027 모션 축 — 대화 시작 셰이크·타이틀 서브 로고 시머가 눈에 들어오는지 | 대기 (2026-07-22 회고 §4-3 — 기계 검증은 끝났으나 재미·감각 판정 미실행) | [retrospective-2026-07-22.md](retrospective-2026-07-22.md) §2 매트릭스 🔴 3건 |
 
 ## ② 결정 대기
 
-| # | 결정 | 선택지 | 참조 |
-|---|---|---|---|
-| B-7 | **구역 컨셉 확정** — 아트 양산 전체의 게이트 | (a) 기존 2구역(행복빌라·달빛맨션)에 컨셉만 입힘 (추천 — 시스템 무변경) (b) 3구역 신설(먹자골목 등 — Travel 노드+주문 풀 확장 1발주) | [art-roadmap.md](art-roadmap.md) §2-1 |
-| B-8 | 구역 선택 화면 — 2D 일러스트 맵+UI (추천) vs 3D 미니어처 | 〃 §2-2 | [art-roadmap.md](art-roadmap.md) |
-
-**그 외 없음** — B-6까지 전량 해소. 다음 결정은 Q2(BOM 동결)에서 발생.
+**현재 없음** — B-7·B-8은 D-064~066으로 해소 (2026-07-23). 다음 결정은 Q2(BOM 동결). — B-6까지 전량 해소. 다음 결정은 Q2(BOM 동결)에서 발생.
 
 ## ③ 손 작업·외부 대기
 
@@ -28,9 +22,12 @@
 | H8 | 텍스처 재전송 2건: ~~가로등~~(Trellis2로 대체됨)·캐릭터 — FBX **Embed Media** 켜기 (캐릭터는 쿠팡 로고 제거 겸) | 민지 | [assets_manifest.md](assets_manifest.md) |
 | H9 | 애니 클립: **idle**(급함 — 정지 시에도 걸음) · jump·pickup·carry | 민지(Mixamo) | [BOM.md](BOM.md) §1 |
 | H4 | RunPod Trellis 관통 → 소품 1개 실측 | 민지 | [TASKS.md](TASKS.md) M0-04 |
+| H14 | **Mixamo 애니 1차 3종** — idle(급함·H9 승계)·짐 들고 걷기(carry walk)·침대 기상(getting up). Humanoid·`A_chr_courier_<동작>.fbx` 명명, 반입은 _intake/art/Mixamo/ | **남규** | [art-roadmap.md](art-roadmap.md) §4 P0 |
 | ~~H10~~ | ~~정수 투입 개시~~ → **자발 개시됨** (오디오 PR merge 완료) — 다음 발주 묶음은 P3 잔여 스크립트로 협의 | — | [orders/audio.md](orders/audio.md) |
 
 ## 처리 완료 (최근)
+
+- ✅ **R12 묶음 플레이 검증 통과** (2026-07-23 님 실플레이) — 하우징·늦코인·미니게임·셰이크/시머 전부 통과. 잔여 결함 1건(전화 15초 미응답 방치) = [orders/system.md](orders/system.md) S-037로 이관
 
 - ✅ **H13 GitHub 브랜치 보호 적용** (2026-07-22 님) — main은 PR+승인 1 필수, 관리자 직접 push 유지. 로컬 pre-push 훅과 이중 방벽 완성 (D-055)
 
