@@ -20,14 +20,14 @@
 ## 창작 태그 (사람이 고치는 유일한 칸)
 
 <!-- NOTE:BEGIN -->
-soft airy swish rising, light and breezy, gentle
+quick playful whoosh swooping upward, bright airy sweep with a cheeky rising pitch bend, energetic and snappy
 <!-- NOTE:END -->
 
 ## 전송 프롬프트 (조립 결과 — 그대로 API에 투입)
 
 <!-- PROMPT:BEGIN -->
 ```
-soft airy swish rising, light and breezy, gentle. It plays when the game event SceneTransitionStarted fires. Duration about 1.0 seconds. Style: cozy cute toy-like game sound, soft wooden marimba and rounded synth plucks, playful little pitch bends, gentle and warm, light and bouncy. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
+quick playful whoosh swooping upward, bright airy sweep with a cheeky rising pitch bend, energetic and snappy. It plays when the game event SceneTransitionStarted fires. Duration about 1.0 seconds. Style: cozy cute toy-like game sound, soft wooden marimba and rounded synth plucks, playful little pitch bends, gentle and warm, light and bouncy. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
 ```
 <!-- PROMPT:END -->
 
@@ -67,3 +67,4 @@ python scripts/audio/audio_pipeline.py intake --bom-id sfx_scene_whoosh
 | 5 | 2026-07-22 | 재조립 |
 | 6 | 2026-07-22 | 재조립 |
 | 7 | 2026-07-22 | 재조립 |
+| 8 | 2026-07-23 | 재조립 |
