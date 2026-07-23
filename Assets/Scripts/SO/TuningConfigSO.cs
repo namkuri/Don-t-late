@@ -79,6 +79,8 @@ namespace DontLate
         [Header("미니게임 (진상 전화)")]
         /// <summary>District 도착 후 전화가 오기까지의 실초.</summary>
         public float phoneCallDelaySeconds = 15f;
+        /// <summary>수신 후 받기/거절 없이 방치 시 자동 종료(부재중=실패)까지의 실초 (S-037).</summary>
+        public float phoneCallTimeoutSeconds = 15f;
         /// <summary>리듬 시퀀스 키 개수.</summary>
         public int minigameKeyCount = 4;
         /// <summary>키 하나당 입력 제한 실초.</summary>

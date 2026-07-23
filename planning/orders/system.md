@@ -794,3 +794,16 @@
 요구: PhoneRang(진상 전화) 후 **15초**(TuningConfigSO 노출) 내 받기/거절 없으면 자동 종료 — 전화 끊김 + **폰 접힘**. 부재중 처리는 거절과 동일(실패 벌금) 권장 — 다르게 판단하면 근거와 함께 보고.
 
 수용기준: 수신 화면 15초 방치 → 폰 자동 수납 + MinigameEnded(실패) 발화 · 받기/거절 시 타이머 해제 · 튜닝값 노출.
+
+### 결과 · 2026-07-23 21:59 (리드 7분 · 정수 공장)
+
+- `TuningConfigSO.phoneCallTimeoutSeconds = 15f` 노출. WorldMinigameManager가 PhoneRang 직후 타임아웃
+  코루틴 가동 — 만료 시 "[전화] 부재중" 로그 + `MinigameEnded(실패 0/0)` (부재중=거절 동일, 발주 권장안 채택:
+  전화 무시도 진상 응대 거부). Accept/Decline/씬 이탈/OnDisable 전부 타이머 해제.
+- 폰 접힘 = PhoneView가 `MinigameEnded` 구독(OnEnable/OnDisable 짝) — Call 화면 표시 중일 때만 수납+홈 복귀
+  (받기·거절 경로는 이미 Call을 벗어나 있어 무해). 경계 통신 이벤트 유지 — 매니저→UI 직접 참조 0.
+- 검증(튜닝 임시 2s/4s 단축 후 15/15 원복 — 에셋 diff는 신규 필드 직렬화뿐): 컴파일 ○ · 콘솔 0 · EditMode 31/31 ·
+  Play 실측 3경로 — ① 방치: PhoneRang → 4s → 부재중 로그 → MinigameEnded 실패(0/0) → DebtIncreased +200 →
+  폰 자동 수납(open=False) ② 거절: 즉시 실패 1회, 타임아웃 창(6s) 경과에도 부재중 없음 = 해제 ③ 받기:
+  MinigameRequested → 자연 종료 실패(0/4)만 — 부재중(0/0) 이중 발화 없음 = 해제. 판정 구분 = TotalCount(0/0 vs 0/4).
+- 부수 수리: 수신 화면 `☎` 글리프가 Pretendard SDF에 없어 TMP 폴백 워닝 유발 → 텍스트 대체(콘솔 0 준수).

@@ -134,6 +134,7 @@ namespace DontLate
             WorldEvents.DeliveryFailed += OnDeliveryFailed;
             WorldEvents.ClockTicked += OnClockTicked;
             WorldEvents.PhoneRang += OnPhoneRang; // S-031 ⑧ — 진상 전화 수신 화면
+            WorldEvents.MinigameEnded += OnMinigameEnded; // S-037 — 부재중(타임아웃) 시 폰 접힘
             WorldEvents.SceneTransitionCompleted += OnSceneChanged; // S-032 ①
             WorldEvents.DebtSettled += OnSettled; // S-034 ① — 정산 후 상차 리스트 초기화
         }
@@ -149,6 +150,7 @@ namespace DontLate
             WorldEvents.DeliveryFailed -= OnDeliveryFailed;
             WorldEvents.ClockTicked -= OnClockTicked;
             WorldEvents.PhoneRang -= OnPhoneRang;
+            WorldEvents.MinigameEnded -= OnMinigameEnded;
             WorldEvents.SceneTransitionCompleted -= OnSceneChanged;
             WorldEvents.DebtSettled -= OnSettled;
         }
@@ -931,6 +933,15 @@ namespace DontLate
             ShowScreen(Screen.Call);
         }
 
+        // S-037: 수신 화면을 띄운 채 통화가 종결(부재중 타임아웃 포함)되면 폰을 접는다.
+        // 받기(Screen.Home 전환)·거절(수동 수납) 경로는 이미 Call 화면을 벗어나 있어 무해.
+        private void OnMinigameEnded(MinigameResult _)
+        {
+            if (_screen != Screen.Call) return;
+            if (_open) OnToggle(default);
+            ShowScreen(Screen.Home); // 재오픈 시 묵은 수신 화면이 남지 않게
+        }
+
         private void BuildCallScreen()
         {
             GameObject screen = NewScreen(Screen.Call);
@@ -966,7 +977,8 @@ namespace DontLate
         private void RefreshCall()
         {
             if (_callLabel != null)
-                _callLabel.text = "☎ 수신 중\n\n<size=140%><b>박말순</b></size>\n<color=#8a93a8>진상 기류의 냄새가 난다…</color>";
+                // ☎ 글리프는 Pretendard SDF에 없음 — TMP 폴백 워닝 유발이라 텍스트로 대체 (S-037 부수).
+                _callLabel.text = "수신 중\n\n<size=140%><b>박말순</b></size>\n<color=#8a93a8>진상 기류의 냄새가 난다…</color>";
         }
 
         private void RefreshBank()
