@@ -21,7 +21,7 @@ namespace DontLate
         /// <summary>가구 배치 대기 id — Home 씬 HomeFurniturePlacer가 소비 (S-019 ④).</summary>
         public static string PendingPlacementId;
 
-        private enum Screen { Home, Delivery, Music, Invest, Bank, Furniture, Call }
+        private enum Screen { Home, Delivery, Music, Invest, Bank, Furniture, Call, Map }
 
         [SerializeField] private RectTransform _panel;
         [SerializeField] private TMP_FontAsset _font;
@@ -36,6 +36,8 @@ namespace DontLate
         [SerializeField] private Sprite _wallpaper;
         [Tooltip("앱 아이콘 5종 (택배·음악·금융·은행·가구 순) — bom_id: ui_phone_icon_*")]
         [SerializeField] private Sprite[] _appIcons;
+        [Tooltip("Travel 지도 앱 배경 일러 (S-036). 실아트(A-004)가 오면 여기 꽂는다 — bom_id: ui_map_town")]
+        [SerializeField] private Sprite _mapSprite;
 
         private readonly List<DeliveryData> _scanned = new List<DeliveryData>();
         private readonly Dictionary<int, int> _status = new Dictionary<int, int>(); // 0진행 1완료 2지각
@@ -66,6 +68,49 @@ namespace DontLate
         private Button _wallpaperButton;             // S-031 ④ 벽지 순환
         private Button _floorButton;                 // S-031 ④ 바닥 순환
         private string _furnitureInvSignature;       // 행 재구축 판정 (스크롤 리셋 방지)
+
+        // ── S-036 다이제틱 폰 지도 (Travel 전용 앱 — 노드 버튼 UI 은퇴 대체) ──
+
+        private struct MapPin
+        {
+            public string label;
+            public string district;
+            public bool locked;
+            public bool far;
+            public Vector2 pos; // 지도 영역 정규화 좌표
+        }
+
+        // 4구역 핀 — 활성 2(S-035 구역) + 잠금 2("준비 중"). 활성화 시 DeliveryOrderSO 상수로 승격.
+        private static readonly MapPin[] Pins =
+        {
+            new MapPin { label = "빌라촌", district = DeliveryOrderSO.DISTRICT_VILLATOWN,
+                         locked = false, far = false, pos = new Vector2(0.26f, 0.64f) },
+            new MapPin { label = "먹자골목", district = DeliveryOrderSO.DISTRICT_FOODALLEY,
+                         locked = false, far = true, pos = new Vector2(0.70f, 0.40f) },
+            new MapPin { label = "아파트단지", district = "아파트단지",
+                         locked = true, far = true, pos = new Vector2(0.74f, 0.78f) },
+            new MapPin { label = "언덕주택가", district = "언덕주택가",
+                         locked = true, far = false, pos = new Vector2(0.24f, 0.20f) },
+        };
+        private static readonly Vector2 MapOriginPos = new Vector2(0.5f, 0.07f); // 출발 마커 위치
+
+        private const float TRAVEL_PANEL_W = 700f;   // 세로 풀스크린(1080 기준) 패널 규격
+        private const float TRAVEL_PANEL_H = 1010f;
+        private const float TRAVEL_HIDDEN_Y = -1080f;
+
+        private RectTransform _mapArea;
+        private RectTransform _routeLine;
+        private TMP_Text _mapOriginLabel;
+        private TMP_Text _mapInfoLabel;
+        private Button _departButton;
+        private int _selectedPin = -1;
+        private bool _inTravel;
+        private GameScene _prevScene = GameScene.Main;
+        private string _travelOrigin = "물류캠프";
+        private Vector2 _panelBaseSize;
+        private float _panelBaseX;
+
+        private float HiddenY => _inTravel ? TRAVEL_HIDDEN_Y : _hiddenY;
 
         // ── 수명주기 ─────────────────────────────────────────
 
@@ -113,7 +158,11 @@ namespace DontLate
         private void Start()
         {
             if (_panel != null)
+            {
+                _panelBaseSize = _panel.sizeDelta;       // S-036 — Travel 확대 후 원복 기준
+                _panelBaseX = _panel.anchoredPosition.x;
                 _panel.anchoredPosition = new Vector2(_panel.anchoredPosition.x, _hiddenY);
+            }
             BuildUI();
             ShowScreen(Screen.Home);
         }
@@ -129,7 +178,31 @@ namespace DontLate
         private void OnSceneChanged(GameScene scene)
         {
             _inTitle = scene == GameScene.Main;
+            bool wasTravel = _inTravel;
+            _inTravel = scene == GameScene.Travel;
+
+            if (_inTravel)
+            {
+                // S-036: 출발지 = 직전 위치 자동 라벨 (District에서 오면 마지막 구역, 그 외 물류캠프).
+                _travelOrigin = _prevScene == GameScene.District && _gameState != null
+                    && !string.IsNullOrEmpty(_gameState.currentDistrict)
+                    ? _gameState.currentDistrict : "물류캠프";
+                _selectedPin = -1;
+                ApplyPanelLayout();
+                if (!_open) OnToggle(default);   // 지도 앱 자동 오픈
+                ShowScreen(Screen.Map);
+            }
+            else if (wasTravel)
+            {
+                ApplyPanelLayout();              // 패널 원복
+                if (_open) OnToggle(default);    // Travel 이탈 = 지도 수납
+                else if (_slide == null && _panel != null)
+                    _panel.anchoredPosition = new Vector2(_panel.anchoredPosition.x, HiddenY);
+                if (_screen == Screen.Map) ShowScreen(Screen.Home);
+            }
+
             if (_inTitle && _open) OnToggle(default); // 타이틀 복귀 시 강제 수납
+            _prevScene = scene;
         }
 
         // S-034 ①: 정산 = 하루 마감 — 상차 리스트를 비운다 (히스토리는 GameState 소유라 유지).
@@ -164,8 +237,8 @@ namespace DontLate
             IsOpen = _open;
             WorldAudioManager.Instance?.PlayPhoneToggleSfx(); // AU-008 — 개폐 공용
             if (_slide != null) StopCoroutine(_slide);
-            _slide = StartCoroutine(Slide(_open ? _shownY : _hiddenY));
-            if (_open) { ShowScreen(Screen.Home); }
+            _slide = StartCoroutine(Slide(_open ? _shownY : HiddenY));
+            if (_open) { ShowScreen(_inTravel ? Screen.Map : Screen.Home); } // S-036 — Travel 기본 앱 = 지도
         }
 
         private IEnumerator Slide(float targetY)
@@ -197,6 +270,7 @@ namespace DontLate
                     Screen.Bank => "은행",
                     Screen.Call => "전화",
                     Screen.Furniture => "가구",
+                    Screen.Map => "지도",
                     _ => "홈"
                 };
             RefreshCurrent();
@@ -212,6 +286,25 @@ namespace DontLate
                 case Screen.Bank: RefreshBank(); break;
                 case Screen.Call: RefreshCall(); break;
                 case Screen.Furniture: RefreshFurniture(); break;
+                case Screen.Map: RefreshMap(); break;
+            }
+        }
+
+        // S-036: Travel에선 폰이 세로 풀스크린 지도 앱 — 패널 중앙 확대, 이탈 시 원복.
+        private void ApplyPanelLayout()
+        {
+            if (_panel == null) return;
+            if (_inTravel)
+            {
+                float canvasWidth = ((RectTransform)_panel.parent).rect.width;
+                _panel.sizeDelta = new Vector2(TRAVEL_PANEL_W, TRAVEL_PANEL_H);
+                _panel.anchoredPosition = new Vector2(
+                    -(canvasWidth - TRAVEL_PANEL_W) * 0.5f, _panel.anchoredPosition.y);
+            }
+            else
+            {
+                _panel.sizeDelta = _panelBaseSize;
+                _panel.anchoredPosition = new Vector2(_panelBaseX, _panel.anchoredPosition.y);
             }
         }
 
@@ -269,6 +362,7 @@ namespace DontLate
             BuildBankScreen();
             BuildCallScreen(); // S-031 ⑧
             BuildFurnitureScreen();
+            BuildMapScreen();  // S-036
         }
 
         private GameObject NewScreen(Screen key)
@@ -936,6 +1030,182 @@ namespace DontLate
         }
 
         // ── 바코드 스캔 (택배앱 화면에서만) ──────────────────
+
+        // ── S-036 지도 앱 화면 ───────────────────────────────
+
+        private void BuildMapScreen()
+        {
+            GameObject screen = NewScreen(Screen.Map);
+
+            _mapOriginLabel = MakeText(screen.transform, "Origin", "출발: 물류캠프", 26f, Color.white, TextAlignmentOptions.TopLeft);
+            Anchor(_mapOriginLabel.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), Vector2.zero, 32f);
+
+            // 지도 영역 — 실아트 스왑 소켓(_mapSprite · bom_id: ui_map_town), 폴백 = 색 블록.
+            GameObject map = new GameObject("MapArea", typeof(RectTransform));
+            map.transform.SetParent(screen.transform, false);
+            _mapArea = (RectTransform)map.transform;
+            _mapArea.anchorMin = Vector2.zero;
+            _mapArea.anchorMax = Vector2.one;
+            _mapArea.offsetMin = new Vector2(0f, 152f);
+            _mapArea.offsetMax = new Vector2(0f, -36f);
+            Image mapImage = map.AddComponent<Image>();
+            mapImage.sprite = _mapSprite != null ? _mapSprite : MapFallbackSprite();
+            mapImage.color = Color.white;
+            mapImage.raycastTarget = false;
+
+            // 추천 경로선 — 선택 시 출발 마커→핀 (좌하단 원점 픽셀 배치 · 회전).
+            GameObject line = new GameObject("Route", typeof(RectTransform));
+            line.transform.SetParent(map.transform, false);
+            Image lineImage = line.AddComponent<Image>();
+            lineImage.color = new Color(0.208f, 0.878f, 0.784f, 0.9f);
+            lineImage.raycastTarget = false;
+            _routeLine = (RectTransform)line.transform;
+            _routeLine.gameObject.SetActive(false);
+
+            TMP_Text origin = MakeText(map.transform, "OriginMarker", "▲", 30f, new Color(1f, 0.62f, 0.27f), TextAlignmentOptions.Center);
+            origin.raycastTarget = false;
+            PlaceOnMap(origin.rectTransform, MapOriginPos, new Vector2(48f, 40f));
+
+            for (int i = 0; i < Pins.Length; i++)
+            {
+                int index = i;
+                MapPin pin = Pins[i];
+                Button b = MakeButton(map.transform, "Pin_" + pin.label,
+                    pin.locked ? pin.label + "\n<size=70%>준비 중</size>" : pin.label,
+                    () => OnPinTapped(index));
+                RectTransform rect = (RectTransform)b.transform;
+                PlaceOnMap(rect, pin.pos, new Vector2(158f, pin.locked ? 78f : 58f));
+                if (pin.locked)
+                {
+                    b.image.color = new Color(0.25f, 0.27f, 0.32f, 0.9f);
+                    b.GetComponentInChildren<TMP_Text>().color = new Color(0.65f, 0.68f, 0.75f);
+                }
+            }
+
+            _mapInfoLabel = MakeText(screen.transform, "Info", "목적지 핀을 탭해라", 26f, Color.white, TextAlignmentOptions.BottomLeft);
+            RectTransform infoRect = _mapInfoLabel.rectTransform;
+            infoRect.anchorMin = new Vector2(0f, 0f);
+            infoRect.anchorMax = new Vector2(1f, 0f);
+            infoRect.pivot = new Vector2(0.5f, 0f);
+            infoRect.anchoredPosition = new Vector2(0f, 86f);
+            infoRect.sizeDelta = new Vector2(0f, 62f);
+
+            _departButton = MakeButton(screen.transform, "Depart", "목적지로 출발", DepartSelected);
+            RectTransform departRect = (RectTransform)_departButton.transform;
+            departRect.anchorMin = departRect.anchorMax = departRect.pivot = new Vector2(0.5f, 0f);
+            departRect.sizeDelta = new Vector2(320f, 72f);
+            departRect.anchoredPosition = new Vector2(0f, 6f);
+            _departButton.interactable = false;
+        }
+
+        private static void PlaceOnMap(RectTransform rect, Vector2 normalized, Vector2 size)
+        {
+            rect.anchorMin = rect.anchorMax = normalized;
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.sizeDelta = size;
+            rect.anchoredPosition = Vector2.zero;
+        }
+
+        private void LayoutRoute(Vector2 fromNorm, Vector2 toNorm)
+        {
+            Vector2 size = _mapArea.rect.size;
+            Vector2 a = Vector2.Scale(fromNorm, size);
+            Vector2 b = Vector2.Scale(toNorm, size);
+            Vector2 d = b - a;
+            _routeLine.anchorMin = _routeLine.anchorMax = Vector2.zero;
+            _routeLine.pivot = new Vector2(0f, 0.5f);
+            _routeLine.anchoredPosition = a;
+            _routeLine.sizeDelta = new Vector2(d.magnitude, 5f);
+            _routeLine.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(d.y, d.x) * Mathf.Rad2Deg);
+        }
+
+        private void OnPinTapped(int index)
+        {
+            WorldAudioManager.Instance?.PlayUiTickSfx(); // AU-011 sfx_map_pin 도착 시 교체
+            _selectedPin = index;
+            RefreshMap();
+        }
+
+        private void RefreshMap()
+        {
+            if (_mapOriginLabel == null) return;
+            _mapOriginLabel.text = "출발: " + _travelOrigin;
+
+            if (_selectedPin < 0)
+            {
+                _mapInfoLabel.text = _inTravel ? "목적지 핀을 탭해라"
+                    : "<color=#8a93a8>출발은 이동(Travel)에서만 가능</color>";
+                _routeLine.gameObject.SetActive(false);
+                if (_departButton != null) _departButton.interactable = false;
+                return;
+            }
+
+            MapPin pin = Pins[_selectedPin];
+            if (pin.locked)
+            {
+                // 잠금 구역 — 진입 불가 (S-036 수용기준).
+                _mapInfoLabel.text = pin.label + " — <color=#ff9f45>준비 중</color> · 진입 불가";
+                _routeLine.gameObject.SetActive(false);
+                _departButton.interactable = false;
+                return;
+            }
+
+            float minutes = pin.far ? _tuning.travelFarMinutes : _tuning.travelNearMinutes;
+            _mapInfoLabel.text = "<b>" + pin.label + "</b> · 추천 경로 " + (pin.far ? "간선도로" : "골목길")
+                + " · 예상 <color=#35e0c8>" + Mathf.RoundToInt(minutes) + "분</color>";
+            _routeLine.gameObject.SetActive(true);
+            LayoutRoute(MapOriginPos, pin.pos);
+            _departButton.interactable = _inTravel;
+        }
+
+        // 출발 — 로직은 매니저 위임(시간=DayNight·목적지=Delivery·전이=SceneFlow). 구 TravelMapView.Depart 승계.
+        private void DepartSelected()
+        {
+            if (_selectedPin < 0 || !_inTravel || Pins[_selectedPin].locked) return;
+            if (WorldSceneFlowManager.Instance == null || WorldDayNightManager.Instance == null
+                || WorldDeliveryManager.Instance == null) return;
+            if (WorldSceneFlowManager.Instance.IsTransitioning) return;
+
+            MapPin pin = Pins[_selectedPin];
+            WorldAudioManager.Instance?.PlayUiTickSfx(); // AU-011 sfx_map_depart 도착 시 교체
+            WorldDayNightManager.Instance.AdvanceMinutes(pin.far ? _tuning.travelFarMinutes : _tuning.travelNearMinutes);
+            WorldDeliveryManager.Instance.SetDestination(pin.district);
+            WorldSceneFlowManager.Instance.Request(GameScene.District);
+        }
+
+        private static Sprite _mapFallbackCache;
+
+        // 색 블록 폴백 지도 (S-036) — 실일러(A-004 · ui_map_town) 도착 전까지. 구역 대역 4블록 + 길.
+        private static Sprite MapFallbackSprite()
+        {
+            if (_mapFallbackCache != null) return _mapFallbackCache;
+            const int W = 128, H = 160;
+            var tex = new Texture2D(W, H, TextureFormat.RGBA32, false);
+            tex.filterMode = FilterMode.Point;
+            var pixels = new Color[W * H];
+            Color ground = new Color(0.09f, 0.12f, 0.20f);
+            for (int i = 0; i < pixels.Length; i++) pixels[i] = ground;
+
+            void Block(float nx, float ny, float nw, float nh, Color c)
+            {
+                int x0 = (int)(nx * W), y0 = (int)(ny * H);
+                int x1 = x0 + (int)(nw * W), y1 = y0 + (int)(nh * H);
+                for (int y = y0; y < y1 && y < H; y++)
+                    for (int x = x0; x < x1 && x < W; x++)
+                        pixels[y * W + x] = c;
+            }
+            Block(0.10f, 0.52f, 0.34f, 0.28f, new Color(0.30f, 0.26f, 0.22f)); // 빌라촌 — 웜브라운
+            Block(0.56f, 0.28f, 0.32f, 0.24f, new Color(0.16f, 0.24f, 0.30f)); // 먹자골목 — 딥블루
+            Block(0.60f, 0.68f, 0.30f, 0.22f, new Color(0.16f, 0.18f, 0.24f)); // 아파트단지 (잠금 — 저채도)
+            Block(0.08f, 0.10f, 0.30f, 0.20f, new Color(0.15f, 0.17f, 0.22f)); // 언덕주택가 (잠금)
+            Block(0.47f, 0f, 0.06f, 1f, new Color(0.22f, 0.24f, 0.30f));       // 세로 간선
+            Block(0f, 0.44f, 1f, 0.05f, new Color(0.22f, 0.24f, 0.30f));       // 가로 골목
+
+            tex.SetPixels(pixels);
+            tex.Apply();
+            _mapFallbackCache = Sprite.Create(tex, new Rect(0, 0, W, H), new Vector2(0.5f, 0.5f));
+            return _mapFallbackCache;
+        }
 
         private void ScanPointer()
         {
