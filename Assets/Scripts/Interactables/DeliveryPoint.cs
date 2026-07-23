@@ -53,38 +53,39 @@ namespace DontLate
             WorldEvents.DeliveryFailed -= OnDeliverySettled;
         }
 
+        // S-034 ④: 비콘에 놓기 = 내려놓기일 뿐 — 완료·보상 없음. 주소가 달라도 놓인다(오배치 = 정산 때 실패).
         public void Interact(PlayerContext ctx)
         {
             DeliveryOrderSO carried = ctx.Player.Status.CarriedOrder;
-            if (carried == null) { Debug.Log("[DeliveryPoint] 빈손 — 상자를 들고 와야 인증된다."); return; }
-            if (_expectedOrder != null && carried != _expectedOrder)
-            {
-                Debug.Log("[DeliveryPoint] 주소 불일치 — 든 건 #" + carried.orderId + ", 이 문은 #" + _expectedOrder.orderId + ".");
-                return;
-            }
-            // 이미 실패(지각)로 적재에서 빠진 건이면 인증 불가 — 상자를 떨어뜨리지 않는다 (S-009 엣지).
+            if (carried == null) { Debug.Log("[DeliveryPoint] 빈손 — 상자를 들고 와야 내려놓는다."); return; }
             if (!WorldDeliveryManager.Instance.IsInCargo(carried))
             {
-                Debug.Log("[DeliveryPoint] #" + carried.orderId + " 은 적재 목록에 없다(지각 실패?) — 인증 불가.");
+                Debug.Log("[DeliveryPoint] #" + carried.orderId + " 은 적재 목록에 없다(지각 실패?) — 내려놓기 불가.");
                 return;
             }
 
             ctx.Player.Status.ReleaseCarry(dropAsPhysics: true);
-            WorldDeliveryManager.Instance.CompleteDelivery(carried);
+            WorldDeliveryManager.Instance.PlaceDelivery(carried, Address);
         }
 
         /// <summary>
-        /// 던져 넣기 (S-017 ②) — 물리로 굴러온 상자가 패드 트리거에 닿으면 배송 인증.
-        /// 손에 든 상자는 콜라이더가 꺼져 있어 여기 안 걸린다(E 인증 경로 그대로).
+        /// 던져 넣기 (S-017 ② → S-034 배치화) — 물리로 굴러온 상자가 패드에 닿으면 배치 기록.
+        /// 상자는 파괴하지 않는다 — 다시 들어 옮길 수 있다.
         /// </summary>
         private void OnTriggerEnter(Collider other)
         {
-            if (_expectedOrder == null) return;
-            if (!other.TryGetComponent(out PickupBox box) || box.Order != _expectedOrder) return;
+            if (!other.TryGetComponent(out PickupBox box) || box.Order == null) return;
             if (WorldDeliveryManager.Instance == null || !WorldDeliveryManager.Instance.IsInCargo(box.Order)) return;
+            WorldDeliveryManager.Instance.PlaceDelivery(box.Order, Address);
+        }
 
-            Destroy(other.gameObject);
-            WorldDeliveryManager.Instance.CompleteDelivery(box.Order);
+        /// <summary>패드 밖으로 굴러 나가면 배치 철회 (재픽업은 PickupBox 쪽에서 철회).</summary>
+        private void OnTriggerExit(Collider other)
+        {
+            if (!other.TryGetComponent(out PickupBox box) || box.Order == null) return;
+            if (WorldDeliveryManager.Instance == null) return;
+            WorldDeliveryManager.Instance.UnplaceDelivery(box.Order.orderId);
+            Debug.Log("[배송] #" + box.Order.orderId + " 패드 이탈 — 배치 철회.");
         }
 
         /// <summary>플레이어 XZ가 패드 사각형(_padSize) 안에 있을 때만 포커스 후보로 인정한다.</summary>

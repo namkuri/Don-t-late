@@ -26,6 +26,8 @@ namespace DontLate
             {
                 if (order == null) continue;
                 if (!string.IsNullOrEmpty(district) && order.district != district) continue;
+                // S-034: 이미 다른 구역 비콘에 내려놓은 건은 재스폰하지 않는다 (배치 기록이 정본).
+                if (_gameState.placedDeliveries.Exists(p => p.orderId == order.orderId)) continue;
                 matching.Add(order);
             }
 

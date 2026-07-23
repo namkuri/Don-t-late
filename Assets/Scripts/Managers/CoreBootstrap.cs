@@ -45,6 +45,7 @@ namespace DontLate
             _gameState.debt = _gameState.startDebt;
             _gameState.cargo.Clear();
             _gameState.scannedOrderIds.Clear();
+            _gameState.placedDeliveries.Clear();
             _gameState.completedCount = 0;
             _gameState.lateCount = 0;
             _gameState.currentDistrict = string.Empty;

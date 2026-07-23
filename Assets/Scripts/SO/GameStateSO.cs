@@ -40,6 +40,7 @@ namespace DontLate
         public int wallpaperIndex;  // S-031 ④ — 벽지 팔레트 (HomeDecorator)
         public int floorIndex;      // S-031 ④ — 바닥 팔레트
         /// <summary>보유 코인 수량 (금융앱).</summary>
+        public List<PlacedDelivery> placedDeliveries = new List<PlacedDelivery>(); // S-034 ④ 비콘 배치 기록
         public float coinUnits;
         public float coinCostBasis; // S-032 ⑤ — 현재 보유분의 총 매수금액 (차익 = 평가액 − 이것)
         /// <summary>런타임 생성 주문의 다음 일련번호 (S-021 ③ — 캠프 주문 갱신).</summary>
@@ -67,6 +68,14 @@ namespace DontLate
         public int reward;
         public int day;
         public int minuteOfDay;
+    }
+
+    /// <summary>비콘에 내려놓은 배송 기록 (S-034 ④) — 정산 때 주소 일치를 일괄 판정한다.</summary>
+    [System.Serializable]
+    public struct PlacedDelivery
+    {
+        public int orderId;
+        public string beaconAddress;
     }
 
     [System.Serializable]

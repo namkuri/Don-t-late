@@ -30,12 +30,16 @@ namespace DontLate
             foreach (PickupBox box in _boxes)
             {
                 if (box == null || box.Order == null) continue;
-                if (!IsConsumed(box.Order)) continue;
+                if (IsConsumed(box.Order))
+                {
+                    DeliveryOrderSO fresh = GenerateOrder();
+                    box.SetOrder(fresh);
+                    Debug.Log("[주문판] 소진 건 교체 → #" + fresh.orderId + " " + fresh.address
+                            + " (" + fresh.district + " · 마감 " + (fresh.deadlineMinuteOfDay / 60f).ToString("0.0") + "시)");
+                }
 
-                DeliveryOrderSO fresh = GenerateOrder();
-                box.SetOrder(fresh);
-                Debug.Log("[주문판] 소진 건 교체 → #" + fresh.orderId + " " + fresh.address
-                        + " (" + fresh.district + " · 마감 " + (fresh.deadlineMinuteOfDay / 60f).ToString("0.0") + "시)");
+                // S-034 ①: 이미 트럭에 실은 건의 상자는 캠프에서 치운다 — 안 실은 것만 남는다.
+                box.gameObject.SetActive(!_gameState.cargo.Contains(box.Order));
             }
         }
 

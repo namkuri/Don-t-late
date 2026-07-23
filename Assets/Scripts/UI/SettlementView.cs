@@ -37,14 +37,20 @@ namespace DontLate
             // 정산은 하루의 마침표 — 패널이 떠 있는 동안 세계를 멈춰 표시·상태 불일치를 차단 (S-010).
             Time.timeScale = 0f;
 
+            // S-034 ④: 배송 일괄 판정(보상·벌금 반영)이 먼저, 그 잔액으로 빚 상환.
+            DeliveryDaySummary d = WorldDeliveryManager.Instance != null
+                ? WorldDeliveryManager.Instance.SettleDeliveries()
+                : default;
             DebtSettlement s = WorldDebtManager.Instance.SettleNow();
             if (_bodyLabel != null)
                 _bodyLabel.text =
                     "오늘 정산\n\n" +
+                    "배송 성공  <color=#35e0c8>" + d.SuccessCount + "건  +₩" + d.RewardTotal.ToString("N0") + "</color>\n" +
+                    "배송 실패  <color=#ff7359>" + d.FailCount + "건  −₩" + d.PenaltyTotal.ToString("N0") + "</color>\n\n" +
                     "빚 상환   <color=#35e0c8>₩" + s.Repaid.ToString("N0") + "</color>\n" +
                     "잔액       ₩" + s.Money.ToString("N0") + "\n" +
                     "남은 빚   ₩" + s.Debt.ToString("N0") + "\n\n" +
-                    "<size=60%><color=#8a93a8>벌금은 발생 즉시 빚에 반영됨</color></size>";
+                    "<size=60%><color=#8a93a8>실패 = 미배치·오배치 — 벌금은 잔액에서, 부족분은 빚으로</color></size>";
             _panel.SetActive(true);
         }
 

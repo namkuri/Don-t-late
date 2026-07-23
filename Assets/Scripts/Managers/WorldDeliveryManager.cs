@@ -2,8 +2,18 @@ using UnityEngine;
 
 namespace DontLate
 {
+    /// <summary>하루 배송 일괄 정산 요약 (S-034 ④ — SettlementView 표시용).</summary>
+    public struct DeliveryDaySummary
+    {
+        public int SuccessCount;
+        public int FailCount;
+        public int RewardTotal;
+        public int PenaltyTotal;
+    }
+
     /// <summary>
-    /// 배송 수명주기: 수주 → 픽업 → 운반 → 인증 → 완료/실패.
+    /// 배송 수명주기 (S-034 재설계): 수주 → 픽업 → 운반 → **비콘 배치(내려놓기)** → 정산 일괄 판정.
+    /// 비콘에 놓는 것은 완료가 아니다 — "집으로" 정산 때 배치 주소와 목적지 일치를 한꺼번에 판정한다.
     /// 적재 목록의 원본은 GameStateSO.cargo이며 여기서만 갱신한다.
     /// </summary>
     public class WorldDeliveryManager : MonoBehaviour
@@ -11,6 +21,7 @@ namespace DontLate
         public static WorldDeliveryManager Instance { get; private set; }
 
         [SerializeField] private GameStateSO _gameState;
+        [SerializeField] private TuningConfigSO _tuning; // S-034 — 실패 벌금(latePenalty)
 
         private void Awake()
         {
@@ -58,23 +69,74 @@ namespace DontLate
             WorldEvents.RaisePackagePickedUp(DeliveryData.From(order));
         }
 
-        /// <summary>문 앞 인증 성공. 보상을 지급하고 적재에서 제거한다.</summary>
-        public void CompleteDelivery(DeliveryOrderSO order)
-        {
-            if (!_gameState.cargo.Remove(order)) return;
+        // ── 비콘 배치 (S-034 ④ — 내려놓기는 완료가 아니다) ──
 
-            _gameState.money += order.reward;
-            _gameState.completedCount++;
-            _gameState.totalEarned += order.reward;
-            _gameState.deliveryHistory.Add(new DeliveryRecord // 택배앱 히스토리 (S-019)
+        /// <summary>비콘 패드에 상자를 내려놓았다 — 같은 주문의 기존 배치는 교체.</summary>
+        public void PlaceDelivery(DeliveryOrderSO order, string beaconAddress)
+        {
+            UnplaceDelivery(order.orderId);
+            _gameState.placedDeliveries.Add(new PlacedDelivery { orderId = order.orderId, beaconAddress = beaconAddress });
+            Debug.Log("[배송] #" + order.orderId + " 을 '" + beaconAddress + "' 비콘에 내려놓음 — 판정은 정산 때.");
+        }
+
+        /// <summary>패드에서 상자가 이탈(재픽업·굴러 나감) — 배치 기록 철회.</summary>
+        public void UnplaceDelivery(int orderId)
+        {
+            _gameState.placedDeliveries.RemoveAll(p => p.orderId == orderId);
+        }
+
+        public bool IsPlaced(int orderId) => _gameState.placedDeliveries.Exists(p => p.orderId == orderId);
+
+        /// <summary>
+        /// "집으로" 정산 일괄 판정 (S-034 ④): 적재된 각 건 — 배치 주소가 목적지와 일치하면 성공(보상),
+        /// 아니면(미배치·오배치) 실패(벌금 — 잔액에서 차감, 부족분은 빚). 판정 후 상차·스캔·배치 전부 초기화.
+        /// </summary>
+        public DeliveryDaySummary SettleDeliveries()
+        {
+            var summary = new DeliveryDaySummary();
+            int penalty = _tuning != null ? _tuning.latePenalty : 500;
+
+            foreach (DeliveryOrderSO order in _gameState.cargo.ToArray())
             {
-                orderId = order.orderId,
-                address = order.address,
-                reward = order.reward,
-                day = _gameState.day,
-                minuteOfDay = Mathf.FloorToInt(_gameState.minuteOfDay)
-            });
-            WorldEvents.RaiseDeliveryCompleted(DeliveryData.From(order));
+                if (order == null) continue;
+                int placedIndex = _gameState.placedDeliveries.FindIndex(p => p.orderId == order.orderId);
+                bool success = placedIndex >= 0
+                    && _gameState.placedDeliveries[placedIndex].beaconAddress == order.address;
+
+                if (success)
+                {
+                    summary.SuccessCount++;
+                    summary.RewardTotal += order.reward;
+                    _gameState.money += order.reward;
+                    _gameState.completedCount++;
+                    _gameState.totalEarned += order.reward;
+                    _gameState.deliveryHistory.Add(new DeliveryRecord
+                    {
+                        orderId = order.orderId,
+                        address = order.address,
+                        reward = order.reward,
+                        day = _gameState.day,
+                        minuteOfDay = Mathf.FloorToInt(_gameState.minuteOfDay)
+                    });
+                    WorldEvents.RaiseDeliveryCompleted(DeliveryData.From(order));
+                }
+                else
+                {
+                    summary.FailCount++;
+                    summary.PenaltyTotal += penalty;
+                    _gameState.money -= penalty;
+                    if (_gameState.money < 0) { _gameState.debt += -_gameState.money; _gameState.money = 0; } // 잔액 부족분은 빚
+                    _gameState.lateCount++;
+                    WorldEvents.RaiseDeliveryFailed(DeliveryData.From(order));
+                }
+            }
+
+            _gameState.cargo.Clear();
+            _gameState.scannedOrderIds.Clear();
+            _gameState.placedDeliveries.Clear();
+            Debug.Log("[배송] 일괄 정산 — 성공 " + summary.SuccessCount + " · 실패 " + summary.FailCount
+                    + " · 보상 " + summary.RewardTotal + " · 벌금 " + summary.PenaltyTotal);
+            return summary;
         }
 
         public bool IsInCargo(DeliveryOrderSO order) => _gameState.cargo.Contains(order);

@@ -90,6 +90,7 @@ namespace DontLate
             WorldEvents.ClockTicked += OnClockTicked;
             WorldEvents.PhoneRang += OnPhoneRang; // S-031 ⑧ — 진상 전화 수신 화면
             WorldEvents.SceneTransitionCompleted += OnSceneChanged; // S-032 ①
+            WorldEvents.DebtSettled += OnSettled; // S-034 ① — 정산 후 상차 리스트 초기화
         }
 
         private void OnDisable()
@@ -104,6 +105,7 @@ namespace DontLate
             WorldEvents.ClockTicked -= OnClockTicked;
             WorldEvents.PhoneRang -= OnPhoneRang;
             WorldEvents.SceneTransitionCompleted -= OnSceneChanged;
+            WorldEvents.DebtSettled -= OnSettled;
         }
 
         private void OnDestroy() { _toggle.Dispose(); _close.Dispose(); }
@@ -128,6 +130,14 @@ namespace DontLate
         {
             _inTitle = scene == GameScene.Main;
             if (_inTitle && _open) OnToggle(default); // 타이틀 복귀 시 강제 수납
+        }
+
+        // S-034 ①: 정산 = 하루 마감 — 상차 리스트를 비운다 (히스토리는 GameState 소유라 유지).
+        private void OnSettled(DebtSettlement _)
+        {
+            _scanned.Clear();
+            _status.Clear();
+            RefreshCurrent();
         }
 
         private void OnBarcodeScanned(DeliveryData data) { _scanned.Add(data); RefreshCurrent(); }
@@ -372,12 +382,33 @@ namespace DontLate
             Anchor(_deliveryHover.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 0f), 38f);
             _deliveryWarn = MakeText(screen.transform, "Warn", "", 22f, new Color(1f, 0.45f, 0.35f), TextAlignmentOptions.Top);
             Anchor(_deliveryWarn.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -40f), 30f);
-            _deliveryList = MakeText(screen.transform, "List", "", 22f, Color.white, TextAlignmentOptions.TopLeft);
+            // S-034 ③: 리스트가 폰을 뚫고 내려가던 것 — 스크롤 영역으로 격리.
+            GameObject viewport = new GameObject("ListViewport", typeof(RectTransform));
+            viewport.transform.SetParent(screen.transform, false);
+            RectTransform vpRect = (RectTransform)viewport.transform;
+            vpRect.anchorMin = Vector2.zero;
+            vpRect.anchorMax = Vector2.one;
+            vpRect.offsetMin = new Vector2(4f, 4f);
+            vpRect.offsetMax = new Vector2(-4f, -76f);
+            Image vpBg = viewport.AddComponent<Image>(); // 스크롤 드래그 타겟
+            vpBg.color = new Color(1f, 1f, 1f, 0.02f);
+            viewport.AddComponent<RectMask2D>();
+
+            _deliveryList = MakeText(viewport.transform, "List", "", 22f, Color.white, TextAlignmentOptions.TopLeft);
             RectTransform listRect = _deliveryList.rectTransform;
-            listRect.anchorMin = Vector2.zero;
-            listRect.anchorMax = Vector2.one;
-            listRect.offsetMin = new Vector2(4f, 0f);
-            listRect.offsetMax = new Vector2(-4f, -76f);
+            listRect.anchorMin = new Vector2(0f, 1f);
+            listRect.anchorMax = new Vector2(1f, 1f);
+            listRect.pivot = new Vector2(0.5f, 1f);
+            listRect.sizeDelta = new Vector2(0f, 100f); // 높이는 ContentSizeFitter가 갱신
+            listRect.anchoredPosition = Vector2.zero;
+            _deliveryList.gameObject.AddComponent<ContentSizeFitter>().verticalFit
+                = ContentSizeFitter.FitMode.PreferredSize;
+
+            ScrollRect scroll = viewport.AddComponent<ScrollRect>();
+            scroll.viewport = vpRect;
+            scroll.content = listRect;
+            scroll.horizontal = false;
+            scroll.scrollSensitivity = 24f;
         }
 
         private void BuildMusicScreen()
@@ -690,10 +721,18 @@ namespace DontLate
             if (_deliveryList == null) return;
             var sb = new System.Text.StringBuilder();
 
+            // S-034 ①: 상차 여부 — cargo(트럭 적재분)가 정본. 스캔만 한 건은 '미상차' 경고.
+            var loadedIds = new HashSet<int>();
+            foreach (DeliveryOrderSO order in _gameState.cargo)
+                if (order != null) loadedIds.Add(order.orderId);
+            var placedIds = new HashSet<int>();
+            foreach (PlacedDelivery placed in _gameState.placedDeliveries) placedIds.Add(placed.orderId);
+
             DeliveryData? urgent = null;
             foreach (DeliveryData d in _scanned)
             {
                 if (_status.TryGetValue(d.OrderId, out int st) && st != 0) continue;
+                if (!loadedIds.Contains(d.OrderId)) continue; // S-034 — 실은 것만이 갈 곳
                 if (urgent == null || d.DeadlineMinuteOfDay < urgent.Value.DeadlineMinuteOfDay) urgent = d;
             }
             if (urgent != null && !string.IsNullOrEmpty(urgent.Value.District))
@@ -710,9 +749,14 @@ namespace DontLate
                 int status = _status.TryGetValue(d.OrderId, out int s) ? s : 0;
                 if (status == 1) sb.Append("<color=#8a93a8>").Append(row).Append(" ✓</color>\n");
                 else if (status == 2) sb.Append("<color=#ff7359><s>").Append(row).Append("</s> 지각</color>\n");
+                else if (!loadedIds.Contains(d.OrderId))
+                {
+                    sb.Append(row).Append("  <color=#ff9f45>미상차</color>\n"); // 캠프에서 실어야 스폰된다
+                }
                 else
                 {
-                    sb.Append(row).Append('\n');
+                    sb.Append(row).Append(placedIds.Contains(d.OrderId)
+                        ? "  <color=#35e0c8>배치됨</color>" : "  <color=#35e0c8><b>상차완료</b></color>").Append('\n');
                     if (_lastClockMinute >= 0)
                     {
                         int remain = Mathf.RoundToInt(d.DeadlineMinuteOfDay) - _lastClockMinute;

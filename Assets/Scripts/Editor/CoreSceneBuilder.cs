@@ -111,6 +111,7 @@ namespace DontLate.EditorTools
 
             WorldDeliveryManager delivery = managers.AddComponent<WorldDeliveryManager>();
             SetField(delivery, "_gameState", gameState);
+            SetField(delivery, "_tuning", tuning); // S-034 — 정산 실패 벌금
 
             WorldDeadlineManager deadline = managers.AddComponent<WorldDeadlineManager>();
             SetField(deadline, "_gameState", gameState);

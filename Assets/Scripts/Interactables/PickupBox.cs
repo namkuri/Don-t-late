@@ -69,6 +69,7 @@ namespace DontLate
             if (!ctx.Player.Status.TryCarry(_order)) return;
 
             WorldDeliveryManager.Instance.NotifyPickedUp(_order);
+            WorldDeliveryManager.Instance.UnplaceDelivery(_order.orderId); // S-034 ④ — 다시 들면 배치 철회
             SetHighlight(false);
 
             // 손에 든 동안은 센서에 다시 잡히면 안 된다. 물리 상자면 손 안에서 잠근다 (S-016 ⑥).
