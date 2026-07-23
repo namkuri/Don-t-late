@@ -493,14 +493,15 @@ namespace DontLate.EditorTools
             MinigameRhythmView view = canvasGo.AddComponent<MinigameRhythmView>();
             SetField(view, "_tuning", tuning);
 
-            // S-031 ⑧: 패널을 폰 열림 위치(우하단 430×610)에 정합 — "폰 화면 안에서 진행"으로 읽히게.
-            // 폰 캔버스(sort ?) 위에 얹힌다(sort 95).
+            // S-031 ⑧: 패널을 폰 열림 위치에 정합 — "폰 화면 안에서 진행"으로 읽히게 (sort 95 = 폰 위).
+            // 폰 프레임 실아트가 있으면 화면 개구 영역에 정확히 맞춘다.
+            bool hasFrame = LoadUISprite("ui_phone_frame") != null;
             GameObject panel = CreateImage(canvasGo.transform, "Panel", CYAN).gameObject;
             RectTransform panelRect = panel.GetComponent<RectTransform>();
             panelRect.anchorMin = panelRect.anchorMax = new Vector2(1f, 0f);
             panelRect.pivot = new Vector2(1f, 0f);
-            panelRect.anchoredPosition = new Vector2(-28f, 24f);
-            panelRect.sizeDelta = new Vector2(430f, 610f);
+            panelRect.anchoredPosition = hasFrame ? new Vector2(-67f, 130f) : new Vector2(-28f, 24f);
+            panelRect.sizeDelta = hasFrame ? new Vector2(354f, 622f) : new Vector2(430f, 610f);
             SetField(view, "_panel", panel);
 
             Image inner = CreateImage(panel.transform, "Inner", NAVY);
@@ -554,21 +555,27 @@ namespace DontLate.EditorTools
             SetField(view, "_gameState", AssetDatabase.LoadAssetAtPath<GameStateSO>(DATA_ROOT + "/GameState.asset"));
             SetField(view, "_furnitureCatalog", GetOrCreateFurnitureCatalog()); // S-019 ④
 
-            // 폰 본체 — 우하단 앵커(사람 요청 S-011 후속), 시안 테두리 + 네이비 스크린.
-            GameObject panel = CreateImage(canvasGo.transform, "Panel", CYAN).gameObject;
+            // 폰 본체 — 우하단 앵커(사람 요청 S-011 후속).
+            // 실아트(ui_phone_frame — 민지 민트 폰, 723×1353 크롭·화면 개구 실측) 있으면 프레임 사용,
+            // 없으면 시안 테두리 폴백 (스왑 계약). 화면(navy)이 아트의 흰 스크린 영역을 정확히 덮는다.
+            Sprite frameArt = LoadUISprite("ui_phone_frame");
+            GameObject panel = CreateImage(canvasGo.transform, "Panel", frameArt != null ? Color.white : CYAN).gameObject;
+            if (frameArt != null) panel.GetComponent<Image>().sprite = frameArt;
             RectTransform panelRect = panel.GetComponent<RectTransform>();
             panelRect.anchorMin = panelRect.anchorMax = new Vector2(1f, 0f);
             panelRect.pivot = new Vector2(1f, 0f);
-            panelRect.sizeDelta = new Vector2(430f, 610f);
-            panelRect.anchoredPosition = new Vector2(-28f, -640f); // 닫힘 = 화면 밖 (PhoneView가 구동)
+            panelRect.sizeDelta = frameArt != null ? new Vector2(430f, 805f) : new Vector2(430f, 610f); // 아트 비율 0.534
+            panelRect.anchoredPosition = new Vector2(-28f, frameArt != null ? -840f : -640f); // 닫힘 = 화면 밖
             SetField(view, "_panel", panelRect);
+            SetField(view, "_hiddenY", frameArt != null ? -840f : -640f);
 
             Image screen = CreateImage(panel.transform, "Screen", NAVY);
             RectTransform screenRect = screen.rectTransform;
             screenRect.anchorMin = Vector2.zero;
             screenRect.anchorMax = Vector2.one;
-            screenRect.offsetMin = new Vector2(4f, 4f);
-            screenRect.offsetMax = new Vector2(-4f, -4f);
+            // 아트 화면 개구 실측값 (정규화 좌 0.086 · 우 0.910 · 상 0.095 · 하 0.868 → 430×805 환산).
+            screenRect.offsetMin = frameArt != null ? new Vector2(37f, 106f) : new Vector2(4f, 4f);
+            screenRect.offsetMax = frameArt != null ? new Vector2(-39f, -77f) : new Vector2(-4f, -4f);
             screen.raycastTarget = true; // 폰 위 클릭이 월드 스캔으로 새지 않게
             // 화면 내부 위젯은 PhoneView v2가 런타임 생성 (S-019 ⑥ — 홈+앱 6종).
 

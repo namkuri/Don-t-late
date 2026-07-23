@@ -142,3 +142,4 @@
 | ui_dialogue_box.png | (원명 chat_box.png) `Assets/Art/UI/` | ChatGPT 생성(민지·구두 계약 2026-07-22) | 산출물 권리 사용자 귀속·상업 가능(OpenAI 약관) | 2026-07-22 |
 | ui_dialogue_arrow.png | (원명 chat_box_box.png) `Assets/Art/UI/` | ChatGPT 생성(민지·구두 계약 2026-07-22) | 산출물 권리 사용자 귀속·상업 가능(OpenAI 약관) | 2026-07-22 |
 | ui_start_button.png | (원명 run_button.png) `Assets/Art/UI/` | ChatGPT 생성(민지·구두 계약 2026-07-22) | 산출물 권리 사용자 귀속·상업 가능(OpenAI 약관) | 2026-07-22 |
+| ui_phone_frame.png | 폰 겉면 프레임 (민트) | ChatGPT 생성 (민지 · 원명 mint_phone.png — UI 구두 계약 라인) | 상업 사용 가능 | 2026-07-23 |

@@ -320,7 +320,7 @@ namespace DontLate
                 RectTransform rect = (RectTransform)tile.transform;
                 rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0f, 1f);
                 rect.sizeDelta = new Vector2(96f, 96f);
-                rect.anchoredPosition = new Vector2(22f + (i % 3) * 124f, -22f - (i / 3) * 138f);
+                rect.anchoredPosition = new Vector2(14f + (i % 3) * 112f, -22f - (i / 3) * 138f); // 프레임 화면폭 354 정합 (mint_phone)
 
                 TMP_Text emoji = MakeText(tile.transform, "Emoji", apps[i].emoji, 44f, Color.white, TextAlignmentOptions.Center);
                 RectTransform emojiRect = emoji.rectTransform;
