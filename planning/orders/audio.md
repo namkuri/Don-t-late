@@ -507,3 +507,14 @@ Morning  Seoul_Alley_Reflection   ← Day 순환
 - CoreSceneBuilder SetField 8건 + Core 재조립 — **씬 YAML guid 8/8 검증** (⚠ 실측: S-022 메뉴 재편으로 경로가 `DontLate/Build/Core Scene` — 구경로 ExecuteMenuItem은 조용히 실패, 반환값 확인 필수).
 - 검증: ① 컴파일 통과 ② 콘솔 에러 0 (워닝 2건 CS0618 = main pull분 기존 · "Creating missing PlayerEffectsManager" 1건 = S-023 프리팹 미부착 기존 — AU-009 범위 외) ③ Play 실측 — 동일 프레임 exec: warn/ring/whoosh/hit/miss/drink/foot 7종 발화 `isPlaying=True` + amb 4분기(밤 on·아침 stop·저녁 on·타이틀 억제) 전부 기대 일치. 클립 주입 8/8 실음원 길이(0.48~5.00s).
 - 발소리 실걸음·귀 판정 = 사람 몫 (플레이 시 자동 청취됨).
+
+---
+
+## AU-010 · 발주 2026-07-23 20:59 → 정수 (구역 앰비언스 2종 + 지도 앱 SFX 3종)
+
+요구 (6세대 동숲 토이 톤 규격 — GAME-SFX-RULES·기존 후처리 체인 그대로):
+- `amb_villatown` — 빌라촌 낮 골목 (새소리·먼 오토바이·생활 소음, 루프 60s±)
+- `amb_foodalley` — 먹자골목 밤 (왁자지껄 웅성·지글지글, 루프 60s±)
+- `sfx_map_pin` · `sfx_map_route` · `sfx_map_depart` — 지도 앱 (핀 탭·경로 표시·출발 확정, 0.2~0.6s)
+
+수용기준: 파일명=bom_id · _intake→승격 해시 일치 · CREDITS 기록 · 배선은 S-035/036과 맞물려 정수 판단(앰비언스는 WorldAudioManager amb 채널 확장).
