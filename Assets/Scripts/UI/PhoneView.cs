@@ -655,6 +655,7 @@ namespace DontLate
             _wallpaperButton = MakeButton(screen.transform, "Wallpaper", "", () =>
             {
                 _gameState.wallpaperIndex = (_gameState.wallpaperIndex + 1) % HomeDecorator.WallPalette.Length;
+                WorldAudioManager.Instance?.PlayUiTickSfx(); // AU-010
                 RefreshDecorButtons();
             });
             RectTransform wallRect = (RectTransform)_wallpaperButton.transform;
@@ -665,6 +666,7 @@ namespace DontLate
             _floorButton = MakeButton(screen.transform, "Floor", "", () =>
             {
                 _gameState.floorIndex = (_gameState.floorIndex + 1) % HomeDecorator.FloorPalette.Length;
+                WorldAudioManager.Instance?.PlayUiTickSfx(); // AU-010
                 RefreshDecorButtons();
             });
             RectTransform floorRect = (RectTransform)_floorButton.transform;
@@ -845,6 +847,7 @@ namespace DontLate
 
             Button accept = MakeButton(screen.transform, "Accept", "받기", () =>
             {
+                WorldAudioManager.Instance?.PlayPhoneToggleSfx(); // AU-010 — 거절은 OnToggle 폐음이 커버
                 ShowScreen(Screen.Home);
                 WorldMinigameManager.Instance?.AcceptCall(); // 미니게임 패널이 폰 위로 뜬다
             });

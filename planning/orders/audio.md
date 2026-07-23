@@ -543,3 +543,18 @@ Morning  Seoul_Alley_Reflection   ← Day 순환
 L129 직접 ++ 후 L130 Raise가 자기 구독 핸들러(L144 OnDeliveryFailed)를 타고 다시 ++.
 
 실패 시: [BLOCKED].
+
+### 결과 · 2026-07-23 20:45 (리드 24분 · 정수 공장)
+
+- **신규 4종 생성·반입 완료** (6세대 토이 톤 · seed CREDITS 기재 · 후처리 트림→피크-1dB→RMS-14dB):
+  settle_ok/bad는 같은 마림바 계열 상행/하행 쌍(규칙 §2). ui_tick은 API 하한 0.5s 생성 후 0.3s 트림.
+  착지 `_intake/ElevenLabs/SFX/` + `Audio/SFX/` 양쪽 · CREDITS AU-010 절 append.
+- **배선 8지점**: SettlementView(FailCount>0 ? Bad : Ok) · HomeFurniturePlacer 확정→Place, R회전/ESC취소/집기→UiTick
+  · PhoneView 벽지/바닥 순환→UiTick, 받기→PhoneToggle(거절은 기존 OnToggle 폐음이 커버 — 이중 재생 회피).
+- **동일 프레임 가드**: PlaySfx에 클립별 frameCount 기록 — Play 실측: 같은 프레임 DeliveryCompleted 3회+Failed 2회
+  Raise → ok/buzzer 각 1회로 수렴(dict 프레임 일치 확인) · PlaySettleOkSfx 재호출 차단 확인.
+- CoreSceneBuilder SetField 4건 + Core 재조립(ExecuteMenuItem 반환 True) → **씬 YAML guid 4/4 검증**.
+- 검증: 재컴파일 통과 · EditMode 30/30 green · 콘솔 = 기존 S-023 워닝 1건뿐(범위 외) · Play 실측
+  클립 주입 4/4(이름·길이 일치 1.48/1.48/0.55/0.30s) · Instance API 4종 발화 isPlaying=True.
+- 감각 판정 잔여: 4종 청취·인게임 체감(가구 배치 마우스 흐름은 시뮬 불가 — S-031 선례) = Director 몫.
+- 부수 발견(발주서 기재): SettleDeliveries lateCount 이중 증가 — 관제 판단 대기.
