@@ -507,3 +507,39 @@ Morning  Seoul_Alley_Reflection   ← Day 순환
 - CoreSceneBuilder SetField 8건 + Core 재조립 — **씬 YAML guid 8/8 검증** (⚠ 실측: S-022 메뉴 재편으로 경로가 `DontLate/Build/Core Scene` — 구경로 ExecuteMenuItem은 조용히 실패, 반환값 확인 필수).
 - 검증: ① 컴파일 통과 ② 콘솔 에러 0 (워닝 2건 CS0618 = main pull분 기존 · "Creating missing PlayerEffectsManager" 1건 = S-023 프리팹 미부착 기존 — AU-009 범위 외) ③ Play 실측 — 동일 프레임 exec: warn/ring/whoosh/hit/miss/drink/foot 7종 발화 `isPlaying=True` + amb 4분기(밤 on·아침 stop·저녁 on·타이틀 억제) 전부 기대 일치. 클립 주입 8/8 실음원 길이(0.48~5.00s).
 - 발소리 실걸음·귀 판정 = 사람 몫 (플레이 시 자동 청취됨).
+
+
+## AU-010 · 발주 2026-07-23 20:21 → 정수 공장 (Director 세션 내 승인 — AskUserQuestion 선택)
+
+목표: S-030~S-034 신규 기능의 무음 지점을 채워 게임플레이 전 구간이 청각 피드백을 갖는다.
+
+배경 (코드 실측 2026-07-23):
+- `DebtSettled` 이벤트 발행됨(`WorldEvents.cs:159`)이나 정산 요약음 부재 — 하루의 마침표가 무음.
+- S-034 `SettleDeliveries`가 건별 `DeliveryCompleted`/`DeliveryFailed`를 같은 프레임에 N회 Raise
+  → 기존 배선(sfx_delivery_ok·sfx_late_buzzer)이 같은 프레임 N중첩 (음량 스파이크).
+- S-031 가구 배치(확정·R회전·ESC취소·집기)·벽지/바닥 순환·전화 받기/거절 — 전부 무음.
+
+입력:
+- 신규 생성 4종 (6세대 토이 톤 앵커 · GAME-SFX-RULES 준수 · 전건 --length 명시):
+  - `sfx_settle_ok` (1.5s) — 정산 요약 성공 (전건 성공 시). 상행 계열.
+  - `sfx_settle_bad` (1.5s) — 정산 요약 실패 포함 (FailCount>0). settle_ok와 같은 음색 계열, 하행 대비 (쌍 규칙 §2).
+  - `sfx_furniture_place` (0.6s) — 가구 배치 확정. 나무 톡 놓기.
+  - `sfx_ui_tick` (0.3s) — 공용 UI 틱. 연타 내성(dry) 필수.
+- 후처리: 피크 -1dB → RMS -14dB (6세대 표준 · 비트크러시 없음). 앞 무음 트림.
+- 반입: `Assets/_intake/ElevenLabs/SFX/` + `Assets/Audio/SFX/` + CREDITS append. BOM §8 신규 행은 관제 몫(R16 ③에 4종 합류 요청).
+
+배선 설계:
+- WorldAudioManager: [SerializeField] 4필드 + Instance API 4종(PlaySettleOkSfx/PlaySettleBadSfx/PlayFurniturePlaceSfx/PlayUiTickSfx)
+  + **PlaySfx 동일 프레임 클립별 1회 가드** (정산 N중첩 수리 — 근본 원인 처방).
+- SettlementView.Open: FailCount>0 ? SettleBad : SettleOk (판정 재료가 뷰에만 있음 — MinigameRhythmView 선례).
+- HomeFurniturePlacer: 확정→FurniturePlace · R회전/ESC취소/집기→UiTick.
+- PhoneView: 벽지/바닥 순환→UiTick · 전화 받기/거절→PlayPhoneToggleSfx(기존 API 재사용 — 신규 에셋 0).
+- CoreSceneBuilder SetField 4건 + Core 재조립 + 씬 YAML guid 4/4 검증 (S-022 함정: 메뉴 경로 반환값 확인).
+
+수용기준: 재컴파일 통과 · 콘솔 0 · EditMode 테스트 green · Play 실측(정산 성공/실패 각 발화 + 건별음 중첩 1회로 수렴
+· 가구 확정/회전/취소/집기 · 벽지/바닥 틱 · 받기/거절 토글) · 클립 주입 4/4 · Director 청취 판정.
+
+부수 발견 (수정 않음 — 관제 판단 요청): `SettleDeliveries` 실패 경로에서 `lateCount` 이중 증가 —
+L129 직접 ++ 후 L130 Raise가 자기 구독 핸들러(L144 OnDeliveryFailed)를 타고 다시 ++.
+
+실패 시: [BLOCKED].
