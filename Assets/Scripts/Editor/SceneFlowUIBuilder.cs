@@ -192,9 +192,9 @@ namespace DontLate.EditorTools
                 46f, Color.white, TextAlignmentOptions.Top, FontStyles.Normal);
             AnchorCorner(label.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -78f), new Vector2(1400f, 72f)); // S-030 ②
 
-            CreateTravelNode(root, "NodeNear", "행복빌라 구역", "행복빌라 구역 (가까움)", false, tuning, font,
+            CreateTravelNode(root, "NodeNear", DeliveryOrderSO.DISTRICT_VILLATOWN, "빌라촌 (가까움)", false, tuning, font,
                 new Vector2(-360f, 40f));
-            CreateTravelNode(root, "NodeFar", "달빛맨션 구역", "달빛맨션 구역 (멀다)", true, tuning, font,
+            CreateTravelNode(root, "NodeFar", DeliveryOrderSO.DISTRICT_FOODALLEY, "먹자골목 (멀다)", true, tuning, font,
                 new Vector2(360f, -60f));
 
             CreateButton(root, "AdvanceButton", "캠프로 돌아간다", GameScene.Camp, font, AMBER,

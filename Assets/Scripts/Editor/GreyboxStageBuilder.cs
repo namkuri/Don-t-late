@@ -40,6 +40,11 @@ namespace DontLate.EditorTools
             GameStateSO gameState = GetOrCreate<GameStateSO>(DATA_ROOT + "/GameState.asset", ConfigureGameState);
             TuningConfigSO tuning = GetOrCreate<TuningConfigSO>(DATA_ROOT + "/Tuning.asset", ConfigureTuning);
             DeliveryOrderSO order = GetOrCreate<DeliveryOrderSO>(DATA_ROOT + "/Order_HappyVilla.asset", ConfigureOrder);
+            // S-035(D-064): GetOrCreate는 생성 시에만 configure — 기존 에셋도 정본 값으로 수렴시킨다
+            // (district 문자열이 스폰 계약이라 구 구역명이 남으면 스폰 0). 같은 값 재기록 = 멱등.
+            ConfigureOrder(order);
+            EditorUtility.SetDirty(order);
+            AssetDatabase.SaveAssetIfDirty(order);
             return (gameState, tuning, order);
         }
 
@@ -1055,7 +1060,7 @@ namespace DontLate.EditorTools
         {
             order.orderId = 7;
             order.address = "행복빌라 301호";
-            order.district = "행복빌라 구역";
+            order.district = DeliveryOrderSO.DISTRICT_VILLATOWN; // S-035(D-064) 구역 개편
             order.floor = 3;
             // 14시 — 인트로 대화·상차·이동(30~90분)을 거치는 실제 루프에서 잡을 수 있는 마감 (S-014, 구 10시는 구조적 지각).
             order.deadlineMinuteOfDay = 14f * 60f;

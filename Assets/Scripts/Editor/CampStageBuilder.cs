@@ -137,7 +137,9 @@ namespace DontLate.EditorTools
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        // 패드별 배송 건. 1번은 그레이박스 기존 건(행복빌라)을 재사용해 District 무대와 이어진다.
+        // 패드별 배송 건. 1번은 그레이박스 기존 건(빌라촌)을 재사용해 District 무대와 이어진다.
+        // S-035(D-064): 로드된 기존 에셋도 정본 값으로 덮는다 — district 문자열이 스폰 계약이라
+        // 구 구역명("달빛맨션 구역" 등)이 남으면 스폰 0. 같은 값 재기록 = 멱등.
         private static DeliveryOrderSO GetOrCreateCampOrder(int index)
         {
             if (index == 0)
@@ -145,17 +147,29 @@ namespace DontLate.EditorTools
 
             string path = "Assets/Data/Order_Camp" + (index + 1).ToString("00") + ".asset";
             DeliveryOrderSO order = AssetDatabase.LoadAssetAtPath<DeliveryOrderSO>(path);
-            if (order != null) return order;
+            bool created = order == null;
+            if (created) order = ScriptableObject.CreateInstance<DeliveryOrderSO>();
 
-            order = ScriptableObject.CreateInstance<DeliveryOrderSO>();
             order.orderId = 100 + index;
-            order.address = index == 1 ? "청운상가 2층" : "달빛맨션 502호";
-            order.district = index == 1 ? "행복빌라 구역" : "달빛맨션 구역";
-            order.floor = index == 1 ? 2 : 5;
+            order.address = index == 1 ? "골목연립 반지하" : "달빛호프 2층";
+            order.district = index == 1
+                ? DeliveryOrderSO.DISTRICT_VILLATOWN
+                : DeliveryOrderSO.DISTRICT_FOODALLEY;
+            order.floor = index == 1 ? -1 : 2;
+            // 먹자골목(19시)은 저녁 마감 — "밤 배송량↑" 표현 (D-064).
             order.deadlineMinuteOfDay = index == 1 ? 15f * 60f : 19f * 60f;
             order.reward = index == 1 ? 900 : 1400;
-            AssetDatabase.CreateAsset(order, path);
-            AssetDatabase.SaveAssets();
+
+            if (created)
+            {
+                AssetDatabase.CreateAsset(order, path);
+                AssetDatabase.SaveAssets();
+            }
+            else
+            {
+                EditorUtility.SetDirty(order);
+                AssetDatabase.SaveAssetIfDirty(order);
+            }
             return order;
         }
 

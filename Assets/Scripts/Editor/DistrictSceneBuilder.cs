@@ -41,7 +41,7 @@ namespace DontLate.EditorTools
             GreyboxStageBuilder.BuildStageContent(gameState, tuning, order);
 
             (GameObject slotsRoot, List<Transform> buildingSlots, List<Transform> propSlots) = BuildSlots();
-            AttachLayoutGenerator(slotsRoot, buildingSlots, propSlots);
+            AttachLayoutGenerator(slotsRoot, buildingSlots, propSlots, gameState);
 
             // S-015: 정적 짐·비콘 제거 — 도착 시 cargo 실데이터로 스폰(DistrictCargoSpawner)한다.
             DestroyRoot("__gb_Box");
@@ -121,12 +121,15 @@ namespace DontLate.EditorTools
         }
 
         // 슬롯 루트에 배치 생성기를 얹고 슬롯 Transform 배열을 직렬화로 주입한다(런타임 이름 검색 금지 규약).
-        // districtId는 지금은 "HappyVilla" 고정 — 구역별 주입은 P3. 프리팹 풀은 비운다(그레이박스 폴백).
-        private static void AttachLayoutGenerator(GameObject slotsRoot, List<Transform> buildings, List<Transform> props)
+        // S-035(D-064): GameState 주입 — 런타임엔 currentDistrict가 구역 프로필·시드를 정한다
+        // (_districtId 기본값 "빌라촌"은 씬 단독 Play 폴백). 프리팹 풀은 Prefabs/Auto pull 조립.
+        private static void AttachLayoutGenerator(GameObject slotsRoot, List<Transform> buildings, List<Transform> props,
+            GameStateSO gameState)
         {
             DistrictLayoutGenerator generator = slotsRoot.AddComponent<DistrictLayoutGenerator>();
             SetObjectArray(generator, "_buildingSlots", buildings);
             SetObjectArray(generator, "_propSlots", props);
+            GreyboxStageBuilder.SetReference(generator, "_gameState", gameState);
 
             // 건물 풀 = Prefabs/Auto 중 소스가 Art/Buildings 인 프리팹 (pull 조립 — S-011).
             var pool = new List<GameObject>();
