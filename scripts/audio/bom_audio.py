@@ -99,7 +99,9 @@ def fallback(bom_id):
     따라서 미등재 id로도 프롬프트 조립·생성은 가능해야 한다(경고만).
     다만 `Assets/`로 들어가는 반입·승격은 여전히 BOM이 지배한다 — audio_pipeline 쪽 게이트는 유지.
     """
-    kind = "sfx" if bom_id.startswith("sfx_") else "bgm"
+    # amb_*도 SFX다 — BOM §8에서 amb_night가 SFX 표에 살고 dest도 Audio/SFX/ (AU-011 실측:
+    # bgm 오분류 시 BGM 루프 규격+음악 앵커가 환경음에 주입되는 사고).
+    kind = "sfx" if bom_id.startswith(("sfx_", "amb_")) else "bgm"
     return {
         "kind": kind,
         "desc": "(BOM 미등재)",

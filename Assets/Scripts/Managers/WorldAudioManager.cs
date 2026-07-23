@@ -50,6 +50,15 @@ namespace DontLate
         [SerializeField] private AudioClip _sfxFurniturePlace;
         [SerializeField] private AudioClip _sfxUiTick;
 
+        [Header("구역 앰비언스 2종 + 지도 앱 3종 (AU-011)")]
+        [SerializeField] private AudioClip _ambVillatown;
+        [SerializeField] private AudioClip _ambFoodalley;
+        [SerializeField] private AudioClip _sfxMapPin;
+        [SerializeField] private AudioClip _sfxMapRoute;
+        [SerializeField] private AudioClip _sfxMapDepart;
+        [Tooltip("구역 앰비언스 선택용 — currentDistrict 조회 (AU-011).")]
+        [SerializeField] private GameStateSO _gameState;
+
         [Header("믹스")]
         [SerializeField, Range(0f, 1f)] private float _volume = 0.5f;
         [SerializeField, Range(0f, 1f)] private float _sfxVolume = 0.7f;
@@ -78,6 +87,7 @@ namespace DontLate
         private BgmSlot _slot = BgmSlot.Unsorted;
         // 씬 전이 통지가 없는 무대(그레이박스)에서도 낮/밤이 정상 동작하도록 "타이틀인가"만 들고 있는다.
         private bool _titleScene;
+        private bool _inDistrict; // AU-011 — 구역 앰비언스는 District 체류 중에만
         private DayPhase _phase;
         // S-009: BGM은 첫 대화(Home 인트로 전화)가 끝난 뒤에야 시작한다.
         [Tooltip("켜면 첫 DialogueEnded까지 BGM을 보류한다 (Home 인트로 연출).")]
@@ -264,27 +274,38 @@ namespace DontLate
         private void OnSceneTransitionCompleted(GameScene scene)
         {
             _titleScene = scene == GameScene.Main;
+            _inDistrict = scene == GameScene.District; // AU-011
             ApplySlot();
             UpdateAmbient();
         }
 
-        /// <summary>amb_night 루프 — 저녁·밤에만, 타이틀 씬 제외 (AU-009).</summary>
+        /// <summary>앰비언스 루프 채널 (AU-009 → AU-011 확장) —
+        /// District 체류 중엔 구역 전용(빌라촌·먹자골목)이 시간대보다 우선(구역감이 목적),
+        /// 그 외 씬은 기존 규칙(저녁·밤 = amb_night). 타이틀 씬은 항상 무음.</summary>
         private void UpdateAmbient()
         {
-            if (_ambNight == null) return; // 음원 미확보 = 무음 (폴백 원칙)
+            AudioClip target = null;
+            if (!_titleScene)
+            {
+                if (_inDistrict && _gameState != null)
+                {
+                    if (_gameState.currentDistrict == DeliveryOrderSO.DISTRICT_VILLATOWN) target = _ambVillatown;
+                    else if (_gameState.currentDistrict == DeliveryOrderSO.DISTRICT_FOODALLEY) target = _ambFoodalley;
+                }
+                if (target == null && (_phase == DayPhase.Evening || _phase == DayPhase.Night))
+                    target = _ambNight;
+            }
 
-            bool night = (_phase == DayPhase.Evening || _phase == DayPhase.Night) && !_titleScene;
-            if (night && !_ambSource.isPlaying)
+            if (target == null) // 음원 미확보 포함 = 무음 (폴백 원칙)
             {
-                _ambSource.clip = _ambNight;
-                _ambSource.volume = _ambVolume;
-                _ambSource.Play();
+                if (_ambSource.isPlaying) { _ambSource.Stop(); _ambSource.clip = null; }
+                return;
             }
-            else if (!night && _ambSource.isPlaying)
-            {
-                _ambSource.Stop();
-                _ambSource.clip = null;
-            }
+            if (_ambSource.clip == target && _ambSource.isPlaying) return;
+
+            _ambSource.clip = target;
+            _ambSource.volume = _ambVolume;
+            _ambSource.Play();
         }
 
         // ── SFX ──────────────────────────────────────────────
@@ -319,6 +340,11 @@ namespace DontLate
         public void PlaySettleBadSfx() => PlaySfx(_sfxSettleBad);
         public void PlayFurniturePlaceSfx() => PlaySfx(_sfxFurniturePlace);
         public void PlayUiTickSfx() => PlaySfx(_sfxUiTick);
+
+        // AU-011 — 폰 지도 앱 3종 (핀 탭·경로 표시·출발 확정 — PhoneView가 호출).
+        public void PlayMapPinSfx() => PlaySfx(_sfxMapPin);
+        public void PlayMapRouteSfx() => PlaySfx(_sfxMapRoute);
+        public void PlayMapDepartSfx() => PlaySfx(_sfxMapDepart);
 
         // AU-010 — 동일 프레임 클립별 1회 가드: 정산 일괄 판정이 DeliveryCompleted/Failed를
         // 같은 프레임에 N회 Raise해 원샷이 N중첩(음량 스파이크)되는 것을 수렴시킨다.

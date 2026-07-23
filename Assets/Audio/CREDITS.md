@@ -168,3 +168,19 @@ late-night introspective, hazy, instrumental, 88 BPM
 | `sfx_footstep` | 0.5s | 652700656 | bouncy hop + woody knock — 연타 전제 dry 유지 |
 | `sfx_scene_whoosh` | 1.0s | 1210195857 | 상행 스윕 + 피치 벤드 (§3 riser 예외 대상) |
 - BOM §8 미등재 — 발주서(AU-010 2026-07-23 20:21)가 근거. 행 추가는 관제 몫(R16 ③에 4종 합류 요청).
+
+### AU-011 구역 앰비언스 2종 + 지도 앱 SFX 3종 (2026-07-23 · 6세대 토이 톤 · 계정·권리는 위 표와 동일)
+
+| bom_id | 요청 길이 | seed | 후처리 실측 |
+|---|---|---|---|
+| `amb_villatown` | 5.0s | 483489003 | 피크 -1dB만 (amb 선례) · RMS -22.6dB |
+| `amb_foodalley` | 5.0s | 281030895 | 피크 -1dB만 · RMS -26.1dB |
+| `sfx_map_pin` | 0.5s | 377050407 | 트림→피크→RMS -17.7dB (클립 가드 0.81%로 -14 미달) |
+| `sfx_map_route` | 0.5s | 144456593 | 트림→피크 · RMS -13.5dB (부스트 불요) |
+| `sfx_map_depart` | 0.6s | 11700560 | 트림→피크→RMS -14.0dB |
+
+- **발주 편차 (AU-011 "루프 60s±")**: amb 2종은 **5.0s 루프**로 납품 — ① sound-generation API 실상한 22s
+  ② 파이프라인 SFX 캡 5.0s(amb_night 승격 선례) ③ BGM 루트는 음악 앵커 주입이라 환경음 불가.
+  반복감 기각 시 후속 = 파이프라인 캡 상향(5→22s) 재생성 제안.
+- 파이프라인 수리 1건: `bom_audio.fallback()`이 미등재 `amb_*`를 bgm으로 오분류(BGM 루프 규격+시티팝 앵커 주입) → `amb_` 접두어 SFX 분류 추가.
+- BOM §8 미등재 5종 — 발주서(AU-011 2026-07-23 20:59)가 근거. 행 추가는 관제 몫(R16 ③ 합류 요청).

@@ -1133,7 +1133,9 @@ namespace DontLate
 
         private void OnPinTapped(int index)
         {
-            WorldAudioManager.Instance?.PlayUiTickSfx(); // AU-011 sfx_map_pin 도착 시 교체
+            // AU-011: 핀 탭 = map_pin · 활성 핀은 경로가 그려지므로 map_route 동반 (잠금 핀은 pin만 — 막다른 감).
+            WorldAudioManager.Instance?.PlayMapPinSfx();
+            if (!Pins[index].locked) WorldAudioManager.Instance?.PlayMapRouteSfx();
             _selectedPin = index;
             RefreshMap();
         }
@@ -1179,7 +1181,7 @@ namespace DontLate
             if (WorldSceneFlowManager.Instance.IsTransitioning) return;
 
             MapPin pin = Pins[_selectedPin];
-            WorldAudioManager.Instance?.PlayUiTickSfx(); // AU-011 sfx_map_depart 도착 시 교체
+            WorldAudioManager.Instance?.PlayMapDepartSfx(); // AU-011
             WorldDayNightManager.Instance.AdvanceMinutes(pin.far ? _tuning.travelFarMinutes : _tuning.travelNearMinutes);
             WorldDeliveryManager.Instance.SetDestination(pin.district);
             WorldSceneFlowManager.Instance.Request(GameScene.District);
