@@ -1,4 +1,4 @@
-# 프롬프트 원본 — `sfx_scene_whoosh`
+# 프롬프트 원본 — `sfx_ui_tick`
 
 > ⚙ **자동 생성 문서** — `scripts/audio/prompt_builder.py` 가 조립한다. 규격 부분을 손으로 고치지 말 것
 > (다음 build 때 덮어쓰인다). 바꾸려면 **창작 태그**를 고치거나 BOM·규격 문서를 고쳐라.
@@ -10,24 +10,24 @@
 
 | 항목 | 값 |
 |---|---|
-| bom_id | `sfx_scene_whoosh` |
+| bom_id | `sfx_ui_tick` |
 | 종류 | SFX |
-| 트리거 | `SceneTransitionStarted` |
-| 소리 | 전환 휙 |
-| 요청 길이 | 1.0s |
-| dest | `Assets/Audio/SFX/sfx_scene_whoosh.wav` |
+| 트리거 | (BOM 미등재) |
+| 소리 | (BOM 미등재 — 생성은 규격만으로 진행) |
+| 요청 길이 | 0.5s |
+| dest | `Assets/Audio/SFX/sfx_ui_tick.wav` |
 
 ## 창작 태그 (사람이 고치는 유일한 칸)
 
 <!-- NOTE:BEGIN -->
-quick playful whoosh swooping upward, bright airy sweep with a cheeky rising pitch bend, energetic and snappy
+one bright tiny toy xylophone plink, snappy and bouncy, very short
 <!-- NOTE:END -->
 
 ## 전송 프롬프트 (조립 결과 — 그대로 API에 투입)
 
 <!-- PROMPT:BEGIN -->
 ```
-quick playful whoosh swooping upward, bright airy sweep with a cheeky rising pitch bend, energetic and snappy. It plays when the game event SceneTransitionStarted fires. Duration about 1.0 seconds. Style: cozy cute toy-like game sound, soft wooden marimba and rounded synth plucks, playful little pitch bends, gentle and warm, light and bouncy. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
+one bright tiny toy xylophone plink, snappy and bouncy, very short. Duration about 0.5 seconds. Style: cozy cute toy-like game sound, soft wooden marimba and rounded synth plucks, playful little pitch bends, gentle and warm, light and bouncy. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
 ```
 <!-- PROMPT:END -->
 
@@ -51,20 +51,14 @@ quick playful whoosh swooping upward, bright airy sweep with a cheeky rising pit
 ## 재생산 절차
 
 ```bash
-python scripts/audio/prompt_builder.py build --bom-id sfx_scene_whoosh
-python scripts/audio/elevenlabs_client.py gen  --bom-id sfx_scene_whoosh
-python scripts/audio/audio_pipeline.py intake --bom-id sfx_scene_whoosh
+python scripts/audio/prompt_builder.py build --bom-id sfx_ui_tick
+python scripts/audio/elevenlabs_client.py gen  --bom-id sfx_ui_tick
+python scripts/audio/audio_pipeline.py intake --bom-id sfx_ui_tick
 ```
 
 ## 세대 이력 (append-only)
 
 | gen | 일자 | 변경 |
 |---|---|---|
-| 1 | 2026-07-22 | 최초 조립 |
-| 2 | 2026-07-22 | 재조립 |
-| 3 | 2026-07-22 | 재조립 |
-| 4 | 2026-07-22 | 재조립 |
-| 5 | 2026-07-22 | 재조립 |
-| 6 | 2026-07-22 | 재조립 |
-| 7 | 2026-07-22 | 재조립 |
-| 8 | 2026-07-23 | 재조립 |
+| 1 | 2026-07-23 | 최초 조립 |
+| 2 | 2026-07-23 | 재조립 |

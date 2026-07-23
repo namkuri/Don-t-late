@@ -44,6 +44,12 @@ namespace DontLate
         [SerializeField] private AudioClip _ambNight;
         [SerializeField, Range(0f, 1f)] private float _ambVolume = 0.35f; // 배경 앰비언스 — SFX보다 낮게
 
+        [Header("SFX — 신규 기능 갭 4종 (AU-010)")]
+        [SerializeField] private AudioClip _sfxSettleOk;
+        [SerializeField] private AudioClip _sfxSettleBad;
+        [SerializeField] private AudioClip _sfxFurniturePlace;
+        [SerializeField] private AudioClip _sfxUiTick;
+
         [Header("믹스")]
         [SerializeField, Range(0f, 1f)] private float _volume = 0.5f;
         [SerializeField, Range(0f, 1f)] private float _sfxVolume = 0.7f;
@@ -308,9 +314,21 @@ namespace DontLate
         public void PlayDrinkSfx() => PlaySfx(_sfxDrink);
         public void PlayFootstepSfx() => PlaySfx(_sfxFootstep);
 
+        // AU-010 — 정산 요약(판정 재료가 SettlementView에만 있음)·가구 확정·공용 UI 틱.
+        public void PlaySettleOkSfx() => PlaySfx(_sfxSettleOk);
+        public void PlaySettleBadSfx() => PlaySfx(_sfxSettleBad);
+        public void PlayFurniturePlaceSfx() => PlaySfx(_sfxFurniturePlace);
+        public void PlayUiTickSfx() => PlaySfx(_sfxUiTick);
+
+        // AU-010 — 동일 프레임 클립별 1회 가드: 정산 일괄 판정이 DeliveryCompleted/Failed를
+        // 같은 프레임에 N회 Raise해 원샷이 N중첩(음량 스파이크)되는 것을 수렴시킨다.
+        private readonly Dictionary<AudioClip, int> _lastPlayedFrame = new Dictionary<AudioClip, int>();
+
         private void PlaySfx(AudioClip clip)
         {
             if (clip == null) return; // 음원 미확보 = 무음 (폴백 원칙)
+            if (_lastPlayedFrame.TryGetValue(clip, out int frame) && frame == Time.frameCount) return;
+            _lastPlayedFrame[clip] = Time.frameCount;
             _sfxSource.PlayOneShot(clip, _sfxVolume);
         }
 

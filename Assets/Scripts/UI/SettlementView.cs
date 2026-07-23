@@ -42,6 +42,11 @@ namespace DontLate
                 ? WorldDeliveryManager.Instance.SettleDeliveries()
                 : default;
             DebtSettlement s = WorldDebtManager.Instance.SettleNow();
+
+            // AU-010 — 정산 요약음: 실패가 하나라도 있으면 하행, 전건 성공이면 상행.
+            if (d.FailCount > 0) WorldAudioManager.Instance?.PlaySettleBadSfx();
+            else WorldAudioManager.Instance?.PlaySettleOkSfx();
+
             if (_bodyLabel != null)
                 _bodyLabel.text =
                     "오늘 정산\n\n" +

@@ -157,6 +157,10 @@ namespace DontLate.EditorTools
             SetField(audio, "_sfxFootstep", LoadSfx("sfx_footstep"));
             SetField(audio, "_sfxDrink", LoadSfx("sfx_drink"));
             SetField(audio, "_ambNight", LoadSfx("amb_night"));
+            SetField(audio, "_sfxSettleOk", LoadSfx("sfx_settle_ok"));           // AU-010 신규 4종
+            SetField(audio, "_sfxSettleBad", LoadSfx("sfx_settle_bad"));
+            SetField(audio, "_sfxFurniturePlace", LoadSfx("sfx_furniture_place"));
+            SetField(audio, "_sfxUiTick", LoadSfx("sfx_ui_tick"));
 
             // 태양은 Core 소유(D-021 교정) — 콘텐츠 씬은 자체 Directional Light를 두지 않는다.
             GameObject sunGo = new GameObject("Sun");

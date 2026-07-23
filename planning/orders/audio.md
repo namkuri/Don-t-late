@@ -508,9 +508,83 @@ Morning  Seoul_Alley_Reflection   ← Day 순환
 - 검증: ① 컴파일 통과 ② 콘솔 에러 0 (워닝 2건 CS0618 = main pull분 기존 · "Creating missing PlayerEffectsManager" 1건 = S-023 프리팹 미부착 기존 — AU-009 범위 외) ③ Play 실측 — 동일 프레임 exec: warn/ring/whoosh/hit/miss/drink/foot 7종 발화 `isPlaying=True` + amb 4분기(밤 on·아침 stop·저녁 on·타이틀 억제) 전부 기대 일치. 클립 주입 8/8 실음원 길이(0.48~5.00s).
 - 발소리 실걸음·귀 판정 = 사람 몫 (플레이 시 자동 청취됨).
 
+
+## AU-010 · 발주 2026-07-23 20:21 → 정수 공장 (Director 세션 내 승인 — AskUserQuestion 선택)
+
+목표: S-030~S-034 신규 기능의 무음 지점을 채워 게임플레이 전 구간이 청각 피드백을 갖는다.
+
+배경 (코드 실측 2026-07-23):
+- `DebtSettled` 이벤트 발행됨(`WorldEvents.cs:159`)이나 정산 요약음 부재 — 하루의 마침표가 무음.
+- S-034 `SettleDeliveries`가 건별 `DeliveryCompleted`/`DeliveryFailed`를 같은 프레임에 N회 Raise
+  → 기존 배선(sfx_delivery_ok·sfx_late_buzzer)이 같은 프레임 N중첩 (음량 스파이크).
+- S-031 가구 배치(확정·R회전·ESC취소·집기)·벽지/바닥 순환·전화 받기/거절 — 전부 무음.
+
+입력:
+- 신규 생성 4종 (6세대 토이 톤 앵커 · GAME-SFX-RULES 준수 · 전건 --length 명시):
+  - `sfx_settle_ok` (1.5s) — 정산 요약 성공 (전건 성공 시). 상행 계열.
+  - `sfx_settle_bad` (1.5s) — 정산 요약 실패 포함 (FailCount>0). settle_ok와 같은 음색 계열, 하행 대비 (쌍 규칙 §2).
+  - `sfx_furniture_place` (0.6s) — 가구 배치 확정. 나무 톡 놓기.
+  - `sfx_ui_tick` (0.3s) — 공용 UI 틱. 연타 내성(dry) 필수.
+- 후처리: 피크 -1dB → RMS -14dB (6세대 표준 · 비트크러시 없음). 앞 무음 트림.
+- 반입: `Assets/_intake/ElevenLabs/SFX/` + `Assets/Audio/SFX/` + CREDITS append. BOM §8 신규 행은 관제 몫(R16 ③에 4종 합류 요청).
+
+배선 설계:
+- WorldAudioManager: [SerializeField] 4필드 + Instance API 4종(PlaySettleOkSfx/PlaySettleBadSfx/PlayFurniturePlaceSfx/PlayUiTickSfx)
+  + **PlaySfx 동일 프레임 클립별 1회 가드** (정산 N중첩 수리 — 근본 원인 처방).
+- SettlementView.Open: FailCount>0 ? SettleBad : SettleOk (판정 재료가 뷰에만 있음 — MinigameRhythmView 선례).
+- HomeFurniturePlacer: 확정→FurniturePlace · R회전/ESC취소/집기→UiTick.
+- PhoneView: 벽지/바닥 순환→UiTick · 전화 받기/거절→PlayPhoneToggleSfx(기존 API 재사용 — 신규 에셋 0).
+- CoreSceneBuilder SetField 4건 + Core 재조립 + 씬 YAML guid 4/4 검증 (S-022 함정: 메뉴 경로 반환값 확인).
+
+수용기준: 재컴파일 통과 · 콘솔 0 · EditMode 테스트 green · Play 실측(정산 성공/실패 각 발화 + 건별음 중첩 1회로 수렴
+· 가구 확정/회전/취소/집기 · 벽지/바닥 틱 · 받기/거절 토글) · 클립 주입 4/4 · Director 청취 판정.
+
+부수 발견 (수정 않음 — 관제 판단 요청): `SettleDeliveries` 실패 경로에서 `lateCount` 이중 증가 —
+L129 직접 ++ 후 L130 Raise가 자기 구독 핸들러(L144 OnDeliveryFailed)를 타고 다시 ++.
+
+실패 시: [BLOCKED].
+
+### 결과 · 2026-07-23 20:45 (리드 24분 · 정수 공장)
+
+- **신규 4종 생성·반입 완료** (6세대 토이 톤 · seed CREDITS 기재 · 후처리 트림→피크-1dB→RMS-14dB):
+  settle_ok/bad는 같은 마림바 계열 상행/하행 쌍(규칙 §2). ui_tick은 API 하한 0.5s 생성 후 0.3s 트림.
+  착지 `_intake/ElevenLabs/SFX/` + `Audio/SFX/` 양쪽 · CREDITS AU-010 절 append.
+- **배선 8지점**: SettlementView(FailCount>0 ? Bad : Ok) · HomeFurniturePlacer 확정→Place, R회전/ESC취소/집기→UiTick
+  · PhoneView 벽지/바닥 순환→UiTick, 받기→PhoneToggle(거절은 기존 OnToggle 폐음이 커버 — 이중 재생 회피).
+- **동일 프레임 가드**: PlaySfx에 클립별 frameCount 기록 — Play 실측: 같은 프레임 DeliveryCompleted 3회+Failed 2회
+  Raise → ok/buzzer 각 1회로 수렴(dict 프레임 일치 확인) · PlaySettleOkSfx 재호출 차단 확인.
+- CoreSceneBuilder SetField 4건 + Core 재조립(ExecuteMenuItem 반환 True) → **씬 YAML guid 4/4 검증**.
+- 검증: 재컴파일 통과 · EditMode 30/30 green · 콘솔 = 기존 S-023 워닝 1건뿐(범위 외) · Play 실측
+  클립 주입 4/4(이름·길이 일치 1.48/1.48/0.55/0.30s) · Instance API 4종 발화 isPlaying=True.
+- 감각 판정 잔여: 4종 청취·인게임 체감(가구 배치 마우스 흐름은 시뮬 불가 — S-031 선례) = Director 몫.
+- 부수 발견(발주서 기재): SettleDeliveries lateCount 이중 증가 — 관제 판단 대기.
+
+### 결과 2차 · 2026-07-23 20:55 (1차 청취 기각 → 재생성)
+
+- Director 청취 판정: 1차 4종 기각 ("맥 빠짐"). 원인 진단 — 승격 19종은 짧은 명사구+음형 개수(two-note·three quick)
+  +에너지 단어(cheerful·bright·bouncy·sparkle) 패턴인데, 1차는 장면 서술형+무기력 단어(satisfied·deflated·gentle placement).
+- 2차: 승격 프롬프트 패턴 모사로 재작성 → 재생성 (seed CREDITS 2차 표 기재, 1차는 git 이력 보존).
+- 음량 실측: 1차 furniture -16.5/tick -16.4dB → 2차 전종 -14.0~-15.4dB (승격 19종 -14.2~-15.5 대역 정합).
+- 같은 파일명 교체(guid 불변 — 코드·씬 재작업 0) · 재임포트 · 콘솔 0.
+- 잔여: Director 재청취 판정.
+
+### 결과 3차 · 2026-07-23 21:03 (재청취 "똑같다" → 원인 규명 + 지목 2종 교체)
+
+- Director 재청취 관찰 "걷는 소리·집으로 버튼 이전과 동일" → 해시 대조로 사실 확정:
+  ① AU-010 신규 4종은 2차에서 실제 재생성됨(1차↔2차 MD5 전부 상이) ② footstep·scene_whoosh는
+  **AU-010 스코프 밖이라 미교체** — PR #11 승격본 그대로 = "똑같다"는 정확한 관찰.
+- 기각 범위 재확정 (Director 선택): 전량 재탐색 아님 — **인게임에서 거슬리는 것 지목 방식**.
+- 지목 2종 재생성: 기존 프롬프트가 19종 중 최약체(soft·gentle·light 무기력 3연발)임을 확인 →
+  에너지 패턴 재작성(bouncy hop·swooping sweep) → 후처리 → 동일 파일명 교체(guid 불변).
+  RMS: footstep -15.6dB(원본 극저음량 gain x34.85) · whoosh -14.0dB.
+- 재임포트 콘솔 0. 잔여: Director 재청취 (걷기·씬 전환 + 정산음 단독 확인 — whoosh와 겹쳐 들릴 수 있음).
+  추가 지목 나오면 같은 절차로 즉시 교체.
 ---
 
-## AU-010 · 발주 2026-07-23 20:59 → 정수 (구역 앰비언스 2종 + 지도 앱 SFX 3종)
+## AU-011 · 발주 2026-07-23 20:59 → 정수 (구역 앰비언스 2종 + 지도 앱 SFX 3종)
+
+> ⚠ 번호 재조정 (병합 시 공장): 원문은 AU-010으로 발주됐으나 공장 세션이 20:21에 같은 번호를 선점
+> (Director 세션 내 승인 · origin push·PR #12 선행). S-028→S-029 선례대로 후발분을 AU-011로 재조정.
 
 요구 (6세대 동숲 토이 톤 규격 — GAME-SFX-RULES·기존 후처리 체인 그대로):
 - `amb_villatown` — 빌라촌 낮 골목 (새소리·먼 오토바이·생활 소음, 루프 60s±)

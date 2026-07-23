@@ -127,6 +127,10 @@
 | sfx_scene_whoosh.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) | 상업 가능·표기 불요 | 2026-07-22 |
 | sfx_throw.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) | 상업 가능·표기 불요 | 2026-07-22 |
 | sfx_vending.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) | 상업 가능·표기 불요 | 2026-07-22 |
+| sfx_settle_ok.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) — AU-010 | 상업 가능·표기 불요 | 2026-07-23 |
+| sfx_settle_bad.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) — AU-010 | 상업 가능·표기 불요 | 2026-07-23 |
+| sfx_furniture_place.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) — AU-010 | 상업 가능·표기 불요 | 2026-07-23 |
+| sfx_ui_tick.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) — AU-010 | 상업 가능·표기 불요 | 2026-07-23 |
 
 ## ChatGPT UI INTAKE (민지) — 2026-07-22
 

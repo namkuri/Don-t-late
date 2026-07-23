@@ -65,13 +65,17 @@ namespace DontLate
             {
                 PhoneView.PendingPlacementId = null;
                 ClearGhost();
+                WorldAudioManager.Instance?.PlayUiTickSfx(); // AU-010
                 Debug.Log("[하우징] 배치 취소 (ESC)");
                 return;
             }
 
             // R = 45° 회전 (벽 부착 중엔 벽 법선이 방향을 소유).
             if (keyboard != null && keyboard.rKey.wasPressedThisFrame && !_ghostOnWall)
+            {
                 _ghostYaw = Mathf.Repeat(_ghostYaw + 45f, 360f);
+                WorldAudioManager.Instance?.PlayUiTickSfx(); // AU-010
+            }
 
             FurnitureSO so = Find(PhoneView.PendingPlacementId);
             Ray ray = camera.ScreenPointToRay(mouse.position.ReadValue());
@@ -116,6 +120,7 @@ namespace DontLate
             _gameState.placedFurniture.Add(new PlacedFurniture { furnitureId = id, position = pos, rotationY = _ghostYaw });
             SpawnVisual(id, pos, _ghostYaw);
             ClearGhost();
+            WorldAudioManager.Instance?.PlayFurniturePlaceSfx(); // AU-010
             Debug.Log("[하우징] " + id + " 배치 — " + pos + " yaw " + _ghostYaw);
         }
 
@@ -140,6 +145,7 @@ namespace DontLate
                 PhoneView.PendingPlacementId = placed.furnitureId;
                 _ghostYaw = placed.rotationY; // 집을 때 각도 유지
                 Destroy(visual.gameObject);
+                WorldAudioManager.Instance?.PlayUiTickSfx(); // AU-010
                 Debug.Log("[하우징] " + placed.furnitureId + " 집음 — 재배치 모드");
                 return;
             }
