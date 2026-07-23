@@ -99,6 +99,9 @@ namespace DontLate
             foreach (DeliveryOrderSO order in _gameState.cargo.ToArray())
             {
                 if (order == null) continue;
+                // 이벤트 발행 전에 적재에서 제거 — OnDeliveryFailed 핸들러(지각 경로용)가
+                // cargo 부재를 보고 무시하게 해 lateCount 이중 가산을 구조적으로 차단 (PR#12 정수 적발).
+                _gameState.cargo.Remove(order);
                 int placedIndex = _gameState.placedDeliveries.FindIndex(p => p.orderId == order.orderId);
                 bool success = placedIndex >= 0
                     && _gameState.placedDeliveries[placedIndex].beaconAddress == order.address;

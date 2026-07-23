@@ -91,6 +91,16 @@ namespace DontLate.Tests
         }
 
         [Test]
+        public void 실패_1건은_lateCount_1만_증가한다_이중가산_회귀()
+        {
+            _gameState.money = 1000; // 미배치 → 실패 1건 (PR#12 적발 결함 회귀 방지)
+
+            _delivery.SettleDeliveries();
+
+            Assert.AreEqual(1, _gameState.lateCount);
+        }
+
+        [Test]
         public void 재픽업하면_배치_철회()
         {
             _delivery.PlaceDelivery(_order, "행복빌라 301호");
