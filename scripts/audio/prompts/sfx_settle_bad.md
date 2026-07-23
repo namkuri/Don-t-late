@@ -20,14 +20,14 @@
 ## 창작 태그 (사람이 고치는 유일한 칸)
 
 <!-- NOTE:BEGIN -->
-end of day settlement with failures, descending toy marimba notes slowing down, three quick falling wooden notes, deflated and disappointed but comical
+four quick toy marimba notes tumbling down, ending on one low comical woody bump, cute but gloomy
 <!-- NOTE:END -->
 
 ## 전송 프롬프트 (조립 결과 — 그대로 API에 투입)
 
 <!-- PROMPT:BEGIN -->
 ```
-end of day settlement with failures, descending toy marimba notes slowing down, three quick falling wooden notes, deflated and disappointed but comical. Duration about 1.5 seconds. Style: cozy cute toy-like game sound, soft wooden marimba and rounded synth plucks, playful little pitch bends, gentle and warm, light and bouncy. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
+four quick toy marimba notes tumbling down, ending on one low comical woody bump, cute but gloomy. Duration about 1.5 seconds. Style: cozy cute toy-like game sound, soft wooden marimba and rounded synth plucks, playful little pitch bends, gentle and warm, light and bouncy. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
 ```
 <!-- PROMPT:END -->
 
@@ -61,3 +61,4 @@ python scripts/audio/audio_pipeline.py intake --bom-id sfx_settle_bad
 | gen | 일자 | 변경 |
 |---|---|---|
 | 1 | 2026-07-23 | 최초 조립 |
+| 2 | 2026-07-23 | 재조립 |

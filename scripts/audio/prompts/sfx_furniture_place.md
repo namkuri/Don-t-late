@@ -20,14 +20,14 @@
 ## 창작 태그 (사람이 고치는 유일한 칸)
 
 <!-- NOTE:BEGIN -->
-small wooden furniture being set down on the floor, soft wooden knock with a felt-padded thud, single gentle placement
+cute toy block placement, one bouncy woody thunk with a tiny happy plink, snappy
 <!-- NOTE:END -->
 
 ## 전송 프롬프트 (조립 결과 — 그대로 API에 투입)
 
 <!-- PROMPT:BEGIN -->
 ```
-small wooden furniture being set down on the floor, soft wooden knock with a felt-padded thud, single gentle placement. Duration about 0.6 seconds. Style: cozy cute toy-like game sound, soft wooden marimba and rounded synth plucks, playful little pitch bends, gentle and warm, light and bouncy. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
+cute toy block placement, one bouncy woody thunk with a tiny happy plink, snappy. Duration about 0.6 seconds. Style: cozy cute toy-like game sound, soft wooden marimba and rounded synth plucks, playful little pitch bends, gentle and warm, light and bouncy. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
 ```
 <!-- PROMPT:END -->
 
@@ -61,3 +61,4 @@ python scripts/audio/audio_pipeline.py intake --bom-id sfx_furniture_place
 | gen | 일자 | 변경 |
 |---|---|---|
 | 1 | 2026-07-23 | 최초 조립 |
+| 2 | 2026-07-23 | 재조립 |
