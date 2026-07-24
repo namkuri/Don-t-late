@@ -828,3 +828,15 @@
 - 마감 압박 정합: 엘베 대기·이동이 게임 시계를 소모해야 함
 
 수용기준: Travel→Apartment 진입 → 외부 대차 적재→비번→1층→엘베→층 배치→정산 일괄 판정까지 무회귀 완주 · 대차 유무 양 경로 동작 · 테스트 green · 그레이박스 수준(실아트 불요). 봉투가 크면 공장 판단으로 PR 분할 가능(외부/대차 → 내부/엘베).
+
+### 결과 · 2026-07-24 15:03 (리드 33분 — 관제 직접, 남규님 지시로 정수→관제 이관)
+- **씬·전이**: GameScene.Apartment 신설(별도 씬 — D-067) · Travel↔Apartment·Apartment→Home 전이 · 빌드 세팅 7씬 · ★ All Scenes 체인 편입 · 폰 지도 아파트단지 핀 활성(출발 라우팅 분기).
+- **대차** (`Interactables/DeliveryCart.cs`): 빈손 E=견인 토글(뒤따라옴) · 상자 든 E=적재 스택(4개 상한·재픽업 시 자동 이탈) · MoveTo로 게이트·엘베 동반 이동.
+- **비번 게이트** (`ApartmentPasswordGate.cs`): E→키패드(뷰는 표시만·판정은 게이트 — GameState 세션 비번 4자리, **폰 배송앱에 표시**). 성공=플레이어+반경 대차+도크 존 낱개 상자 로비 이동. 실측 — 오답 무반응(x -16 유지)·정답 로비(x 3.0) 진입.
+- **엘리베이터** (`ApartmentElevator.cs` — 층당 패널 4기): E 호출→대기(게임분 소모)→층 선택 UI→이동(층당 게임분·대차·상자 동반). 실측 — 1층→2층 x 26.5 도착·시계 635→638(+3분 정확).
+- **스포너 확장**: DistrictCargoSpawner에 _boxOrigin(마당)+_floorBeaconAnchors(층별) — 아파트 주문(늦지마아파트 202·303·404호, 캠프 풀 9종) floor→층 앵커 배치. 실측 — 상자 1(마당)·비콘 1(2층 x30) 정확.
+- **UI** (`UI/ApartmentUIView.cs`): 키패드(0~9·●○ 표시·오류)·층 선택 패널 — 이벤트 6종(WorldEvents 아파트 절) 구독. SceneFlowUIBuilder 공용 마감 블록(BuildDeliveryEndCanvas) 추출 — District·Apartment가 같은 정산 UI.
+- 배치·정산: 기존 S-034 계약 그대로(비콘 배치 실측 isPlaced=True — 판정·벌금은 기유닛테스트 커버).
+- 검증: 컴파일 ○ 콘솔 0(신규 CS0618 4건 즉시 청산) ○ **테스트 32/32**(풀 9종 모듈로 정합 — 정수 테스트 포함 시리얼 보정) ○ 재조립 ○ 통합 Play(마당→비번→로비→엘베 2층→배치) ○ 캡처 1장.
+- 사람 확인 필요: 대차 견인 손맛·키패드 실클릭·엘베 대기 체감(연출 1.2s+게임 8분) — R18로 등재.
+- 직교 추가: DeliveryCart·ApartmentPasswordGate·ApartmentElevator·ApartmentUIView·ApartmentStageBuilder + WorldEvents 아파트 이벤트 6종.

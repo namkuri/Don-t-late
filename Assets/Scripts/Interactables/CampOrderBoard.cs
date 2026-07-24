@@ -19,6 +19,9 @@ namespace DontLate
             ("왕만두분식", DeliveryOrderSO.DISTRICT_FOODALLEY, 1),
             ("달빛호프 2층", DeliveryOrderSO.DISTRICT_FOODALLEY, 2),
             ("끝집포장마차", DeliveryOrderSO.DISTRICT_FOODALLEY, 1),
+            ("늦지마아파트 202호", DeliveryOrderSO.DISTRICT_APARTMENT, 2), // S-038
+            ("늦지마아파트 303호", DeliveryOrderSO.DISTRICT_APARTMENT, 3),
+            ("늦지마아파트 404호", DeliveryOrderSO.DISTRICT_APARTMENT, 4),
         };
 
         [SerializeField] private GameStateSO _gameState;

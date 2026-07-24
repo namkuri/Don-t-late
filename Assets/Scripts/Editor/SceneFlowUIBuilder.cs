@@ -36,8 +36,9 @@ namespace DontLate.EditorTools
             BuildLabeledAction("Camp", "물류캠프 — 패드에서 E로 적재", "짐 다 실었다 — 출발", GameScene.Travel, font);
             BuildTravel(font);
             BuildDistrict(font);
+            BuildDeliveryEndUI("Apartment", "아파트단지 — 대차에 싣고 비번·엘베로", font); // S-038
 
-            Debug.Log("[SceneFlowUIBuilder] 씬 흐름 UI 조립 완료 — Main·Home·Camp·Travel·District 5씬.");
+            Debug.Log("[SceneFlowUIBuilder] 씬 흐름 UI 조립 완료 — Main·Home·Camp·Travel·District·Apartment 6씬.");
         }
 
         // ── 씬별 조립 ────────────────────────────────────────
@@ -209,7 +210,27 @@ namespace DontLate.EditorTools
                 Debug.LogWarning("[SceneFlowUIBuilder] District 무대 없음 — 'DontLate/Build District Stage'를 먼저 실행하라. UI만 얹는다.");
 
             Transform root = CreateFlowCanvas().transform;
+            BuildDeliveryEndCanvas(root, font);
+            EditorSceneManager.SaveScene(scene, SCENES_ROOT + "/District.unity");
+        }
 
+        // S-038: 아파트 등 배송 씬 공용 — 라벨 + 정산 UI. District와 같은 마감 UI를 얹는다.
+        private static void BuildDeliveryEndUI(string sceneName, string labelText, TMP_FontAsset font)
+        {
+            Scene scene = EditorSceneManager.OpenScene(SCENES_ROOT + "/" + sceneName + ".unity", OpenSceneMode.Single);
+            Transform root = CreateFlowCanvas().transform;
+
+            TMP_Text label = CreateText(root, "Label", labelText, font, 46f, Color.white,
+                TextAlignmentOptions.Top, FontStyles.Normal);
+            AnchorCorner(label.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -78f), new Vector2(1200f, 72f));
+
+            BuildDeliveryEndCanvas(root, font);
+            EditorSceneManager.SaveScene(scene, SCENES_ROOT + "/" + sceneName + ".unity");
+        }
+
+        // "집으로"(정산)·"다른 구역으로"·정산 패널 — District·Apartment 공용 마감 블록.
+        private static void BuildDeliveryEndCanvas(Transform root, TMP_FontAsset font)
+        {
             // "집으로" = 즉시 전이가 아니라 정산 패널을 연다 (S-009 ⑥) — SceneAdvanceButton 없이 만든다.
             GameObject endDay = new GameObject("EndDayButton", typeof(RectTransform));
             endDay.transform.SetParent(root, false);
@@ -273,8 +294,6 @@ namespace DontLate.EditorTools
             SetField(view, "_confirmButton", confirmButton);
             EditorUtility.SetDirty(view);
             panel.SetActive(false);
-
-            EditorSceneManager.SaveScene(scene, SCENES_ROOT + "/District.unity");
         }
 
         // ── UI 헬퍼 ──────────────────────────────────────────

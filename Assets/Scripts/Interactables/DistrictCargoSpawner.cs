@@ -18,6 +18,12 @@ namespace DontLate
         [SerializeField] private Material _boxFallback;
         [SerializeField] private TuningConfigSO _tuning;
 
+        [Header("아파트 배치 (S-038 — 비면 거리 기본 배치)")]
+        [Tooltip("짐 스폰 원점 — 아파트는 외부 마당.")]
+        [SerializeField] private Transform _boxOrigin;
+        [Tooltip("층별 비콘 앵커 — 인덱스 0=2층, 1=3층… 설정 시 order.floor로 층을 찾는다.")]
+        [SerializeField] private Transform[] _floorBeaconAnchors;
+
         private void Start()
         {
             string district = _gameState != null ? _gameState.currentDistrict : null;
@@ -31,10 +37,26 @@ namespace DontLate
                 matching.Add(order);
             }
 
+            var perFloorCount = new Dictionary<int, int>();
             for (int i = 0; i < matching.Count; i++)
             {
-                SpawnBox(matching[i], new Vector3(-16f + i * 1.2f, 0f, -1.2f));
-                SpawnBeacon(matching[i], new Vector3(-8f + i * 8f, 0f, 0f));
+                Vector3 boxPos = _boxOrigin != null
+                    ? _boxOrigin.position + new Vector3(i * 1.2f, 0f, 0f)
+                    : new Vector3(-16f + i * 1.2f, 0f, -1.2f);
+                SpawnBox(matching[i], boxPos);
+
+                if (_floorBeaconAnchors != null && _floorBeaconAnchors.Length > 0)
+                {
+                    // S-038: 층별 앵커 배치 — order.floor(2층=[0])별로 옆으로 나열.
+                    int floorIndex = Mathf.Clamp(matching[i].floor - 2, 0, _floorBeaconAnchors.Length - 1);
+                    perFloorCount.TryGetValue(floorIndex, out int slot);
+                    perFloorCount[floorIndex] = slot + 1;
+                    SpawnBeacon(matching[i], _floorBeaconAnchors[floorIndex].position + new Vector3(slot * 5f, 0f, 0f));
+                }
+                else
+                {
+                    SpawnBeacon(matching[i], new Vector3(-8f + i * 8f, 0f, 0f));
+                }
             }
             Debug.Log("[CargoSpawner] 구역 '" + district + "' — 짐 " + matching.Count + "건 · 비콘 " + matching.Count + "개 스폰.");
         }

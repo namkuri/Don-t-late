@@ -72,6 +72,12 @@ namespace DontLate
 
         [Header("이동맵 (Travel)")]
         /// <summary>근거리 노드 이동에 소모되는 게임 분.</summary>
+        [Header("아파트 엘리베이터 (S-038)")]
+        [Tooltip("호출 후 문이 열릴 때까지 소모되는 게임분.")]
+        public float elevatorWaitMinutes = 8f;
+        [Tooltip("층당 이동 게임분.")]
+        public float elevatorRideMinutesPerFloor = 3f;
+
         public float travelNearMinutes = 30f;
         /// <summary>원거리 노드 이동에 소모되는 게임 분.</summary>
         public float travelFarMinutes = 90f;

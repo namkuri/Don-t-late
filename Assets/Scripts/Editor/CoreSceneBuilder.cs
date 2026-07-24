@@ -31,9 +31,9 @@ namespace DontLate.EditorTools
         private const string DIALOGUE_DATA_ROOT = "Assets/Data/Dialogue";
         private const string PARK_SCENARIO_PATH = DIALOGUE_DATA_ROOT + "/Scenario_ParkMalsoon_Intro.asset";
 
-        private static readonly string[] ContentSceneNames = { "Home", "Camp", "Travel", "District" };
+        private static readonly string[] ContentSceneNames = { "Home", "Camp", "Travel", "District", "Apartment" };
 
-        // 빌드 세팅 등록 순서 — Core(0) → Main → 콘텐츠 4종. SampleScene·Greybox 제외.
+        // 빌드 세팅 등록 순서 — Core(0) → Main → 콘텐츠 5종. SampleScene·Greybox 제외.
         private static readonly string[] BuildOrder =
         {
             SCENES_ROOT + "/Core.unity",
@@ -42,6 +42,7 @@ namespace DontLate.EditorTools
             SCENES_ROOT + "/Camp.unity",
             SCENES_ROOT + "/Travel.unity",
             SCENES_ROOT + "/District.unity",
+            SCENES_ROOT + "/Apartment.unity", // S-038
         };
 
         // ── 메뉴 ─────────────────────────────────────────────
@@ -94,6 +95,7 @@ namespace DontLate.EditorTools
             CampStageBuilder.BuildCampStage();
             HomeStageBuilder.BuildHomeStage();
             DistrictSceneBuilder.BuildDistrictStage();
+            ApartmentStageBuilder.BuildApartmentStage(); // S-038
             SceneFlowUIBuilder.BuildSceneFlowUI();  // 씬별 전환 UI + 정산 패널 (무대 뒤에 얹는다)
             RegisterBuildSettings();
             EditorSceneManager.OpenScene(CORE_PATH); // Play 시작점으로 복귀

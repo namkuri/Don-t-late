@@ -205,5 +205,31 @@ namespace DontLate
             Log("DialogueEnded → " + scenarioName);
             DialogueEnded?.Invoke(scenarioName);
         }
+
+        // ── 아파트 (S-038 · D-067) — 전부 저빈도 상태 통지 ──
+
+        /// <summary>공동현관 비번 패널 앞에서 E — 키패드 UI 열림 요청.</summary>
+        public static event Action KeypadRequested;
+        public static void RaiseKeypadRequested() { Log("KeypadRequested"); KeypadRequested?.Invoke(); }
+
+        /// <summary>키패드 4자리 입력 완료 — 판정은 게이트 몫(뷰는 표시만).</summary>
+        public static event Action<string> KeypadEntered;
+        public static void RaiseKeypadEntered(string code) { Log("KeypadEntered ****"); KeypadEntered?.Invoke(code); }
+
+        /// <summary>비번 일치 — 공동현관 개방(게이트가 발행, 키패드 뷰가 닫힘 구독).</summary>
+        public static event Action GateOpened;
+        public static void RaiseGateOpened() { Log("GateOpened"); GateOpened?.Invoke(); }
+
+        /// <summary>비번 불일치 — 키패드 뷰가 오류 표시.</summary>
+        public static event Action KeypadRejected;
+        public static void RaiseKeypadRejected() { Log("KeypadRejected"); KeypadRejected?.Invoke(); }
+
+        /// <summary>엘리베이터 문 열림 — 층 선택 UI 요청 (페이로드 = 선택 가능한 층 배열).</summary>
+        public static event Action<int[]> FloorSelectRequested;
+        public static void RaiseFloorSelectRequested(int[] floors) { Log("FloorSelectRequested"); FloorSelectRequested?.Invoke(floors); }
+
+        /// <summary>층 선택 — 이동은 요청한 엘리베이터가 처리.</summary>
+        public static event Action<int> FloorChosen;
+        public static void RaiseFloorChosen(int floor) { Log("FloorChosen → " + floor); FloorChosen?.Invoke(floor); }
     }
 }

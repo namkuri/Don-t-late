@@ -87,8 +87,8 @@ namespace DontLate
                          locked = false, far = false, pos = new Vector2(0.26f, 0.64f) },
             new MapPin { label = "먹자골목", district = DeliveryOrderSO.DISTRICT_FOODALLEY,
                          locked = false, far = true, pos = new Vector2(0.70f, 0.40f) },
-            new MapPin { label = "아파트단지", district = "아파트단지",
-                         locked = true, far = true, pos = new Vector2(0.74f, 0.78f) },
+            new MapPin { label = "아파트단지", district = DeliveryOrderSO.DISTRICT_APARTMENT,
+                         locked = false, far = true, pos = new Vector2(0.74f, 0.78f) }, // S-038 활성화
             new MapPin { label = "언덕주택가", district = "언덕주택가",
                          locked = true, far = false, pos = new Vector2(0.24f, 0.20f) },
         };
@@ -836,6 +836,14 @@ namespace DontLate
             if (urgent != null && !string.IsNullOrEmpty(urgent.Value.District))
                 sb.Append("가야 할 구역  <color=#ff9f45><b>").Append(urgent.Value.District).Append("</b></color>\n");
 
+            // S-038: 아파트 건이 잡혀 있으면 공동현관 비번을 여기서 알려준다 (키패드는 폰을 보란 콘셉트).
+            foreach (DeliveryData d in _scanned)
+                if (d.District == DeliveryOrderSO.DISTRICT_APARTMENT)
+                {
+                    sb.Append("공동현관 비번  <color=#35e0c8><b>").Append(_gameState.apartmentGatePassword).Append("</b></color>\n");
+                    break;
+                }
+
             sb.Append("<color=#8a93a8>No 운송장     순번 목적지</color>\n");
             var byDeadline = new List<DeliveryData>(_scanned);
             byDeadline.Sort((a, b) => a.DeadlineMinuteOfDay.CompareTo(b.DeadlineMinuteOfDay));
@@ -1184,7 +1192,9 @@ namespace DontLate
             WorldAudioManager.Instance?.PlayMapDepartSfx(); // AU-011
             WorldDayNightManager.Instance.AdvanceMinutes(pin.far ? _tuning.travelFarMinutes : _tuning.travelNearMinutes);
             WorldDeliveryManager.Instance.SetDestination(pin.district);
-            WorldSceneFlowManager.Instance.Request(GameScene.District);
+            // S-038: 아파트단지는 별도 씬(D-067) — 나머지는 공용 District.
+            WorldSceneFlowManager.Instance.Request(
+                pin.district == DeliveryOrderSO.DISTRICT_APARTMENT ? GameScene.Apartment : GameScene.District);
         }
 
         private static Sprite _mapFallbackCache;

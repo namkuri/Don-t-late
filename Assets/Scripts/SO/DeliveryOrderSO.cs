@@ -10,6 +10,7 @@ namespace DontLate
         // 잔여 2구역(아파트단지·언덕주택가)은 S-036 지도 "준비 중" 잠금 전용 — 활성화 시 여기 승격.
         public const string DISTRICT_VILLATOWN = "빌라촌";
         public const string DISTRICT_FOODALLEY = "먹자골목";
+        public const string DISTRICT_APARTMENT = "아파트단지"; // S-038 (D-067)
 
         public int orderId;
         public string address;
