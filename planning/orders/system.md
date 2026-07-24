@@ -1054,3 +1054,20 @@
 - 라이선스: **Suno 유료(Pro/Premier)** — 상업이용·소유권 귀속·표기의무 없음(Director 확인). `Assets/Audio/CREDITS.md` "BGM (타이틀) — Suno" 절 신설 + `.gitignore` 예외 추가.
 - 인게임 재생: 타이틀 화면은 인트로 대화까지 무음(S-009), 대화 종료 후 크로스페이드 인. **곡 손맛·믹스 판정은 Director 청취 몫(사람 판정)**.
 - 검증: 임포트 에러 0 ○ · 배선 exec ○ · Play 크로스페이드 실측 ○. (오디오 레인 — 콘솔 검증은 임포트 에러용, 청취는 사람 게이트)
+
+---
+
+## S-051 · 발주 2026-07-24 (Director 직접 지시 — 타이틀곡 시작 화면 재생)
+
+요구 (Director 원문): "시작 버튼 있는 화면에서 타이틀 곡 나오게 해줘".
+
+배경: S-050이 Title 슬롯에 곡을 배선했으나 **실플레이에서 영영 무음**이었다 — `_holdUntilFirstDialogue`(S-009 인트로 무음)가 ApplySlot 진입 즉시 return시켜 Main(타이틀)에서 곡 선택 자체가 안 됐고(직전엔 Title 풀이 비어 무증상), DialogueEnded 시점엔 이미 Home이라 `_titleScene=false`→Day/Night만 재생. Title 슬롯은 도달 불가 상태였다.
+
+수용기준: 시작 버튼 화면(Main)에서 타이틀곡 재생 · S-009 인트로 무음 회귀 없음 · 셀프검증 3종.
+
+### 결과 · 2026-07-24 (리드 ~20분)
+- `WorldAudioManager.ApplySlot` 수정: hold 체크를 next 계산 **뒤로** 이동 + **Title 슬롯 예외**(타이틀 곡은 시작 화면에서 즉시 재생, 낮/밤 곡만 인트로까지 보류). 타이틀 이탈 시(held 상태로 non-title 진입) `StopBgm()` 신설로 타이틀 곡을 정지 — 인트로 무음 구간(S-009)으로 누수 방지.
+- 실검증(부팅→타이틀, 인위 구동 없음): `titleScene=True · slot=Title · clip=Pixel_Night_Funk_Don-T-Late · PLAYING vol=0.50 t=22.7s` — 시작 버튼 화면에서 타이틀곡 실재생 확인.
+- 회귀 방지: 이탈 경로는 `StopBgm`(held·non-title) → 무음, 대화 종료(released) 후 Day/Night 재생 경로는 무수정. Day/Night 풀 무손상(Day:2 Night:3 Title:1 실측).
+- 검증: 컴파일 ○ · 콘솔 0 ○ · Play 실재생 ○. **인트로→Day 전 구간 청취는 Director 사람 판정(오디오 레인)**.
+- 부기: 실 전이(Request(Home)) 관측 중 SceneFlow 전이가 Completed 미도달(Home 씬 빌드세팅/로드 이슈 — M1-05 미완, 콘솔 0). **오디오 변경과 무관**(TransitionRoutine 무수정) — 별건.
