@@ -76,6 +76,22 @@
   **BGM 청취 판정 종료** — 반입 10곡 → 채택 5곡.
 - **폐기 1곡**: `Late_for_Work_8-Bit_Panic` — 8비트로 분위기 불일치(Director 청취 판정). 프로젝트·아카이브 삭제.
 
+## Suno BGM INTAKE (타이틀) — 2026-07-24
+
+> 출처 = **Suno** (AI 음악 생성), **Director 개인 유료 플랜(Pro/Premier)** 생성물 (2026-07-24 반입 시 확인).
+> 권리 = **상업적 사용 가능·소유권 생성자 귀속·기간 무제한**. Suno 유료 구독 생성물은 상업 이용 허용,
+> 소유권 귀속(무료 플랜은 비상업+소유권 미귀속이라 반입 불가). 표기 의무 = **없음**(유료 플랜 한정).
+> 근거: Suno 이용약관 유료 플랜 상업 라이선스 조항 · Director 플랜 확인(2026-07-24). 상세 = `Assets/Audio/CREDITS.md`.
+> ElevenLabs 절 채택 5곡이 컷했던 **Title 슬롯 공백을 충원**. 스왑 계약은 `Assets/Data/BgmLibrary.asset`(slot=3).
+
+| 파일명 | 슬롯 | 길이 | dest | 출처 | 라이선스 | 반입일 |
+|---|---|---|---|---|---|---|
+| Pixel_Night_Funk_Don-T-Late_NoVocal.wav | **Title** (현 타이틀 곡) | 195.6s | `Assets/Audio/BGM/` | Suno (유료 Pro/Premier) — 스템 분리 보컬제거본 | 상업 사용 가능·소유권 귀속·무기한 | 2026-07-24 |
+| Pixel_Night_Funk_Don-T-Late.wav | Unsorted (보관) | 195.6s | `Assets/Audio/BGM/` | Suno (유료 Pro/Premier) — 보컬본 | 〃 | 2026-07-24 |
+
+- 임포트 = **Vorbis q30 · Compressed In Memory · 스테레오**(AudioImportPostprocessor 자동, BGM 규격 · WebGL안전). 파일 MD5(앞12): NoVocal `02a1e5057f1a` · 보컬본 `f9b29ce1614c`.
+- **2026-07-24 교체**(Director 지시): 타이틀 곡을 보컬제거본으로 교체, 보컬본은 삭제 없이 Unsorted 강등해 보관(추첨 제외). 보컬제거본은 원곡 Suno 스템이라 라이선스 동일.
+
 ## Trellis2 INTAKE — 2026-07-22
 
 > 출처 = **RunPod 셀프호스팅 TRELLIS** (Microsoft · MIT) · 민지 생성. 생성물 상업 사용 제약 없음.

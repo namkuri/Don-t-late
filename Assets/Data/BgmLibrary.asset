@@ -23,3 +23,7 @@ MonoBehaviour:
     slot: 2
   - clip: {fileID: 8300000, guid: ca1b70d78fd806d4aad3c6abe2659280, type: 3}
     slot: 1
+  - clip: {fileID: 8300000, guid: b0e4edd320d35714384de4161d8d6267, type: 3}
+    slot: 0
+  - clip: {fileID: 8300000, guid: 16c3391781cc6454c8644a78736c995b, type: 3}
+    slot: 3

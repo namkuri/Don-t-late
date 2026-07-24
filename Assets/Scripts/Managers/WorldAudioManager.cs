@@ -368,12 +368,18 @@ namespace DontLate
 
         private void ApplySlot()
         {
-            if (_holdUntilFirstDialogue && !_bgmReleased) return; // 인트로 전 무음 (S-009)
-
             BgmSlot next;
             if (_titleScene) next = BgmSlot.Title;
             else if (_phase == DayPhase.Evening || _phase == DayPhase.Night) next = BgmSlot.Night;
             else next = BgmSlot.Day;
+
+            // 타이틀 곡은 시작 화면에서 바로 재생한다. 낮/밤 곡만 인트로 대화 종료까지 보류하고(S-009),
+            // 타이틀을 벗어나 인트로로 들어갈 땐 타이틀 곡이 무음 구간으로 새지 않게 정지한다.
+            if (next != BgmSlot.Title && _holdUntilFirstDialogue && !_bgmReleased)
+            {
+                StopBgm();
+                return;
+            }
 
             if (next == _slot) return;
 
@@ -383,6 +389,16 @@ namespace DontLate
             _slot = next;
             SyncDebugIndex(next, clip);
             Crossfade(clip);
+        }
+
+        /// <summary>BGM 즉시 정지. 타이틀 곡이 인트로 무음 구간(S-009)으로 새지 않게 한다.</summary>
+        private void StopBgm()
+        {
+            if (_fade != null) { StopCoroutine(_fade); _fade = null; }
+            if (_sourceA != null) { _sourceA.Stop(); _sourceA.clip = null; _sourceA.volume = 0f; }
+            if (_sourceB != null) { _sourceB.Stop(); _sourceB.clip = null; _sourceB.volume = 0f; }
+            _active = null;
+            _slot = BgmSlot.Unsorted; // 재진입 시 다시 크로스페이드하도록 슬롯 커서 초기화
         }
 
         /// <summary>

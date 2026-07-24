@@ -1078,3 +1078,73 @@
 - 실측: 등반로 접지 ○(y1.61) · 계단 램프 접지 ○(y3.69) · 정상 접지 ○(y9.58) · 카메라 Y 추종 ○ · 스포너 앵커 3(중턱/달동네 초입/정상) 재배선 · 캡처 4장(Screenshots/s051_*) — 우천 스위치백 컷이 달동네 감을 확인시킴.
 - 검증: 컴파일 ○ 콘솔 0 ○ 재조립 ○ (매니저 무변경 — 테스트 32/32 유지).
 - 2단계 백로그: 계단 구간 스태미나 추가 가중 · BuildingSlot(modern/moon 태그) · 달동네 아트 세트 발주(판잣집·물탱크·전봇대·연탄) · 저지대 가로등/달동네 백열등 조명 분리.
+
+> ⚠ **번호 재조정 (2026-07-25 관제 · 선발 유지 관례)**: 아래 오디오 4건은 원발주가 S-050~S-054로
+> 기록됐으나 관제 대장이 동일 번호를 먼저 사용(위 S-050·S-051) — **AU-013~AU-017**로 재번호.
+> 커밋 메시지의 구번호(S-050~054)는 히스토리라 그대로다.
+
+## AU-013 · 발주 2026-07-24 (Director 직접 지시 — 타이틀곡 반입·배선)
+
+요구 (Director 원문): "타이틀 곡 아직 없으면, `Pixel Night Funk Don-T-Late.wav` 이 곡 붙이는 작업해줘(복사, 잘라내기 둘다 오케이)".
+
+수용기준: Title 슬롯 공백 확인 · WAV 반입(임포터 자동 규격) · BgmLibrary Title 배선 · 라이선스 기록 · 커밋 게이트 통과.
+
+### 결과 · 2026-07-24 (리드 ~15분)
+- Title 슬롯 공백 확인(CREDITS 폐기이력 — 구 `Late_for_Work_8-Bit_Panic` 8비트 불일치 폐기 후 공백).
+- WAV 복사 → `Assets/Audio/BGM/Pixel_Night_Funk_Don-T-Late.wav`(37.5MB · **195.6s**). AudioImportPostprocessor 자동: Vorbis · CompressedInMemory · 스테레오 · q0.30 · loadInBackground · WebGL안전(콘솔 0).
+- `BgmLibrary.asset` Title(slot 3) 엔트리 추가 — Title 풀=1곡(Day 2·Night 3 무손상, exec 검증).
+- Play 실검증: Main 전이 + DialogueEnded 구동 시 `CurrentClip = Pixel_Night_Funk_Don-T-Late`(195.6s) 크로스페이드 선택 확인 · 콘솔 0.
+- 라이선스: **Suno 유료(Pro/Premier)** — 상업이용·소유권 귀속·표기의무 없음(Director 확인). `Assets/Audio/CREDITS.md` "BGM (타이틀) — Suno" 절 신설 + `.gitignore` 예외 추가.
+- 인게임 재생: 타이틀 화면은 인트로 대화까지 무음(S-009), 대화 종료 후 크로스페이드 인. **곡 손맛·믹스 판정은 Director 청취 몫(사람 판정)**.
+- 검증: 임포트 에러 0 ○ · 배선 exec ○ · Play 크로스페이드 실측 ○. (오디오 레인 — 콘솔 검증은 임포트 에러용, 청취는 사람 게이트)
+
+---
+
+## AU-014 · 발주 2026-07-24 (Director 직접 지시 — 타이틀곡 시작 화면 재생)
+
+요구 (Director 원문): "시작 버튼 있는 화면에서 타이틀 곡 나오게 해줘".
+
+배경: AU-013이 Title 슬롯에 곡을 배선했으나 **실플레이에서 영영 무음**이었다 — `_holdUntilFirstDialogue`(S-009 인트로 무음)가 ApplySlot 진입 즉시 return시켜 Main(타이틀)에서 곡 선택 자체가 안 됐고(직전엔 Title 풀이 비어 무증상), DialogueEnded 시점엔 이미 Home이라 `_titleScene=false`→Day/Night만 재생. Title 슬롯은 도달 불가 상태였다.
+
+수용기준: 시작 버튼 화면(Main)에서 타이틀곡 재생 · S-009 인트로 무음 회귀 없음 · 셀프검증 3종.
+
+### 결과 · 2026-07-24 (리드 ~20분)
+- `WorldAudioManager.ApplySlot` 수정: hold 체크를 next 계산 **뒤로** 이동 + **Title 슬롯 예외**(타이틀 곡은 시작 화면에서 즉시 재생, 낮/밤 곡만 인트로까지 보류). 타이틀 이탈 시(held 상태로 non-title 진입) `StopBgm()` 신설로 타이틀 곡을 정지 — 인트로 무음 구간(S-009)으로 누수 방지.
+- 실검증(부팅→타이틀, 인위 구동 없음): `titleScene=True · slot=Title · clip=Pixel_Night_Funk_Don-T-Late · PLAYING vol=0.50 t=22.7s` — 시작 버튼 화면에서 타이틀곡 실재생 확인.
+- 회귀 방지: 이탈 경로는 `StopBgm`(held·non-title) → 무음, 대화 종료(released) 후 Day/Night 재생 경로는 무수정. Day/Night 풀 무손상(Day:2 Night:3 Title:1 실측).
+- 검증: 컴파일 ○ · 콘솔 0 ○ · Play 실재생 ○. **인트로→Day 전 구간 청취는 Director 사람 판정(오디오 레인)**.
+- 부기: 실 전이(Request(Home)) 관측 중 SceneFlow 전이가 Completed 미도달(Home 씬 빌드세팅/로드 이슈 — M1-05 미완, 콘솔 0). **오디오 변경과 무관**(TransitionRoutine 무수정) — 별건.
+
+---
+
+## AU-015 · 발주 2026-07-24 (Director 직접 지시 — 타이틀곡 보컬제거본 교체)
+
+요구 (Director 원문): "`Pixel Night Funk Stems/1 Lead Vocal.wav` 은 보컬을 제거한 타이틀곡이야. 기존 곡은 지우지말고 보관하고 보컬없는 곡으로 교체해줘".
+
+배경: 파일명이 `1 Lead Vocal`이라 이름상 보컬 스템처럼 보여 검증 필요 — Python 에너지 분석으로 판별.
+
+수용기준: 보컬제거본이 실제 인스트루멘탈인지 검증 · Title 슬롯 교체 · 기존 보컬본 삭제 없이 보관 · 셀프검증.
+
+### 결과 · 2026-07-24 (리드 ~15분)
+- **판별**(ffprobe 부재 → Python wave/array): `0 Lead Vocal`=RMS2355·무음비31.9%(격리 보컬), `1 Lead Vocal`=RMS4352·무음비5.8%(연속 풀밴드=인스트루멘탈). Director 지시(`1`=보컬제거) 확인.
+- 교체: `1 Lead Vocal.wav` → `Assets/Audio/BGM/Pixel_Night_Funk_Don-T-Late_NoVocal.wav` 반입(임포터 자동 규격, 콘솔 0). BgmLibrary: NoVocal=**Title(slot3)**, 기존 보컬본=**Unsorted(slot0)로 강등**(삭제 없이 보관·추첨 제외).
+- 실검증(부팅→타이틀): `slot=Title · clip=Pixel_Night_Funk_Don-T-Late_NoVocal · PLAYING` — 보컬 없는 곡 재생 확인. Day2·Night3 무손상.
+- 라이선스: 원곡 Suno 스템이라 동일(Suno 유료). CREDITS.md·assets_manifest.md 2곡 등재(현 타이틀=NoVocal, 보관=보컬본) + .gitignore 예외.
+- 검증: 컴파일 ○ · 콘솔 0 ○ · Play 재생 ○. 손맛 청취는 Director 사람 판정(오디오 레인).
+
+---
+
+## AU-017 · 발주 2026-07-25 (Director 직접 지시 — 맵이동·대사 효과음 ElevenLabs 재생성)
+
+요구 (Director 원문): "맵이동과 대사 효과음만 다시 일레븐랩스로 만들어줘." (AU-016 8비트 블립 롤백 직후 — b04c39d)
+
+수용기준: sfx_map_pin/route/depart·sfx_dialogue_blip 4종 ElevenLabs 재생성 · 기존 파일 제자리 교체(guid 불변) · 셀프검증. 음질은 Director 청취.
+
+### 결과 · 2026-07-25 (리드 ~20분)
+- 선블로커 해소: ElevenLabs 크레딧 0 → Director 10000 충전 후 진행.
+- 생성: `elevenlabs_client gen --overwrite` 4종(기존 토이톤 프롬프트·새 seed). seed 기록 — dialogue **864007029** · map_pin **1884846211** · map_route **782230717** · map_depart **2078724653**.
+- 후공정: 파이프라인 normalize/intake/promote는 4종 BOM/JUICE 미등재로 게이트 차단 → 기존 프로젝트 자산 재생성이라(신규 반입 아님·이미 라이선스/manifest 등재) 자체 DSP(트림·피크 -1dB·RMS -14dB, **피크 한계 무클립**)로 처리 후 `Assets/Audio/SFX/` **제자리 교체**.
+- 후공정 실측: route -14.0dB·depart -14.0dB(RMS 타깃) · dialogue_blip -1.0dB피크/-22.3dB·map_pin -1.0dB피크/-20.8dB(피크형 트랜지언트라 무클립 피크 한계 — 짧은 틱/플링크는 피크가 체감 음량). 확립 프로세스(0.81% 클립 가드)보다 보수적 = 무왜곡. **더 크게 원하면 클립 가드 재처리 가능**.
+- guid 4종 전부 보존(.meta 미변경) → 코드·씬 재작업 0(맵 SFX=WorldAudioManager·블립=DialogueView `_blipClip` 배선 유지). Core 재빌드로 로컬 씬 정합(AU-016 잔재 정리).
+- 검증: 임포트 콘솔 0 · 클립 4종 유효(mono 44.1kHz) · 배선 유지. **인게임 청취 판정은 Director(오디오 레인)**.
+- 라이선스: ElevenLabs SFX 유료(기존 동일) — CREDITS/manifest 기등재.
