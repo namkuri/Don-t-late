@@ -190,8 +190,11 @@ namespace DontLate
         private void OnSceneChanged(GameScene scene)
         {
             _sceneZOffset = scene == GameScene.Home ? 10f : 0f; // S-044 ① — 방 뒷벽(z3) 너머 창밖
+            _indoorScene = scene == GameScene.Apartment;        // S-050 ④ — 실내엔 눈 안 쌓임
             RefreshGradeTarget();
         }
+
+        private bool _indoorScene; // S-050 ④ — 아파트 실내: SnowCover·발자국(HasSnowCover) 억제
 
         private void RefreshGradeTarget()
         {
@@ -400,7 +403,8 @@ namespace DontLate
         private void UpdateSnowCover()
         {
             if (_snowCover == null) return;
-            float target = Weather == WeatherType.Snow ? 0.30f : 0f; // S-046 ③ — 보조 톤으로 강등
+            if (_indoorScene) _snowAmount = 0f; // S-050 ④ — 실내 진입 즉시 걷힘 (HasSnowCover도 false → 발자국 없음)
+            float target = !_indoorScene && Weather == WeatherType.Snow ? 0.30f : 0f; // S-046 ③ — 보조 톤으로 강등
             float rate = Weather == WeatherType.Snow ? 0.030f : 0.018f; // 쌓임은 느긋(~24s), 녹음은 더 느긋
             _snowAmount = Mathf.MoveTowards(_snowAmount, target, rate * Time.deltaTime);
             bool visible = _snowAmount > 0.01f;

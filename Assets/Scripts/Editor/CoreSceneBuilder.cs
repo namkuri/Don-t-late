@@ -529,7 +529,7 @@ namespace DontLate.EditorTools
             RectTransform panelRect = panel.GetComponent<RectTransform>();
             panelRect.anchorMin = panelRect.anchorMax = new Vector2(1f, 0f);
             panelRect.pivot = new Vector2(1f, 0f);
-            panelRect.anchoredPosition = hasFrame ? new Vector2(-67f, 130f) : new Vector2(-28f, 24f);
+            panelRect.anchoredPosition = hasFrame ? new Vector2(-67f, 0f) : new Vector2(-28f, 24f); // S-050 ①: 폰 하강(-106)에 맞춰 개구 정합 130→0
             panelRect.sizeDelta = hasFrame ? new Vector2(354f, 622f) : new Vector2(430f, 610f);
             SetField(view, "_panel", panel);
 
@@ -597,6 +597,8 @@ namespace DontLate.EditorTools
             panelRect.anchoredPosition = new Vector2(-28f, frameArt != null ? -840f : -640f); // 닫힘 = 화면 밖
             SetField(view, "_panel", panelRect);
             SetField(view, "_hiddenY", frameArt != null ? -840f : -640f);
+            // S-050 ①: 열림 = 화면 개구 바닥(패널바닥+106px)이 뷰포트 바닥에 딱 — 하단 베젤은 화면 밖.
+            SetField(view, "_shownY", frameArt != null ? -106f : 24f);
 
             Image screen = CreateImage(panel.transform, "Screen", NAVY);
             RectTransform screenRect = screen.rectTransform;

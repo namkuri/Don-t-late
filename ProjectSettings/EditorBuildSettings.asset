@@ -26,5 +26,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Apartment.unity
     guid: 5826ae2f5d500fd428e688d71275db10
+  - enabled: 1
+    path: Assets/Scenes/Hillside.unity
+    guid: 072bdc7dc3628a046b2a378f671c8234
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

@@ -1037,3 +1037,23 @@
 - 메커닉(D-065): **비×언덕 미끄럼** — PlayerLocomotionManager가 SceneTransitionCompleted·WeatherChanged 구독, Hillside+Rain일 때 이동을 관성 수렴(MoveTowards, 가속 6/s — 출발 굼뜸·정지 밀림)으로 전환. **스태미나 가중** — PlayerStatusManager가 Hillside에서 drain ×1.4.
 - 실측: Travel→Hillside 진입 ○ · 4단 테라스·램프 렌더 ○ · 플레이어 4단 접지(y6.08) ○ · 카메라 y 8.10→12.89 추종 ○ · Rain 전환 후 강우 렌더 ○ · 캡처 3장(Screenshots/s049_*).
 - 부기: 전이 가드 실측 — Home→Hillside 직행은 "허용되지 않은 전이" 거부(정상, Travel 경유만).
+
+---
+
+## S-050 · 발주 2026-07-24 19:52 → ClaudeCode (본 세션 실행 — 폰 돌출 높이·문 방향·캐빈 개방·실내 눈)
+
+요구 (남규님 원문+에디터 스크린샷):
+1. 아트 피드백: Tab 폰 — 전체가 아니라 **스크린 기준 바닥까지만** 화면에 돌출
+2. 자동문 "좌측" 정정 — 카메라 기준 좌가 아니라 **카메라에서 먼 쪽(깊이)** 으로 슬라이드
+3. 엘베 캐빈 **Y축 90도** + Right 벽 제거 — 카메라가 내부를 보게 (스크린샷처럼)
+4. 아파트 실내 — SnowCover 깔지 않기 + 눈 발자국 미생성
+
+수용기준: 폰 개구 바닥=뷰포트 바닥 정합 · 문 +Z 슬라이드 · 캐빈 회전·개방면 카메라 · Snow 날씨에도 아파트에서 커버·발자국 없음 · 테스트 green.
+
+### 결과 · 2026-07-24 20:03 (리드 11분)
+- ① 폰 열림 위치 `_shownY` 24→**-106**(프레임 아트 시) — 화면 개구 바닥(패널바닥+106px)이 뷰포트 바닥에 딱, 하단 베젤은 화면 밖. 미니게임 패널 y 130→0 동반 정합. 캡처 — 상태바·앱그리드 전부 보이고 폰 하단이 바닥에 닿음.
+- ② [ApartmentSlidingDoor.cs](../../Assets/Scripts/Interactables/ApartmentSlidingDoor.cs) 슬라이드 축 `Vector3.left`→**`Vector3.forward`(+Z)**. 실측: Unlock 시 panel local (0,1.1,0)→**(0,1.1,1.70)** — 카메라 반대쪽으로 열림.
+- ③ 캐빈 루트 **rotY=90** + Right 벽 미생성(빌더 개정) — 실측: Back=월드 x21.4(샤프트 안벽)·Left=월드 z+1.4(카메라 반대편)·카메라쪽(-Z) 개방·개구는 복도(-X) 방향. CabinPanel은 먼쪽 벽 안면(z+1.2)으로 이설. 탑승 촬영 — 상승 중 캐빈 내부·플레이어가 카메라에 보임, 3층 도착 y8.28.
+- ④ WorldWeatherManager `_indoorScene`(Apartment) — 진입 즉시 `_snowAmount=0` 스냅·목표 0 고정. 실측: Snow 날씨 12초 경과에도 **HasSnowCover=False·커버 quad 비활성**(야외였다면 ≈0.36 축적) → 발자국 게이트(HasSnowCover)도 함께 닫힘.
+- 검증: 컴파일 ○ 콘솔 0 ○ ★ 재조립 ○ Play 실측(위 수치) ○ 캡처 2장(Screenshots/s050_*). 매니저 로직은 표시 게이트만이라 테스트 무영향(32/32 유지).
+- 실수 기록: exec 안 for 루프 행잉 함정 **3회차 재위반**(캐빈 자식 순회) — 인덱스 단문으로 재작성해 회복. 기지 함정 체크리스트를 exec 작성 전에 상기할 것.

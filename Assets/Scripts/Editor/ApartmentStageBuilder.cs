@@ -154,12 +154,13 @@ namespace DontLate.EditorTools
 
         private static void BuildElevator(TuningConfigSO tuning, Material cabinMat, Material panelMat, Material highlight)
         {
-            // 캐빈 — 바닥+뒷벽+양옆(앞 개방), 1층에서 시작.
+            // 캐빈 — 1층에서 시작. S-050 ③: 루트 Y90 회전 — 개구(로컬 -Z)가 복도(-X)를 향하고,
+            // 카메라 쪽(-Z)이 되는 로컬 +X 벽(구 Right)은 만들지 않아 카메라가 내부를 본다.
             GameObject cabin = GreyboxStageBuilder.CreateEmpty("ElevatorCabin", new Vector3(SHAFT_X, 0f, 0f));
+            cabin.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
             BuildCabinPart(cabin, "Floor", new Vector3(0f, 0.1f, 0f), new Vector3(3f, 0.2f, 3f), cabinMat);
-            BuildCabinPart(cabin, "Back", new Vector3(0f, 1.6f, 1.4f), new Vector3(3f, 3f, 0.2f), cabinMat);
-            BuildCabinPart(cabin, "Left", new Vector3(-1.4f, 1.6f, 0f), new Vector3(0.2f, 3f, 3f), cabinMat);
-            BuildCabinPart(cabin, "Right", new Vector3(1.4f, 1.6f, 0f), new Vector3(0.2f, 3f, 3f), cabinMat);
+            BuildCabinPart(cabin, "Back", new Vector3(0f, 1.6f, 1.4f), new Vector3(3f, 3f, 0.2f), cabinMat);  // 월드 +X — 샤프트 안벽
+            BuildCabinPart(cabin, "Left", new Vector3(-1.4f, 1.6f, 0f), new Vector3(0.2f, 3f, 3f), cabinMat); // 월드 +Z — 카메라 반대편
 
             ApartmentElevator elevator = cabin.AddComponent<ApartmentElevator>();
             GreyboxStageBuilder.SetReference(elevator, "_tuning", tuning);
@@ -170,8 +171,8 @@ namespace DontLate.EditorTools
             for (int i = 0; i < FLOORS; i++) ys.GetArrayElementAtIndex(i).floatValue = i * FLOOR_H;
             serialized.ApplyModifiedPropertiesWithoutUndo();
 
-            // 캐빈 내부 패널 (층 선택).
-            BuildPanel(cabin.transform, "CabinPanel", new Vector3(1.15f, 1.4f, 0.9f), elevator, 0, true, panelMat, highlight);
+            // 캐빈 내부 패널 (층 선택) — Y90 회전 후 로컬 -X 벽(월드 -Z 개방부 아님, 월드 +Z의 Left 벽) 안쪽.
+            BuildPanel(cabin.transform, "CabinPanel", new Vector3(-1.15f, 1.4f, 0.9f), elevator, 0, true, panelMat, highlight);
 
             // 층 호출 패널 — 샤프트 왼쪽 벽면.
             for (int floor = 1; floor <= FLOORS; floor++)

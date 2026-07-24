@@ -3,7 +3,7 @@ using UnityEngine;
 namespace DontLate
 {
     /// <summary>
-    /// 아파트 공동현관 자동 슬라이드문 (S-048 ②). 비번 성공(Unlock) 시 좌로 슬라이드 개방(코드 트윈) →
+    /// 아파트 공동현관 자동 슬라이드문 (S-048 ②). 비번 성공(Unlock) 시 깊이(+Z — 카메라에서 먼 쪽)로 슬라이드 개방(코드 트윈) →
     /// 일정 시간 후 자동 닫힘. 해제된 뒤에는 문 앞 모션 센서(트리거)가 움직임을 감지하면 다시 열린다.
     /// 문 패널 자체가 실콜라이더 — 닫혀 있으면 물리적으로 막힌다.
     /// </summary>
@@ -11,7 +11,7 @@ namespace DontLate
     {
         [Tooltip("슬라이드하는 문 패널 (실콜라이더 포함).")]
         [SerializeField] private Transform _panel;
-        [SerializeField] private float _slideDistance = 1.7f; // 좌(−X)로
+        [SerializeField] private float _slideDistance = 1.7f; // 깊이(+Z — 카메라 반대쪽)로 (S-050 ②)
         [SerializeField] private float _slideSeconds = 0.45f;
         [SerializeField] private float _autoCloseSeconds = 4f;
 
@@ -52,7 +52,7 @@ namespace DontLate
             }
 
             _openAmount = Mathf.MoveTowards(_openAmount, _target, Time.deltaTime / _slideSeconds);
-            _panel.localPosition = _closedPos + Vector3.left * (_slideDistance * _openAmount);
+            _panel.localPosition = _closedPos + Vector3.forward * (_slideDistance * _openAmount);
         }
 
         // 모션 센서 — 이 오브젝트의 트리거 콜라이더(문 앞뒤 구역). 해제 후에만 반응.
