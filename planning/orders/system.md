@@ -1176,3 +1176,26 @@
   District 할머니 의뢰 → ErrandBox(12.9)·마커(-6) 스폰 → 픽업(심부름 짐) → 마커 도달 자동 배달 →
   복귀 보상 money 0→**1,500**·totalEarned 반영·HUD 표시 ○ / 행인 배회 이동 캡처 간 위치 변화 ○.
 - 검증: 컴파일 ○ 콘솔 0 ○ 테스트 32/32 ○ ★ 재조립 ○ 캡처 3장(Screenshots/s052_*).
+
+---
+
+## AU-019 · 발주 2026-07-25 (구번호 S-055 — 관제 재번호) (Director 직접 지시 — 맵이동 소리 후보 청취·선택)
+
+요구 (Director): 맵이동 소리를 "다양하게 들어보고" 싶다 → 동작당 5후보 생성해 청취 후 선택.
+
+배경 확인: ElevenLabs 웹은 프롬프트당 4후보 제시하나 **REST `/v1/sound-generation`은 요청당 1개**(count 파라미터 없음)·**SFX는 seed 파라미터도 없어 매 호출 랜덤**. → 웹 4후보 = API N회 호출로 재현.
+
+### 결과 · 2026-07-25 (리드 ~15분)
+- 3종(pin·route·depart) 각 5후보 = **15 생성**(같은 토이톤 프롬프트·랜덤) → 자체 후공정(트림·피크 -1dB·RMS -14dB) → `Downloads/맵소리후보/`에 청취용 배치.
+- Director 선택: **pin_1 · route_5 · depart_2**.
+- 선택본 `Assets/Audio/SFX/`에 제자리 교체 — guid 3종 보존(pin 5fa59c·route 9461617·depart f4d3041, .meta 미변경) → 코드·씬 재작업 0. 클립 유효(pin 0.14s·route 0.26s·depart 0.60s, mono).
+- 검증: 콘솔 0 · 배선 유지(WorldAudioManager PlayMapPin/Route/Depart). **최종 인게임 청취는 Director**.
+- 부기: SFX seed 비복원 확인 → CREDITS AU-017 표 정정(seed는 로컬 기록·복원 불가 명시).
+
+---
+
+## 판정 · 2026-07-25 — AU-013~017·AU-019 오디오 배치 (구번호 S-050~055) (Director 청취 통과)
+
+Director 인게임 테스트: "테스트해봤을 때 괜찮았어" — **청취 판정 통과**(오디오 레인 사람 게이트 충족).
+- AU-013~015 타이틀 BGM(Suno·시작화면 재생·보컬제거본) · AU-017 SFX 재생성 · AU-019 맵이동 선택본(pin_1·route_5·depart_2) 전부 통과.
+- 상태: PR #14 반영 완료. **머지만 관제 게이트로 잔여**(Director 지시 "머지 빼고 진행"). review→done 전이는 관제 머지 시점.

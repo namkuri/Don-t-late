@@ -211,13 +211,15 @@ late-night introspective, hazy, instrumental, 88 BPM
 - 파이프라인 수리 1건: `bom_audio.fallback()`이 미등재 `amb_*`를 bgm으로 오분류(BGM 루프 규격+시티팝 앵커 주입) → `amb_` 접두어 SFX 분류 추가.
 - BOM §8 미등재 5종 — 발주서(AU-011 2026-07-23 20:59)가 근거. 행 추가는 관제 몫(R16 ③ 합류 요청).
 
-### AU-017 재생성 (2026-07-25 · Director 지시 · 계정·권리 위 표와 동일 — 구번호 S-054, 관제 재번호)
+### AU-017/AU-019 재생성 (구번호 S-054/055 — 관제 재번호) (2026-07-25 · Director 지시 · 계정·권리 위 표와 동일)
 
-맵이동 3종 + 대사 블립을 ElevenLabs로 재생성(같은 토이톤 프롬프트·새 seed → 제자리 교체, guid 불변). seed 기록은 [orders/system.md](../../planning/orders/system.md) AU-017.
+맵이동 3종 + 대사 블립을 ElevenLabs로 재생성(같은 토이톤 프롬프트 → 자체 후공정 트림·피크 -1dB·RMS -14dB → 제자리 교체, guid 불변).
+⚠ **SFX는 API가 seed를 안 받아 seed로 복원 불가**(음악만 seed 복원 가능). AU-017(구 S-054) ledger의 seed는 로컬 기록일 뿐.
+맵 3종은 각 5후보 생성 후 **Director 청취 선택**(AU-019 — pin_1·route_5·depart_2).
 
-| bom_id | seed | 후공정 실측 |
+| bom_id | 출처 | 후공정 실측 |
 |---|---|---|
-| `sfx_dialogue_blip` | 864007029 | 트림→피크 -1.0dB · RMS -22.3dB(피크형 무클립) |
-| `sfx_map_pin` | 1884846211 | 피크 -1.0dB · RMS -20.8dB(피크형 무클립) |
-| `sfx_map_route` | 782230717 | 피크 -4.5dB · RMS -14.0dB |
-| `sfx_map_depart` | 2078724653 | 피크 -2.7dB · RMS -14.0dB |
+| `sfx_dialogue_blip` | S-054 단일 | 트림→피크 -1.0dB · RMS -22.3dB(피크형 무클립) |
+| `sfx_map_pin` | S-055 선택(5후보 중 pin_1) | 피크 -1.0dB · RMS -17.4dB |
+| `sfx_map_route` | S-055 선택(route_5) | 피크 -3.5dB · RMS -14.0dB |
+| `sfx_map_depart` | S-055 선택(depart_2) | 피크 -2.2dB · RMS -14.0dB |
