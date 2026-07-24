@@ -11,6 +11,17 @@ namespace DontLate
         Apartment // S-038 (D-067) — 아파트단지 별도 씬 (대차·비번·엘베)
     }
 
+    /// <summary>하루의 날씨 (S-042) — 아침 추첨, 시각·연출·안개가 구독.</summary>
+    public enum WeatherType
+    {
+        Clear,   // 맑음 — 구름 거의 없음
+        Cloudy,  // 흐림
+        Rain,    // 비 — 먹구름
+        Snow,    // 눈
+        Fog,     // 안개
+        Heat     // 폭염 — 아지랑이
+    }
+
     /// <summary>하루의 시간대. 조명·LUT 전환의 기준.</summary>
     public enum DayPhase
     {

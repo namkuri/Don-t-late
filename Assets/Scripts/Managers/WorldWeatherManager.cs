@@ -1,0 +1,402 @@
+using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
+
+namespace DontLate
+{
+    /// <summary>
+    /// 날씨 (S-042) — 하루 1회 추첨(맑음·흐림·비·눈·안개·폭염), 파티클(비·눈·아지랑이)·구름·
+    /// 컬러 그레이드("LUT" — 날씨×시간대×구역 합성, 수 초 러프)를 소유한다. Core 상주.
+    /// 안개 밀도는 WorldDayNightManager가 WeatherChanged를 구독해 협조(조명과 한 몸).
+    /// 연출물은 전부 코드 조립 — 씬 재조립만으로 완성(그레이박스 원칙).
+    /// </summary>
+    public class WorldWeatherManager : MonoBehaviour
+    {
+        public static WorldWeatherManager Instance { get; private set; }
+
+        [SerializeField] private GameStateSO _gameState;
+        [Tooltip("그레이드 전이 속도 (1/초) — 낮을수록 느긋한 트랜지션.")]
+        [SerializeField] private float _gradeLerpSpeed = 0.5f;
+
+        public WeatherType Weather { get; private set; } = WeatherType.Clear;
+
+        private int _lastRolledDay = -1;
+        private ParticleSystem _rain;
+        private ParticleSystem _snow;
+        private ParticleSystem _haze;
+        private Transform _cloudRoot;
+        private SpriteRenderer[] _clouds;
+        private DayPhase _phase = DayPhase.Morning;
+
+        // 런타임 글로벌 볼륨 (그레이드 소유 — 씬 볼륨(블룸)과 별개, 우선순위 높음).
+        private ColorAdjustments _colorAdjust;
+        private WhiteBalance _whiteBalance;
+        private float _targetExposure, _targetSaturation, _targetTemperature;
+        private Color _targetFilter = Color.white;
+
+        private void Awake()
+        {
+            if (Instance != null) { Destroy(gameObject); return; }
+            Instance = this;
+        }
+
+        private void OnDestroy()
+        {
+            if (Instance == this) Instance = null;
+        }
+
+        private void OnEnable()
+        {
+            WorldEvents.ClockTicked += OnClockTicked;
+            WorldEvents.DayPhaseChanged += OnDayPhaseChanged;
+            WorldEvents.SceneTransitionCompleted += OnSceneChanged;
+        }
+
+        private void OnDisable()
+        {
+            WorldEvents.ClockTicked -= OnClockTicked;
+            WorldEvents.DayPhaseChanged -= OnDayPhaseChanged;
+            WorldEvents.SceneTransitionCompleted -= OnSceneChanged;
+        }
+
+        private void Start()
+        {
+            BuildEffects();
+            BuildGradeVolume();
+            Reroll();
+        }
+
+        private void Update()
+        {
+            DriftClouds();
+            LerpGrade();
+        }
+
+        private void LateUpdate()
+        {
+            // 연출 리그는 카메라 X를 따라간다 (씬·구역 무관).
+            Camera camera = Camera.main;
+            if (camera == null) return;
+            Vector3 cam = camera.transform.position;
+            transform.position = new Vector3(cam.x, 0f, 0f);
+        }
+
+        // ── 추첨 ─────────────────────────────────────────────
+        private void OnClockTicked(GameClock clock)
+        {
+            if (clock.Day == _lastRolledDay) return;
+            Reroll();
+        }
+
+        private static readonly (WeatherType type, int weight)[] Weights =
+        {
+            (WeatherType.Clear, 28), (WeatherType.Cloudy, 22), (WeatherType.Rain, 16),
+            (WeatherType.Snow, 10), (WeatherType.Fog, 12), (WeatherType.Heat, 12),
+        };
+
+        private void Reroll()
+        {
+            _lastRolledDay = _gameState != null ? _gameState.day : 0;
+            int total = 0;
+            foreach (var w in Weights) total += w.weight;
+            int roll = Random.Range(0, total);
+            WeatherType picked = WeatherType.Clear;
+            foreach (var w in Weights)
+            {
+                roll -= w.weight;
+                if (roll < 0) { picked = w.type; break; }
+            }
+            SetWeather(picked);
+        }
+
+        /// <summary>디버그·튜닝용 강제 설정 (unity-cli exec 검증 포함).</summary>
+        public void SetWeather(WeatherType weather)
+        {
+            Weather = weather;
+            ApplyWeatherVisuals();
+            RefreshGradeTarget();
+            WorldEvents.RaiseWeatherChanged(weather);
+        }
+
+        // ── 파티클·구름 ──────────────────────────────────────
+        private void ApplyWeatherVisuals()
+        {
+            Toggle(_rain, Weather == WeatherType.Rain);
+            Toggle(_snow, Weather == WeatherType.Snow);
+            Toggle(_haze, Weather == WeatherType.Heat);
+
+            int cloudCount = Weather switch
+            {
+                WeatherType.Clear => 1,
+                WeatherType.Heat => 0,
+                WeatherType.Cloudy => 7,
+                WeatherType.Rain => 8,
+                WeatherType.Snow => 6,
+                WeatherType.Fog => 4,
+                _ => 3
+            };
+            Color cloudColor = Weather == WeatherType.Rain
+                ? new Color(0.30f, 0.31f, 0.36f, 0.92f)   // 먹구름
+                : new Color(0.92f, 0.93f, 0.96f, 0.82f);
+            for (int i = 0; i < _clouds.Length; i++)
+            {
+                _clouds[i].gameObject.SetActive(i < cloudCount);
+                _clouds[i].color = cloudColor * new Color(1f, 1f, 1f, 0.6f + 0.4f * ((i * 37) % 10) / 10f);
+            }
+        }
+
+        private static void Toggle(ParticleSystem system, bool on)
+        {
+            if (system == null) return;
+            if (on && !system.isPlaying) system.Play();
+            else if (!on && system.isPlaying) system.Stop();
+        }
+
+        private void DriftClouds()
+        {
+            if (_cloudRoot == null) return;
+            for (int i = 0; i < _clouds.Length; i++)
+            {
+                if (!_clouds[i].gameObject.activeSelf) continue;
+                Transform cloud = _clouds[i].transform;
+                float speed = 0.35f + 0.1f * (i % 3);
+                Vector3 pos = cloud.localPosition + Vector3.right * (speed * Time.deltaTime);
+                if (pos.x > 45f) pos.x = -45f; // 랩
+                cloud.localPosition = pos;
+            }
+        }
+
+        // ── 그레이드 ("LUT" — 날씨×시간대×구역) ─────────────
+        private void OnDayPhaseChanged(DayPhase phase)
+        {
+            _phase = phase;
+            RefreshGradeTarget();
+        }
+
+        private void OnSceneChanged(GameScene _) => RefreshGradeTarget();
+
+        private void RefreshGradeTarget()
+        {
+            // 시간대 베이스 (조명은 DayNight 몫 — 여기는 필름 톤만 살짝).
+            float exposure = 0f, saturation = 0f, temperature = 0f;
+            Color filter = Color.white;
+            switch (_phase)
+            {
+                case DayPhase.Morning: temperature = 4f; break;
+                case DayPhase.Day: exposure = 0.05f; break;
+                case DayPhase.Evening: temperature = 14f; saturation = 6f; break;
+                case DayPhase.Night: temperature = -10f; saturation = -6f; exposure = -0.05f; break;
+            }
+
+            // 날씨 모디파이어.
+            switch (Weather)
+            {
+                case WeatherType.Rain: exposure -= 0.28f; saturation -= 18f; temperature -= 10f; filter = new Color(0.88f, 0.92f, 1f); break;
+                case WeatherType.Snow: exposure += 0.08f; saturation -= 12f; temperature -= 18f; break;
+                case WeatherType.Fog: exposure -= 0.18f; saturation -= 14f; break;
+                case WeatherType.Cloudy: exposure -= 0.12f; saturation -= 8f; break;
+                case WeatherType.Heat: temperature += 22f; saturation += 6f; exposure += 0.06f; filter = new Color(1f, 0.97f, 0.90f); break;
+            }
+
+            // 구역 분위기.
+            string district = _gameState != null ? _gameState.currentDistrict : null;
+            if (district == DeliveryOrderSO.DISTRICT_VILLATOWN) temperature += 6f;                      // 웜그레이 골목
+            else if (district == DeliveryOrderSO.DISTRICT_FOODALLEY) { saturation += 8f; filter *= new Color(1f, 0.96f, 0.99f); } // 네온끼
+            else if (district == DeliveryOrderSO.DISTRICT_APARTMENT) saturation -= 4f;                  // 무채 단지
+
+            _targetExposure = exposure;
+            _targetSaturation = saturation;
+            _targetTemperature = temperature;
+            _targetFilter = filter;
+        }
+
+        private void LerpGrade()
+        {
+            if (_colorAdjust == null) return;
+            float t = Time.deltaTime * _gradeLerpSpeed;
+            _colorAdjust.postExposure.value = Mathf.Lerp(_colorAdjust.postExposure.value, _targetExposure, t);
+            _colorAdjust.saturation.value = Mathf.Lerp(_colorAdjust.saturation.value, _targetSaturation, t);
+            _colorAdjust.colorFilter.value = Color.Lerp(_colorAdjust.colorFilter.value, _targetFilter, t);
+            _whiteBalance.temperature.value = Mathf.Lerp(_whiteBalance.temperature.value, _targetTemperature, t);
+        }
+
+        private void BuildGradeVolume()
+        {
+            GameObject go = new GameObject("WeatherGradeVolume");
+            go.transform.SetParent(transform, false);
+            Volume volume = go.AddComponent<Volume>();
+            volume.isGlobal = true;
+            volume.priority = 50f; // 씬 블룸 볼륨보다 위
+
+            VolumeProfile profile = ScriptableObject.CreateInstance<VolumeProfile>(); // 런타임 전용 — 에셋 무오염
+            _colorAdjust = profile.Add<ColorAdjustments>();
+            _colorAdjust.postExposure.overrideState = true;
+            _colorAdjust.saturation.overrideState = true;
+            _colorAdjust.colorFilter.overrideState = true;
+            _whiteBalance = profile.Add<WhiteBalance>();
+            _whiteBalance.temperature.overrideState = true;
+            volume.profile = profile;
+        }
+
+        // ── 연출물 조립 (코드 — 그레이박스) ──────────────────
+        private void BuildEffects()
+        {
+            _rain = BuildFallSystem("RainEmitter", new Color(0.62f, 0.72f, 0.92f, 0.55f),
+                startSpeed: 26f, size: 0.05f, lengthScale: 6f, rate: 340f, gravity: 1.2f);
+            _snow = BuildFallSystem("SnowEmitter", new Color(0.98f, 0.98f, 1f, 0.9f),
+                startSpeed: 1.6f, size: 0.09f, lengthScale: 1f, rate: 120f, gravity: 0.06f, noise: true);
+            _haze = BuildHaze();
+            BuildClouds();
+        }
+
+        private ParticleSystem BuildFallSystem(string name, Color color, float startSpeed,
+            float size, float lengthScale, float rate, float gravity, bool noise = false)
+        {
+            GameObject go = new GameObject(name);
+            go.transform.SetParent(transform, false);
+            go.transform.localPosition = new Vector3(0f, 14f, 1.5f);
+            go.transform.localRotation = Quaternion.Euler(90f, 0f, 0f); // 아래로
+
+            ParticleSystem system = go.AddComponent<ParticleSystem>();
+            var main = system.main;
+            main.startSpeed = startSpeed;
+            main.startSize = size;
+            main.startLifetime = 2.2f;
+            main.startColor = color;
+            main.maxParticles = 1200;
+            main.gravityModifier = gravity;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+
+            var shape = system.shape;
+            shape.enabled = true;
+            shape.shapeType = ParticleSystemShapeType.Box;
+            shape.scale = new Vector3(44f, 10f, 1f);
+
+            var emission = system.emission;
+            emission.rateOverTime = rate;
+
+            if (noise)
+            {
+                var noiseModule = system.noise;
+                noiseModule.enabled = true;
+                noiseModule.strength = 0.55f;
+                noiseModule.frequency = 0.4f;
+            }
+
+            var renderer = go.GetComponent<ParticleSystemRenderer>();
+            renderer.material = MakeParticleMaterial(color);
+            if (lengthScale > 1.01f)
+            {
+                renderer.renderMode = ParticleSystemRenderMode.Stretch;
+                renderer.lengthScale = lengthScale; // 빗줄기
+            }
+            system.Stop();
+            return system;
+        }
+
+        private ParticleSystem BuildHaze()
+        {
+            // 아지랑이 — 지면에서 느리게 상승하는 옅은 웨이브 스트릭 (노이즈로 좌우 일렁임).
+            GameObject go = new GameObject("HeatHazeEmitter");
+            go.transform.SetParent(transform, false);
+            go.transform.localPosition = new Vector3(0f, 0.15f, 0.5f);
+
+            ParticleSystem system = go.AddComponent<ParticleSystem>();
+            var main = system.main;
+            main.startSpeed = 0.5f;
+            main.startSize = new ParticleSystem.MinMaxCurve(0.5f, 1.1f);
+            main.startLifetime = 2.8f;
+            main.startColor = new Color(1f, 1f, 1f, 0.05f);
+            main.maxParticles = 260;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+
+            var shape = system.shape;
+            shape.enabled = true;
+            shape.shapeType = ParticleSystemShapeType.Box;
+            shape.scale = new Vector3(40f, 0.2f, 3f);
+
+            var emission = system.emission;
+            emission.rateOverTime = 70f;
+
+            var noiseModule = system.noise;
+            noiseModule.enabled = true;
+            noiseModule.strength = 0.8f;
+            noiseModule.frequency = 1.4f;
+
+            var colorOverLifetime = system.colorOverLifetime;
+            colorOverLifetime.enabled = true;
+            Gradient gradient = new Gradient();
+            gradient.SetKeys(
+                new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(0.09f, 0.35f), new GradientAlphaKey(0f, 1f) });
+            colorOverLifetime.color = gradient;
+
+            var renderer = go.GetComponent<ParticleSystemRenderer>();
+            renderer.material = MakeParticleMaterial(new Color(1f, 1f, 1f, 0.06f));
+            system.Stop();
+            return system;
+        }
+
+        private void BuildClouds()
+        {
+            _cloudRoot = new GameObject("Clouds").transform;
+            _cloudRoot.SetParent(transform, false);
+
+            Sprite blob = MakeCloudSprite();
+            _clouds = new SpriteRenderer[8];
+            for (int i = 0; i < _clouds.Length; i++)
+            {
+                GameObject cloud = new GameObject("Cloud_" + i);
+                cloud.transform.SetParent(_cloudRoot, false);
+                cloud.transform.localPosition = new Vector3(-40f + i * 11f, 21f + (i * 13 % 7), 64f + (i % 3) * 3f);
+                cloud.transform.localScale = new Vector3(9f + (i * 7 % 5), 3.2f + (i * 5 % 3), 1f);
+                SpriteRenderer renderer = cloud.AddComponent<SpriteRenderer>();
+                renderer.sprite = blob;
+                cloud.SetActive(false);
+                _clouds[i] = renderer;
+            }
+        }
+
+        private static Material MakeParticleMaterial(Color tint)
+        {
+            Shader shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
+            if (shader == null) shader = Shader.Find("Sprites/Default");
+            Material material = new Material(shader);
+            material.SetFloat("_Surface", 1f);
+            material.SetOverrideTag("RenderType", "Transparent");
+            material.renderQueue = (int)RenderQueue.Transparent;
+            if (material.HasProperty("_BaseColor")) material.SetColor("_BaseColor", tint);
+            return material;
+        }
+
+        private static Sprite _cloudSpriteCache;
+
+        private static Sprite MakeCloudSprite()
+        {
+            if (_cloudSpriteCache != null) return _cloudSpriteCache;
+            const int W = 64, H = 32;
+            var tex = new Texture2D(W, H, TextureFormat.RGBA32, false);
+            tex.wrapMode = TextureWrapMode.Clamp;
+            for (int y = 0; y < H; y++)
+                for (int x = 0; x < W; x++)
+                {
+                    // 타원 3개 겹친 소프트 블롭.
+                    float a = BlobAlpha(x, y, 20f, 18f, 16f, 9f)
+                            + BlobAlpha(x, y, 36f, 14f, 14f, 8f)
+                            + BlobAlpha(x, y, 46f, 19f, 12f, 7f);
+                    tex.SetPixel(x, y, new Color(1f, 1f, 1f, Mathf.Clamp01(a)));
+                }
+            tex.Apply();
+            _cloudSpriteCache = Sprite.Create(tex, new Rect(0, 0, W, H), new Vector2(0.5f, 0.5f), 16f);
+            return _cloudSpriteCache;
+        }
+
+        private static float BlobAlpha(int x, int y, float cx, float cy, float rx, float ry)
+        {
+            float dx = (x - cx) / rx;
+            float dy = (y - cy) / ry;
+            float d = dx * dx + dy * dy;
+            return Mathf.Clamp01(1.15f - d);
+        }
+    }
+}

@@ -135,6 +135,9 @@ namespace DontLate.EditorTools
             WorldMinigameManager minigame = managers.AddComponent<WorldMinigameManager>(); // S-007
             SetField(minigame, "_tuning", tuning);
 
+            WorldWeatherManager weather = managers.AddComponent<WorldWeatherManager>(); // S-042
+            SetField(weather, "_gameState", gameState);
+
             WorldJuiceManager juice = managers.AddComponent<WorldJuiceManager>(); // S-023
             SetField(juice, "_font", AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FONT_PATH));
 

@@ -41,7 +41,9 @@ MonoBehaviour:
   throwSpeed: 7
   latePenalty: 300
   minigamePenalty: 200
-  maxCargo: 3
+  maxCargo: 10
+  elevatorWaitMinutes: 8
+  elevatorRideMinutesPerFloor: 3
   travelNearMinutes: 30
   travelFarMinutes: 90
   phoneCallDelaySeconds: 15

@@ -68,7 +68,7 @@ namespace DontLate
         /// <summary>미니게임(진상 전화) 실패 벌금.</summary>
         public int minigamePenalty = 200;
         /// <summary>한 번에 실을 수 있는 최대 적재 수.</summary>
-        public int maxCargo = 3;
+        public int maxCargo = 10; // S-042 ③ — 트럭 적재 상한 3→10 (남규님 지시)
 
         [Header("이동맵 (Travel)")]
         /// <summary>근거리 노드 이동에 소모되는 게임 분.</summary>

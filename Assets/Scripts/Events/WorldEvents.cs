@@ -206,6 +206,15 @@ namespace DontLate
             DialogueEnded?.Invoke(scenarioName);
         }
 
+        /// <summary>날씨 변경 (S-042 — 하루 1회 추첨). 연출·안개·그레이드가 구독.</summary>
+        public static event Action<WeatherType> WeatherChanged;
+
+        public static void RaiseWeatherChanged(WeatherType weather)
+        {
+            Log("WeatherChanged → " + weather);
+            WeatherChanged?.Invoke(weather);
+        }
+
         // ── 아파트 (S-038 · D-067) — 전부 저빈도 상태 통지 ──
 
         /// <summary>공동현관 비번 패널 앞에서 E — 키패드 UI 열림 요청.</summary>

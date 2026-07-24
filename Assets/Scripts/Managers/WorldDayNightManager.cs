@@ -92,6 +92,25 @@ namespace DontLate
             WorldEvents.RaiseDayPhaseChanged(_phase);
         }
 
+        // S-042: 날씨별 안개 배율 — WeatherChanged 구독 (조명·안개는 이 매니저가 단일 소유).
+        private float _weatherFogMultiplier = 1f;
+
+        private void OnEnable() => WorldEvents.WeatherChanged += OnWeatherChanged;
+        private void OnDisable() => WorldEvents.WeatherChanged -= OnWeatherChanged;
+
+        private void OnWeatherChanged(WeatherType weather)
+        {
+            _weatherFogMultiplier = weather switch
+            {
+                WeatherType.Fog => 6f,
+                WeatherType.Rain => 2.4f,
+                WeatherType.Snow => 1.8f,
+                WeatherType.Cloudy => 1.3f,
+                _ => 1f
+            };
+            ApplyVisuals(_gameState.minuteOfDay);
+        }
+
         private void Update()
         {
 #if UNITY_EDITOR
@@ -213,7 +232,7 @@ namespace DontLate
             RenderSettings.ambientLight = _ambientColor.Evaluate(t);
 
             RenderSettings.fogColor = _fogColor.Evaluate(t);
-            RenderSettings.fogDensity = _fogDensity.Evaluate(t);
+            RenderSettings.fogDensity = _fogDensity.Evaluate(t) * _weatherFogMultiplier; // S-042 날씨 협조
 
             if (_skyInstance != null)
             {
