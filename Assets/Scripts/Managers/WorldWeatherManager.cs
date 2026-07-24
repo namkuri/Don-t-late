@@ -278,14 +278,16 @@ namespace DontLate
                 tiltDegrees: 15f); // 아트 피드백 (2026-07-24) — 수직 낙하는 부자연, 15° 사선
             ConfigureRainSplash(_rain); // S-044 ② — 충돌 지점 물 튀김
             _snow = BuildFallSystem("SnowEmitter", new Color(0.98f, 0.98f, 1f, 0.9f),
-                startSpeed: 1.6f, size: 0.09f, lengthScale: 1f, rate: 120f, gravity: 0.06f, noise: true);
+                startSpeed: 1.6f, size: 0.09f, lengthScale: 1f, rate: 120f, gravity: 0.06f, noise: true,
+                lifetime: 12f); // S-046 ① — 14u 상공에서 지면까지 (2.2s는 공중 소멸)
+            ConfigureSnowPile(_snow);   // S-046 ③ — 낙하 지점 실누적 (반드시 _snow 생성 후)
             _hazeRoot = BuildHazeQuads();
             BuildSnowCover();
             BuildClouds();
         }
 
         private ParticleSystem BuildFallSystem(string name, Color color, float startSpeed,
-            float size, float lengthScale, float rate, float gravity, bool noise = false, float tiltDegrees = 0f)
+            float size, float lengthScale, float rate, float gravity, bool noise = false, float tiltDegrees = 0f, float lifetime = 2.2f)
         {
             GameObject go = new GameObject(name);
             go.transform.SetParent(transform, false);
@@ -299,16 +301,16 @@ namespace DontLate
             var main = system.main;
             main.startSpeed = startSpeed;
             main.startSize = size;
-            main.startLifetime = 2.2f;
+            main.startLifetime = lifetime;
             main.startColor = color;
-            main.maxParticles = 2600; // S-045 ① 영역 확대분
+            main.maxParticles = 3200; // S-046 ② 영역 확대분(눈 12s 체공 포함)
             main.gravityModifier = gravity;
             main.simulationSpace = ParticleSystemSimulationSpace.World;
 
             var shape = system.shape;
             shape.enabled = true;
             shape.shapeType = ParticleSystemShapeType.Box;
-            shape.scale = new Vector3(70f, 10f, 8f); // S-045 ① — 화면 전역+깊이 커버
+            shape.scale = new Vector3(70f, 10f, 70f); // S-046 ② — 70×70 전역
 
             var emission = system.emission;
             emission.rateOverTime = rate;
@@ -332,7 +334,52 @@ namespace DontLate
             return system;
         }
 
-        // 눈 쌓임 (S-045 ⑤) — 지면 위 흰 막이 눈 오는 동안 자라고, 그치면 서서히 녹는다.
+        // 눈 실누적 (S-046 ③) — 눈송이가 닿은 지점에 퇴적 입자가 남는다 (균일 커버는 보조 톤으로 강등).
+        private void ConfigureSnowPile(ParticleSystem snow)
+        {
+            var collision = snow.collision;
+            collision.enabled = true;
+            collision.type = ParticleSystemCollisionType.World;
+            collision.mode = ParticleSystemCollisionMode.Collision3D;
+            collision.bounce = 0f;
+            collision.lifetimeLoss = 1f;
+            collision.quality = ParticleSystemCollisionQuality.Medium;
+
+            GameObject pileGo = new GameObject("SnowPile");
+            pileGo.transform.SetParent(snow.transform, false);
+            ParticleSystem pile = pileGo.AddComponent<ParticleSystem>();
+            var main = pile.main;
+            main.startSpeed = 0f;
+            main.startSize = new ParticleSystem.MinMaxCurve(0.10f, 0.20f);
+            main.startLifetime = 50f; // 퇴적 잔류 — 이후 서서히 소멸(녹음)
+            main.startColor = new Color(0.96f, 0.97f, 1f, 0.85f);
+            main.gravityModifier = 0f;
+            main.maxParticles = 4000;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+
+            var emission = pile.emission;
+            emission.rateOverTime = 0f;
+            emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 1) });
+
+            var fade = pile.colorOverLifetime;
+            fade.enabled = true;
+            Gradient gradient = new Gradient();
+            gradient.SetKeys(
+                new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                new[] { new GradientAlphaKey(0.85f, 0f), new GradientAlphaKey(0.85f, 0.8f), new GradientAlphaKey(0f, 1f) });
+            fade.color = gradient;
+
+            pileGo.GetComponent<ParticleSystemRenderer>().material
+                = MakeParticleMaterial(new Color(0.96f, 0.97f, 1f, 0.85f));
+            pile.Stop();
+
+            var subEmitters = snow.subEmitters;
+            subEmitters.enabled = true;
+            subEmitters.AddSubEmitter(pile, ParticleSystemSubEmitterType.Collision,
+                ParticleSystemSubEmitterProperties.InheritNothing);
+        }
+
+        // 눈 쌓임 보조 톤 (S-045 ⑤ → S-046 ③ 강등) — 실누적 아래 옅은 바탕.
         private void BuildSnowCover()
         {
             GameObject quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
@@ -350,7 +397,7 @@ namespace DontLate
         private void UpdateSnowCover()
         {
             if (_snowCover == null) return;
-            float target = Weather == WeatherType.Snow ? 0.72f : 0f;
+            float target = Weather == WeatherType.Snow ? 0.30f : 0f; // S-046 ③ — 보조 톤으로 강등
             float rate = Weather == WeatherType.Snow ? 0.030f : 0.018f; // 쌓임은 느긋(~24s), 녹음은 더 느긋
             _snowAmount = Mathf.MoveTowards(_snowAmount, target, rate * Time.deltaTime);
             bool visible = _snowAmount > 0.01f;
@@ -382,12 +429,12 @@ namespace DontLate
             splashGo.transform.SetParent(rain.transform, false);
             ParticleSystem splash = splashGo.AddComponent<ParticleSystem>();
             var main = splash.main;
-            main.startSpeed = new ParticleSystem.MinMaxCurve(0.7f, 1.6f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(1.8f, 3.2f); // S-046 ④ — 더 높이
             main.startSize = new ParticleSystem.MinMaxCurve(0.015f, 0.03f); // S-045 ② — 절반
-            main.startLifetime = 0.28f;
+            main.startLifetime = 2f; // S-046 ④ — 남규님 지정
             main.startColor = new Color(0.75f, 0.84f, 1f, 0.75f);
-            main.gravityModifier = 2.2f;
-            main.maxParticles = 600;
+            main.gravityModifier = 1.6f;
+            main.maxParticles = 900;
             main.simulationSpace = ParticleSystemSimulationSpace.World;
 
             var emission = splash.emission;
@@ -398,6 +445,14 @@ namespace DontLate
             shape.enabled = true;
             shape.shapeType = ParticleSystemShapeType.Hemisphere;
             shape.radius = 0.04f;
+
+            var splashFade = splash.colorOverLifetime;
+            splashFade.enabled = true;
+            Gradient splashGradient = new Gradient();
+            splashGradient.SetKeys(
+                new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                new[] { new GradientAlphaKey(0.85f, 0f), new GradientAlphaKey(0.5f, 0.4f), new GradientAlphaKey(0f, 0.75f) });
+            splashFade.color = splashGradient;
 
             splashGo.GetComponent<ParticleSystemRenderer>().material
                 = MakeParticleMaterial(new Color(0.75f, 0.84f, 1f, 0.75f));

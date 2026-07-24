@@ -4,7 +4,7 @@ Shader "DontLate/HeatHaze"
 {
     Properties
     {
-        _RefractStrength ("Refract Strength", Range(0, 0.05)) = 0.012
+        _RefractStrength ("Refract Strength", Range(0, 0.05)) = 0.004
         _WobbleAmp ("Vertex Wobble", Range(0, 0.5)) = 0.10
         _WobbleFreq ("Wobble Frequency", Range(0, 12)) = 5.5
         _ScrollSpeed ("Upward Scroll", Range(0, 3)) = 1.1
