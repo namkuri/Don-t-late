@@ -10,14 +10,15 @@ namespace DontLate
     public class CampOrderBoard : MonoBehaviour
     {
         // 신규 목적지 풀 — district는 이동맵 노드 라벨과 정확히 일치해야 스폰이 맞물린다.
+        // S-035(D-064): 빌라촌={OO빌라·반지하·원룸·연립} / 먹자골목={식당·호프·분식·포장마차} 컨셉 정합.
         private static readonly (string address, string district, int floor)[] Destinations =
         {
-            ("초록아파트 102동", "행복빌라 구역", 1),
-            ("골목슈퍼", "행복빌라 구역", 1),
-            ("은하빌라 202호", "달빛맨션 구역", 2),
-            ("반달오피스텔 707호", "달빛맨션 구역", 7),
-            ("청운상가 지하1층", "행복빌라 구역", -1),
-            ("달동네 꼭대기집", "달빛맨션 구역", 4),
+            ("초록빌라 202호", DeliveryOrderSO.DISTRICT_VILLATOWN, 2),
+            ("골목연립 반지하", DeliveryOrderSO.DISTRICT_VILLATOWN, -1),
+            ("햇살원룸 3호", DeliveryOrderSO.DISTRICT_VILLATOWN, 1),
+            ("왕만두분식", DeliveryOrderSO.DISTRICT_FOODALLEY, 1),
+            ("달빛호프 2층", DeliveryOrderSO.DISTRICT_FOODALLEY, 2),
+            ("끝집포장마차", DeliveryOrderSO.DISTRICT_FOODALLEY, 1),
         };
 
         [SerializeField] private GameStateSO _gameState;
@@ -70,7 +71,11 @@ namespace DontLate
             order.floor = pick.floor;
             order.reward = 900 + (serial % 4) * 400;
             order.weight = 2f + serial % 5;
-            order.deadlineMinuteOfDay = Mathf.Min(1435f, _gameState.minuteOfDay + 300f + (serial % 3) * 90f); // S-031 ⑦ 최소 여유 240→300분
+            float deadline = Mathf.Min(1435f, _gameState.minuteOfDay + 300f + (serial % 3) * 90f); // S-031 ⑦ 최소 여유 240→300분
+            // S-035(D-064): 먹자골목은 저녁~밤 마감으로 몰아 "밤 배송량↑" 설정을 신규 시스템 없이 표현.
+            if (order.district == DeliveryOrderSO.DISTRICT_FOODALLEY)
+                deadline = Mathf.Min(1435f, Mathf.Max(deadline, 19f * 60f));
+            order.deadlineMinuteOfDay = deadline;
             return order;
         }
     }

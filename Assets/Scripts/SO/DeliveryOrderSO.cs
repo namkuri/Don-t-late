@@ -6,6 +6,11 @@ namespace DontLate
     [CreateAssetMenu(menuName = "DontLate/DeliveryOrder")]
     public class DeliveryOrderSO : ScriptableObject
     {
+        // 구역 라벨 정본 (S-035 · D-064) — district 문자열이 스폰 계약이라 리터럴 산개 금지.
+        // 잔여 2구역(아파트단지·언덕주택가)은 S-036 지도 "준비 중" 잠금 전용 — 활성화 시 여기 승격.
+        public const string DISTRICT_VILLATOWN = "빌라촌";
+        public const string DISTRICT_FOODALLEY = "먹자골목";
+
         public int orderId;
         public string address;
         /// <summary>배송 구역 라벨 (S-015) — 폰 안내·구역 도착 시 스폰 매칭 키. 이동맵 노드 라벨과 일치해야 한다.</summary>

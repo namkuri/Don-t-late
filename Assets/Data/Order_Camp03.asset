@@ -13,9 +13,10 @@ MonoBehaviour:
   m_Name: Order_Camp03
   m_EditorClassIdentifier: Assembly-CSharp::DontLate.DeliveryOrderSO
   orderId: 102
-  address: "\uB2EC\uBE5B\uB9E8\uC158 502\uD638"
-  district: "\uB2EC\uBE5B\uB9E8\uC158 \uAD6C\uC5ED"
-  floor: 5
+  address: "\uB2EC\uBE5B\uD638\uD504 2\uCE35"
+  district: "\uBA39\uC790\uACE8\uBAA9"
+  floor: 2
+  weight: 3
   deadlineMinuteOfDay: 1140
   reward: 1400
   memo: 

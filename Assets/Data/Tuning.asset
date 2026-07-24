@@ -45,5 +45,6 @@ MonoBehaviour:
   travelNearMinutes: 30
   travelFarMinutes: 90
   phoneCallDelaySeconds: 15
+  phoneCallTimeoutSeconds: 15
   minigameKeyCount: 4
   minigameKeyStepSeconds: 1.2

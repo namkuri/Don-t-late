@@ -161,6 +161,12 @@ namespace DontLate.EditorTools
             SetField(audio, "_sfxSettleBad", LoadSfx("sfx_settle_bad"));
             SetField(audio, "_sfxFurniturePlace", LoadSfx("sfx_furniture_place"));
             SetField(audio, "_sfxUiTick", LoadSfx("sfx_ui_tick"));
+            SetField(audio, "_ambVillatown", LoadSfx("amb_villatown"));          // AU-011 구역 앰비언스+지도 5종
+            SetField(audio, "_ambFoodalley", LoadSfx("amb_foodalley"));
+            SetField(audio, "_sfxMapPin", LoadSfx("sfx_map_pin"));
+            SetField(audio, "_sfxMapRoute", LoadSfx("sfx_map_route"));
+            SetField(audio, "_sfxMapDepart", LoadSfx("sfx_map_depart"));
+            SetField(audio, "_gameState", AssetDatabase.LoadAssetAtPath<GameStateSO>(DATA_ROOT + "/GameState.asset"));
 
             // 태양은 Core 소유(D-021 교정) — 콘텐츠 씬은 자체 Directional Light를 두지 않는다.
             GameObject sunGo = new GameObject("Sun");
