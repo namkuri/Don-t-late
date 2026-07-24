@@ -203,7 +203,14 @@ namespace DontLate
                 GameObject sign = MakeCube(building.transform, "Sign",
                     new Vector3(0f, FLOOR_HEIGHT + 0.45f, centerZLocal - BUILDING_DEPTH * 0.5f - 0.06f),
                     new Vector3(width * 0.62f, 0.7f, 0.1f));
-                Tint(sign, SignColors[tone % SignColors.Length]);
+                // S-043: 전광판 셰이더(프레넬·이미시브·펄스) — 밤 점등은 전역 _DL_SignNight가 구동.
+                Renderer renderer = sign.GetComponent<Renderer>();
+                renderer.sharedMaterial = GetSignBoardMaterial();
+                var mpb = new MaterialPropertyBlock();
+                Color tint = SignColors[tone % SignColors.Length];
+                mpb.SetColor("_EmissionColor", tint * 3.2f); // HDR — 블룸 임계 돌파
+                mpb.SetColor("_BaseColor", tint * 0.22f);
+                renderer.SetPropertyBlock(mpb);
             }
         }
 
@@ -252,6 +259,17 @@ namespace DontLate
             Tint(MakeCube(prop.transform, "Box_0", new Vector3(0f, 0.4f, 0f), Vector3.one * 0.8f), PropColor);
             Tint(MakeCube(prop.transform, "Box_1", new Vector3(0.5f, 0.35f, 0.2f), Vector3.one * 0.7f), PropColor);
             Tint(MakeCube(prop.transform, "Box_2", new Vector3(0.15f, 1.0f, -0.1f), Vector3.one * 0.6f), PropColor);
+        }
+
+        private static Material _signBoardMaterial;
+
+        // 전광판 공유 머티리얼 (S-043) — 색은 MPB로 간판별 주입(머티리얼 1개 유지).
+        private static Material GetSignBoardMaterial()
+        {
+            if (_signBoardMaterial != null) return _signBoardMaterial;
+            Shader shader = Shader.Find("DontLate/SignBoard");
+            _signBoardMaterial = shader != null ? new Material(shader) : null;
+            return _signBoardMaterial;
         }
 
         private static GameObject MakeCube(Transform parent, string name, Vector3 localPos, Vector3 localScale)

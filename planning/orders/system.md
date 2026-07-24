@@ -919,8 +919,15 @@
 
 ---
 
-## S-043 · 발주 2026-07-24 17:15 → ClaudeCode (본 세션 실행 — 전광판 셰이더+Bloom 밤낮)
+## S-043 · 발주 2026-07-24 17:14 → ClaudeCode (본 세션 실행 — 전광판 셰이더+Bloom 밤낮)
 
 요구 (남규님 원문): **Fresnel Effect·Emission Color & Strength·Pulse Animation**으로 전광판용 셰이더+머티리얼 제작, 간판에 적용. 볼륨에 **Bloom** 추가 — **밤/낮에 따라 강도 조절**.
 
 수용기준: 커스텀 셰이더(프레넬 림·HDR 이미시브·펄스) 간판 적용 · 밤 점등/낮 소등이 부드럽게 · Bloom 강도가 시간대 따라 전이 · 콘솔 0 · 테스트 green.
+
+### 결과 · 2026-07-24 17:19 (리드 5분)
+- **`Art/Shaders/SignBoard.shader` 신설** — 프레넬 림(가장자리 발광 가산·Power/Strength 노출)·HDR 이미시브(Color+Strength)·펄스(사인 Speed/Amount). 전역 `_DL_SignNight`(0~1)로 점등: WorldDayNightManager가 시각 구동 — **17~19시 램프업·새벽 5~7시 램프다운**(자정~5시 유지). 초안 램프 공식의 5시 점프 결함은 자가 검산으로 잡고 분기식으로 교체.
+- 간판 적용: DistrictLayoutGenerator 먹자골목 간판 스트립 — 공유 SignBoard 머티리얼 + MPB로 간판별 색(HDR ×3.2 — 블룸 임계 돌파).
+- **Bloom 밤/낮**: 날씨 그레이드 볼륨(S-042)에 Bloom 합류 — 밤 0.85·저녁 0.6·아침 0.3·낮 0.2(+비 0.1) 러프 전이.
+- 실측: 밤 20:39 먹자골목 — 시안·앰버 전광판 발광+블룸 번짐 캡처 · signNight=1 / 낮 700분 — signNight=0 소등 캡처.
+- 검증: 컴파일 ○ 콘솔 0 ○ 테스트 32/32 ○ 재조립 ○. 펄스 깜박임·프레넬 각도감은 사람 눈 판정(R18 합류).

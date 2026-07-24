@@ -234,6 +234,13 @@ namespace DontLate
             RenderSettings.fogColor = _fogColor.Evaluate(t);
             RenderSettings.fogDensity = _fogDensity.Evaluate(t) * _weatherFogMultiplier; // S-042 날씨 협조
 
+            // S-043: 전광판 점등 전역값 — 17~19시 램프업 · 새벽 5~7시 램프다운 (자정~5시 점등 유지).
+            float night01;
+            if (minuteOfDay >= 17f * 60f) night01 = Mathf.Clamp01((minuteOfDay - 17f * 60f) / 120f);
+            else if (minuteOfDay < 7f * 60f) night01 = 1f - Mathf.Clamp01((minuteOfDay - 5f * 60f) / 120f);
+            else night01 = 0f;
+            Shader.SetGlobalFloat("_DL_SignNight", night01);
+
             if (_skyInstance != null)
             {
                 if (_driveSkyTint) _skyInstance.SetColor(SkyTintId, _skyColor.Evaluate(t));

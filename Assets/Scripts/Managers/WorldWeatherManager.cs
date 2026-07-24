@@ -31,7 +31,8 @@ namespace DontLate
         // 런타임 글로벌 볼륨 (그레이드 소유 — 씬 볼륨(블룸)과 별개, 우선순위 높음).
         private ColorAdjustments _colorAdjust;
         private WhiteBalance _whiteBalance;
-        private float _targetExposure, _targetSaturation, _targetTemperature;
+        private Bloom _bloom; // S-043 — 밤/낮 강도
+        private float _targetExposure, _targetSaturation, _targetTemperature, _targetBloom = 0.3f;
         private Color _targetFilter = Color.white;
 
         private void Awake()
@@ -204,10 +205,21 @@ namespace DontLate
             else if (district == DeliveryOrderSO.DISTRICT_FOODALLEY) { saturation += 8f; filter *= new Color(1f, 0.96f, 0.99f); } // 네온끼
             else if (district == DeliveryOrderSO.DISTRICT_APARTMENT) saturation -= 4f;                  // 무채 단지
 
+            // S-043: Bloom 밤/낮 강도 — 밤에 전광판 HDR이 크게 번지고 낮엔 절제.
+            float bloom = _phase switch
+            {
+                DayPhase.Night => 0.85f,
+                DayPhase.Evening => 0.6f,
+                DayPhase.Morning => 0.3f,
+                _ => 0.2f
+            };
+            if (Weather == WeatherType.Rain) bloom += 0.1f; // 젖은 밤거리 번짐
+
             _targetExposure = exposure;
             _targetSaturation = saturation;
             _targetTemperature = temperature;
             _targetFilter = filter;
+            _targetBloom = bloom;
         }
 
         private void LerpGrade()
@@ -218,6 +230,7 @@ namespace DontLate
             _colorAdjust.saturation.value = Mathf.Lerp(_colorAdjust.saturation.value, _targetSaturation, t);
             _colorAdjust.colorFilter.value = Color.Lerp(_colorAdjust.colorFilter.value, _targetFilter, t);
             _whiteBalance.temperature.value = Mathf.Lerp(_whiteBalance.temperature.value, _targetTemperature, t);
+            _bloom.intensity.value = Mathf.Lerp(_bloom.intensity.value, _targetBloom, t);
         }
 
         private void BuildGradeVolume()
@@ -235,6 +248,10 @@ namespace DontLate
             _colorAdjust.colorFilter.overrideState = true;
             _whiteBalance = profile.Add<WhiteBalance>();
             _whiteBalance.temperature.overrideState = true;
+            _bloom = profile.Add<Bloom>(); // S-043 — 밤 간판 발광 증폭, 낮 절제
+            _bloom.intensity.overrideState = true;
+            _bloom.threshold.overrideState = true;
+            _bloom.threshold.value = 0.9f;
             volume.profile = profile;
         }
 
