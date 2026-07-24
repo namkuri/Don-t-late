@@ -40,10 +40,14 @@ namespace DontLate
             IInteractable nearest = null;
             float nearestDistance = float.MaxValue;
 
+            bool carrying = _hub.Status.IsCarrying;
             for (int i = 0; i < count; i++)
             {
                 if (!_hits[i].TryGetComponent(out IInteractable candidate)) continue;
                 if (candidate is IFocusGate gate && !gate.AllowsFocus(transform.position)) continue;
+                // S-040: 상자를 든 동안엔 다른 상자를 집을 수 없다 — PickupBox가 포커스를 먹으면
+                // 대차·비콘 상호작용이 막힌다 (대차 적재 2개째 불가의 원흉).
+                if (carrying && candidate is PickupBox) continue;
 
                 float distance = (_hits[i].transform.position - transform.position).sqrMagnitude;
                 if (distance >= nearestDistance) continue;

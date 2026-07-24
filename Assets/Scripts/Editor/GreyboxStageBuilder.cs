@@ -419,44 +419,55 @@ namespace DontLate.EditorTools
             volume.AddComponent<WalkableVolume>();
         }
 
-        // 배달 대차 (S-038 → S-039 공용 승격 — 캠프·아파트). 콜라이더는 트리거:
-        // 센서 포커스용일 뿐, 실체 충돌이면 플레이어를 밀어 낙사시킨다 (S-039 ② 실사고).
+        internal const int LAYER_PLAYER = 8;    // TagManager 등록 (S-040)
+        internal const int LAYER_CART_WALL = 9; // 플레이어와 충돌 무시 — CoreBootstrap이 매트릭스 해제
+
+        // 배달 대차 (S-038 → S-040 물리 재설계 — 1.5배 바구니). 루트 콜라이더 = 트리거(센서 포커스).
+        // 바닥·사방 벽 = CartWall 레이어 실콜라이더 — 상자는 가두고 플레이어는 통과(낙사 회귀 방지).
+        // 위는 개방 — 던지면 튀어나갈 수 있다 (남규님 스펙).
         internal static void BuildDeliveryCart(Vector3 position)
         {
             Material cartMat = GetOrCreateMaterial("Cart", new Color(0.30f, 0.55f, 0.42f), false);
             Material highlight = GetOrCreateMaterial("Highlight", ParseColor("#35e0c8"), true);
 
             GameObject root = CreateEmpty("DeliveryCart", position);
-            BoxCollider collider = root.AddComponent<BoxCollider>();
-            collider.isTrigger = true;
-            collider.size = new Vector3(1.4f, 1.1f, 0.9f);
-            collider.center = new Vector3(0f, 0.55f, 0f);
+            BoxCollider focus = root.AddComponent<BoxCollider>();
+            focus.isTrigger = true;
+            focus.size = new Vector3(2.4f, 1.4f, 1.8f);
+            focus.center = new Vector3(0f, 0.7f, 0f);
 
-            GameObject bed = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            bed.name = "Bed";
-            bed.transform.SetParent(root.transform, false);
-            bed.transform.localPosition = new Vector3(0f, 0.3f, 0f);
-            bed.transform.localScale = new Vector3(1.4f, 0.12f, 0.9f);
-            Object.DestroyImmediate(bed.GetComponent<Collider>());
-            bed.GetComponent<Renderer>().sharedMaterial = cartMat;
+            // 바닥 (1.5배: 1.4→2.1 × 0.9→1.35)
+            AddCartPart(root, "Bed", new Vector3(0f, 0.3f, 0f), new Vector3(2.1f, 0.12f, 1.35f), cartMat, true);
+            // 사방 벽 (높이 0.55 — 위 개방)
+            AddCartPart(root, "WallL", new Vector3(-1.02f, 0.6f, 0f), new Vector3(0.08f, 0.55f, 1.35f), cartMat, true);
+            AddCartPart(root, "WallR", new Vector3(1.02f, 0.6f, 0f), new Vector3(0.08f, 0.55f, 1.35f), cartMat, true);
+            AddCartPart(root, "WallF", new Vector3(0f, 0.6f, 0.66f), new Vector3(2.1f, 0.55f, 0.08f), cartMat, true);
+            AddCartPart(root, "WallB", new Vector3(0f, 0.6f, -0.66f), new Vector3(2.1f, 0.55f, 0.08f), cartMat, true);
+            // 손잡이 (시각 전용)
+            AddCartPart(root, "Handle", new Vector3(-1.15f, 0.85f, 0f), new Vector3(0.08f, 1.1f, 1.0f), cartMat, false);
 
-            GameObject handle = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            handle.name = "Handle";
-            handle.transform.SetParent(root.transform, false);
-            handle.transform.localPosition = new Vector3(-0.65f, 0.75f, 0f);
-            handle.transform.localScale = new Vector3(0.08f, 1.0f, 0.9f);
-            Object.DestroyImmediate(handle.GetComponent<Collider>());
-            handle.GetComponent<Renderer>().sharedMaterial = cartMat;
-
-            GameObject stack = new GameObject("StackRoot");
-            stack.transform.SetParent(root.transform, false);
-            stack.transform.localPosition = new Vector3(0.1f, 0.36f, 0f);
+            GameObject drop = new GameObject("DropPoint");
+            drop.transform.SetParent(root.transform, false);
+            drop.transform.localPosition = new Vector3(0f, 1.5f, 0f);
 
             DeliveryCart cart = root.AddComponent<DeliveryCart>();
-            SetReference(cart, "_renderer", bed.GetComponent<Renderer>());
+            SetReference(cart, "_renderer", root.transform.Find("Bed").GetComponent<Renderer>());
             SetReference(cart, "_normalMaterial", cartMat);
             SetReference(cart, "_highlightMaterial", highlight);
-            SetReference(cart, "_stackRoot", stack.transform);
+            SetReference(cart, "_dropPoint", drop.transform);
+        }
+
+        private static void AddCartPart(GameObject root, string name, Vector3 localPos, Vector3 size,
+            Material material, bool physical)
+        {
+            GameObject part = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            part.name = name;
+            part.transform.SetParent(root.transform, false);
+            part.transform.localPosition = localPos;
+            part.transform.localScale = size;
+            part.GetComponent<Renderer>().sharedMaterial = material;
+            if (physical) part.layer = LAYER_CART_WALL; // 상자만 가두고 플레이어는 통과
+            else Object.DestroyImmediate(part.GetComponent<Collider>());
         }
 
         private static void BuildPickupBox(DeliveryOrderSO order, Material normal, Material highlight)
@@ -976,6 +987,7 @@ namespace DontLate.EditorTools
         {
             GameObject player = CreateEmpty("Player", new Vector3(0f, 0.1f, 0f));
             player.transform.rotation = Quaternion.Euler(0f, 90f, 0f);
+            player.layer = LAYER_PLAYER; // S-040 — CartWall과 충돌 무시(매트릭스는 CoreBootstrap)
 
             CharacterController controller = player.AddComponent<CharacterController>();
             controller.height = 1.8f;

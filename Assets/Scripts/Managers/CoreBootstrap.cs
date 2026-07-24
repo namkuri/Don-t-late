@@ -14,6 +14,9 @@ namespace DontLate
 
         private void Start()
         {
+            // S-040: 대차 바구니 벽(CartWall=9)은 상자만 가둔다 — 플레이어(Player=8)와는 충돌 무시.
+            Physics.IgnoreLayerCollision(8, 9, true);
+
             ResetSession();
 
             if (WorldSceneFlowManager.Instance == null)

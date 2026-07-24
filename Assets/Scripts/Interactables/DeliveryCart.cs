@@ -1,42 +1,45 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace DontLate
 {
     /// <summary>
-    /// 배달 대차 (S-038 · D-067). E = 견인 토글(플레이어 뒤를 따라온다) ·
-    /// 상자를 든 채 E = 대차에 적재(스택). 실린 상자는 PickupBox가 살아 있어 E로 다시 집을 수 있다.
-    /// 게이트·엘리베이터가 이동시킬 때는 MoveTo로 통째 순간이동(적재분은 자식이라 동반).
+    /// 배달 대차 (S-038 → S-040 물리 재설계). E = 견인 토글 · 상자 든 채 E = 바구니에 투하(실물리).
+    /// 상자는 파지 않고 물리로 바구니(사방 벽·위 개방)에 담긴다 — 위로는 튀어나갈 수 있다.
+    /// 벽·바닥 콜라이더는 CartWall 레이어(플레이어와 충돌 무시 — S-039 낙사 회귀 방지).
+    /// 게이트·엘베는 MoveTo로 대차+바구니 속 상자를 통째 이동.
     /// </summary>
     [RequireComponent(typeof(Collider))]
     public class DeliveryCart : MonoBehaviour, IInteractable
     {
-        private const int MAX_STACK = 4;
-        private const float FOLLOW_DISTANCE = 1.1f;
+        private const float FOLLOW_DISTANCE = 1.4f;
         private const float FOLLOW_LERP = 8f;
+        private const float BASKET_RADIUS = 1.6f; // MoveTo 동반 판정 (수평)
+        private const float BASKET_HEIGHT = 2.0f;
 
         [SerializeField] private Renderer _renderer;
         [SerializeField] private Material _normalMaterial;
         [SerializeField] private Material _highlightMaterial;
-        [SerializeField] private Transform _stackRoot;
+        [SerializeField] private Transform _dropPoint; // 적재 투하 지점 (바구니 위)
 
         private Transform _towedBy;
-        private readonly List<Transform> _stack = new List<Transform>();
 
         public bool IsTowing => _towedBy != null;
 
         public void Interact(PlayerContext ctx)
         {
-            // 상자를 들고 있으면 = 적재.
+            // 상자를 들고 있으면 = 바구니에 투하 (실물리 — 벽이 가둔다).
             DeliveryOrderSO carried = ctx.Player.Status.CarriedOrder;
             if (carried != null)
             {
-                if (CountStacked() >= MAX_STACK) { Debug.Log("[대차] 만적 — " + MAX_STACK + "개까지."); return; }
-                DeliveryOrderSO released = ctx.Player.Status.ReleaseCarry(dropAsPhysics: true);
-                // 방금 떨어뜨린 상자(가장 가까운 in-cargo PickupBox)를 스택에 붙인다.
-                PickupBox nearest = FindNearestBox(released);
-                if (nearest != null) StackBox(nearest.transform);
-                Debug.Log("[대차] #" + released.orderId + " 적재 — " + CountStacked() + "/" + MAX_STACK);
+                ctx.Player.Status.ReleaseCarry(dropAsPhysics: true);
+                PickupBox box = FindNearestBox(carried);
+                if (box != null)
+                {
+                    Vector3 drop = _dropPoint != null ? _dropPoint.position : transform.position + Vector3.up * 1.2f;
+                    box.transform.position = drop + new Vector3(Random.Range(-0.15f, 0.15f), 0f, Random.Range(-0.1f, 0.1f));
+                    if (box.TryGetComponent(out Rigidbody body)) { body.isKinematic = false; body.linearVelocity = Vector3.zero; }
+                }
+                Debug.Log("[대차] #" + carried.orderId + " 바구니 투하 — 현재 " + CountInBasket() + "개.");
                 return;
             }
 
@@ -54,43 +57,35 @@ namespace DontLate
 
         private void Update()
         {
-            PruneStack();
             if (_towedBy == null) return;
             Vector3 target = _towedBy.position - _towedBy.right * FOLLOW_DISTANCE;
             target.y = 0f;
             transform.position = Vector3.Lerp(transform.position, target, Time.deltaTime * FOLLOW_LERP);
         }
 
-        /// <summary>게이트·엘베 이동 — 대차와 적재분을 통째로.</summary>
+        /// <summary>게이트·엘베 이동 — 대차와 바구니 속 상자를 같은 델타로 통째 이동.</summary>
         public void MoveTo(Vector3 position)
         {
+            Vector3 delta = position - transform.position;
+            foreach (PickupBox box in Object.FindObjectsByType<PickupBox>())
+                if (IsInBasket(box.transform.position))
+                    box.transform.position += delta;
             transform.position = position;
         }
 
-        private void StackBox(Transform box)
+        private bool IsInBasket(Vector3 point)
         {
-            if (box.TryGetComponent(out Rigidbody body)) body.isKinematic = true;
-            box.SetParent(_stackRoot != null ? _stackRoot : transform, false);
-            box.localPosition = new Vector3(0f, 0.35f + CountStacked() * 0.72f, 0f);
-            box.localRotation = Quaternion.identity;
-            _stack.Add(box);
+            Vector3 local = point - transform.position;
+            return Mathf.Abs(local.x) <= BASKET_RADIUS && Mathf.Abs(local.z) <= BASKET_RADIUS
+                && local.y >= -0.2f && local.y <= BASKET_HEIGHT;
         }
 
-        // 스택에서 다시 집어간(부모가 바뀐) 상자는 목록에서 잊는다.
-        private void PruneStack()
+        private int CountInBasket()
         {
-            for (int i = _stack.Count - 1; i >= 0; i--)
-            {
-                Transform box = _stack[i];
-                Transform anchor = _stackRoot != null ? _stackRoot : transform;
-                if (box == null || box.parent != anchor) _stack.RemoveAt(i);
-            }
-        }
-
-        private int CountStacked()
-        {
-            PruneStack();
-            return _stack.Count;
+            int count = 0;
+            foreach (PickupBox box in Object.FindObjectsByType<PickupBox>())
+                if (IsInBasket(box.transform.position)) count++;
+            return count;
         }
 
         private PickupBox FindNearestBox(DeliveryOrderSO order)
