@@ -29,8 +29,22 @@ namespace DontLate
             _cc = GetComponent<CharacterController>();
         }
 
+        // S-039 ② 낙사 안전망 — 맵 밖으로 떨어지면 마지막 접지점 위로 복귀.
+        private const float FALL_LIMIT_Y = -6f;
+        private Vector3 _lastGroundedPosition;
+
         private void Update()
         {
+            if (_cc.isGrounded && transform.position.y > FALL_LIMIT_Y + 2f)
+                _lastGroundedPosition = transform.position;
+            else if (transform.position.y < FALL_LIMIT_Y)
+            {
+                _cc.enabled = false; // CC는 켠 채로 transform을 옮기면 씹힌다
+                transform.position = _lastGroundedPosition + Vector3.up * 1.5f;
+                _cc.enabled = true;
+                Debug.Log("[안전망] 낙사 감지 — 마지막 접지점 위로 복귀.");
+            }
+
             TuningConfigSO tuning = _hub.Tuning;
             Vector2 input = _hub.Input.MoveVector;
 

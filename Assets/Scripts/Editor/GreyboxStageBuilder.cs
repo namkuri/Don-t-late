@@ -419,6 +419,46 @@ namespace DontLate.EditorTools
             volume.AddComponent<WalkableVolume>();
         }
 
+        // 배달 대차 (S-038 → S-039 공용 승격 — 캠프·아파트). 콜라이더는 트리거:
+        // 센서 포커스용일 뿐, 실체 충돌이면 플레이어를 밀어 낙사시킨다 (S-039 ② 실사고).
+        internal static void BuildDeliveryCart(Vector3 position)
+        {
+            Material cartMat = GetOrCreateMaterial("Cart", new Color(0.30f, 0.55f, 0.42f), false);
+            Material highlight = GetOrCreateMaterial("Highlight", ParseColor("#35e0c8"), true);
+
+            GameObject root = CreateEmpty("DeliveryCart", position);
+            BoxCollider collider = root.AddComponent<BoxCollider>();
+            collider.isTrigger = true;
+            collider.size = new Vector3(1.4f, 1.1f, 0.9f);
+            collider.center = new Vector3(0f, 0.55f, 0f);
+
+            GameObject bed = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            bed.name = "Bed";
+            bed.transform.SetParent(root.transform, false);
+            bed.transform.localPosition = new Vector3(0f, 0.3f, 0f);
+            bed.transform.localScale = new Vector3(1.4f, 0.12f, 0.9f);
+            Object.DestroyImmediate(bed.GetComponent<Collider>());
+            bed.GetComponent<Renderer>().sharedMaterial = cartMat;
+
+            GameObject handle = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            handle.name = "Handle";
+            handle.transform.SetParent(root.transform, false);
+            handle.transform.localPosition = new Vector3(-0.65f, 0.75f, 0f);
+            handle.transform.localScale = new Vector3(0.08f, 1.0f, 0.9f);
+            Object.DestroyImmediate(handle.GetComponent<Collider>());
+            handle.GetComponent<Renderer>().sharedMaterial = cartMat;
+
+            GameObject stack = new GameObject("StackRoot");
+            stack.transform.SetParent(root.transform, false);
+            stack.transform.localPosition = new Vector3(0.1f, 0.36f, 0f);
+
+            DeliveryCart cart = root.AddComponent<DeliveryCart>();
+            SetReference(cart, "_renderer", bed.GetComponent<Renderer>());
+            SetReference(cart, "_normalMaterial", cartMat);
+            SetReference(cart, "_highlightMaterial", highlight);
+            SetReference(cart, "_stackRoot", stack.transform);
+        }
+
         private static void BuildPickupBox(DeliveryOrderSO order, Material normal, Material highlight)
         {
             var (go, _, _) = CreateParcelBox("Box", new Vector3(-5f, 0f, 0f), normal);

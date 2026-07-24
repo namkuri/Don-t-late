@@ -24,6 +24,7 @@
 | H8 | 텍스처 재전송 2건: ~~가로등~~(Trellis2로 대체됨)·캐릭터 — FBX **Embed Media** 켜기 (캐릭터는 쿠팡 로고 제거 겸) | 민지 | [assets_manifest.md](assets_manifest.md) |
 | H9 | 애니 클립: **idle**(급함 — 정지 시에도 걸음) · jump·pickup·carry | 민지(Mixamo) | [BOM.md](BOM.md) §1 |
 | H4 | RunPod Trellis 관통 → 소품 1개 실측 | 민지 | [TASKS.md](TASKS.md) M0-04 |
+| H15 | **캐릭터 정면 +Z 재정렬** — 현행 chr_courier 모델의 정면이 Unity +Z가 아니어서 이동 방향·대차 추종이 어긋남. 블렌더에서 정면=+Z(Apply Rotation)로 재익스포트 (fbx 원점=바닥중심 유지) | 민지님 | [orders/art.md](orders/art.md) 공통 규격 |
 | H14 | **Mixamo 애니 1차 3종** — idle(급함·H9 승계)·짐 들고 걷기(carry walk)·침대 기상(getting up). Humanoid·`A_chr_courier_<동작>.fbx` 명명, 반입은 _intake/art/Mixamo/ | **남규** | [art-roadmap.md](art-roadmap.md) §4 P0 |
 | ~~H10~~ | ~~정수 투입 개시~~ → **자발 개시됨** (오디오 PR merge 완료) — 다음 발주 묶음은 P3 잔여 스크립트로 협의 | — | [orders/audio.md](orders/audio.md) |
 

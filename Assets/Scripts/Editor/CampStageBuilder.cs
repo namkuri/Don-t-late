@@ -15,7 +15,7 @@ namespace DontLate.EditorTools
     public static class CampStageBuilder
     {
         private const string CAMP_PATH = "Assets/Scenes/Camp.unity";
-        private const int LOAD_ZONE_COUNT = 3;
+        private const int LOAD_ZONE_COUNT = 4; // S-039 ④ — 4번째 = 아파트행 물량
 
         [MenuItem("DontLate/Build/Camp Stage", priority = 12)]
         public static void BuildCampStage()
@@ -37,6 +37,7 @@ namespace DontLate.EditorTools
             GreyboxStageBuilder.BuildWalkableVolume();
             GreyboxStageBuilder.BuildGroundMist();
             GreyboxStageBuilder.BuildStarField(); // S-033 ① — 캠프 밤하늘 별 (밤 페이드는 StarField.cs 공용)
+            GreyboxStageBuilder.BuildDeliveryCart(new Vector3(-4f, 0f, 1.2f)); // S-039 ④ — 캠프에서도 대차 운반
             BuildTruck(truck, box, highlight);
             System.Collections.Generic.List<PickupBox> boxes = BuildPickupBoxes(box, highlight, tuning);
             BuildOrderBoard(gameState, boxes);
@@ -151,14 +152,30 @@ namespace DontLate.EditorTools
             if (created) order = ScriptableObject.CreateInstance<DeliveryOrderSO>();
 
             order.orderId = 100 + index;
-            order.address = index == 1 ? "골목연립 반지하" : "달빛호프 2층";
-            order.district = index == 1
-                ? DeliveryOrderSO.DISTRICT_VILLATOWN
-                : DeliveryOrderSO.DISTRICT_FOODALLEY;
-            order.floor = index == 1 ? -1 : 2;
-            // 먹자골목(19시)은 저녁 마감 — "밤 배송량↑" 표현 (D-064).
-            order.deadlineMinuteOfDay = index == 1 ? 15f * 60f : 19f * 60f;
-            order.reward = index == 1 ? 900 : 1400;
+            switch (index)
+            {
+                case 1:
+                    order.address = "골목연립 반지하";
+                    order.district = DeliveryOrderSO.DISTRICT_VILLATOWN;
+                    order.floor = -1;
+                    order.deadlineMinuteOfDay = 15f * 60f;
+                    order.reward = 900;
+                    break;
+                case 3: // S-039 ④ — 첫날부터 아파트행 물량
+                    order.address = "늦지마아파트 202호";
+                    order.district = DeliveryOrderSO.DISTRICT_APARTMENT;
+                    order.floor = 2;
+                    order.deadlineMinuteOfDay = 18f * 60f;
+                    order.reward = 1600;
+                    break;
+                default: // 먹자골목(19시)은 저녁 마감 — "밤 배송량↑" 표현 (D-064).
+                    order.address = "달빛호프 2층";
+                    order.district = DeliveryOrderSO.DISTRICT_FOODALLEY;
+                    order.floor = 2;
+                    order.deadlineMinuteOfDay = 19f * 60f;
+                    order.reward = 1400;
+                    break;
+            }
 
             if (created)
             {

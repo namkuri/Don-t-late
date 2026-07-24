@@ -30,7 +30,6 @@ namespace DontLate.EditorTools
             Material lobby = GreyboxStageBuilder.GetOrCreateMaterial("AptLobby", new Color(0.36f, 0.34f, 0.30f), false);
             Material corridor = GreyboxStageBuilder.GetOrCreateMaterial("AptCorridor", new Color(0.42f, 0.40f, 0.36f), false);
             Material wall = GreyboxStageBuilder.GetOrCreateMaterial("AptWall", new Color(0.50f, 0.48f, 0.44f), false);
-            Material cartMat = GreyboxStageBuilder.GetOrCreateMaterial("Cart", new Color(0.30f, 0.55f, 0.42f), false);
             Material panelMat = GreyboxStageBuilder.GetOrCreateMaterial("AptPanel", new Color(0.16f, 0.20f, 0.30f), false);
             Material highlight = GreyboxStageBuilder.GetOrCreateMaterial("Highlight", GreyboxStageBuilder.ParseColor("#35e0c8"), true);
             Material dockMat = GreyboxStageBuilder.GetOrCreateMaterial("AptDock", GreyboxStageBuilder.ParseColor("#ff9f45"), true);
@@ -62,8 +61,8 @@ namespace DontLate.EditorTools
             walkable.center = new Vector3(29f, 2f, 0f);
             volume.AddComponent<WalkableVolume>();
 
-            // ── 대차 ─────────────────────────────────────────
-            BuildCart(cartMat, highlight);
+            // ── 대차 (공용 헬퍼 — S-039 트리거 콜라이더) ─────
+            GreyboxStageBuilder.BuildDeliveryCart(new Vector3(-9f, 0f, 0f));
 
             // ── 도크(짐 전용 비콘 패드) + 비번 게이트 ────────
             GameObject dock = GreyboxStageBuilder.CreatePrimitive(PrimitiveType.Cube, "CartDockPad", new Vector3(-4.5f, 0.03f, 0f));
@@ -113,40 +112,6 @@ namespace DontLate.EditorTools
             GameObject wallGo = GreyboxStageBuilder.CreatePrimitive(PrimitiveType.Cube, name, position);
             wallGo.transform.localScale = size;
             wallGo.GetComponent<Renderer>().sharedMaterial = material;
-        }
-
-        private static void BuildCart(Material material, Material highlight)
-        {
-            GameObject root = GreyboxStageBuilder.CreateEmpty("DeliveryCart", new Vector3(-9f, 0f, 0f));
-            BoxCollider collider = root.AddComponent<BoxCollider>();
-            collider.size = new Vector3(1.4f, 1.1f, 0.9f);
-            collider.center = new Vector3(0f, 0.55f, 0f);
-
-            GameObject bed = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            bed.name = "Bed";
-            bed.transform.SetParent(root.transform, false);
-            bed.transform.localPosition = new Vector3(0f, 0.3f, 0f);
-            bed.transform.localScale = new Vector3(1.4f, 0.12f, 0.9f);
-            Object.DestroyImmediate(bed.GetComponent<Collider>());
-            bed.GetComponent<Renderer>().sharedMaterial = material;
-
-            GameObject handle = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            handle.name = "Handle";
-            handle.transform.SetParent(root.transform, false);
-            handle.transform.localPosition = new Vector3(-0.65f, 0.75f, 0f);
-            handle.transform.localScale = new Vector3(0.08f, 1.0f, 0.9f);
-            Object.DestroyImmediate(handle.GetComponent<Collider>());
-            handle.GetComponent<Renderer>().sharedMaterial = material;
-
-            GameObject stack = new GameObject("StackRoot");
-            stack.transform.SetParent(root.transform, false);
-            stack.transform.localPosition = new Vector3(0.1f, 0.36f, 0f);
-
-            DeliveryCart cart = root.AddComponent<DeliveryCart>();
-            GreyboxStageBuilder.SetReference(cart, "_renderer", bed.GetComponent<Renderer>());
-            GreyboxStageBuilder.SetReference(cart, "_normalMaterial", material);
-            GreyboxStageBuilder.SetReference(cart, "_highlightMaterial", highlight);
-            GreyboxStageBuilder.SetReference(cart, "_stackRoot", stack.transform);
         }
 
         private static void BuildPasswordGate(GameStateSO gameState, Material material, Material highlight,

@@ -12,13 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 69da21dde442b254d84abbbf4e98a028, type: 3}
   m_Name: GameState
   m_EditorClassIdentifier: Assembly-CSharp::DontLate.GameStateSO
-  day: 1
-  minuteOfDay: 480
+  day: 2
+  minuteOfDay: 1199.202
   money: 0
   debt: 10000
   cargo: []
-  scannedOrderIds: 
-  currentDistrict: 
+  scannedOrderIds: 65000000
+  currentDistrict: "\uC544\uD30C\uD2B8\uB2E8\uC9C0"
   deliveryHistory: []
   totalEarned: 0
   ownedFurnitureIds: []
@@ -27,8 +27,10 @@ MonoBehaviour:
     position: {x: -2.5, y: 0, z: 2}
     rotationY: 0
   bedSeeded: 1
+  apartmentGatePassword: 2777
   wallpaperIndex: 0
   floorIndex: 0
+  placedDeliveries: []
   coinUnits: 0
   coinCostBasis: 0
   nextOrderSerial: 200
