@@ -1088,3 +1088,20 @@
 - 실검증(부팅→타이틀): `slot=Title · clip=Pixel_Night_Funk_Don-T-Late_NoVocal · PLAYING` — 보컬 없는 곡 재생 확인. Day2·Night3 무손상.
 - 라이선스: 원곡 Suno 스템이라 동일(Suno 유료). CREDITS.md·assets_manifest.md 2곡 등재(현 타이틀=NoVocal, 보관=보컬본) + .gitignore 예외.
 - 검증: 컴파일 ○ · 콘솔 0 ○ · Play 재생 ○. 손맛 청취는 Director 사람 판정(오디오 레인).
+
+---
+
+## S-054 · 발주 2026-07-25 (Director 직접 지시 — 맵이동·대사 효과음 ElevenLabs 재생성)
+
+요구 (Director 원문): "맵이동과 대사 효과음만 다시 일레븐랩스로 만들어줘." (S-053 8비트 블립 롤백 직후 — b04c39d)
+
+수용기준: sfx_map_pin/route/depart·sfx_dialogue_blip 4종 ElevenLabs 재생성 · 기존 파일 제자리 교체(guid 불변) · 셀프검증. 음질은 Director 청취.
+
+### 결과 · 2026-07-25 (리드 ~20분)
+- 선블로커 해소: ElevenLabs 크레딧 0 → Director 10000 충전 후 진행.
+- 생성: `elevenlabs_client gen --overwrite` 4종(기존 토이톤 프롬프트·새 seed). seed 기록 — dialogue **864007029** · map_pin **1884846211** · map_route **782230717** · map_depart **2078724653**.
+- 후공정: 파이프라인 normalize/intake/promote는 4종 BOM/JUICE 미등재로 게이트 차단 → 기존 프로젝트 자산 재생성이라(신규 반입 아님·이미 라이선스/manifest 등재) 자체 DSP(트림·피크 -1dB·RMS -14dB, **피크 한계 무클립**)로 처리 후 `Assets/Audio/SFX/` **제자리 교체**.
+- 후공정 실측: route -14.0dB·depart -14.0dB(RMS 타깃) · dialogue_blip -1.0dB피크/-22.3dB·map_pin -1.0dB피크/-20.8dB(피크형 트랜지언트라 무클립 피크 한계 — 짧은 틱/플링크는 피크가 체감 음량). 확립 프로세스(0.81% 클립 가드)보다 보수적 = 무왜곡. **더 크게 원하면 클립 가드 재처리 가능**.
+- guid 4종 전부 보존(.meta 미변경) → 코드·씬 재작업 0(맵 SFX=WorldAudioManager·블립=DialogueView `_blipClip` 배선 유지). Core 재빌드로 로컬 씬 정합(S-053 잔재 정리).
+- 검증: 임포트 콘솔 0 · 클립 4종 유효(mono 44.1kHz) · 배선 유지. **인게임 청취 판정은 Director(오디오 레인)**.
+- 라이선스: ElevenLabs SFX 유료(기존 동일) — CREDITS/manifest 기등재.

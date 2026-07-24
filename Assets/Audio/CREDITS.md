@@ -210,3 +210,14 @@ late-night introspective, hazy, instrumental, 88 BPM
   반복감 기각 시 후속 = 파이프라인 캡 상향(5→22s) 재생성 제안.
 - 파이프라인 수리 1건: `bom_audio.fallback()`이 미등재 `amb_*`를 bgm으로 오분류(BGM 루프 규격+시티팝 앵커 주입) → `amb_` 접두어 SFX 분류 추가.
 - BOM §8 미등재 5종 — 발주서(AU-011 2026-07-23 20:59)가 근거. 행 추가는 관제 몫(R16 ③ 합류 요청).
+
+### S-054 재생성 (2026-07-25 · Director 지시 · 계정·권리 위 표와 동일)
+
+맵이동 3종 + 대사 블립을 ElevenLabs로 재생성(같은 토이톤 프롬프트·새 seed → 제자리 교체, guid 불변). seed 기록은 [orders/system.md](../../planning/orders/system.md) S-054.
+
+| bom_id | seed | 후공정 실측 |
+|---|---|---|
+| `sfx_dialogue_blip` | 864007029 | 트림→피크 -1.0dB · RMS -22.3dB(피크형 무클립) |
+| `sfx_map_pin` | 1884846211 | 피크 -1.0dB · RMS -20.8dB(피크형 무클립) |
+| `sfx_map_route` | 782230717 | 피크 -4.5dB · RMS -14.0dB |
+| `sfx_map_depart` | 2078724653 | 피크 -2.7dB · RMS -14.0dB |
