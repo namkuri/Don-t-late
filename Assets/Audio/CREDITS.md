@@ -70,11 +70,34 @@ late-night introspective, hazy, instrumental, 88 BPM
   — WAV 대응본 부재, 재확보 포기 (2026-07-21 정수 결정 — 주체 D-048 정정). FLAC 원본은 삭제됨.
 - `Late_for_Work_8-Bit_Panic_2026-07-19T072529`(60s, PCM md5 `0c251eeedd11`)
   — **8비트 사운드로 나머지 곡과 분위기 불일치** (2026-07-21 정수 청취 판정 — 위임 D-045 범위, 주체 D-048 정정). 프로젝트·아카이브 양쪽에서 삭제.
-  유일한 Title 슬롯 곡이었으므로 **Title 슬롯은 현재 공백** — Unsorted 5곡 중에서 재지정 필요.
+  유일한 Title 슬롯 곡이었으므로 한동안 Title 슬롯 공백 — **2026-07-24 Suno 곡 `Pixel_Night_Funk_Don-T-Late`로 충원**(위 "BGM (타이틀) — Suno" 절).
 - **미채택 4곡** (2026-07-21 청취 판정 — 최종 컷). 프로젝트에서 제거, 원본 아카이브(`Don-t-late-bgm/`)에는 보존:
   `Ironic_Stillness`(`6cd06cf4ba1a`) · `Pixel_Seoul_Breeze`(`3f398520c39c`) ·
   `Seoul_Pixel_Boulevard`(`4c1169ca957b`) · `Sunlit_Stroll_in_Seoul`(`4ffa4f0689f9`).
   `Ironic_Stillness`는 원본에서 낮·밤 양쪽에 중복 배치돼 있던 곡이다.
+
+---
+
+## BGM (타이틀) — Suno
+
+| 항목 | 내용 |
+|---|---|
+| 생성 도구 | **Suno** (AI 음악 생성) |
+| 계정 | Director 개인 계정 — **유료 플랜 (Pro/Premier)** (2026-07-24 반입 시 Director 확인) |
+| 권리 | **상업적 사용 가능 · 소유권 사용자 귀속 · 기간 무제한.** Suno 유료 구독 중 생성한 콘텐츠는 상업 이용이 허용되며 소유권이 생성자에게 귀속된다 (무료 플랜은 비상업 + 소유권 미귀속이라 반입 불가) |
+| 표기 의무 | **없음** — 유료 플랜 한정 (무료 플랜만 "Made with Suno" 표기 의무) |
+| 근거 | Suno 이용약관 유료 플랜 상업 라이선스 조항 · Director 플랜 확인 (2026-07-24) |
+| 반입일 | 2026-07-24 |
+
+### 곡 목록 (Title 슬롯 · 1곡)
+
+| 파일 | 슬롯 | 길이 | 파일 MD5(앞 12) |
+|---|---|---|---|
+| `Pixel_Night_Funk_Don-T-Late.wav` | **Title** | 195.6s | `f9b29ce1614c` |
+
+- ElevenLabs 절 채택 5곡이 컷했던 Title 슬롯(구 `Late_for_Work_8-Bit_Panic` — 8비트 불일치로 폐기, Title 공백)을 이 곡이 채운다. `BgmLibrary.asset` slot=3(Title) 배선. WebGL 임포트는 AudioImportPostprocessor 자동(Vorbis · CompressedInMemory · q0.30 · 스테레오).
+- 인게임 재생: 타이틀 화면(Main)은 인트로 대화까지 무음(S-009), 대화 종료 후 크로스페이드 인.
+- **파일 MD5는 WAV 파일 전체 해시**(ElevenLabs 절의 PCM MD5와 계산 기준이 다름 — 디코드 없이 식별용).
 
 ---
 

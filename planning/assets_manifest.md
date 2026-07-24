@@ -76,6 +76,20 @@
   **BGM 청취 판정 종료** — 반입 10곡 → 채택 5곡.
 - **폐기 1곡**: `Late_for_Work_8-Bit_Panic` — 8비트로 분위기 불일치(Director 청취 판정). 프로젝트·아카이브 삭제.
 
+## Suno BGM INTAKE (타이틀) — 2026-07-24
+
+> 출처 = **Suno** (AI 음악 생성), **Director 개인 유료 플랜(Pro/Premier)** 생성물 (2026-07-24 반입 시 확인).
+> 권리 = **상업적 사용 가능·소유권 생성자 귀속·기간 무제한**. Suno 유료 구독 생성물은 상업 이용 허용,
+> 소유권 귀속(무료 플랜은 비상업+소유권 미귀속이라 반입 불가). 표기 의무 = **없음**(유료 플랜 한정).
+> 근거: Suno 이용약관 유료 플랜 상업 라이선스 조항 · Director 플랜 확인(2026-07-24). 상세 = `Assets/Audio/CREDITS.md`.
+> ElevenLabs 절 채택 5곡이 컷했던 **Title 슬롯 공백을 충원**. 스왑 계약은 `Assets/Data/BgmLibrary.asset`(slot=3).
+
+| 파일명 | 슬롯 | 길이 | dest | 출처 | 라이선스 | 반입일 |
+|---|---|---|---|---|---|---|
+| Pixel_Night_Funk_Don-T-Late.wav | Title | 195.6s | `Assets/Audio/BGM/` | Suno (유료 Pro/Premier) | 상업 사용 가능·소유권 귀속·무기한 | 2026-07-24 |
+
+- 임포트 = **Vorbis q30 · Compressed In Memory · 스테레오**(AudioImportPostprocessor 자동, BGM 규격 · WebGL안전). 파일 MD5(앞12) `f9b29ce1614c`.
+
 ## Trellis2 INTAKE — 2026-07-22
 
 > 출처 = **RunPod 셀프호스팅 TRELLIS** (Microsoft · MIT) · 민지 생성. 생성물 상업 사용 제약 없음.

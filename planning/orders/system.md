@@ -1037,3 +1037,20 @@
 - 메커닉(D-065): **비×언덕 미끄럼** — PlayerLocomotionManager가 SceneTransitionCompleted·WeatherChanged 구독, Hillside+Rain일 때 이동을 관성 수렴(MoveTowards, 가속 6/s — 출발 굼뜸·정지 밀림)으로 전환. **스태미나 가중** — PlayerStatusManager가 Hillside에서 drain ×1.4.
 - 실측: Travel→Hillside 진입 ○ · 4단 테라스·램프 렌더 ○ · 플레이어 4단 접지(y6.08) ○ · 카메라 y 8.10→12.89 추종 ○ · Rain 전환 후 강우 렌더 ○ · 캡처 3장(Screenshots/s049_*).
 - 부기: 전이 가드 실측 — Home→Hillside 직행은 "허용되지 않은 전이" 거부(정상, Travel 경유만).
+
+---
+
+## S-050 · 발주 2026-07-24 (Director 직접 지시 — 타이틀곡 반입·배선)
+
+요구 (Director 원문): "타이틀 곡 아직 없으면, `Pixel Night Funk Don-T-Late.wav` 이 곡 붙이는 작업해줘(복사, 잘라내기 둘다 오케이)".
+
+수용기준: Title 슬롯 공백 확인 · WAV 반입(임포터 자동 규격) · BgmLibrary Title 배선 · 라이선스 기록 · 커밋 게이트 통과.
+
+### 결과 · 2026-07-24 (리드 ~15분)
+- Title 슬롯 공백 확인(CREDITS 폐기이력 — 구 `Late_for_Work_8-Bit_Panic` 8비트 불일치 폐기 후 공백).
+- WAV 복사 → `Assets/Audio/BGM/Pixel_Night_Funk_Don-T-Late.wav`(37.5MB · **195.6s**). AudioImportPostprocessor 자동: Vorbis · CompressedInMemory · 스테레오 · q0.30 · loadInBackground · WebGL안전(콘솔 0).
+- `BgmLibrary.asset` Title(slot 3) 엔트리 추가 — Title 풀=1곡(Day 2·Night 3 무손상, exec 검증).
+- Play 실검증: Main 전이 + DialogueEnded 구동 시 `CurrentClip = Pixel_Night_Funk_Don-T-Late`(195.6s) 크로스페이드 선택 확인 · 콘솔 0.
+- 라이선스: **Suno 유료(Pro/Premier)** — 상업이용·소유권 귀속·표기의무 없음(Director 확인). `Assets/Audio/CREDITS.md` "BGM (타이틀) — Suno" 절 신설 + `.gitignore` 예외 추가.
+- 인게임 재생: 타이틀 화면은 인트로 대화까지 무음(S-009), 대화 종료 후 크로스페이드 인. **곡 손맛·믹스 판정은 Director 청취 몫(사람 판정)**.
+- 검증: 임포트 에러 0 ○ · 배선 exec ○ · Play 크로스페이드 실측 ○. (오디오 레인 — 콘솔 검증은 임포트 에러용, 청취는 사람 게이트)
