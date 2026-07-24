@@ -8,7 +8,7 @@
 | # | 항목 | 상태 | 참조 |
 |---|---|---|---|
 | R16 | **SFX 6세대(동물의 숲 토이 톤) 19종** — ①② 완료 (2026-07-22 23:20): ① Director 청취 판정 **19종 통과**("검증결과 괜찮네" — 체크리스트 청취) ② `Assets/Audio/SFX/` 6세대 승격 커밋(PR #11, main .meta 보존). **잔여 = 관제 ③④**: ③ BOM §8 신규 행 추가+JUICE 대응 — AU-008 7종 + **PR#12 4종 + PR#13 5종(amb_villatown/foodalley·map_pin/route/depart) 합류** ④ GAME-SFX-RULES §1 앵커 개정("retro pixel-art" → 토이 톤). 부기: 미배선 8종(deadline_warn·phone_ring·rhythm_hit/miss·scene_whoosh·footstep·drink·amb_night) 배선은 AU-007 카드1대로 관제 몫 | [orders/audio.md](orders/audio.md) AU-007/008 결과 7 · PR #11 |
-| R17 | **PR#13 사람 판정 묶음** — ① 구역감: 빌라촌(웜그레이 저층)·먹자골목(간판 스트립) 그레이박스 톤 ② 폰 지도 앱 조작감(핀→경로→출발) ③ AU-011 5종 청취 + **amb 루프 5초 반복감**(발주는 60s±였으나 API 상한으로 5s 납품 — 귀에 거슬리면 캡 상향 재생성 후속) | 대기 (2026-07-24 머지) | [orders/system.md](orders/system.md) S-035·036 결과 · PR #13 |
+| R17 | **PR#13 사람 판정** — 잔여 ①만: 구역감(빌라촌 웜그레이 저층 · 먹자골목 간판 스트립 그레이박스 톤). ~~② 지도 조작감~~→폴리싱 백로그 (님: "추후 폴리싱") · ~~③ 앰비언스~~→**5초 루프 기각** — [orders/audio.md](orders/audio.md) AU-012 재생성(30s+×3종) | 부분 처리 (2026-07-24) | PR #13 |
 | R11 | 간판 발광판 | **재발주됨** (2026-07-22) — 처방 확정 [decisions.md](decisions.md) D-051: 발광판 폐지 → 간판 머티리얼 이미시브 스왑(S-004, 시스템) + 간판 분리 익스포트(아트 공통 규격 승격) | [orders/system.md](orders/system.md) S-004 |
 
 ## ② 결정 대기
