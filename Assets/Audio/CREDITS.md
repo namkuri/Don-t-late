@@ -223,3 +223,13 @@ late-night introspective, hazy, instrumental, 88 BPM
 | `sfx_map_pin` | S-055 선택(5후보 중 pin_1) | 피크 -1.0dB · RMS -17.4dB |
 | `sfx_map_route` | S-055 선택(route_5) | 피크 -3.5dB · RMS -14.0dB |
 | `sfx_map_depart` | S-055 선택(depart_2) | 피크 -2.2dB · RMS -14.0dB |
+
+### scene_whoosh cand16 교체 (2026-07-25 · Director 지시 · 계정·권리 위 표와 동일)
+
+전환음(`sfx_scene_whoosh`)을 **레트로 city chiptune**(멜로우·재즈 없음)으로 교체 — 기존 토이톤/상행스윕 폐기.
+17후보 생성 후 **Director 청취 선택(cand16)**. ⚠ SFX는 API가 seed를 안 받아 **seed 복원 불가** — 프롬프트로 재생.
+제자리 교체(guid 불변 `3e4e0175…`). 후공정 = 피크 -1.0dB (RMS 미부스트 — 필요 시 후속).
+
+| bom_id | 출처 | 프롬프트 SHA1 | 후공정 |
+|---|---|---|---|
+| `sfx_scene_whoosh` | 17후보 중 cand16 (Director 선택) | `217dec5cb9a8` | 피크 -1.0dB |

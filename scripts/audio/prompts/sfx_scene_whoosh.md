@@ -20,14 +20,14 @@
 ## 창작 태그 (사람이 고치는 유일한 칸)
 
 <!-- NOTE:BEGIN -->
-quick playful whoosh swooping upward, bright airy sweep with a cheeky rising pitch bend, energetic and snappy
+mellow retro city chiptune transition, soft rolling 8-bit blips with a cozy urban groove, laid-back and warm
 <!-- NOTE:END -->
 
 ## 전송 프롬프트 (조립 결과 — 그대로 API에 투입)
 
 <!-- PROMPT:BEGIN -->
 ```
-quick playful whoosh swooping upward, bright airy sweep with a cheeky rising pitch bend, energetic and snappy. It plays when the game event SceneTransitionStarted fires. Duration about 1.0 seconds. Style: cozy cute toy-like game sound, soft wooden marimba and rounded synth plucks, playful little pitch bends, gentle and warm, light and bouncy. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
+mellow retro city chiptune transition, soft rolling 8-bit blips with a cozy urban groove, laid-back and warm. Duration about 1.0 seconds. Style: retro 8-bit chiptune game sound, warm urban city vibe, pulse and square waves, mellow and cozy, clean and readable in a busy mix. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
 ```
 <!-- PROMPT:END -->
 
@@ -68,3 +68,4 @@ python scripts/audio/audio_pipeline.py intake --bom-id sfx_scene_whoosh
 | 6 | 2026-07-22 | 재조립 |
 | 7 | 2026-07-22 | 재조립 |
 | 8 | 2026-07-23 | 재조립 |
+| 9 | 2026-07-25 | cand16 채택 — 레트로 city chiptune(멜로우·재즈X) 교체, 토이톤/상행스윕 폐기 · SFX seed 미수신(프롬프트로 재생) |
