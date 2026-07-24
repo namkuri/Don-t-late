@@ -259,7 +259,8 @@ namespace DontLate
         private void BuildEffects()
         {
             _rain = BuildFallSystem("RainEmitter", new Color(0.62f, 0.72f, 0.92f, 0.55f),
-                startSpeed: 26f, size: 0.05f, lengthScale: 6f, rate: 340f, gravity: 1.2f);
+                startSpeed: 26f, size: 0.05f, lengthScale: 6f, rate: 340f, gravity: 1.2f,
+                tiltDegrees: 15f); // 아트 피드백 (2026-07-24) — 수직 낙하는 부자연, 15° 사선
             _snow = BuildFallSystem("SnowEmitter", new Color(0.98f, 0.98f, 1f, 0.9f),
                 startSpeed: 1.6f, size: 0.09f, lengthScale: 1f, rate: 120f, gravity: 0.06f, noise: true);
             _haze = BuildHaze();
@@ -267,12 +268,15 @@ namespace DontLate
         }
 
         private ParticleSystem BuildFallSystem(string name, Color color, float startSpeed,
-            float size, float lengthScale, float rate, float gravity, bool noise = false)
+            float size, float lengthScale, float rate, float gravity, bool noise = false, float tiltDegrees = 0f)
         {
             GameObject go = new GameObject(name);
             go.transform.SetParent(transform, false);
             go.transform.localPosition = new Vector3(0f, 14f, 1.5f);
-            go.transform.localRotation = Quaternion.Euler(90f, 0f, 0f); // 아래로
+            // 낙하 방향 — 기울기(도)만큼 X로 사선 (스트레치 렌더가 속도 정렬이라 빗줄기도 같이 기운다).
+            float tilt = tiltDegrees * Mathf.Deg2Rad;
+            go.transform.localRotation = Quaternion.LookRotation(
+                new Vector3(Mathf.Sin(tilt), -Mathf.Cos(tilt), 0f));
 
             ParticleSystem system = go.AddComponent<ParticleSystem>();
             var main = system.main;
