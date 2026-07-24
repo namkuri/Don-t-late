@@ -137,6 +137,22 @@ namespace DontLate.EditorTools
 
             WorldWeatherManager weather = managers.AddComponent<WorldWeatherManager>(); // S-042
             SetField(weather, "_gameState", gameState);
+            // S-047: 구름 실아트 소켓 — Art/Backgrounds/fx_cloud_*.png 있으면 배선 (없으면 코드 블롭 폴백).
+            var cloudSprites = new System.Collections.Generic.List<Sprite>();
+            foreach (string suffix in new[] { "a", "b", "c" })
+            {
+                var sprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Backgrounds/fx_cloud_" + suffix + ".png");
+                if (sprite != null) cloudSprites.Add(sprite);
+            }
+            if (cloudSprites.Count > 0)
+            {
+                SerializedObject weatherSerialized = new SerializedObject(weather);
+                SerializedProperty cloudsProp = weatherSerialized.FindProperty("_cloudSprites");
+                cloudsProp.arraySize = cloudSprites.Count;
+                for (int i = 0; i < cloudSprites.Count; i++)
+                    cloudsProp.GetArrayElementAtIndex(i).objectReferenceValue = cloudSprites[i];
+                weatherSerialized.ApplyModifiedPropertiesWithoutUndo();
+            }
 
             WorldJuiceManager juice = managers.AddComponent<WorldJuiceManager>(); // S-023
             SetField(juice, "_font", AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FONT_PATH));

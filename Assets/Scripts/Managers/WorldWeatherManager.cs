@@ -16,6 +16,8 @@ namespace DontLate
         public static WorldWeatherManager Instance { get; private set; }
 
         [SerializeField] private GameStateSO _gameState;
+        [Tooltip("구름 실아트 스왑 슬롯 (S-047 — bom_id: fx_cloud_a/b/c, Art/Backgrounds). 비면 코드 블롭 폴백.")]
+        [SerializeField] private Sprite[] _cloudSprites;
         [Tooltip("그레이드 전이 속도 (1/초) — 낮을수록 느긋한 트랜지션.")]
         [SerializeField] private float _gradeLerpSpeed = 0.5f;
 
@@ -310,7 +312,7 @@ namespace DontLate
             var shape = system.shape;
             shape.enabled = true;
             shape.shapeType = ParticleSystemShapeType.Box;
-            shape.scale = new Vector3(70f, 10f, 70f); // S-046 ② — 70×70 전역
+            shape.scale = new Vector3(90f, 10f, 90f); // S-047 ③ — 정사각 확대
 
             var emission = system.emission;
             emission.rateOverTime = rate;
@@ -343,7 +345,7 @@ namespace DontLate
             collision.mode = ParticleSystemCollisionMode.Collision3D;
             collision.bounce = 0f;
             collision.lifetimeLoss = 1f;
-            collision.quality = ParticleSystemCollisionQuality.Medium;
+            collision.quality = ParticleSystemCollisionQuality.High; // S-047 ① — Medium 근사 평면이 부유 퇴적의 원흉
 
             GameObject pileGo = new GameObject("SnowPile");
             pileGo.transform.SetParent(snow.transform, false);
@@ -369,8 +371,9 @@ namespace DontLate
                 new[] { new GradientAlphaKey(0.85f, 0f), new GradientAlphaKey(0.85f, 0.8f), new GradientAlphaKey(0f, 1f) });
             fade.color = gradient;
 
-            pileGo.GetComponent<ParticleSystemRenderer>().material
-                = MakeParticleMaterial(new Color(0.96f, 0.97f, 1f, 0.85f));
+            var pileRenderer = pileGo.GetComponent<ParticleSystemRenderer>();
+            pileRenderer.material = MakeParticleMaterial(new Color(0.96f, 0.97f, 1f, 0.85f));
+            pileRenderer.renderMode = ParticleSystemRenderMode.HorizontalBillboard; // S-047 ① — 하늘 보기(바닥에 눕는다)
             pile.Stop();
 
             var subEmitters = snow.subEmitters;
@@ -496,12 +499,14 @@ namespace DontLate
             _clouds = new SpriteRenderer[8];
             for (int i = 0; i < _clouds.Length; i++)
             {
+                Sprite sprite = _cloudSprites != null && _cloudSprites.Length > 0
+                    ? _cloudSprites[i % _cloudSprites.Length] : blob; // 실아트 로테이션
                 GameObject cloud = new GameObject("Cloud_" + i);
                 cloud.transform.SetParent(_cloudRoot, false);
                 cloud.transform.localPosition = new Vector3(-40f + i * 11f, 21f + (i * 13 % 7), 64f + (i % 3) * 3f);
                 cloud.transform.localScale = new Vector3(9f + (i * 7 % 5), 3.2f + (i * 5 % 3), 1f);
                 SpriteRenderer renderer = cloud.AddComponent<SpriteRenderer>();
-                renderer.sprite = blob;
+                renderer.sprite = sprite;
                 cloud.SetActive(false);
                 _clouds[i] = renderer;
             }
