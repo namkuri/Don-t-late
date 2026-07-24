@@ -1105,3 +1105,18 @@
 - guid 4종 전부 보존(.meta 미변경) → 코드·씬 재작업 0(맵 SFX=WorldAudioManager·블립=DialogueView `_blipClip` 배선 유지). Core 재빌드로 로컬 씬 정합(S-053 잔재 정리).
 - 검증: 임포트 콘솔 0 · 클립 4종 유효(mono 44.1kHz) · 배선 유지. **인게임 청취 판정은 Director(오디오 레인)**.
 - 라이선스: ElevenLabs SFX 유료(기존 동일) — CREDITS/manifest 기등재.
+
+---
+
+## S-055 · 발주 2026-07-25 (Director 직접 지시 — 맵이동 소리 후보 청취·선택)
+
+요구 (Director): 맵이동 소리를 "다양하게 들어보고" 싶다 → 동작당 5후보 생성해 청취 후 선택.
+
+배경 확인: ElevenLabs 웹은 프롬프트당 4후보 제시하나 **REST `/v1/sound-generation`은 요청당 1개**(count 파라미터 없음)·**SFX는 seed 파라미터도 없어 매 호출 랜덤**. → 웹 4후보 = API N회 호출로 재현.
+
+### 결과 · 2026-07-25 (리드 ~15분)
+- 3종(pin·route·depart) 각 5후보 = **15 생성**(같은 토이톤 프롬프트·랜덤) → 자체 후공정(트림·피크 -1dB·RMS -14dB) → `Downloads/맵소리후보/`에 청취용 배치.
+- Director 선택: **pin_1 · route_5 · depart_2**.
+- 선택본 `Assets/Audio/SFX/`에 제자리 교체 — guid 3종 보존(pin 5fa59c·route 9461617·depart f4d3041, .meta 미변경) → 코드·씬 재작업 0. 클립 유효(pin 0.14s·route 0.26s·depart 0.60s, mono).
+- 검증: 콘솔 0 · 배선 유지(WorldAudioManager PlayMapPin/Route/Depart). **최종 인게임 청취는 Director**.
+- 부기: SFX seed 비복원 확인 → CREDITS S-054 표 정정(seed는 로컬 기록·복원 불가 명시).
