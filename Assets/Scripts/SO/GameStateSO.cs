@@ -53,6 +53,7 @@ namespace DontLate
 
         [Header("진행")]
         public GameScene currentScene;
+        public bool bossIntroPlayed; // S-052 ① — 캠프 사장님 튜토리얼 1회 재생 여부 (세션제)
 
         [Header("세션 초기값")]
         public int startDay = 1;

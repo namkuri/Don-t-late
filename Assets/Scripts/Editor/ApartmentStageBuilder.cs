@@ -84,6 +84,12 @@ namespace DontLate.EditorTools
             AttachSpawner(gameState);
 
             // ── 플레이어·카메라(Y 팔로우) ────────────────────
+            // S-052 ②③ — 마당 행인 2 + 심부름 할아버지 (마당 안 짐 옮기기).
+            NpcBuildKit.BuildPedestrian("Walker_A", new Vector3(-16f, 0f, 2.0f), new Color(0.45f, 0.52f, 0.62f), 4f);
+            NpcBuildKit.BuildPedestrian("Walker_B", new Vector3(-8f, 0f, 2.4f), new Color(0.60f, 0.48f, 0.40f), 5f);
+            NpcBuildKit.BuildErrandNpc("ErrandGrandpa", "할아버지", new Vector3(-16f, 0f, -1.8f),
+                new Vector3(-4f, 0f, 1.8f), gameState, 1200);
+
             GreyboxStageBuilder.BuildPlayer(gameState, tuning);
             GameObject player = GameObject.Find("__gb_Player");
             if (player != null) player.transform.position = new Vector3(-16f, 0.1f, 0f);

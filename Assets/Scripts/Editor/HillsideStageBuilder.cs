@@ -98,6 +98,12 @@ namespace DontLate.EditorTools
             // ── 스포너 (밴드별 앵커 — floor 2=중턱, 3=달동네 초입, 4=정상) ──
             AttachSpawner(gameState);
 
+            // S-052 ②③ — 저지대 행인 2 + 심부름 할머니(저지대→달동네 초입 — 긴 계단 지름길 유도).
+            NpcBuildKit.BuildPedestrian("Walker_A", new Vector3(-12f, 0f, 2.0f), new Color(0.45f, 0.52f, 0.62f), 5f);
+            NpcBuildKit.BuildPedestrian("Walker_B", new Vector3(-4f, 0f, 2.4f), new Color(0.60f, 0.48f, 0.40f), 6f);
+            NpcBuildKit.BuildErrandNpc("ErrandGranny", "할머니", new Vector3(2f, 0f, 1.8f),
+                new Vector3(11f, 6.6f, 0.4f), gameState, 2500);
+
             // ── 플레이어·카메라(Y 팔로우) ────────────────────
             GreyboxStageBuilder.BuildPlayer(gameState, tuning);
             GameObject player = GameObject.Find("__gb_Player");

@@ -48,6 +48,13 @@ namespace DontLate.EditorTools
             DestroyRoot("__gb_Beacon");
             AttachCargoSpawner(gameState);
 
+            // S-052 ②③ — 행인 3 + 심부름 할머니 (길 건너까지 짐 옮기기).
+            NpcBuildKit.BuildPedestrian("Walker_A", new Vector3(-8f, 0f, 2.2f), new Color(0.45f, 0.52f, 0.62f), 6f);
+            NpcBuildKit.BuildPedestrian("Walker_B", new Vector3(6f, 0f, 2.6f), new Color(0.60f, 0.48f, 0.40f), 7f);
+            NpcBuildKit.BuildPedestrian("Walker_C", new Vector3(18f, 0f, 2.0f), new Color(0.50f, 0.58f, 0.45f), 5f);
+            NpcBuildKit.BuildErrandNpc("ErrandGranny", "할머니", new Vector3(12f, 0f, -1.8f),
+                new Vector3(-6f, 0f, -1.8f), gameState, 1500);
+
             EditorSceneManager.SaveScene(scene, DISTRICT_PATH);
             Debug.Log("[DistrictSceneBuilder] District.unity 조립 완료 — 매니저 제외 무대 + 슬롯 마커 "
                     + (BUILDING_SLOTS + PROP_SLOTS) + "개.");

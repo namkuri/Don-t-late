@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a5e3ef5ec1efc4b4397e1c503ec59084, type: 3}
+  m_Name: Scenario_Grandpa_Ask
+  m_EditorClassIdentifier: Assembly-CSharp::DontLate.DialogueScenarioSO
+  lines:
+  - speaker: "\uD560\uC544\uBC84\uC9C0"
+    text: "\uC774\uBCF4\uAC8C \uCD1D\uAC01... \uC774 \uC9D0\uC774 \uBB34\uAC70\uC6CC\uC11C
+      \uADF8\uB7EC\uB294\uB370, \uC800\uAE30 \uBE5B\uB098\uB294 \uC790\uB9AC\uAE4C\uC9C0\uB9CC
+      \uC62E\uACA8\uC904 \uC218 \uC788\uACA0\uB098?"
+    portrait: {fileID: 0}
+  - speaker: "\uD560\uC544\uBC84\uC9C0"
+    text: "\uB2E4 \uC62E\uAE30\uACE0 \uB098\uD55C\uD14C \uB2E4\uC2DC \uC640\uC8FC\uAC8C.
+      \uACE0\uB9C8\uC6C0\uC740 \uAF2D \uAC1A\uC744 \uD14C\uB2C8."
+    portrait: {fileID: 0}

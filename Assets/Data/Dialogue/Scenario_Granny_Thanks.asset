@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a5e3ef5ec1efc4b4397e1c503ec59084, type: 3}
+  m_Name: Scenario_Granny_Thanks
+  m_EditorClassIdentifier: Assembly-CSharp::DontLate.DialogueScenarioSO
+  lines:
+  - speaker: "\uD560\uBA38\uB2C8"
+    text: "\uC544\uC774\uACE0, \uACE0\uB9C8\uC6CC\uB77C! \uC80A\uC740 \uC0AC\uB78C\uC774
+      \uCC38 \uCC29\uD558\uB124. \uC774\uAC70 \uC5BC\uB9C8 \uC548 \uB418\uC9C0\uB9CC
+      \uBC1B\uC544 \uAC00\uAC8C."
+    portrait: {fileID: 0}

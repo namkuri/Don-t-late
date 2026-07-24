@@ -47,6 +47,7 @@ namespace DontLate
             _gameState.minuteOfDay = _gameState.startMinuteOfDay;
             _gameState.money = _gameState.startMoney;
             _gameState.debt = _gameState.startDebt;
+            _gameState.bossIntroPlayed = false; // S-052 — 사장님 튜토리얼 리셋
             _gameState.cargo.Clear();
             _gameState.scannedOrderIds.Clear();
             _gameState.placedDeliveries.Clear();

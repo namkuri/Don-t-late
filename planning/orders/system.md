@@ -1148,3 +1148,31 @@
 - guid 4종 전부 보존(.meta 미변경) → 코드·씬 재작업 0(맵 SFX=WorldAudioManager·블립=DialogueView `_blipClip` 배선 유지). Core 재빌드로 로컬 씬 정합(AU-016 잔재 정리).
 - 검증: 임포트 콘솔 0 · 클립 4종 유효(mono 44.1kHz) · 배선 유지. **인게임 청취 판정은 Director(오디오 레인)**.
 - 라이선스: ElevenLabs SFX 유료(기존 동일) — CREDITS/manifest 기등재.
+
+---
+
+## S-052 · 발주 2026-07-25 01:31 → ClaudeCode (본 세션 실행 — NPC 3종: 캠프 사장님·행인·심부름 노인)
+
+요구 (남규님 원문):
+1. **캠프 사장님 NPC** — 첫 방문 시 플레이어 앞으로 걸어와 튜토리얼 대화. 이후엔 구석에 서 있고
+   다가가 말 걸면 격려 대사. **간혹 안 나오는 날도** 있게.
+2. **행인 NPC** — 집(Home) 빼고 씬마다 배치, 길을 오가는 배회.
+3. **심부름 노인 NPC** — 할머니/할아버지가 길가에 서 있음(간혹). 말 걸면 상자를 지정 위치로
+   옮겨달라 부탁 → 옮기고 돌아와 말 걸면 보상.
+
+수용기준: 사장님 접근→튜토리얼→복귀·재방문 격려·부재 추첨 / 행인 배회(Camp·District·Apartment·Hillside) /
+심부름 수락→상자 픽업→목표 배달→복귀 보상(₩ 증가 HUD 반영) / Find 금지 준수 / 테스트 green.
+
+### 결과 (S-052) · 2026-07-25 (리드 — NPC 3종 시공+실측)
+- 신설 3종: [CampBossNpc.cs](../../Assets/Scripts/Interactables/CampBossNpc.cs)(접근 튜토리얼·격려·부재 25%) ·
+  [PedestrianNpc.cs](../../Assets/Scripts/Interactables/PedestrianNpc.cs)(X 왕복 배회·위상 분산·무콜라이더) ·
+  [ErrandNpc.cs](../../Assets/Scripts/Interactables/ErrandNpc.cs)(의뢰→운반→복귀 보상·부재 35%·런타임 주문으로 정산 격리)
+  + [NpcBuildKit.cs](../../Assets/Scripts/Editor/NpcBuildKit.cs)(피규어·시나리오 SO GetOrCreate 공용 키트).
+- 플레이어 발견 = OverlapSphere 저빈도 폴링(Find 금지 준수, ApartmentElevator 선례). 대사 = WorldDialogueManager
+  재생(시나리오 SO는 빌더가 Data/Dialogue/ 생성). bossIntroPlayed는 GameStateSO+CoreBootstrap 리셋 편입.
+- 배선: Camp(사장님+행인2) · District(행인3+할머니 ₩1,500) · Apartment(행인2+할아버지 ₩1,200) ·
+  Hillside(행인2+할머니 저지대→달동네 초입 ₩2,500 — 긴 계단 지름길 유도). Home 제외.
+- 실측(Play): 사장님 (-7.5,1.6)→(-1.6,0.3) 접근·튜토리얼 5줄 재생·종료 후 제자리 복귀·introPlayed=true ○ /
+  District 할머니 의뢰 → ErrandBox(12.9)·마커(-6) 스폰 → 픽업(심부름 짐) → 마커 도달 자동 배달 →
+  복귀 보상 money 0→**1,500**·totalEarned 반영·HUD 표시 ○ / 행인 배회 이동 캡처 간 위치 변화 ○.
+- 검증: 컴파일 ○ 콘솔 0 ○ 테스트 32/32 ○ ★ 재조립 ○ 캡처 3장(Screenshots/s052_*).
