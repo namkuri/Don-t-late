@@ -23,7 +23,7 @@ namespace DontLate
         private int _lastRolledDay = -1;
         private ParticleSystem _rain;
         private ParticleSystem _snow;
-        private ParticleSystem _haze;
+        private GameObject _hazeRoot; // S-044 ③ — 일렁 셰이더 쿼드 (파티클 박스룩 폐지)
         private Transform _cloudRoot;
         private SpriteRenderer[] _clouds;
         private DayPhase _phase = DayPhase.Morning;
@@ -73,13 +73,16 @@ namespace DontLate
             LerpGrade();
         }
 
+        // S-044 ①: 실내 씬(Home)에선 강수·아지랑이를 창밖 원경(z+)으로 민다.
+        private float _sceneZOffset;
+
         private void LateUpdate()
         {
             // 연출 리그는 카메라 X를 따라간다 (씬·구역 무관).
             Camera camera = Camera.main;
             if (camera == null) return;
             Vector3 cam = camera.transform.position;
-            transform.position = new Vector3(cam.x, 0f, 0f);
+            transform.position = new Vector3(cam.x, 0f, _sceneZOffset);
         }
 
         // ── 추첨 ─────────────────────────────────────────────
@@ -124,7 +127,7 @@ namespace DontLate
         {
             Toggle(_rain, Weather == WeatherType.Rain);
             Toggle(_snow, Weather == WeatherType.Snow);
-            Toggle(_haze, Weather == WeatherType.Heat);
+            if (_hazeRoot != null) _hazeRoot.SetActive(Weather == WeatherType.Heat);
 
             int cloudCount = Weather switch
             {
@@ -174,7 +177,11 @@ namespace DontLate
             RefreshGradeTarget();
         }
 
-        private void OnSceneChanged(GameScene _) => RefreshGradeTarget();
+        private void OnSceneChanged(GameScene scene)
+        {
+            _sceneZOffset = scene == GameScene.Home ? 10f : 0f; // S-044 ① — 방 뒷벽(z3) 너머 창밖
+            RefreshGradeTarget();
+        }
 
         private void RefreshGradeTarget()
         {
@@ -261,9 +268,10 @@ namespace DontLate
             _rain = BuildFallSystem("RainEmitter", new Color(0.62f, 0.72f, 0.92f, 0.55f),
                 startSpeed: 26f, size: 0.05f, lengthScale: 6f, rate: 340f, gravity: 1.2f,
                 tiltDegrees: 15f); // 아트 피드백 (2026-07-24) — 수직 낙하는 부자연, 15° 사선
+            ConfigureRainSplash(_rain); // S-044 ② — 충돌 지점 물 튀김
             _snow = BuildFallSystem("SnowEmitter", new Color(0.98f, 0.98f, 1f, 0.9f),
                 startSpeed: 1.6f, size: 0.09f, lengthScale: 1f, rate: 120f, gravity: 0.06f, noise: true);
-            _haze = BuildHaze();
+            _hazeRoot = BuildHazeQuads();
             BuildClouds();
         }
 
@@ -315,47 +323,70 @@ namespace DontLate
             return system;
         }
 
-        private ParticleSystem BuildHaze()
+        // 비 스플래시 (S-044 ②) — 빗방울이 월드 콜라이더에 닿으면 소멸 + 자잘한 물방울 튐.
+        private void ConfigureRainSplash(ParticleSystem rain)
         {
-            // 아지랑이 — 지면에서 느리게 상승하는 옅은 웨이브 스트릭 (노이즈로 좌우 일렁임).
-            GameObject go = new GameObject("HeatHazeEmitter");
-            go.transform.SetParent(transform, false);
-            go.transform.localPosition = new Vector3(0f, 0.15f, 0.5f);
+            var collision = rain.collision;
+            collision.enabled = true;
+            collision.type = ParticleSystemCollisionType.World;
+            collision.mode = ParticleSystemCollisionMode.Collision3D;
+            collision.bounce = 0f;
+            collision.lifetimeLoss = 1f; // 닿는 순간 소멸 → 스플래시로 교대
+            collision.quality = ParticleSystemCollisionQuality.Medium;
 
-            ParticleSystem system = go.AddComponent<ParticleSystem>();
-            var main = system.main;
-            main.startSpeed = 0.5f;
-            main.startSize = new ParticleSystem.MinMaxCurve(0.5f, 1.1f);
-            main.startLifetime = 2.8f;
-            main.startColor = new Color(1f, 1f, 1f, 0.05f);
-            main.maxParticles = 260;
+            // 스플래시 서브 시스템 — 위로 톡 튀는 물방울 3~4개.
+            GameObject splashGo = new GameObject("RainSplash");
+            splashGo.transform.SetParent(rain.transform, false);
+            ParticleSystem splash = splashGo.AddComponent<ParticleSystem>();
+            var main = splash.main;
+            main.startSpeed = new ParticleSystem.MinMaxCurve(0.7f, 1.6f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.03f, 0.06f);
+            main.startLifetime = 0.28f;
+            main.startColor = new Color(0.75f, 0.84f, 1f, 0.75f);
+            main.gravityModifier = 2.2f;
+            main.maxParticles = 600;
             main.simulationSpace = ParticleSystemSimulationSpace.World;
 
-            var shape = system.shape;
+            var emission = splash.emission;
+            emission.rateOverTime = 0f;
+            emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 3, 4, 1, 0.01f) });
+
+            var shape = splash.shape;
             shape.enabled = true;
-            shape.shapeType = ParticleSystemShapeType.Box;
-            shape.scale = new Vector3(40f, 0.2f, 3f);
+            shape.shapeType = ParticleSystemShapeType.Hemisphere;
+            shape.radius = 0.04f;
 
-            var emission = system.emission;
-            emission.rateOverTime = 70f;
+            splashGo.GetComponent<ParticleSystemRenderer>().material
+                = MakeParticleMaterial(new Color(0.75f, 0.84f, 1f, 0.75f));
+            splash.Stop();
 
-            var noiseModule = system.noise;
-            noiseModule.enabled = true;
-            noiseModule.strength = 0.8f;
-            noiseModule.frequency = 1.4f;
+            var subEmitters = rain.subEmitters;
+            subEmitters.enabled = true;
+            subEmitters.AddSubEmitter(splash, ParticleSystemSubEmitterType.Collision,
+                ParticleSystemSubEmitterProperties.InheritNothing);
+        }
 
-            var colorOverLifetime = system.colorOverLifetime;
-            colorOverLifetime.enabled = true;
-            Gradient gradient = new Gradient();
-            gradient.SetKeys(
-                new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
-                new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(0.09f, 0.35f), new GradientAlphaKey(0f, 1f) });
-            colorOverLifetime.color = gradient;
+        // 아지랑이 (S-044 ③) — HeatHaze 셰이더 쿼드 2겹: 정점 일렁임+상승 노이즈.
+        private GameObject BuildHazeQuads()
+        {
+            GameObject root = new GameObject("HeatHaze");
+            root.transform.SetParent(transform, false);
 
-            var renderer = go.GetComponent<ParticleSystemRenderer>();
-            renderer.material = MakeParticleMaterial(new Color(1f, 1f, 1f, 0.06f));
-            system.Stop();
-            return system;
+            Shader shader = Shader.Find("DontLate/HeatHaze");
+            Material material = shader != null ? new Material(shader) : null;
+
+            for (int i = 0; i < 2; i++)
+            {
+                GameObject quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                quad.name = "HazeQuad_" + i;
+                Object.Destroy(quad.GetComponent<Collider>());
+                quad.transform.SetParent(root.transform, false);
+                quad.transform.localPosition = new Vector3(0f, 1.15f + i * 0.4f, 0.6f + i * 1.2f);
+                quad.transform.localScale = new Vector3(44f, 2.3f, 1f);
+                if (material != null) quad.GetComponent<Renderer>().sharedMaterial = material;
+            }
+            root.SetActive(false);
+            return root;
         }
 
         private void BuildClouds()
