@@ -28,6 +28,12 @@ namespace DontLate.EditorTools
         private static readonly Color NAVY = new Color(0.039f, 0.051f, 0.086f, 0.9f); // #0a0d16 반투명
 
         private const string BLIP_PATH = "Assets/Audio/SFX/sfx_dialogue_blip.wav";
+        // 8비트 블립 변주 2종 (S-053) — 있으면 문자마다 랜덤. 없으면 BLIP_PATH 폴백.
+        private static readonly string[] BLIP_VARIANT_PATHS =
+        {
+            "Assets/Audio/SFX/sfx_dialogue_blip_1.wav",
+            "Assets/Audio/SFX/sfx_dialogue_blip_2.wav",
+        };
         private const string DIALOGUE_DATA_ROOT = "Assets/Data/Dialogue";
         private const string PARK_SCENARIO_PATH = DIALOGUE_DATA_ROOT + "/Scenario_ParkMalsoon_Intro.asset";
 
@@ -431,6 +437,15 @@ namespace DontLate.EditorTools
             blipSource.spatialBlend = 0f;
             SetField(view, "_blipSource", blipSource);
             SetField(view, "_blipClip", blip);
+
+            // 8비트 블립 변주 풀 (S-053) — 반입된 것만 배선. 비면 DialogueView가 _blipClip 폴백.
+            var blipVariants = new System.Collections.Generic.List<AudioClip>();
+            foreach (string p in BLIP_VARIANT_PATHS)
+            {
+                AudioClip v = AssetDatabase.LoadAssetAtPath<AudioClip>(p);
+                if (v != null) blipVariants.Add(v);
+            }
+            SetField(view, "_blipClips", blipVariants.ToArray());
 
             // 박스 루트 (평소 숨김). 하단 가로 박스 — 실아트(ui_dialogue_box) 있으면 사용, 없으면 시안 테두리 폴백 (S-025).
             Sprite boxArt = LoadUISprite("ui_dialogue_box");

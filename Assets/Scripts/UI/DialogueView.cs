@@ -28,6 +28,8 @@ namespace DontLate
         [Header("블립 (로컬 2D)")]
         [SerializeField] private AudioSource _blipSource;
         [SerializeField] private AudioClip _blipClip;
+        [Tooltip("여러 개면 문자마다 랜덤으로 골라 재생 (비면 _blipClip 사용).")]
+        [SerializeField] private AudioClip[] _blipClips;
 
         [Header("튜닝")]
         [Tooltip("문자 1개당 노출 간격(초).")]
@@ -213,9 +215,13 @@ namespace DontLate
         // ── 블립 ─────────────────────────────────────────────
         private void PlayBlip()
         {
-            if (_blipSource == null || _blipClip == null) return;
+            if (_blipSource == null) return;
+            AudioClip clip = (_blipClips != null && _blipClips.Length > 0)
+                ? _blipClips[Random.Range(0, _blipClips.Length)]
+                : _blipClip;
+            if (clip == null) return;
             _blipSource.pitch = Random.Range(0.95f, 1.05f);
-            _blipSource.PlayOneShot(_blipClip);
+            _blipSource.PlayOneShot(clip);
         }
 
         // ── 대기 화살표 깜빡임 ───────────────────────────────
