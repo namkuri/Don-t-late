@@ -1071,3 +1071,20 @@
 - 회귀 방지: 이탈 경로는 `StopBgm`(held·non-title) → 무음, 대화 종료(released) 후 Day/Night 재생 경로는 무수정. Day/Night 풀 무손상(Day:2 Night:3 Title:1 실측).
 - 검증: 컴파일 ○ · 콘솔 0 ○ · Play 실재생 ○. **인트로→Day 전 구간 청취는 Director 사람 판정(오디오 레인)**.
 - 부기: 실 전이(Request(Home)) 관측 중 SceneFlow 전이가 Completed 미도달(Home 씬 빌드세팅/로드 이슈 — M1-05 미완, 콘솔 0). **오디오 변경과 무관**(TransitionRoutine 무수정) — 별건.
+
+---
+
+## S-052 · 발주 2026-07-24 (Director 직접 지시 — 타이틀곡 보컬제거본 교체)
+
+요구 (Director 원문): "`Pixel Night Funk Stems/1 Lead Vocal.wav` 은 보컬을 제거한 타이틀곡이야. 기존 곡은 지우지말고 보관하고 보컬없는 곡으로 교체해줘".
+
+배경: 파일명이 `1 Lead Vocal`이라 이름상 보컬 스템처럼 보여 검증 필요 — Python 에너지 분석으로 판별.
+
+수용기준: 보컬제거본이 실제 인스트루멘탈인지 검증 · Title 슬롯 교체 · 기존 보컬본 삭제 없이 보관 · 셀프검증.
+
+### 결과 · 2026-07-24 (리드 ~15분)
+- **판별**(ffprobe 부재 → Python wave/array): `0 Lead Vocal`=RMS2355·무음비31.9%(격리 보컬), `1 Lead Vocal`=RMS4352·무음비5.8%(연속 풀밴드=인스트루멘탈). Director 지시(`1`=보컬제거) 확인.
+- 교체: `1 Lead Vocal.wav` → `Assets/Audio/BGM/Pixel_Night_Funk_Don-T-Late_NoVocal.wav` 반입(임포터 자동 규격, 콘솔 0). BgmLibrary: NoVocal=**Title(slot3)**, 기존 보컬본=**Unsorted(slot0)로 강등**(삭제 없이 보관·추첨 제외).
+- 실검증(부팅→타이틀): `slot=Title · clip=Pixel_Night_Funk_Don-T-Late_NoVocal · PLAYING` — 보컬 없는 곡 재생 확인. Day2·Night3 무손상.
+- 라이선스: 원곡 Suno 스템이라 동일(Suno 유료). CREDITS.md·assets_manifest.md 2곡 등재(현 타이틀=NoVocal, 보관=보컬본) + .gitignore 예외.
+- 검증: 컴파일 ○ · 콘솔 0 ○ · Play 재생 ○. 손맛 청취는 Director 사람 판정(오디오 레인).

@@ -89,11 +89,14 @@ late-night introspective, hazy, instrumental, 88 BPM
 | 근거 | Suno 이용약관 유료 플랜 상업 라이선스 조항 · Director 플랜 확인 (2026-07-24) |
 | 반입일 | 2026-07-24 |
 
-### 곡 목록 (Title 슬롯 · 1곡)
+### 곡 목록 (Suno 타이틀 · 2곡 — 보컬본 보관 + 보컬제거본 재생)
 
-| 파일 | 슬롯 | 길이 | 파일 MD5(앞 12) |
-|---|---|---|---|
-| `Pixel_Night_Funk_Don-T-Late.wav` | **Title** | 195.6s | `f9b29ce1614c` |
+| 파일 | 슬롯 | 길이 | 파일 MD5(앞 12) | 비고 |
+|---|---|---|---|---|
+| `Pixel_Night_Funk_Don-T-Late_NoVocal.wav` | **Title** | 195.6s | `02a1e5057f1a` | **현 타이틀 곡** — Suno 스템 분리 보컬제거본 |
+| `Pixel_Night_Funk_Don-T-Late.wav` | Unsorted | 195.6s | `f9b29ce1614c` | 보컬본 — **보관**(2026-07-24 Director 지시, 삭제 안 함). Unsorted라 추첨 제외 |
+
+- 2026-07-24 Director 교체 지시("보컬 없는 곡으로 교체·기존은 보관"). 보컬제거본은 **Suno 스템 분리** 산출(원곡과 동일 저작권·라이선스). `1 Lead Vocal.wav` 스템(무음비 5.8%·RMS 4352 = 인스트루멘탈, 격리 보컬본 `0 Lead Vocal` 무음비 31.9%와 대비로 확인).
 
 - ElevenLabs 절 채택 5곡이 컷했던 Title 슬롯(구 `Late_for_Work_8-Bit_Panic` — 8비트 불일치로 폐기, Title 공백)을 이 곡이 채운다. `BgmLibrary.asset` slot=3(Title) 배선. WebGL 임포트는 AudioImportPostprocessor 자동(Vorbis · CompressedInMemory · q0.30 · 스테레오).
 - 인게임 재생: 타이틀 화면(Main)은 인트로 대화까지 무음(S-009), 대화 종료 후 크로스페이드 인.

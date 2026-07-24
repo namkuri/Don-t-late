@@ -86,9 +86,11 @@
 
 | 파일명 | 슬롯 | 길이 | dest | 출처 | 라이선스 | 반입일 |
 |---|---|---|---|---|---|---|
-| Pixel_Night_Funk_Don-T-Late.wav | Title | 195.6s | `Assets/Audio/BGM/` | Suno (유료 Pro/Premier) | 상업 사용 가능·소유권 귀속·무기한 | 2026-07-24 |
+| Pixel_Night_Funk_Don-T-Late_NoVocal.wav | **Title** (현 타이틀 곡) | 195.6s | `Assets/Audio/BGM/` | Suno (유료 Pro/Premier) — 스템 분리 보컬제거본 | 상업 사용 가능·소유권 귀속·무기한 | 2026-07-24 |
+| Pixel_Night_Funk_Don-T-Late.wav | Unsorted (보관) | 195.6s | `Assets/Audio/BGM/` | Suno (유료 Pro/Premier) — 보컬본 | 〃 | 2026-07-24 |
 
-- 임포트 = **Vorbis q30 · Compressed In Memory · 스테레오**(AudioImportPostprocessor 자동, BGM 규격 · WebGL안전). 파일 MD5(앞12) `f9b29ce1614c`.
+- 임포트 = **Vorbis q30 · Compressed In Memory · 스테레오**(AudioImportPostprocessor 자동, BGM 규격 · WebGL안전). 파일 MD5(앞12): NoVocal `02a1e5057f1a` · 보컬본 `f9b29ce1614c`.
+- **2026-07-24 교체**(Director 지시): 타이틀 곡을 보컬제거본으로 교체, 보컬본은 삭제 없이 Unsorted 강등해 보관(추첨 제외). 보컬제거본은 원곡 Suno 스템이라 라이선스 동일.
 
 ## Trellis2 INTAKE — 2026-07-22
 
