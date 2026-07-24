@@ -40,6 +40,60 @@ namespace DontLate
         /// <summary>드링크 음용 순간 1회 버스트. PlayerStatusManager가 허브 경유로 호출한다.</summary>
         public void PlayDrinkEffect() => _drinkBurst.Emit(_drinkBurstCount);
 
+        // ── 눈 발자국 (S-045 ⑤) — 눈이 쌓인 동안 이동 궤적에 밟은 자국 ──
+        private const float FOOTPRINT_STRIDE = 0.55f;
+        private const float FOOTPRINT_LIFETIME = 30f;
+
+        private bool _snowing;
+        private Vector3 _lastFootprintPos;
+        private bool _leftFoot;
+        private Material _footprintMaterial;
+
+        private void OnEnable() => WorldEvents.WeatherChanged += OnWeatherChanged;
+        private void OnDisable() => WorldEvents.WeatherChanged -= OnWeatherChanged;
+        private void OnWeatherChanged(WeatherType weather) => _snowing = weather == WeatherType.Snow;
+
+        private void LateUpdate()
+        {
+            if (!_snowing || !_hub.Locomotion.IsGrounded) return;
+            // 쌓임이 어느 정도 자란 뒤부터 자국이 남는다 (World 상태 읽기 — Instance 조회만).
+            if (WorldWeatherManager.Instance == null || !WorldWeatherManager.Instance.HasSnowCover) return;
+            if ((transform.position - _lastFootprintPos).sqrMagnitude < FOOTPRINT_STRIDE * FOOTPRINT_STRIDE) return;
+
+            _lastFootprintPos = transform.position;
+            _leftFoot = !_leftFoot;
+            SpawnFootprint();
+        }
+
+        private void SpawnFootprint()
+        {
+            GameObject quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            quad.name = "Footprint";
+            Destroy(quad.GetComponent<Collider>());
+            float yaw = transform.eulerAngles.y;
+            Vector3 side = Quaternion.Euler(0f, yaw, 0f) * Vector3.forward * (_leftFoot ? 0.12f : -0.12f);
+            quad.transform.SetPositionAndRotation(
+                transform.position + side + Vector3.up * 0.045f, // 눈막(0.03) 위
+                Quaternion.Euler(90f, yaw + 90f, 0f));
+            quad.transform.localScale = new Vector3(0.16f, 0.30f, 1f);
+
+            if (_footprintMaterial == null)
+            {
+                Shader shader = Shader.Find("Universal Render Pipeline/Unlit");
+                _footprintMaterial = new Material(shader);
+                _footprintMaterial.SetFloat("_Surface", 1f);
+                _footprintMaterial.SetOverrideTag("RenderType", "Transparent");
+                _footprintMaterial.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+                _footprintMaterial.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+                _footprintMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+                _footprintMaterial.SetInt("_ZWrite", 0);
+                _footprintMaterial.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+                _footprintMaterial.SetColor("_BaseColor", new Color(0.52f, 0.58f, 0.72f, 0.55f)); // 눌린 눈 그늘
+            }
+            quad.GetComponent<Renderer>().sharedMaterial = _footprintMaterial;
+            Destroy(quad, FOOTPRINT_LIFETIME);
+        }
+
         // ── 파티클 조립 (코드 — 그레이박스) ──────────────────
 
         private ParticleSystem BuildDust()

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
@@ -25,6 +26,8 @@ namespace DontLate
         private ParticleSystem _snow;
         private GameObject _hazeRoot; // S-044 ③ — 일렁 셰이더 쿼드 (파티클 박스룩 폐지)
         private Transform _cloudRoot;
+        private Renderer _snowCover;   // S-045 ⑤ — 지면 쌓임(알파 성장)
+        private float _snowAmount;
         private SpriteRenderer[] _clouds;
         private DayPhase _phase = DayPhase.Morning;
 
@@ -69,8 +72,13 @@ namespace DontLate
 
         private void Update()
         {
+            // S-045 ③: Y키 = 날씨 순환 (검증·튜닝용 — 심사 전 제거 후보).
+            if (Keyboard.current != null && Keyboard.current.yKey.wasPressedThisFrame)
+                SetWeather((WeatherType)(((int)Weather + 1) % 6));
+
             DriftClouds();
             LerpGrade();
+            UpdateSnowCover();
         }
 
         // S-044 ①: 실내 씬(Home)에선 강수·아지랑이를 창밖 원경(z+)으로 민다.
@@ -272,6 +280,7 @@ namespace DontLate
             _snow = BuildFallSystem("SnowEmitter", new Color(0.98f, 0.98f, 1f, 0.9f),
                 startSpeed: 1.6f, size: 0.09f, lengthScale: 1f, rate: 120f, gravity: 0.06f, noise: true);
             _hazeRoot = BuildHazeQuads();
+            BuildSnowCover();
             BuildClouds();
         }
 
@@ -292,14 +301,14 @@ namespace DontLate
             main.startSize = size;
             main.startLifetime = 2.2f;
             main.startColor = color;
-            main.maxParticles = 1200;
+            main.maxParticles = 2600; // S-045 ① 영역 확대분
             main.gravityModifier = gravity;
             main.simulationSpace = ParticleSystemSimulationSpace.World;
 
             var shape = system.shape;
             shape.enabled = true;
             shape.shapeType = ParticleSystemShapeType.Box;
-            shape.scale = new Vector3(44f, 10f, 1f);
+            shape.scale = new Vector3(70f, 10f, 8f); // S-045 ① — 화면 전역+깊이 커버
 
             var emission = system.emission;
             emission.rateOverTime = rate;
@@ -323,6 +332,40 @@ namespace DontLate
             return system;
         }
 
+        // 눈 쌓임 (S-045 ⑤) — 지면 위 흰 막이 눈 오는 동안 자라고, 그치면 서서히 녹는다.
+        private void BuildSnowCover()
+        {
+            GameObject quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            quad.name = "SnowCover";
+            Object.Destroy(quad.GetComponent<Collider>());
+            quad.transform.SetParent(transform, false);
+            quad.transform.localPosition = new Vector3(0f, 0.03f, 0f);
+            quad.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            quad.transform.localScale = new Vector3(110f, 9f, 1f);
+            _snowCover = quad.GetComponent<Renderer>();
+            _snowCover.material = MakeParticleMaterial(new Color(0.96f, 0.97f, 1f, 0f));
+            quad.SetActive(false);
+        }
+
+        private void UpdateSnowCover()
+        {
+            if (_snowCover == null) return;
+            float target = Weather == WeatherType.Snow ? 0.72f : 0f;
+            float rate = Weather == WeatherType.Snow ? 0.030f : 0.018f; // 쌓임은 느긋(~24s), 녹음은 더 느긋
+            _snowAmount = Mathf.MoveTowards(_snowAmount, target, rate * Time.deltaTime);
+            bool visible = _snowAmount > 0.01f;
+            if (_snowCover.gameObject.activeSelf != visible) _snowCover.gameObject.SetActive(visible);
+            if (visible && _snowCover.material.HasProperty("_BaseColor"))
+            {
+                Color color = _snowCover.material.GetColor("_BaseColor");
+                color.a = _snowAmount;
+                _snowCover.material.SetColor("_BaseColor", color);
+            }
+        }
+
+        /// <summary>플레이어 발자국용 — 지금 눈이 쌓여 있는가 (PlayerEffects가 WeatherChanged와 함께 사용).</summary>
+        public bool HasSnowCover => _snowAmount > 0.25f;
+
         // 비 스플래시 (S-044 ②) — 빗방울이 월드 콜라이더에 닿으면 소멸 + 자잘한 물방울 튐.
         private void ConfigureRainSplash(ParticleSystem rain)
         {
@@ -340,7 +383,7 @@ namespace DontLate
             ParticleSystem splash = splashGo.AddComponent<ParticleSystem>();
             var main = splash.main;
             main.startSpeed = new ParticleSystem.MinMaxCurve(0.7f, 1.6f);
-            main.startSize = new ParticleSystem.MinMaxCurve(0.03f, 0.06f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.015f, 0.03f); // S-045 ② — 절반
             main.startLifetime = 0.28f;
             main.startColor = new Color(0.75f, 0.84f, 1f, 0.75f);
             main.gravityModifier = 2.2f;
