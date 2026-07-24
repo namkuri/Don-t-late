@@ -37,6 +37,7 @@ namespace DontLate.EditorTools
             BuildTravel(font);
             BuildDistrict(font);
             BuildDeliveryEndUI("Apartment", "아파트단지 — 대차에 싣고 비번·엘베로", font); // S-038
+            BuildDeliveryEndUI("Hillside", "언덕주택가 — 오르막 조심, 비 오면 미끄럽다", font); // S-049
 
             Debug.Log("[SceneFlowUIBuilder] 씬 흐름 UI 조립 완료 — Main·Home·Camp·Travel·District·Apartment 6씬.");
         }

@@ -312,7 +312,7 @@ namespace DontLate
             var shape = system.shape;
             shape.enabled = true;
             shape.shapeType = ParticleSystemShapeType.Box;
-            shape.scale = new Vector3(90f, 10f, 90f); // S-047 ③ — 정사각 확대
+            shape.scale = new Vector3(90f, 30f, 90f); // S-048 ① — Y 확대 (75° 기운 이미터의 높이 커버)
 
             var emission = system.emission;
             emission.rateOverTime = rate;

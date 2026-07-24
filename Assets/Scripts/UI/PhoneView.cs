@@ -89,8 +89,8 @@ namespace DontLate
                          locked = false, far = true, pos = new Vector2(0.70f, 0.40f) },
             new MapPin { label = "아파트단지", district = DeliveryOrderSO.DISTRICT_APARTMENT,
                          locked = false, far = true, pos = new Vector2(0.74f, 0.78f) }, // S-038 활성화
-            new MapPin { label = "언덕주택가", district = "언덕주택가",
-                         locked = true, far = false, pos = new Vector2(0.24f, 0.20f) },
+            new MapPin { label = "언덕주택가", district = DeliveryOrderSO.DISTRICT_HILLSIDE,
+                         locked = false, far = false, pos = new Vector2(0.24f, 0.20f) }, // S-049 활성화
         };
         private static readonly Vector2 MapOriginPos = new Vector2(0.5f, 0.07f); // 출발 마커 위치
 
@@ -1192,9 +1192,11 @@ namespace DontLate
             WorldAudioManager.Instance?.PlayMapDepartSfx(); // AU-011
             WorldDayNightManager.Instance.AdvanceMinutes(pin.far ? _tuning.travelFarMinutes : _tuning.travelNearMinutes);
             WorldDeliveryManager.Instance.SetDestination(pin.district);
-            // S-038: 아파트단지는 별도 씬(D-067) — 나머지는 공용 District.
-            WorldSceneFlowManager.Instance.Request(
-                pin.district == DeliveryOrderSO.DISTRICT_APARTMENT ? GameScene.Apartment : GameScene.District);
+            // S-038·S-049: 아파트·언덕은 별도 씬(D-067) — 나머지는 공용 District.
+            GameScene target = pin.district == DeliveryOrderSO.DISTRICT_APARTMENT ? GameScene.Apartment
+                             : pin.district == DeliveryOrderSO.DISTRICT_HILLSIDE ? GameScene.Hillside
+                             : GameScene.District;
+            WorldSceneFlowManager.Instance.Request(target);
         }
 
         private static Sprite _mapFallbackCache;

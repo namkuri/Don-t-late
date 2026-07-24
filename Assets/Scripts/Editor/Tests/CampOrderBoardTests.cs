@@ -105,14 +105,14 @@ namespace DontLate.Tests
         [Test]
         public void GenerateOrder_마감은_현재시각_300분_이후이되_1435를_넘지_않는다()
         {
-            _gameState.nextOrderSerial = 306; // %9==0 → 빌라촌 픽(마감 상향 미적용) · %3==0 → 오프셋 300분 (S-038 풀 9종 정합)
+            _gameState.nextOrderSerial = 300; // %12==0 → 빌라촌 픽(마감 상향 미적용) · %3==0 → 오프셋 300분 (S-049 풀 12종 정합)
             _gameState.minuteOfDay = 1300f;   // 1300+300=1600 → 1435로 캡
 
             DeliveryOrderSO capped = Generate();
             Assert.AreEqual(1435f, capped.deadlineMinuteOfDay);
 
             _gameState.minuteOfDay = 500f;    // 캡 미달 구간
-            _gameState.nextOrderSerial = 306;
+            _gameState.nextOrderSerial = 300;
             DeliveryOrderSO normal = Generate();
             Assert.AreEqual(800f, normal.deadlineMinuteOfDay);
         }
@@ -120,7 +120,7 @@ namespace DontLate.Tests
         [Test]
         public void GenerateOrder_먹자골목은_마감이_19시_이후로_밀린다_S035()
         {
-            _gameState.nextOrderSerial = 300; // %9==3 → 먹자골목 픽 · %3==0 → 오프셋 300분 (S-038 풀 9종 정합)
+            _gameState.nextOrderSerial = 303; // %12==3 → 먹자골목 픽 · %3==0 → 오프셋 300분 (S-049 풀 12종 정합)
             _gameState.minuteOfDay = 500f;    // 기본 마감 800(13.3시) → 저녁 19시(1140)로 상향
             DeliveryOrderSO order = Generate();
             Assert.AreEqual(DeliveryOrderSO.DISTRICT_FOODALLEY, order.district);

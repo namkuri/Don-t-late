@@ -33,6 +33,27 @@ namespace DontLate
         private const float FALL_LIMIT_Y = -6f;
         private Vector3 _lastGroundedPosition;
 
+        // S-049: 언덕 × 비 = 미끄럼 — 목표 속도로 즉시가 아니라 관성으로 수렴 (빙판 감).
+        private bool _inHillside;
+        private bool _raining;
+        private Vector3 _planarInertia;
+        private const float SLIPPERY_ACCEL = 6f; // 낮을수록 미끄럽다
+
+        private void OnEnable()
+        {
+            WorldEvents.SceneTransitionCompleted += OnSceneArrivedLoco;
+            WorldEvents.WeatherChanged += OnWeatherChangedLoco;
+        }
+
+        private void OnDisable()
+        {
+            WorldEvents.SceneTransitionCompleted -= OnSceneArrivedLoco;
+            WorldEvents.WeatherChanged -= OnWeatherChangedLoco;
+        }
+
+        private void OnSceneArrivedLoco(GameScene scene) => _inHillside = scene == GameScene.Hillside;
+        private void OnWeatherChangedLoco(WeatherType weather) => _raining = weather == WeatherType.Rain;
+
         // S-041: CC는 리지드바디를 밀지 않는다 — 히트 시 수평 속도를 실어 대차·상자를 민다.
         private const float PUSH_SPEED = 2.2f;
 
@@ -63,7 +84,18 @@ namespace DontLate
             float speed = _hub.Input.RunHeld ? tuning.runSpeed : tuning.moveSpeed;
             if (_hub.Status.IsCarrying) speed *= tuning.carrySpeedPenalty;
 
-            PlanarVelocity = new Vector3(input.x * speed, 0f, input.y * speed * tuning.depthSpeedRatio);
+            Vector3 targetPlanar = new Vector3(input.x * speed, 0f, input.y * speed * tuning.depthSpeedRatio);
+            if (_inHillside && _raining)
+            {
+                // S-049 미끄럼 — 가감속이 굼떠진다 (멈추려 해도 밀리고, 출발도 굼뜸).
+                _planarInertia = Vector3.MoveTowards(_planarInertia, targetPlanar, SLIPPERY_ACCEL * Time.deltaTime);
+                PlanarVelocity = _planarInertia;
+            }
+            else
+            {
+                _planarInertia = targetPlanar;
+                PlanarVelocity = targetPlanar;
+            }
 
             if (_cc.isGrounded)
             {

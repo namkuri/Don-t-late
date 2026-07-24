@@ -11,6 +11,7 @@ namespace DontLate
         public const string DISTRICT_VILLATOWN = "빌라촌";
         public const string DISTRICT_FOODALLEY = "먹자골목";
         public const string DISTRICT_APARTMENT = "아파트단지"; // S-038 (D-067)
+        public const string DISTRICT_HILLSIDE = "언덕주택가"; // S-049 (D-064)
 
         public int orderId;
         public string address;

@@ -6,17 +6,17 @@ using UnityEngine.SceneManagement;
 namespace DontLate.EditorTools
 {
     /// <summary>
-    /// Apartment.unity(아파트단지 — S-038 · D-067) 그레이박스 무대 조립.
-    /// 레이아웃(X축 세그먼트): 외부 마당(-20..-2) → 공동현관(비번 게이트) → 로비(2..16, 엘베) →
-    /// 층 복도 2층(24..38) · 3층(44..58) · 4층(64..78). 엘베 이동 = 세그먼트 텔레포트 + 게임분 소모.
-    /// 대차·짐 비콘(도크)·비번 패널·엘베 패널·세대 비콘 스포너까지 전부 여기서 배선. 멱등(__gb_ Clear).
+    /// Apartment.unity (S-038 → S-048 ③ 수직 재구조). 마당(-20..-2) → 자동문 → 건물(x -1..22)
+    /// **수직 4층**(층고 4u: y 0/4/8/12) — 각 층 복도 슬래브, 맨 오른쪽(x 18.5..21.5) 엘베 샤프트에
+    /// **실물리 캐빈**이 오르내린다(사람·대차 탑승). 카메라는 Y 팔로우. 멱등(__gb_ Clear).
     /// </summary>
     public static class ApartmentStageBuilder
     {
         private const string SCENE_PATH = "Assets/Scenes/Apartment.unity";
-
-        // 층 복도 시작 X — 인덱스 0=1층(로비 엘베 앞), 1=2층…
-        private static readonly float[] FloorExitX = { 13f, 25f, 45f, 65f };
+        private const float FLOOR_H = 4f;
+        private const int FLOORS = 4;
+        private const float SHAFT_X = 20f;      // 샤프트 중심
+        private const float SLAB_RIGHT = 18.4f; // 슬래브는 샤프트 앞에서 끝난다
 
         [MenuItem("DontLate/Build/Apartment Stage", priority = 14)]
         public static void BuildApartmentStage()
@@ -31,131 +31,185 @@ namespace DontLate.EditorTools
             Material corridor = GreyboxStageBuilder.GetOrCreateMaterial("AptCorridor", new Color(0.42f, 0.40f, 0.36f), false);
             Material wall = GreyboxStageBuilder.GetOrCreateMaterial("AptWall", new Color(0.50f, 0.48f, 0.44f), false);
             Material panelMat = GreyboxStageBuilder.GetOrCreateMaterial("AptPanel", new Color(0.16f, 0.20f, 0.30f), false);
+            Material doorMat = GreyboxStageBuilder.GetOrCreateMaterial("AptDoor", new Color(0.35f, 0.62f, 0.58f), false);
+            Material cabinMat = GreyboxStageBuilder.GetOrCreateMaterial("AptCabin", new Color(0.55f, 0.50f, 0.35f), false);
             Material highlight = GreyboxStageBuilder.GetOrCreateMaterial("Highlight", GreyboxStageBuilder.ParseColor("#35e0c8"), true);
             Material dockMat = GreyboxStageBuilder.GetOrCreateMaterial("AptDock", GreyboxStageBuilder.ParseColor("#ff9f45"), true);
 
-        // ── 지면·구획 ────────────────────────────────────
-            BuildStrip("YardGround", -20f, -1f, ground);          // 외부 마당
-            BuildStrip("LobbyGround", -1f, 17f, lobby);           // 로비
-            BuildStrip("Corridor2F", 23f, 39f, corridor);
-            BuildStrip("Corridor3F", 43f, 59f, corridor);
-            BuildStrip("Corridor4F", 63f, 79f, corridor);
+            // ── 지면·층 슬래브 ───────────────────────────────
+            BuildBox("YardGround", new Vector3(-10.5f, -0.05f, 0f), new Vector3(19f, 0.1f, 6f), ground);
+            BuildBox("LobbyGround", new Vector3(10.25f, -0.05f, 0f), new Vector3(23.5f, 0.1f, 6f), lobby);
+            for (int floor = 2; floor <= FLOORS; floor++)
+            {
+                float y = (floor - 1) * FLOOR_H;
+                BuildBox("Slab_" + floor + "F", new Vector3((SLAB_RIGHT - 1f) * 0.5f, y - 0.15f, 0f),
+                    new Vector3(SLAB_RIGHT + 1f, 0.3f, 6f), corridor);
+            }
+            BuildBox("Roof", new Vector3(10.25f, FLOORS * FLOOR_H - 0.15f, 0f), new Vector3(23.5f, 0.3f, 6f), wall);
 
-            // 공동현관 벽 (마당-로비 사이 — 시각 구획, 통행은 게이트 텔레포트만)
-            BuildWall("EntranceWall", new Vector3(0f, 2f, 0f), new Vector3(0.4f, 4f, 6f), wall);
-            // 복도 뒷벽 + 층 라벨 대비 색벽
-            BuildWall("LobbyBack", new Vector3(8f, 2f, 3f), new Vector3(18f, 4f, 0.3f), wall);
-            BuildWall("Back2F", new Vector3(31f, 2f, 3f), new Vector3(16f, 4f, 0.3f), wall);
-            BuildWall("Back3F", new Vector3(51f, 2f, 3f), new Vector3(16f, 4f, 0.3f), wall);
-            BuildWall("Back4F", new Vector3(71f, 2f, 3f), new Vector3(16f, 4f, 0.3f), wall);
-            // 세그먼트 사이 갭 시각 차단벽
-            BuildWall("Gap12", new Vector3(20f, 2f, 0f), new Vector3(0.4f, 4f, 6f), wall);
-            BuildWall("Gap23", new Vector3(41f, 2f, 0f), new Vector3(0.4f, 4f, 6f), wall);
-            BuildWall("Gap34", new Vector3(61f, 2f, 0f), new Vector3(0.4f, 4f, 6f), wall);
+            // 뒷벽(전 층) + 좌우 외벽 + 샤프트 뒷벽
+            BuildBox("BackWall", new Vector3(10.25f, FLOORS * FLOOR_H * 0.5f, 3.1f),
+                new Vector3(23.5f, FLOORS * FLOOR_H, 0.2f), wall);
+            BuildBox("RightWall", new Vector3(21.9f, FLOORS * FLOOR_H * 0.5f, 0f),
+                new Vector3(0.2f, FLOORS * FLOOR_H, 6f), wall);
+            // 정면 외벽(1층 마당 쪽) — 문 개구부(x -1.5±1.1) 제외 상단부
+            BuildBox("FrontWallUpper", new Vector3(-1.4f, (FLOOR_H + FLOORS * FLOOR_H) * 0.5f + 0.5f, 0f),
+                new Vector3(0.25f, (FLOORS - 1) * FLOOR_H + 1f, 6f), wall);
+            BuildBox("FrontWallLeft", new Vector3(-1.4f, FLOOR_H * 0.5f, -2.25f), new Vector3(0.25f, FLOOR_H, 1.5f), wall);
+            BuildBox("FrontWallRight", new Vector3(-1.4f, FLOOR_H * 0.5f, 2.25f), new Vector3(0.25f, FLOOR_H, 1.5f), wall);
 
-            // 걷기 볼륨 — 전 세그먼트 커버 (게이트·엘베가 세그먼트 사이를 텔레포트로 잇는다)
+            // ── 걷기 볼륨 (수직 전체) ────────────────────────
             GameObject volume = GreyboxStageBuilder.CreateEmpty("Walkable", Vector3.zero);
             BoxCollider walkable = volume.AddComponent<BoxCollider>();
             walkable.isTrigger = true;
-            walkable.size = new Vector3(100f, 4f, 6f);
-            walkable.center = new Vector3(29f, 2f, 0f);
+            walkable.size = new Vector3(50f, FLOORS * FLOOR_H + 4f, 6f);
+            walkable.center = new Vector3(1f, (FLOORS * FLOOR_H) * 0.5f, 0f);
             volume.AddComponent<WalkableVolume>();
 
-            // ── 대차 (공용 헬퍼 — S-039 트리거 콜라이더) ─────
-            GreyboxStageBuilder.BuildDeliveryCart(new Vector3(-9f, 0f, 0f));
-
-            // ── 도크(짐 전용 비콘 패드) + 비번 게이트 ────────
+            // ── 자동문 + 비번 게이트 + 도크 ──────────────────
+            ApartmentSlidingDoor door = BuildSlidingDoor(doorMat);
+            BuildPasswordGate(gameState, panelMat, highlight, door);
             GameObject dock = GreyboxStageBuilder.CreatePrimitive(PrimitiveType.Cube, "CartDockPad", new Vector3(-4.5f, 0.03f, 0f));
             Object.DestroyImmediate(dock.GetComponent<Collider>());
             dock.transform.localScale = new Vector3(2.4f, 0.06f, 2.4f);
             dock.GetComponent<Renderer>().sharedMaterial = dockMat;
 
-            GameObject lobbySpawn = GreyboxStageBuilder.CreateEmpty("LobbySpawn", new Vector3(3f, 0f, 0f));
-            BuildPasswordGate(gameState, panelMat, highlight, dock.transform, lobbySpawn.transform);
+            // ── 대차 ─────────────────────────────────────────
+            GreyboxStageBuilder.BuildDeliveryCart(new Vector3(-9f, 0f, 0f));
 
-            // ── 엘리베이터 패널 (로비 + 각 층) ───────────────
-            Transform[] exits = new Transform[FloorExitX.Length];
-            for (int i = 0; i < FloorExitX.Length; i++)
-                exits[i] = GreyboxStageBuilder.CreateEmpty("FloorExit_" + (i + 1), new Vector3(FloorExitX[i] + 1.5f, 0f, 0f)).transform;
-            for (int floor = 1; floor <= FloorExitX.Length; floor++)
-                BuildElevatorPanel(floor, exits, tuning, panelMat, highlight);
+            // ── 실물리 엘리베이터 (캐빈 + 층 호출 패널) ──────
+            BuildElevator(tuning, cabinMat, panelMat, highlight);
 
-            // ── 세대 비콘 스포너 (cargo 아파트 건 → 층별 앵커) ──
+            // ── 세대 비콘 스포너 (층별 y 앵커) ───────────────
             AttachSpawner(gameState);
 
-            // ── 플레이어·카메라 ─────────────────────────────
+            // ── 플레이어·카메라(Y 팔로우) ────────────────────
             GreyboxStageBuilder.BuildPlayer(gameState, tuning);
             GameObject player = GameObject.Find("__gb_Player");
-            if (player != null) player.transform.position = new Vector3(-16f, 0f, 0f); // 마당에서 시작
+            if (player != null) player.transform.position = new Vector3(-16f, 0.1f, 0f);
             GreyboxStageBuilder.BuildPostVolume();
             GreyboxStageBuilder.ConfigureCamera();
             GreyboxStageBuilder.AttachCameraFollow();
+            Camera camera = Camera.main;
+            if (camera != null && camera.TryGetComponent(out CameraFollowX follow))
+            {
+                SerializedObject serialized = new SerializedObject(follow);
+                serialized.FindProperty("_followY").boolValue = true; // S-048 — 층 추종
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+            }
 
-            // ── 아파트 UI (키패드·층 선택) ───────────────────
             BuildApartmentCanvas();
 
             EditorSceneManager.SaveScene(scene, SCENE_PATH);
-            Debug.Log("[Apartment] 무대 조립 완료 — 마당→비번→로비→엘베→층 복도 (S-038).");
+            Debug.Log("[Apartment] 수직 4층 무대 조립 완료 — 자동문·실물리 엘베 (S-048).");
         }
 
-        private static void BuildStrip(string name, float fromX, float toX, Material material)
+        private static GameObject BuildBox(string name, Vector3 position, Vector3 size, Material material)
         {
-            float width = toX - fromX;
-            GameObject strip = GreyboxStageBuilder.CreatePrimitive(PrimitiveType.Cube, name,
-                new Vector3(fromX + width * 0.5f, -0.05f, 0f));
-            strip.transform.localScale = new Vector3(width, 0.1f, 6f);
-            strip.GetComponent<Renderer>().sharedMaterial = material;
+            GameObject box = GreyboxStageBuilder.CreatePrimitive(PrimitiveType.Cube, name, position);
+            box.transform.localScale = size;
+            box.GetComponent<Renderer>().sharedMaterial = material;
+            return box;
         }
 
-        private static void BuildWall(string name, Vector3 position, Vector3 size, Material material)
+        private static ApartmentSlidingDoor BuildSlidingDoor(Material doorMat)
         {
-            GameObject wallGo = GreyboxStageBuilder.CreatePrimitive(PrimitiveType.Cube, name, position);
-            wallGo.transform.localScale = size;
-            wallGo.GetComponent<Renderer>().sharedMaterial = material;
+            GameObject root = GreyboxStageBuilder.CreateEmpty("SlidingDoor", new Vector3(-1.4f, 0f, 0f));
+
+            GameObject panel = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            panel.name = "Panel";
+            panel.transform.SetParent(root.transform, false);
+            panel.transform.localPosition = new Vector3(0f, 1.1f, 0f);
+            panel.transform.localScale = new Vector3(0.18f, 2.2f, 1.6f); // 개구부(z ±0.8) 커버 — 실콜라이더
+            panel.GetComponent<Renderer>().sharedMaterial = doorMat;
+
+            // 모션 센서 존 — 문 앞뒤.
+            BoxCollider sensor = root.AddComponent<BoxCollider>();
+            sensor.isTrigger = true;
+            sensor.center = new Vector3(0f, 1f, 0f);
+            sensor.size = new Vector3(5f, 2.5f, 4f);
+
+            ApartmentSlidingDoor door = root.AddComponent<ApartmentSlidingDoor>();
+            GreyboxStageBuilder.SetReference(door, "_panel", panel.transform);
+            return door;
         }
 
         private static void BuildPasswordGate(GameStateSO gameState, Material material, Material highlight,
-            Transform dockPoint, Transform lobbySpawn)
+            ApartmentSlidingDoor door)
         {
-            GameObject panel = GreyboxStageBuilder.CreatePrimitive(PrimitiveType.Cube, "PasswordGate", new Vector3(-1.2f, 1.2f, -1.4f));
+            GameObject panel = GreyboxStageBuilder.CreatePrimitive(PrimitiveType.Cube, "PasswordGate", new Vector3(-2.2f, 1.2f, -1.6f));
             panel.transform.localScale = new Vector3(0.25f, 0.5f, 0.4f);
             panel.GetComponent<Renderer>().sharedMaterial = material;
             BoxCollider trigger = panel.GetComponent<BoxCollider>();
             trigger.isTrigger = true;
-            trigger.size = new Vector3(6f, 4f, 8f); // 근접 포커스 여유
+            trigger.size = new Vector3(8f, 5f, 8f);
 
             ApartmentPasswordGate gate = panel.AddComponent<ApartmentPasswordGate>();
             GreyboxStageBuilder.SetReference(gate, "_gameState", gameState);
             GreyboxStageBuilder.SetReference(gate, "_renderer", panel.GetComponent<Renderer>());
             GreyboxStageBuilder.SetReference(gate, "_normalMaterial", material);
             GreyboxStageBuilder.SetReference(gate, "_highlightMaterial", highlight);
-            GreyboxStageBuilder.SetReference(gate, "_dockPoint", dockPoint);
-            GreyboxStageBuilder.SetReference(gate, "_lobbySpawn", lobbySpawn);
+            GreyboxStageBuilder.SetReference(gate, "_door", door);
         }
 
-        private static void BuildElevatorPanel(int floor, Transform[] exits, TuningConfigSO tuning,
-            Material material, Material highlight)
+        private static void BuildElevator(TuningConfigSO tuning, Material cabinMat, Material panelMat, Material highlight)
         {
-            float x = FloorExitX[floor - 1];
-            GameObject panel = GreyboxStageBuilder.CreatePrimitive(PrimitiveType.Cube, "Elevator_" + floor + "F",
-                new Vector3(x, 1.2f, 2.6f));
-            panel.transform.localScale = new Vector3(1.6f, 2.4f, 0.3f);
+            // 캐빈 — 바닥+뒷벽+양옆(앞 개방), 1층에서 시작.
+            GameObject cabin = GreyboxStageBuilder.CreateEmpty("ElevatorCabin", new Vector3(SHAFT_X, 0f, 0f));
+            BuildCabinPart(cabin, "Floor", new Vector3(0f, 0.1f, 0f), new Vector3(3f, 0.2f, 3f), cabinMat);
+            BuildCabinPart(cabin, "Back", new Vector3(0f, 1.6f, 1.4f), new Vector3(3f, 3f, 0.2f), cabinMat);
+            BuildCabinPart(cabin, "Left", new Vector3(-1.4f, 1.6f, 0f), new Vector3(0.2f, 3f, 3f), cabinMat);
+            BuildCabinPart(cabin, "Right", new Vector3(1.4f, 1.6f, 0f), new Vector3(0.2f, 3f, 3f), cabinMat);
+
+            ApartmentElevator elevator = cabin.AddComponent<ApartmentElevator>();
+            GreyboxStageBuilder.SetReference(elevator, "_tuning", tuning);
+            GreyboxStageBuilder.SetReference(elevator, "_cabin", cabin.transform);
+            SerializedObject serialized = new SerializedObject(elevator);
+            SerializedProperty ys = serialized.FindProperty("_floorYs");
+            ys.arraySize = FLOORS;
+            for (int i = 0; i < FLOORS; i++) ys.GetArrayElementAtIndex(i).floatValue = i * FLOOR_H;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+
+            // 캐빈 내부 패널 (층 선택).
+            BuildPanel(cabin.transform, "CabinPanel", new Vector3(1.15f, 1.4f, 0.9f), elevator, 0, true, panelMat, highlight);
+
+            // 층 호출 패널 — 샤프트 왼쪽 벽면.
+            for (int floor = 1; floor <= FLOORS; floor++)
+                BuildPanel(null, "CallPanel_" + floor + "F",
+                    new Vector3(SHAFT_X - 2.2f, (floor - 1) * FLOOR_H + 1.3f, 2.6f), elevator, floor, false, panelMat, highlight);
+        }
+
+        private static void BuildCabinPart(GameObject cabin, string name, Vector3 localPos, Vector3 size, Material material)
+        {
+            GameObject part = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            part.name = name;
+            part.transform.SetParent(cabin.transform, false);
+            part.transform.localPosition = localPos;
+            part.transform.localScale = size;
+            part.GetComponent<Renderer>().sharedMaterial = material;
+        }
+
+        private static void BuildPanel(Transform parent, string name, Vector3 position,
+            ApartmentElevator elevator, int floor, bool isCabinPanel, Material material, Material highlight)
+        {
+            GameObject panel = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            panel.name = parent == null ? "__gb_" + name : name; // 루트면 멱등 Clear 대상 접두어
+            if (parent != null) { panel.transform.SetParent(parent, false); panel.transform.localPosition = position; }
+            else panel.transform.position = position;
+            panel.transform.localScale = new Vector3(0.35f, 0.5f, 0.12f);
             panel.GetComponent<Renderer>().sharedMaterial = material;
             BoxCollider trigger = panel.GetComponent<BoxCollider>();
             trigger.isTrigger = true;
-            trigger.size = new Vector3(2.5f, 2f, 12f);
+            trigger.size = new Vector3(6f, 5f, 16f);
 
-            ApartmentElevator elevator = panel.AddComponent<ApartmentElevator>();
-            GreyboxStageBuilder.SetReference(elevator, "_tuning", tuning);
-            GreyboxStageBuilder.SetReference(elevator, "_renderer", panel.GetComponent<Renderer>());
-            GreyboxStageBuilder.SetReference(elevator, "_normalMaterial", material);
-            GreyboxStageBuilder.SetReference(elevator, "_highlightMaterial", highlight);
-            SerializedObject serialized = new SerializedObject(elevator);
+            ApartmentElevatorPanel component = panel.AddComponent<ApartmentElevatorPanel>();
+            GreyboxStageBuilder.SetReference(component, "_elevator", elevator);
+            GreyboxStageBuilder.SetReference(component, "_renderer", panel.GetComponent<Renderer>());
+            GreyboxStageBuilder.SetReference(component, "_normalMaterial", material);
+            GreyboxStageBuilder.SetReference(component, "_highlightMaterial", highlight);
+            SerializedObject serialized = new SerializedObject(component);
             serialized.FindProperty("_floor").intValue = floor;
-            SerializedProperty exitsProp = serialized.FindProperty("_floorExits");
-            exitsProp.arraySize = exits.Length;
-            for (int i = 0; i < exits.Length; i++)
-                exitsProp.GetArrayElementAtIndex(i).objectReferenceValue = exits[i];
+            serialized.FindProperty("_isCabinPanel").boolValue = isCabinPanel;
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
@@ -165,11 +219,10 @@ namespace DontLate.EditorTools
             DistrictCargoSpawner spawner = go.AddComponent<DistrictCargoSpawner>();
 
             Transform boxOrigin = GreyboxStageBuilder.CreateEmpty("BoxOrigin", new Vector3(-17f, 0f, -1.2f)).transform;
-            // 층별 세대 비콘 앵커 — 2·3·4층 복도 안쪽.
-            var anchors = new Transform[3];
-            anchors[0] = GreyboxStageBuilder.CreateEmpty("BeaconAnchor2F", new Vector3(30f, 0f, 0f)).transform;
-            anchors[1] = GreyboxStageBuilder.CreateEmpty("BeaconAnchor3F", new Vector3(50f, 0f, 0f)).transform;
-            anchors[2] = GreyboxStageBuilder.CreateEmpty("BeaconAnchor4F", new Vector3(70f, 0f, 0f)).transform;
+            var anchors = new Transform[3]; // 2·3·4층 복도
+            for (int i = 0; i < 3; i++)
+                anchors[i] = GreyboxStageBuilder.CreateEmpty("BeaconAnchor" + (i + 2) + "F",
+                    new Vector3(4f, (i + 1) * FLOOR_H, 0f)).transform;
 
             SerializedObject serialized = new SerializedObject(spawner);
             serialized.FindProperty("_gameState").objectReferenceValue = gameState;
@@ -195,7 +248,7 @@ namespace DontLate.EditorTools
             GameObject canvasGo = new GameObject("__gb_ApartmentCanvas");
             var canvas = canvasGo.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 60; // 폰(그 아래)·대화(90)의 사이
+            canvas.sortingOrder = 60;
             var scaler = canvasGo.AddComponent<UnityEngine.UI.CanvasScaler>();
             scaler.uiScaleMode = UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920f, 1080f);

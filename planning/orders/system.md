@@ -1023,3 +1023,17 @@
 - 메커닉(D-065): 비 오는 날 **미끄러움**(이동 관성) + 오르막 **스태미나 가중**
 
 수용기준: Travel→Hillside 진입·테라스 지형·배송 루프 완주 · 비+언덕 조합에서 이동 관성 체감 · 스태미나 가중 · 테스트 green.
+
+### 결과 (S-048) · 2026-07-24 19:28 (리드 23분 — S-049와 병행)
+- ① 레인 이미터 shape (90,30,90) — Y 30으로 상공 볼륨 확보.
+- ② [ApartmentSlidingDoor.cs](../../Assets/Scripts/Interactables/ApartmentSlidingDoor.cs) 신설 — 비번 성공(PasswordGate가 텔레포트 대신 `Unlock()` 호출) 시 패널 좌슬라이드. 실측: panelX 0→**-1.70**(개방)→4초 후 **0.00**(자동 닫힘)→해제 상태에서 문 앞 접근 시 모션센서(OnTriggerStay)로 **-1.70** 재개방.
+- ③ 아파트 **수직 4층 적층**(층고 4u — y 0/4/8/12) 전면 재조립 + **실물리 엘베 캐빈**([ApartmentElevator.cs](../../Assets/Scripts/Interactables/ApartmentElevator.cs) 재작성 · 바닥+3벽 캐빈이 샤프트 x20을 실이동). 층 호출 패널=빈 캐빈 호출(CallToFloor), 캐빈 내부 패널=층 선택(FloorSelectRequested→FloorChosen). 탑승자는 이동 중 캐빈 부피 **물리 쿼리**(Physics.OverlapBox — Find 계열 금지 규칙 준수)로 실측해 임시 부모화. 실측: 캐빈 y0→**8**(3층 호출) · 플레이어 탑승 후 층선택 1층 → 플레이어 y8.5→**0.28** 동반 하강·도착 후 부모 해제.
+- 카메라 층 추종: CameraFollowX `_followY` — 3층 이동 시 카메라 y 상승 실측.
+- 검증: 컴파일 ○ 콘솔 0 ○ 테스트 **32/32** ○ ★ 재조립 ○ Play 실측(위 수치) ○ 캡처 4장(Screenshots/s048_*).
+
+### 결과 (S-049) · 2026-07-24 19:28 (리드 22분)
+- [HillsideStageBuilder.cs](../../Assets/Scripts/Editor/HillsideStageBuilder.cs) 신설 — 테라스 4단(y 0/2/4/6)·옹벽(램프 개구 z±1.2)·경사 램프 큐브·집 실루엣 3·스포너(2~4단 비콘 앵커)·카메라 `_followY`. 씬 파일은 빌더가 최초 실행 시 스스로 생성(DefaultGameObjects).
+- 흐름 편입: GameScene.**Hillside** · DISTRICT_HILLSIDE 주소 3종(캠프 12종 풀) · Travel↔Hillside 전이 · 지도 핀 라우팅 · ★ All Scenes 체인·씬 흐름 UI("언덕주택가 — 오르막 조심, 비 오면 미끄럽다").
+- 메커닉(D-065): **비×언덕 미끄럼** — PlayerLocomotionManager가 SceneTransitionCompleted·WeatherChanged 구독, Hillside+Rain일 때 이동을 관성 수렴(MoveTowards, 가속 6/s — 출발 굼뜸·정지 밀림)으로 전환. **스태미나 가중** — PlayerStatusManager가 Hillside에서 drain ×1.4.
+- 실측: Travel→Hillside 진입 ○ · 4단 테라스·램프 렌더 ○ · 플레이어 4단 접지(y6.08) ○ · 카메라 y 8.10→12.89 추종 ○ · Rain 전환 후 강우 렌더 ○ · 캡처 3장(Screenshots/s049_*).
+- 부기: 전이 가드 실측 — Home→Hillside 직행은 "허용되지 않은 전이" 거부(정상, Travel 경유만).

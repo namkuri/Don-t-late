@@ -8,7 +8,8 @@ namespace DontLate
         Camp,
         Travel,
         District,
-        Apartment // S-038 (D-067) — 아파트단지 별도 씬 (대차·비번·엘베)
+        Apartment, // S-038 (D-067) — 아파트단지 별도 씬 (대차·비번·엘베)
+        Hillside   // S-049 (D-064) — 언덕주택가 (테라스·미끄럼)
     }
 
     /// <summary>하루의 날씨 (S-042) — 아침 추첨, 시각·연출·안개가 구독.</summary>

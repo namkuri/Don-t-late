@@ -22,6 +22,9 @@ namespace DontLate
             ("늦지마아파트 202호", DeliveryOrderSO.DISTRICT_APARTMENT, 2), // S-038
             ("늦지마아파트 303호", DeliveryOrderSO.DISTRICT_APARTMENT, 3),
             ("늦지마아파트 404호", DeliveryOrderSO.DISTRICT_APARTMENT, 4),
+            ("언덕 계단집", DeliveryOrderSO.DISTRICT_HILLSIDE, 2),      // S-049 — floor=테라스 단
+            ("중턱 빨간지붕", DeliveryOrderSO.DISTRICT_HILLSIDE, 3),
+            ("꼭대기 파란대문", DeliveryOrderSO.DISTRICT_HILLSIDE, 4),
         };
 
         [SerializeField] private GameStateSO _gameState;

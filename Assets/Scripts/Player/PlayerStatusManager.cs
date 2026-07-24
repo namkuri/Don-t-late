@@ -25,8 +25,20 @@ namespace DontLate
 
         private void Awake() => _hub = GetComponent<PlayerManager>();
 
-        private void OnEnable() => WorldEvents.DeliveryFailed += OnDeliveryFailed;
-        private void OnDisable() => WorldEvents.DeliveryFailed -= OnDeliveryFailed;
+        private bool _inHillside; // S-049 — 오르막 스태미나 가중
+
+        private void OnEnable()
+        {
+            WorldEvents.DeliveryFailed += OnDeliveryFailed;
+            WorldEvents.SceneTransitionCompleted += OnSceneArrivedStatus;
+        }
+        private void OnDisable()
+        {
+            WorldEvents.DeliveryFailed -= OnDeliveryFailed;
+            WorldEvents.SceneTransitionCompleted -= OnSceneArrivedStatus;
+        }
+
+        private void OnSceneArrivedStatus(GameScene scene) => _inHillside = scene == GameScene.Hillside;
 
         private void Start()
         {
@@ -62,6 +74,7 @@ namespace DontLate
                         ? CarriedOrder.weight * tuning.staminaDrainPerKg
                         : drain * (tuning.staminaDrainCarryMultiplier - 1f); // 무게 미지정 주문 폴백
                 }
+                if (_inHillside) drain *= 1.4f; // S-049 — 오르막 동네는 힘들다
                 Stamina -= drain * Time.deltaTime;
             }
             else
