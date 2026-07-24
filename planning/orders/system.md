@@ -1120,3 +1120,11 @@
 - 선택본 `Assets/Audio/SFX/`에 제자리 교체 — guid 3종 보존(pin 5fa59c·route 9461617·depart f4d3041, .meta 미변경) → 코드·씬 재작업 0. 클립 유효(pin 0.14s·route 0.26s·depart 0.60s, mono).
 - 검증: 콘솔 0 · 배선 유지(WorldAudioManager PlayMapPin/Route/Depart). **최종 인게임 청취는 Director**.
 - 부기: SFX seed 비복원 확인 → CREDITS S-054 표 정정(seed는 로컬 기록·복원 불가 명시).
+
+---
+
+## 판정 · 2026-07-25 — S-050~055 오디오 배치 (Director 청취 통과)
+
+Director 인게임 테스트: "테스트해봤을 때 괜찮았어" — **청취 판정 통과**(오디오 레인 사람 게이트 충족).
+- S-050~052 타이틀 BGM(Suno·시작화면 재생·보컬제거본) · S-054 SFX 재생성 · S-055 맵이동 선택본(pin_1·route_5·depart_2) 전부 통과.
+- 상태: PR #14 반영 완료. **머지만 관제 게이트로 잔여**(Director 지시 "머지 빼고 진행"). review→done 전이는 관제 머지 시점.
