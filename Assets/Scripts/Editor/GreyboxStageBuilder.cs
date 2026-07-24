@@ -436,6 +436,12 @@ namespace DontLate.EditorTools
             focus.size = new Vector3(2.4f, 1.4f, 1.8f);
             focus.center = new Vector3(0f, 0.7f, 0f);
 
+            // S-041: 몸으로 미는 물리 — CC 히트 푸시(PlayerLocomotionManager)가 동력.
+            Rigidbody body = root.AddComponent<Rigidbody>();
+            body.mass = 8f;
+            body.linearDamping = 2.5f;
+            body.constraints = RigidbodyConstraints.FreezeRotation; // 전복·회전 방지 (2.5D)
+
             // 바닥 (1.5배: 1.4→2.1 × 0.9→1.35)
             AddCartPart(root, "Bed", new Vector3(0f, 0.3f, 0f), new Vector3(2.1f, 0.12f, 1.35f), cartMat, true);
             // 사방 벽 (높이 0.55 — 위 개방)

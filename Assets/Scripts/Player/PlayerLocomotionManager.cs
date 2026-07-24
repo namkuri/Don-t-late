@@ -33,6 +33,18 @@ namespace DontLate
         private const float FALL_LIMIT_Y = -6f;
         private Vector3 _lastGroundedPosition;
 
+        // S-041: CC는 리지드바디를 밀지 않는다 — 히트 시 수평 속도를 실어 대차·상자를 민다.
+        private const float PUSH_SPEED = 2.2f;
+
+        private void OnControllerColliderHit(ControllerColliderHit hit)
+        {
+            Rigidbody body = hit.collider.attachedRigidbody;
+            if (body == null || body.isKinematic) return;
+            if (hit.moveDirection.y < -0.3f) return; // 밟고 선 것은 밀지 않는다
+            Vector3 push = new Vector3(hit.moveDirection.x, 0f, hit.moveDirection.z);
+            body.linearVelocity = new Vector3(push.x * PUSH_SPEED, body.linearVelocity.y, push.z * PUSH_SPEED);
+        }
+
         private void Update()
         {
             if (_cc.isGrounded && transform.position.y > FALL_LIMIT_Y + 2f)

@@ -14,8 +14,9 @@ namespace DontLate
 
         private void Start()
         {
-            // S-040: 대차 바구니 벽(CartWall=9)은 상자만 가둔다 — 플레이어(Player=8)와는 충돌 무시.
-            Physics.IgnoreLayerCollision(8, 9, true);
+            // S-041: 대차는 몸으로 민다 — Player×CartWall 충돌 허용(무시 규칙 폐지).
+            // 밀림 폭주는 대차가 자가 이동을 안 하므로(플레이어 푸시가 유일 동력) 재발하지 않는다.
+            Physics.IgnoreLayerCollision(8, 9, false);
 
             ResetSession();
 

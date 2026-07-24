@@ -3,16 +3,15 @@ using UnityEngine;
 namespace DontLate
 {
     /// <summary>
-    /// 배달 대차 (S-038 → S-040 물리 재설계). E = 견인 토글 · 상자 든 채 E = 바구니에 투하(실물리).
-    /// 상자는 파지 않고 물리로 바구니(사방 벽·위 개방)에 담긴다 — 위로는 튀어나갈 수 있다.
-    /// 벽·바닥 콜라이더는 CartWall 레이어(플레이어와 충돌 무시 — S-039 낙사 회귀 방지).
+    /// 배달 대차 (S-038 → S-040 바구니 → S-041 밀기 전환). **밀어서 옮긴다** — E 견인 폐지,
+    /// 플레이어가 걸어가 닿으면 물리로 밀린다(푸시는 PlayerLocomotionManager의 CC 히트가 담당).
+    /// E는 적재 전용: 상자 든 채 E = 바구니에 투하(실물리 — 사방 벽·위 개방).
     /// 게이트·엘베는 MoveTo로 대차+바구니 속 상자를 통째 이동.
     /// </summary>
     [RequireComponent(typeof(Collider))]
+    [RequireComponent(typeof(Rigidbody))]
     public class DeliveryCart : MonoBehaviour, IInteractable
     {
-        private const float FOLLOW_DISTANCE = 1.4f;
-        private const float FOLLOW_LERP = 8f;
         private const float BASKET_RADIUS = 1.6f; // MoveTo 동반 판정 (수평)
         private const float BASKET_HEIGHT = 2.0f;
 
@@ -20,10 +19,6 @@ namespace DontLate
         [SerializeField] private Material _normalMaterial;
         [SerializeField] private Material _highlightMaterial;
         [SerializeField] private Transform _dropPoint; // 적재 투하 지점 (바구니 위)
-
-        private Transform _towedBy;
-
-        public bool IsTowing => _towedBy != null;
 
         public void Interact(PlayerContext ctx)
         {
@@ -43,9 +38,7 @@ namespace DontLate
                 return;
             }
 
-            // 빈손 E = 견인 토글.
-            _towedBy = _towedBy == null ? ctx.Player.transform : null;
-            Debug.Log(_towedBy != null ? "[대차] 견인 시작" : "[대차] 견인 해제");
+            Debug.Log("[대차] 몸으로 밀어서 옮긴다 (S-041) — E는 적재 전용.");
         }
 
         public void SetHighlight(bool on)
@@ -53,14 +46,6 @@ namespace DontLate
             if (_renderer == null) return;
             Material material = on && _highlightMaterial != null ? _highlightMaterial : _normalMaterial;
             if (material != null) _renderer.sharedMaterial = material;
-        }
-
-        private void Update()
-        {
-            if (_towedBy == null) return;
-            Vector3 target = _towedBy.position - _towedBy.right * FOLLOW_DISTANCE;
-            target.y = 0f;
-            transform.position = Vector3.Lerp(transform.position, target, Time.deltaTime * FOLLOW_LERP);
         }
 
         /// <summary>게이트·엘베 이동 — 대차와 바구니 속 상자를 같은 델타로 통째 이동.</summary>
@@ -71,6 +56,7 @@ namespace DontLate
                 if (IsInBasket(box.transform.position))
                     box.transform.position += delta;
             transform.position = position;
+            if (TryGetComponent(out Rigidbody body)) { body.linearVelocity = Vector3.zero; body.angularVelocity = Vector3.zero; }
         }
 
         private bool IsInBasket(Vector3 point)
