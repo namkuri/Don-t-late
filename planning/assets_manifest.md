@@ -152,10 +152,6 @@
 | sfx_map_pin.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) — AU-011 | 상업 가능·표기 불요 | 2026-07-23 |
 | sfx_map_route.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) — AU-011 | 상업 가능·표기 불요 | 2026-07-23 |
 | sfx_map_depart.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) — AU-011 | 상업 가능·표기 불요 | 2026-07-23 |
-| sfx_dialogue_blip_1.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) — S-053 8비트 rapid_stepped | 상업 가능·표기 불요 | 2026-07-25 |
-| sfx_dialogue_blip_2.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) — S-053 8비트 rapid_stepped | 상업 가능·표기 불요 | 2026-07-25 |
-
-- S-053 대사 블립 변주 2종(문자마다 랜덤): DialogueView `_blipClips` 풀 배선. 기존 `sfx_dialogue_blip.wav`는 삭제 없이 `_blipClip` 폴백으로 보관.
 
 ## ChatGPT UI INTAKE (민지) — 2026-07-22
 

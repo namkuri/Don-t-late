@@ -210,13 +210,3 @@ late-night introspective, hazy, instrumental, 88 BPM
   반복감 기각 시 후속 = 파이프라인 캡 상향(5→22s) 재생성 제안.
 - 파이프라인 수리 1건: `bom_audio.fallback()`이 미등재 `amb_*`를 bgm으로 오분류(BGM 루프 규격+시티팝 앵커 주입) → `amb_` 접두어 SFX 분류 추가.
 - BOM §8 미등재 5종 — 발주서(AU-011 2026-07-23 20:59)가 근거. 행 추가는 관제 몫(R16 ③ 합류 요청).
-
-### S-053 대사 블립 8비트 변주 2종 (2026-07-25 · 계정·권리는 위 SFX 표와 동일)
-
-| 파일 | 길이 | 비고 |
-|---|---|---|
-| `sfx_dialogue_blip_1.wav` | 0.48s | ElevenLabs SFX — 8비트 rapid_stepped (원명 `rapid_stepped_8-bit__#2`) |
-| `sfx_dialogue_blip_2.wav` | 0.48s | ElevenLabs SFX — 8비트 rapid_stepped (원명 `rapid_stepped_8-bit__#3`) |
-
-- Director 지시(2026-07-25): 8비트 블립 2종을 대사 효과음에 적용. DialogueView `_blipClips` 풀로 배선해 **문자마다 랜덤**(피치 0.95~1.05 변주 유지). 기존 `sfx_dialogue_blip.wav`는 삭제 없이 `_blipClip` 폴백으로 **보관**.
-- 라이선스 = ElevenLabs SFX 유료 플랜(위 표와 동일 계정·권리 — 상업 가능·표기 불요). 임포트 = SFX 규격(Vorbis·Decompress On Load·모노 강제).
