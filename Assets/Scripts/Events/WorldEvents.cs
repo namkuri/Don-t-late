@@ -215,6 +215,15 @@ namespace DontLate
             WeatherChanged?.Invoke(weather);
         }
 
+        /// <summary>적설(지면 쌓임) 유무 전환 (AU-018 ③ — 발소리 스노 스왑용). 저빈도: 임계 통과 시 1회.</summary>
+        public static event Action<bool> SnowCoverChanged;
+
+        public static void RaiseSnowCoverChanged(bool covered)
+        {
+            Log("SnowCoverChanged → " + covered);
+            SnowCoverChanged?.Invoke(covered);
+        }
+
         // ── 아파트 (S-038 · D-067) — 전부 저빈도 상태 통지 ──
 
         /// <summary>공동현관 비번 패널 앞에서 E — 키패드 UI 열림 요청.</summary>

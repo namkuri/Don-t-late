@@ -18,6 +18,7 @@ namespace DontLate
         private readonly HashSet<WalkableVolume> _volumes = new HashSet<WalkableVolume>();
         private float _verticalVelocity;
         private float _strideAccum;
+        private bool _wasGrounded = true; // AU-018 ③ — 착지 엣지 감지(공중→접지 전환에 land음)
 
         /// <summary>수평 속도(월드). 애니메이션·회전이 읽는다.</summary>
         public Vector3 PlanarVelocity { get; private set; }
@@ -101,7 +102,10 @@ namespace DontLate
             {
                 _verticalVelocity = -1f; // 접지 유지용 약한 하향
                 if (_hub.Input.JumpPressed)
+                {
                     _verticalVelocity = Mathf.Sqrt(-2f * tuning.gravity * tuning.jumpHeight);
+                    WorldAudioManager.Instance?.PlayJumpSfx(); // AU-018 ③
+                }
             }
             else
             {
@@ -111,6 +115,11 @@ namespace DontLate
             Vector3 delta = (PlanarVelocity + Vector3.up * _verticalVelocity) * Time.deltaTime;
             delta.z = ResolveDepth(transform.position + delta) - transform.position.z;
             _cc.Move(delta);
+
+            // AU-018 ③ — 공중→접지 전환에 착지음 (스폰·안전망 복귀는 _wasGrounded 초기 true로 억제).
+            bool groundedNow = _cc.isGrounded;
+            if (groundedNow && !_wasGrounded) WorldAudioManager.Instance?.PlayLandSfx();
+            _wasGrounded = groundedNow;
 
             TickFootstep();
         }

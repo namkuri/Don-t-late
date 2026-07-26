@@ -62,6 +62,12 @@ namespace DontLate
         [Header("SFX — 배송지 도착 차임 (AU-018 ④)")]
         [SerializeField] private AudioClip _sfxArrive;
 
+        [Header("SFX — 액션 4종 (AU-018 ③)")]
+        [SerializeField] private AudioClip _sfxBoxDamage;   // 상자 HP 닳음(미파손)
+        [SerializeField] private AudioClip _sfxJump;
+        [SerializeField] private AudioClip _sfxLand;
+        [SerializeField] private AudioClip _sfxFootstepSnow; // 적설 시 발소리 스왑
+
         [Header("믹스")]
         [SerializeField, Range(0f, 1f)] private float _volume = 0.5f;
         [SerializeField, Range(0f, 1f)] private float _sfxVolume = 0.7f;
@@ -91,6 +97,7 @@ namespace DontLate
         // 씬 전이 통지가 없는 무대(그레이박스)에서도 낮/밤이 정상 동작하도록 "타이틀인가"만 들고 있는다.
         private bool _titleScene;
         private bool _inDistrict; // AU-011 — 구역 앰비언스는 District 체류 중에만
+        private bool _snowCover;  // AU-018 ③ — 적설 발소리 스왑 (SnowCoverChanged 캐시)
         private DayPhase _phase;
         // S-009: BGM은 첫 대화(Home 인트로 전화)가 끝난 뒤에야 시작한다.
         [Tooltip("켜면 첫 DialogueEnded까지 BGM을 보류한다 (Home 인트로 연출).")]
@@ -182,6 +189,7 @@ namespace DontLate
             WorldEvents.DeadlineWarned += OnDeadlineWarned;
             WorldEvents.PhoneRang += OnPhoneRang;
             WorldEvents.SceneTransitionStarted += OnSceneTransitionStarted;
+            WorldEvents.SnowCoverChanged += OnSnowCoverChanged; // AU-018 ③
         }
 
         private void OnDisable()
@@ -199,6 +207,7 @@ namespace DontLate
             WorldEvents.DeadlineWarned -= OnDeadlineWarned;
             WorldEvents.PhoneRang -= OnPhoneRang;
             WorldEvents.SceneTransitionStarted -= OnSceneTransitionStarted;
+            WorldEvents.SnowCoverChanged -= OnSnowCoverChanged; // AU-018 ③
         }
 
         private void OnDestroy()
@@ -328,6 +337,7 @@ namespace DontLate
         private void OnDeadlineWarned(DeliveryData data) => PlaySfx(_sfxDeadlineWarn); // AU-009
         private void OnPhoneRang(PhoneCall call) => PlaySfx(_sfxPhoneRing);            // AU-009
         private void OnSceneTransitionStarted(GameScene scene) => PlaySfx(_sfxSceneWhoosh); // AU-009
+        private void OnSnowCoverChanged(bool covered) => _snowCover = covered;              // AU-018 ③
 
         // 이벤트 없는 지점(자판기·던지기·코인·폰 개폐)의 Instance 명령 API (AU-008).
         // 컴포넌트가 클립을 들지 않게 해 배선을 빌더 한 곳(Core)으로 모은다.
@@ -340,7 +350,13 @@ namespace DontLate
         public void PlayRhythmHitSfx() => PlaySfx(_sfxRhythmHit);
         public void PlayRhythmMissSfx() => PlaySfx(_sfxRhythmMiss);
         public void PlayDrinkSfx() => PlaySfx(_sfxDrink);
-        public void PlayFootstepSfx() => PlaySfx(_sfxFootstep);
+        // AU-018 ③ — 적설(HasSnowCover) 시 스노 크런치로 스왑, 아니면 기본 발소리.
+        public void PlayFootstepSfx() => PlaySfx(_snowCover && _sfxFootstepSnow != null ? _sfxFootstepSnow : _sfxFootstep);
+
+        // AU-018 ③ — 액션 3종 (Instance 명령 — 이벤트 없는 지점, PlayThrowSfx 선례).
+        public void PlayBoxDamageSfx() => PlaySfx(_sfxBoxDamage);
+        public void PlayJumpSfx() => PlaySfx(_sfxJump);
+        public void PlayLandSfx() => PlaySfx(_sfxLand);
 
         // AU-010 — 정산 요약(판정 재료가 SettlementView에만 있음)·가구 확정·공용 UI 틱.
         public void PlaySettleOkSfx() => PlaySfx(_sfxSettleOk);

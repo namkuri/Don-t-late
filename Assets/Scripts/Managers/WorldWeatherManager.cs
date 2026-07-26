@@ -195,6 +195,7 @@ namespace DontLate
         }
 
         private bool _indoorScene; // S-050 ④ — 아파트 실내: SnowCover·발자국(HasSnowCover) 억제
+        private bool _snowCovered; // AU-018 ③ — 기존 HasSnowCover 전환 감지용(SnowCoverChanged 발행)
 
         private void RefreshGradeTarget()
         {
@@ -407,6 +408,10 @@ namespace DontLate
             float target = !_indoorScene && Weather == WeatherType.Snow ? 0.30f : 0f; // S-046 ③ — 보조 톤으로 강등
             float rate = Weather == WeatherType.Snow ? 0.030f : 0.018f; // 쌓임은 느긋(~24s), 녹음은 더 느긋
             _snowAmount = Mathf.MoveTowards(_snowAmount, target, rate * Time.deltaTime);
+
+            bool covered = HasSnowCover; // AU-018 ③ — 기존 게이트(>0.25) 전환 시 발소리 스왑 통지
+            if (covered != _snowCovered) { _snowCovered = covered; WorldEvents.RaiseSnowCoverChanged(covered); }
+
             bool visible = _snowAmount > 0.01f;
             if (_snowCover.gameObject.activeSelf != visible) _snowCover.gameObject.SetActive(visible);
             if (visible && _snowCover.material.HasProperty("_BaseColor"))

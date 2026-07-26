@@ -57,6 +57,7 @@ namespace DontLate
             RefreshBar();
 
             if (_hp <= 0f) Explode();
+            else WorldAudioManager.Instance?.PlayBoxDamageSfx(); // AU-018 ③ — 미파손 데미지음(파손은 box_break)
         }
 
         private void Explode()
