@@ -59,6 +59,9 @@ namespace DontLate
         [Tooltip("구역 앰비언스 선택용 — currentDistrict 조회 (AU-011).")]
         [SerializeField] private GameStateSO _gameState;
 
+        [Header("SFX — 배송지 도착 차임 (AU-018 ④)")]
+        [SerializeField] private AudioClip _sfxArrive;
+
         [Header("믹스")]
         [SerializeField, Range(0f, 1f)] private float _volume = 0.5f;
         [SerializeField, Range(0f, 1f)] private float _sfxVolume = 0.7f;
@@ -277,6 +280,10 @@ namespace DontLate
             _inDistrict = scene == GameScene.District; // AU-011
             ApplySlot();
             UpdateAmbient();
+
+            // AU-018 ④ — 배송지(District·아파트·언덕) 진입 시 도착 차임. whoosh(떠남)와 짝.
+            if (scene == GameScene.District || scene == GameScene.Apartment || scene == GameScene.Hillside)
+                PlaySfx(_sfxArrive);
         }
 
         /// <summary>앰비언스 루프 채널 (AU-009 → AU-011 확장) —

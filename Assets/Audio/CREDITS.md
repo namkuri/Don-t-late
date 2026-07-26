@@ -233,3 +233,15 @@ late-night introspective, hazy, instrumental, 88 BPM
 | bom_id | 출처 | 프롬프트 SHA1 | 후공정 |
 |---|---|---|---|
 | `sfx_scene_whoosh` | 17후보 중 cand16 (Director 선택) | `217dec5cb9a8` | 피크 -1.0dB |
+
+### AU-018 ④ 배송지 도착 차임 (2026-07-26 · Director 지시 "④ 이어서 진행" · 계정·권리 위 표와 동일)
+
+빈 상호작용(배송지 진입)에 도착 차임 신규 배선. 토이톤 프롬프트로 ElevenLabs 생성 → 자체 후공정
+(trim → g=min(RMS→-14dB, peak→-1dB) 무클립). ⚠ **SFX는 API가 seed를 안 받아 seed 복원 불가**(seed는 로컬 기록).
+배선: `WorldAudioManager.OnSceneTransitionCompleted`에서 District·Apartment·Hillside 진입 시 발화(whoosh=떠남과 짝).
+※ 같은 세션 초안 5종(travel_loop/ping·loading_tick/done·arrive 중 arrive만) 중 arrive만 채택 — 나머지 4종은
+이동/로딩 연출 UX 부재로 **보류**(Director 결정). map_depart 재생성본은 폐기, 기존 인게임 파일 유지.
+
+| bom_id | 출처 | 프롬프트 SHA1 | seed(로컬) | 후공정 실측 |
+|---|---|---|---|---|
+| `sfx_arrive` | 단일 생성 (0.6s→trim 0.46s) | `f0d1f91dd067` | 838478889 | 피크 -1.0dB · RMS -14.8dB (peak-limited) |

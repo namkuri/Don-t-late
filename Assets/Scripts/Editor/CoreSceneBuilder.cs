@@ -189,6 +189,7 @@ namespace DontLate.EditorTools
             SetField(audio, "_sfxMapPin", LoadSfx("sfx_map_pin"));
             SetField(audio, "_sfxMapRoute", LoadSfx("sfx_map_route"));
             SetField(audio, "_sfxMapDepart", LoadSfx("sfx_map_depart"));
+            SetField(audio, "_sfxArrive", LoadSfx("sfx_arrive"));                 // AU-018 ④ 배송지 도착 차임
             SetField(audio, "_gameState", AssetDatabase.LoadAssetAtPath<GameStateSO>(DATA_ROOT + "/GameState.asset"));
 
             // 태양은 Core 소유(D-021 교정) — 콘텐츠 씬은 자체 Directional Light를 두지 않는다.
