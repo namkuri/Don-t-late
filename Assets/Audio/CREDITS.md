@@ -251,11 +251,12 @@ late-night introspective, hazy, instrumental, 88 BPM
 액션 3종 신규 배선 + box_damage 훅(오디오 후속). 토이톤 프롬프트로 ElevenLabs 생성 → 자체 후공정
 (trim → g=min(RMS→-14dB, peak→-1dB) 무클립). ⚠ SFX는 API가 seed 미수용 → seed 복원 불가(로컬 기록).
 - 배선: `sfx_jump`=Locomotion 점프 · `sfx_land`=착지 엣지 · `sfx_footstep_snow`=WorldWeatherManager.HasSnowCover(>0.25) 전환 시 발소리 스왑(SnowCoverChanged 이벤트 경유).
-- **box_damage 보류**: 토이톤(marimba) 스타일이 "충격·크런치" 내용과 충돌해 3회 생성 모두 근무음(RMS -44~-48). 오디오 미채택 — 훅만 배선(null-safe 무음). --no-anchors 재생성 여부 Director 결정 대기.
-- **box_roll 보류**: 굴림 감지 시스템(신규) 필요 — 배선 홈 부재로 미착수(협의).
+- **box_damage**: 토이톤(marimba)이 충격음과 충돌해 3회 근무음(RMS -44~-48) → **--raw로 조립기 우회**(비토이톤 임팩트 프롬프트)로 재생성 채택(Director 결정). 크런치는 노이즈 질감이라 부스트 자연.
+- **box_roll 폐기**: 굴림 감지 시스템(신규 컴포넌트) 필요 — 배선 홈 부재, YAGNI로 폐기(Director 결정).
 
 | bom_id | 출처 | 프롬프트 SHA1 | seed(로컬) | 후공정 실측 |
 |---|---|---|---|---|
 | `sfx_jump` | 단일 생성 (0.5s) | `a85292a7aa8a` | 990680310 | 피크 -1.0dB · RMS -16.1dB |
 | `sfx_land` | 단일 생성 (0.5s→trim 0.25s) | `b89fd307e1c3` | 1251878742 | 피크 -1.0dB · RMS -17.6dB |
 | `sfx_footstep_snow` | 단일 생성 (0.5s→trim 0.28s) | `69144d354128` | 27761564 | 피크 -1.0dB · RMS -20.5dB |
+| `sfx_box_damage` | --raw 비토이톤 (0.5s→trim 0.22s) | `09be3099e6cc` | 70264330 | 피크 -1.0dB · RMS -16.1dB |

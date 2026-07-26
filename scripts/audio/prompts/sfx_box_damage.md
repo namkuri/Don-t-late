@@ -20,14 +20,14 @@
 ## 창작 태그 (사람이 고치는 유일한 칸)
 
 <!-- NOTE:BEGIN -->
-muffled box thump, soft dull wooden knock, one blunt hit
+(raw 붙여넣기 — 조립기 미경유)
 <!-- NOTE:END -->
 
 ## 전송 프롬프트 (조립 결과 — 그대로 API에 투입)
 
 <!-- PROMPT:BEGIN -->
 ```
-muffled box thump, soft dull wooden knock, one blunt hit. Duration about 0.5 seconds. Style: cozy cute toy-like game sound, soft wooden marimba and rounded synth plucks, playful little pitch bends, gentle and warm, light and bouncy. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
+heavy cardboard box crush, muffled dull thud impact, short cardboard crunch. Duration about 0.5 seconds. Single isolated impact sound effect, dry and close, punchy, no background music, no vocals, no long reverb tail.
 ```
 <!-- PROMPT:END -->
 
@@ -62,3 +62,5 @@ python scripts/audio/audio_pipeline.py intake --bom-id sfx_box_damage
 |---|---|---|
 | 1 | 2026-07-26 | 최초 조립 |
 | 2 | 2026-07-26 | 재조립 |
+| 3 | 2026-07-27 | 재조립 |
+| 4 | 2026-07-27 | 재조립 |

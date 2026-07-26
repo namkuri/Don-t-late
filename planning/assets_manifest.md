@@ -156,6 +156,7 @@
 | sfx_jump.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) — AU-018 ③ | 상업 가능·표기 불요 | 2026-07-27 |
 | sfx_land.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) — AU-018 ③ | 상업 가능·표기 불요 | 2026-07-27 |
 | sfx_footstep_snow.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) — AU-018 ③ | 상업 가능·표기 불요 | 2026-07-27 |
+| sfx_box_damage.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료 · --raw 비토이톤) — AU-018 ③ | 상업 가능·표기 불요 | 2026-07-27 |
 
 ## ChatGPT UI INTAKE (민지) — 2026-07-22
 
