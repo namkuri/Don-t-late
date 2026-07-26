@@ -211,11 +211,11 @@ late-night introspective, hazy, instrumental, 88 BPM
 - 파이프라인 수리 1건: `bom_audio.fallback()`이 미등재 `amb_*`를 bgm으로 오분류(BGM 루프 규격+시티팝 앵커 주입) → `amb_` 접두어 SFX 분류 추가.
 - BOM §8 미등재 5종 — 발주서(AU-011 2026-07-23 20:59)가 근거. 행 추가는 관제 몫(R16 ③ 합류 요청).
 
-### S-054/055 재생성 (2026-07-25 · Director 지시 · 계정·권리 위 표와 동일)
+### AU-017/AU-019 재생성 (구번호 S-054/055 — 관제 재번호) (2026-07-25 · Director 지시 · 계정·권리 위 표와 동일)
 
 맵이동 3종 + 대사 블립을 ElevenLabs로 재생성(같은 토이톤 프롬프트 → 자체 후공정 트림·피크 -1dB·RMS -14dB → 제자리 교체, guid 불변).
-⚠ **SFX는 API가 seed를 안 받아 seed로 복원 불가**(음악만 seed 복원 가능). S-054 ledger의 seed는 로컬 기록일 뿐.
-맵 3종은 각 5후보 생성 후 **Director 청취 선택**(S-055 — pin_1·route_5·depart_2).
+⚠ **SFX는 API가 seed를 안 받아 seed로 복원 불가**(음악만 seed 복원 가능). AU-017(구 S-054) ledger의 seed는 로컬 기록일 뿐.
+맵 3종은 각 5후보 생성 후 **Director 청취 선택**(AU-019 — pin_1·route_5·depart_2).
 
 | bom_id | 출처 | 후공정 실측 |
 |---|---|---|

@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a5e3ef5ec1efc4b4397e1c503ec59084, type: 3}
+  m_Name: Scenario_Granny_Progress
+  m_EditorClassIdentifier: Assembly-CSharp::DontLate.DialogueScenarioSO
+  lines:
+  - speaker: "\uD560\uBA38\uB2C8"
+    text: "\uC800\uAE30 \uBE5B\uB098\uB294 \uC790\uB9AC\uAE4C\uC9C0 \uBD80\uD0C1\uD558\uB124.
+      \uCC9C\uCC9C\uD788 \uD574\uB3C4 \uAD1C\uCC2E\uC544."
+    portrait: {fileID: 0}

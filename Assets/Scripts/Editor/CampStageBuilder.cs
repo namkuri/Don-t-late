@@ -43,6 +43,9 @@ namespace DontLate.EditorTools
             BuildOrderBoard(gameState, boxes);
             BuildDrink(drink, highlight);
             BuildVendingMachine(tuning, drink, highlight);
+            BuildBossNpc(gameState, highlight);                                  // S-052 ① 사장님
+            NpcBuildKit.BuildPedestrian("Walker_A", new Vector3(-9f, 0f, 2.4f), new Color(0.45f, 0.52f, 0.62f), 5f);
+            NpcBuildKit.BuildPedestrian("Walker_B", new Vector3(4f, 0f, 2.8f), new Color(0.60f, 0.48f, 0.40f), 6f); // S-052 ② 행인
             GreyboxStageBuilder.BuildPlayer(gameState, tuning);
             GreyboxStageBuilder.BuildPostVolume();
             GreyboxStageBuilder.ConfigureCamera();
@@ -125,6 +128,41 @@ namespace DontLate.EditorTools
         }
 
         // 주문판 (S-021 ③) — 캠프 복귀 시 소진 주문을 새 목적지로 교체.
+        // S-052 ① — 사장님 NPC: 첫 방문 접근 튜토리얼 + 재방문 격려(부재 추첨).
+        private static void BuildBossNpc(GameStateSO gameState, Material highlight)
+        {
+            var (go, body) = NpcBuildKit.BuildFigure("BossNpc", new Vector3(-7.5f, 0f, 1.6f),
+                "NpcBoss", new Color(0.32f, 0.45f, 0.38f), 1.8f);
+            NpcBuildKit.AddInteractTrigger(go, 1.8f);
+
+            DialogueScenarioSO tutorial = NpcBuildKit.GetOrCreateScenario("Scenario_Boss_Tutorial",
+                ("사장님", "어이 신입! 왔구먼. 여기가 물류캠프야."),
+                ("사장님", "저기 게시판에서 오늘 주문 받고, 상자는 바코드 스캔부터 해. 스캔 안 한 짐은 못 실어."),
+                ("사장님", "스캔한 상자는 트럭에 실으면 되고, 무거우면 대차에 밀어 담아서 옮겨."),
+                ("사장님", "마감 시간 넘기면 벌금이야. 늦지 마 — 그게 이 바닥 제1원칙이다."),
+                ("사장님", "다 실었으면 출발해. 화이팅이야, 신입!"));
+            DialogueScenarioSO cheer1 = NpcBuildKit.GetOrCreateScenario("Scenario_Boss_Cheer1",
+                ("사장님", "오늘도 달리는구먼. 무릎 아끼면서 뛰어!"));
+            DialogueScenarioSO cheer2 = NpcBuildKit.GetOrCreateScenario("Scenario_Boss_Cheer2",
+                ("사장님", "빚은 갚으라고 있는 거야. 조급해하지 말고, 늦지만 마."));
+            DialogueScenarioSO cheer3 = NpcBuildKit.GetOrCreateScenario("Scenario_Boss_Cheer3",
+                ("사장님", "비 오는 날 언덕길은 조심해. 미끄러지면 짐이 먼저 구른다?"));
+
+            CampBossNpc boss = go.AddComponent<CampBossNpc>();
+            GreyboxStageBuilder.SetReference(boss, "_gameState", gameState);
+            GreyboxStageBuilder.SetReference(boss, "_tutorialScenario", tutorial);
+            GreyboxStageBuilder.SetReference(boss, "_highlightRenderer", body);
+            GreyboxStageBuilder.SetReference(boss, "_normalMaterial", body.sharedMaterial);
+            GreyboxStageBuilder.SetReference(boss, "_highlightMaterial", highlight);
+            SerializedObject serialized = new SerializedObject(boss);
+            SerializedProperty cheers = serialized.FindProperty("_cheerScenarios");
+            cheers.arraySize = 3;
+            cheers.GetArrayElementAtIndex(0).objectReferenceValue = cheer1;
+            cheers.GetArrayElementAtIndex(1).objectReferenceValue = cheer2;
+            cheers.GetArrayElementAtIndex(2).objectReferenceValue = cheer3;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
         private static void BuildOrderBoard(GameStateSO gameState, System.Collections.Generic.List<PickupBox> boxes)
         {
             GameObject go = GreyboxStageBuilder.CreateEmpty("OrderBoard", Vector3.zero);
