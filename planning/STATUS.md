@@ -12,7 +12,7 @@ pending_decisions:
   - "B-4 캐릭터 도구·리그 — M0-04 Meshy 관통 실측 후에 결정 (그 전엔 보류)"
   - "Q2 게이트: BOM 동결 (fab 태그 보완+eta 합산) — 발주 전량 완료로 사거리 진입"
 blocked: []   # M0-03 WebGL→Pages 해소 (2026-07-22 S-028 — https://namkuri.github.io/Don-t-late/ 실기동 확인)
-last_checkpoint: "2026-07-22 22:33 — 중간점검 2차 (retrospective-2026-07-22.md — 백로그 델타 5✅1△1🔴)"
+last_checkpoint: "2026-07-28 01:52 — 중간점검 3차 (retrospective-2026-07-28.md — 전 백로그 3.5/7 이행 · 발주규율 붕괴 적발/복원 · 백로그 8건)"
 clock_note: "정상 — 제출까지 21일"
 ```
 
