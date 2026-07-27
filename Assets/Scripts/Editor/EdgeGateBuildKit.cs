@@ -1,23 +1,21 @@
-using TMPro;
 using UnityEditor;
 using UnityEngine;
 
 namespace DontLate.EditorTools
 {
     /// <summary>
-    /// 씬 가장자리 도보 게이트 조립 키트 (S-054b — 엣지 워크).
-    /// 반투명 기둥 존 + 표지판(3D TMP)으로 "밟으면 걸어서 이동"을 시각화한다.
+    /// 씬 가장자리 도보 게이트 조립 키트 (S-054b → S-062 개편).
+    /// 반투명 기둥 존 + 둥둥 뜨는 방향 화살표(텍스트 없음) + 미해금 물리 벽.
     /// </summary>
     internal static class EdgeGateBuildKit
     {
-        private const string FONT_PATH = "Assets/Art/UI/Fonts/Pretendard-Regular SDF.asset";
-
-        /// <summary>도보 게이트 1기 — direction: Next=시안(개척 방향) / Prev=앰버(되돌아가기).</summary>
+        /// <summary>도보 게이트 1기 — direction: Next=시안 / Prev=앰버. 화살표는 씬 바깥 방향을 가리킨다.</summary>
         internal static void BuildGate(string name, Vector3 position, DistrictEdgeGate.Direction direction,
             GameStateSO gameState, float walkMinutes = 40f, float zoneDepth = 6f)
         {
             bool next = direction == DistrictEdgeGate.Direction.Next;
-            Color tint = next ? new Color(0.208f, 0.878f, 0.784f, 0.35f) : new Color(1f, 0.624f, 0.271f, 0.35f);
+            Color color = next ? new Color(0.208f, 0.878f, 0.784f) : new Color(1f, 0.624f, 0.271f);
+            Material gateMat = GreyboxStageBuilder.GetOrCreateMaterial(next ? "EdgeGateNext" : "EdgeGatePrev", color, true);
 
             GameObject root = GreyboxStageBuilder.CreateEmpty(name, position);
 
@@ -28,27 +26,27 @@ namespace DontLate.EditorTools
             pillar.transform.SetParent(root.transform, false);
             pillar.transform.localPosition = new Vector3(0f, 1.4f, 0f);
             pillar.transform.localScale = new Vector3(0.5f, 2.8f, zoneDepth);
-            Material zoneMat = GreyboxStageBuilder.GetOrCreateMaterial(
-                next ? "EdgeGateNext" : "EdgeGatePrev",
-                new Color(tint.r, tint.g, tint.b, 1f), true);
-            pillar.GetComponent<Renderer>().sharedMaterial = zoneMat;
+            pillar.GetComponent<Renderer>().sharedMaterial = gateMat;
 
-            // 표지판 — 3D TMP 라벨 (카메라 쪽 -Z를 본다).
-            TMP_FontAsset font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FONT_PATH);
-            if (font != null)
-            {
-                GameObject signGo = new GameObject("Sign");
-                signGo.transform.SetParent(root.transform, false);
-                signGo.transform.localPosition = new Vector3(0f, 3.3f, 0f); // TMP 3D 기본면이 카메라(-Z) 정면 — 회전 불요
-                TextMeshPro sign = signGo.AddComponent<TextMeshPro>();
-                sign.font = font;
-                sign.fontSize = 8f;
-                sign.alignment = TextAlignmentOptions.Center;
-                sign.text = next ? "다음 동네 →\n<size=60%>밟으면 걸어간다</size>"
-                                 : "← 이전 동네\n<size=60%>밟으면 걸어간다</size>";
-                sign.color = next ? new Color(0.208f, 0.878f, 0.784f) : new Color(1f, 0.624f, 0.271f);
-                sign.rectTransform.sizeDelta = new Vector2(8f, 2.4f);
-            }
+            // S-062 ③ — 둥둥 뜨는 방향 화살표 (셰브런 2장 + 축) — 씬 바깥쪽을 가리킨다.
+            float outward = position.x >= 0f ? 1f : -1f;
+            GameObject arrow = new GameObject("Arrow");
+            arrow.transform.SetParent(root.transform, false);
+            arrow.transform.localPosition = new Vector3(0f, 3.2f, 0f);
+            BuildArrowMesh(arrow.transform, gateMat, outward);
+            FloatingArrow bob = arrow.AddComponent<FloatingArrow>();
+            SerializedObject bobSerialized = new SerializedObject(bob);
+            bobSerialized.FindProperty("_pushDirection").vector3Value = new Vector3(outward, 0f, 0f);
+            bobSerialized.ApplyModifiedPropertiesWithoutUndo();
+
+            // S-062 ④ — 미해금 물리 벽 (게이트가 잠김 판정 시 활성화).
+            GameObject wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            wall.name = "LockWall";
+            wall.transform.SetParent(root.transform, false);
+            wall.transform.localPosition = new Vector3(0f, 1.5f, 0f);
+            wall.transform.localScale = new Vector3(0.6f, 3f, zoneDepth);
+            wall.GetComponent<Renderer>().enabled = false; // 보이지 않는 벽 — 기둥 색이 잠김을 말해줄 몫은 추후
+            wall.SetActive(false);
 
             BoxCollider trigger = root.AddComponent<BoxCollider>();
             trigger.isTrigger = true;
@@ -57,10 +55,31 @@ namespace DontLate.EditorTools
 
             DistrictEdgeGate gate = root.AddComponent<DistrictEdgeGate>();
             GreyboxStageBuilder.SetReference(gate, "_gameState", gameState);
+            GreyboxStageBuilder.SetReference(gate, "_lockWall", wall);
             SerializedObject serialized = new SerializedObject(gate);
             serialized.FindProperty("_direction").enumValueIndex = (int)direction;
             serialized.FindProperty("_walkMinutes").floatValue = walkMinutes;
             serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        // 화살표 = 축 1 + 셰브런 2 (±45°) — outward 방향을 가리키는 납작 큐브 구성.
+        private static void BuildArrowMesh(Transform parent, Material material, float outward)
+        {
+            void Piece(string pieceName, Vector3 localPos, Vector3 scale, float zAngle)
+            {
+                GameObject piece = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                piece.name = pieceName;
+                Object.DestroyImmediate(piece.GetComponent<Collider>());
+                piece.transform.SetParent(parent, false);
+                piece.transform.localPosition = localPos;
+                piece.transform.localScale = scale;
+                piece.transform.localRotation = Quaternion.Euler(0f, 0f, zAngle);
+                piece.GetComponent<Renderer>().sharedMaterial = material;
+            }
+
+            Piece("Shaft", Vector3.zero, new Vector3(1.1f, 0.22f, 0.22f), 0f);
+            Piece("ChevronUp", new Vector3(outward * 0.55f, 0.22f, 0f), new Vector3(0.62f, 0.2f, 0.22f), outward * -45f);
+            Piece("ChevronDown", new Vector3(outward * 0.55f, -0.22f, 0f), new Vector3(0.62f, 0.2f, 0.22f), outward * 45f);
         }
     }
 }

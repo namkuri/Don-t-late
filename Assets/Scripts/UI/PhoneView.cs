@@ -21,7 +21,7 @@ namespace DontLate
         /// <summary>가구 배치 대기 id — Home 씬 HomeFurniturePlacer가 소비 (S-019 ④).</summary>
         public static string PendingPlacementId;
 
-        private enum Screen { Home, Delivery, Music, Invest, Bank, Furniture, Call, Map }
+        private enum Screen { Home, Delivery, Music, Invest, Bank, Furniture, Call, Map, Shop, Social }
 
         [SerializeField] private RectTransform _panel;
         [SerializeField] private TMP_FontAsset _font;
@@ -281,6 +281,8 @@ namespace DontLate
                     Screen.Call => "전화",
                     Screen.Furniture => "가구",
                     Screen.Map => "지도",
+                    Screen.Shop => "쇼핑",
+                    Screen.Social => "소셜",
                     _ => "홈"
                 };
             RefreshCurrent();
@@ -298,6 +300,18 @@ namespace DontLate
                 case Screen.Furniture: RefreshFurniture(); break;
                 case Screen.Map: RefreshMap(); break;
             }
+        }
+
+        // S-062 ⑦ — 쇼핑(S-056)·소셜(S-061) 자리 표시 화면. 정식 시공 때 교체.
+        private void BuildPlaceholderScreen(Screen target, string title, string body)
+        {
+            GameObject screen = NewScreen(target);
+            TMP_Text label = MakeText(screen.transform, "ComingSoon", title + "\n\n<size=60%>" + body + "</size>",
+                34f, new Color(0.75f, 0.80f, 0.90f), TextAlignmentOptions.Center);
+            RectTransform rect = label.rectTransform;
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = rect.offsetMax = Vector2.zero;
         }
 
         // S-036: Travel에선 폰이 세로 풀스크린 지도 앱 — 패널 중앙 확대, 이탈 시 원복.
@@ -372,6 +386,8 @@ namespace DontLate
             BuildBankScreen();
             BuildCallScreen(); // S-031 ⑧
             BuildFurnitureScreen();
+            BuildPlaceholderScreen(Screen.Shop, "쇼핑", "배달앱 상점 준비 중 (S-056)\n구루마·음료·고양이 용품이 들어온다");
+            BuildPlaceholderScreen(Screen.Social, "소셜", "SNS 준비 중 (S-061)\n동네 사람들 소식과 호감도가 보인다");
             BuildMapScreen();  // S-036
         }
 
@@ -397,6 +413,9 @@ namespace DontLate
                 ("금", "금융", Screen.Invest, new Color(0.30f, 0.78f, 0.50f)),
                 ("은", "은행", Screen.Bank, new Color(0.32f, 0.56f, 0.92f)),
                 ("가", "가구", Screen.Furniture, new Color(0.75f, 0.52f, 0.35f)),
+                ("지", "지도", Screen.Map, new Color(0.30f, 0.62f, 0.85f)),      // S-062 ⑦
+                ("쇼", "쇼핑", Screen.Shop, new Color(0.90f, 0.42f, 0.45f)),     // S-062 ⑦ — S-056 상점 예정지
+                ("소", "소셜", Screen.Social, new Color(0.95f, 0.75f, 0.30f)),   // S-062 ⑦ — S-061 SNS 예정지
             };
             for (int i = 0; i < apps.Length; i++)
             {
@@ -1186,17 +1205,20 @@ namespace DontLate
                 + " · 예상 <color=#35e0c8>" + Mathf.RoundToInt(minutes) + "분</color>";
             _routeLine.gameObject.SetActive(true);
             LayoutRoute(MapOriginPos, pin.pos);
-            _departButton.interactable = _inTravel && !IsWalkingEra; // S-054b — 트럭 전 비활성
+            _departButton.interactable = (_inTravel || HasTruck) && !IsWalkingEra; // S-062 ⑥ — 트럭 시대 어디서나
         }
 
         // 출발 — 로직은 매니저 위임(시간=DayNight·목적지=Delivery·전이=SceneFlow). 구 TravelMapView.Depart 승계.
         // S-054b — 트럭 전에는 지도 출발 불가 (이동은 씬 가장자리 도보 게이트).
         private bool IsWalkingEra => _gameState != null && !_gameState.hasTruck && _gameState.unlockedDistricts.Count > 0;
 
+        private bool HasTruck => _gameState != null && _gameState.hasTruck;
+
         private void DepartSelected()
         {
-            if (_selectedPin < 0 || !_inTravel || IsPinLocked(Pins[_selectedPin])) return;
+            if (_selectedPin < 0 || IsPinLocked(Pins[_selectedPin])) return;
             if (IsWalkingEra) { Debug.Log("[지도] 트럭이 없다 — 동네 가장자리로 걸어가자."); return; }
+            if (!_inTravel && !HasTruck) return; // S-062 ⑥ — 트럭이 있으면 어디서든 지도 출발
             if (WorldSceneFlowManager.Instance == null || WorldDayNightManager.Instance == null
                 || WorldDeliveryManager.Instance == null) return;
             if (WorldSceneFlowManager.Instance.IsTransitioning) return;

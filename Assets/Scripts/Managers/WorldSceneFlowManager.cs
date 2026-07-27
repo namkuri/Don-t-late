@@ -33,6 +33,24 @@ namespace DontLate
         private bool _busy;
 
         public bool IsTransitioning => _busy;
+        /// <summary>직전 씬 (S-062 ⑤ — 뒤로가기).</summary>
+        public GameScene PreviousScene { get; private set; } = GameScene.Main;
+
+        /// <summary>직전 씬으로 복귀 (S-062 ⑤) — Travel 등에서 좌상단 ←·Backspace/Delete.</summary>
+        public void GoBack()
+        {
+            if (PreviousScene == _gameState.currentScene) return;
+            Request(PreviousScene);
+        }
+
+        private void Update()
+        {
+            // S-062 ⑤ — Travel에서 폰이 닫혀 있을 때 Backspace/Delete = 뒤로가기.
+            if (_gameState.currentScene != GameScene.Travel || PhoneView.IsOpen || _busy) return;
+            var keyboard = UnityEngine.InputSystem.Keyboard.current;
+            if (keyboard == null) return;
+            if (keyboard.backspaceKey.wasPressedThisFrame || keyboard.deleteKey.wasPressedThisFrame) GoBack();
+        }
 
         private void Awake()
         {
@@ -73,6 +91,7 @@ namespace DontLate
                 return;
             }
 
+            PreviousScene = _gameState.currentScene; // S-062 ⑤
             StartCoroutine(TransitionRoutine(next));
         }
 

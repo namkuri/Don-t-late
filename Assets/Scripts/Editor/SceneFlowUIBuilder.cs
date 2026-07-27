@@ -145,10 +145,10 @@ namespace DontLate.EditorTools
             CreateButton(root, "AdvanceButton", buttonText, target, font, CYAN,
                 new Vector2(0.5f, 0f), new Vector2(0f, 150f), new Vector2(600f, 104f), 40f);
 
-            // S-053 ③: 캠프 → 집 귀가 버튼 (상차 없이 하루를 접는 동선).
+            // S-062 ⑥: 캠프 = 정산 거점 — "하루 끝 — 집으로"(정산 패널) 블록 이식.
+            // 배송지 FlowCanvas가 비활성이므로 정산 진입점은 캠프(또는 왼쪽 엣지로 무정산 귀가).
             if (sceneName == "Camp")
-                CreateButton(root, "HomeButton", "집으로", GameScene.Home, font, new Color(0.55f, 0.62f, 0.75f, 1f),
-                    new Vector2(1f, 1f), new Vector2(-40f, -220f), new Vector2(300f, 70f), 28f);
+                BuildDeliveryEndCanvas(root, font, navButtons: false);
 
             EditorSceneManager.SaveScene(scene, SCENES_ROOT + "/" + sceneName + ".unity");
         }
@@ -198,6 +198,22 @@ namespace DontLate.EditorTools
                 46f, Color.white, TextAlignmentOptions.Top, FontStyles.Normal);
             AnchorCorner(label.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -78f), new Vector2(1400f, 72f)); // S-030 ②
 
+            // S-062 ⑤ — 좌상단 ← 뒤로가기 (직전 씬 복귀 · Backspace/Delete 동일).
+            GameObject backGo = new GameObject("BackButton", typeof(RectTransform));
+            backGo.transform.SetParent(root, false);
+            Image backImg = backGo.AddComponent<Image>();
+            backImg.color = new Color(0.20f, 0.24f, 0.34f, 0.95f);
+            RectTransform backRect = (RectTransform)backGo.transform;
+            backRect.anchorMin = backRect.anchorMax = backRect.pivot = new Vector2(0f, 1f);
+            backRect.sizeDelta = new Vector2(120f, 72f);
+            backRect.anchoredPosition = new Vector2(28f, -28f);
+            Button backButton = backGo.AddComponent<Button>();
+            backButton.targetGraphic = backImg;
+            backGo.AddComponent<SceneBackButton>();
+            TMP_Text backLabel = CreateText(backGo.transform, "Label", "←", font, 44f, Color.white,
+                TextAlignmentOptions.Center, FontStyles.Bold);
+            StretchFull(backLabel.rectTransform);
+
             CreateButton(root, "AdvanceButton", "캠프로 돌아간다", GameScene.Camp, font, AMBER,
                 new Vector2(0.5f, 0f), new Vector2(0f, 90f), new Vector2(420f, 74f), 30f);
 
@@ -217,6 +233,7 @@ namespace DontLate.EditorTools
 
             Transform root = CreateFlowCanvas().transform;
             BuildDeliveryEndCanvas(root, font);
+            root.gameObject.SetActive(false); // S-062 ⑥ — 배송지 흐름 UI 미사용
             EditorSceneManager.SaveScene(scene, SCENES_ROOT + "/District.unity");
         }
 
@@ -231,11 +248,13 @@ namespace DontLate.EditorTools
             AnchorCorner(label.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -78f), new Vector2(1200f, 72f));
 
             BuildDeliveryEndCanvas(root, font);
+            root.gameObject.SetActive(false); // S-062 ⑥ — 배송지 흐름 UI 미사용 (엣지 워크·지도 이동 체제)
             EditorSceneManager.SaveScene(scene, SCENES_ROOT + "/" + sceneName + ".unity");
         }
 
         // "집으로"(정산)·"다른 구역으로"·정산 패널 — District·Apartment 공용 마감 블록.
-        private static void BuildDeliveryEndCanvas(Transform root, TMP_FontAsset font)
+        // S-062 ⑥: navButtons=false면 정산 블록만 (Camp 이식용 — 이동은 엣지 워크·지도 몫).
+        private static void BuildDeliveryEndCanvas(Transform root, TMP_FontAsset font, bool navButtons = true)
         {
             // "집으로" = 즉시 전이가 아니라 정산 패널을 연다 (S-009 ⑥) — SceneAdvanceButton 없이 만든다.
             GameObject endDay = new GameObject("EndDayButton", typeof(RectTransform));
@@ -252,13 +271,16 @@ namespace DontLate.EditorTools
                 TextAlignmentOptions.Center, FontStyles.Bold);
             StretchFull(endLabel.rectTransform);
 
-            // S-028 ③: 다른 구역 이동 — 집 강제 복귀는 루프상 안 맞음. Travel(구역 선택)로 재진입.
-            CreateButton(root, "TravelButton", "다른 구역으로", GameScene.Travel, font, AMBER,
-                new Vector2(1f, 1f), new Vector2(-40f, -310f), new Vector2(380f, 74f), 30f);
+            if (navButtons)
+            {
+                // S-028 ③: 다른 구역 이동 — Travel(구역 선택)로 재진입.
+                CreateButton(root, "TravelButton", "다른 구역으로", GameScene.Travel, font, AMBER,
+                    new Vector2(1f, 1f), new Vector2(-40f, -310f), new Vector2(380f, 74f), 30f);
 
-            // S-053 ④: 캠프 직행 — 추가 물량 실으러 되돌아가는 동선 단축.
-            CreateButton(root, "CampButton", "캠프로 (추가 상차)", GameScene.Camp, font, new Color(0.55f, 0.62f, 0.75f, 1f),
-                new Vector2(1f, 1f), new Vector2(-40f, -400f), new Vector2(380f, 74f), 30f);
+                // S-053 ④: 캠프 직행.
+                CreateButton(root, "CampButton", "캠프로 (추가 상차)", GameScene.Camp, font, new Color(0.55f, 0.62f, 0.75f, 1f),
+                    new Vector2(1f, 1f), new Vector2(-40f, -400f), new Vector2(380f, 74f), 30f);
+            }
 
             // 정산 패널 — 시안 테두리 + 네이비 내부 + 확인 버튼.
             GameObject panel = CreateImage(root, "SettlementPanel", CYAN).gameObject;
