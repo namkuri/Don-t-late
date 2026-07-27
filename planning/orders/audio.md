@@ -676,3 +676,38 @@ L129 직접 ++ 후 L130 Raise가 자기 구독 핸들러(L144 OnDeliveryFailed)�
 - 후공정: 피크 -1dB. 라이선스 기록(CREDITS·manifest) 관례대로.
 
 수용기준: District에서 차에 치일 때 1회 재생 · 셀프검증 · 브랜치→PR.
+
+---
+
+### 결과 · ① 날씨 앰비언스 3종 · 2026-07-27 (정수 공장 · 리드 ~50분)
+
+**셀프검증 3종 통과** — 컴파일 OK · 콘솔 에러·워닝 **0** · Play 실측 아래.
+
+**생성·후공정 (실측치)**
+- Rain·Snow·Heat 3종 신규. **사실적 환경음**이라 토이톤 앵커 제거(`--no-anchors`). API 22s 상한을
+  넘기려 **22s×2 테이크 등파워 크로스페이드 스티칭 → 심리스 루프 랩**으로 **40s 루프** 제작
+  (scratchpad `stitch_amb.py` · D-068 "≥30s·클립 내 무반복" 정신 승계).
+- 후공정 = RMS -20dB 타겟 + 피크 -1dB 소프트리밋(3종 라우드니스 일관):
+  rain peak -1.7/rms -22.5 · snow peak -1.3/rms -20.5 · heat peak -4.8/rms -20.9 dBFS.
+- 루프 이음새 불연속(끝→처음) = 정상 인접 스텝보다 작음(rain -29.9 / snow -56.9 / heat -16.5dB vs 정상 -7.8dB) → 클릭 없음(파형 수치).
+- **눈은 본래 조용** — 1차 "정적·먹먹" 태그가 API를 무음(RMS -53)으로 유도 → 바람 중심 태그 재생성(가청 확보).
+
+**배선 (WorldAudioManager.UpdateAmbient 우선순위 확장)**
+- 우선순위 **날씨(Rain·Snow·Heat) > 구역(빌라촌·먹자골목) > 시간대(저녁·밤 amb_night)**.
+  Clear·Cloudy·Fog는 날씨 클립이 없어 자연히 구역/시간대로 폴백(발주 "Clear는 기존 구역 앰비언스 겸용" 충족).
+- `WeatherChanged` 구독 추가(OnEnable/OnDisable 짝) → `_weather` 캐시 → UpdateAmbient.
+- CoreSceneBuilder SetField 3건 + Core 재조립 — **씬 YAML guid 3/3 검증**(주입 유실 없음).
+
+**Play 실측 (exec)**
+- Rain→`amb_weather_rain` · Snow→`amb_weather_snow` · Heat→`amb_weather_heat` 각 `playing=True`.
+- 구역=빌라촌 설정 시: Clear→`amb_villatown`(겸용) · Rain→`amb_weather_rain`(날씨 override) · Cloudy→`amb_villatown`(폴백) → AU-011 구역 동작 보존 확인.
+
+**파이프라인 개선 2건 (관제 검토 요청)**
+- `prompt_builder`: SFX 5.0s 캡을 `amb_*` 한정 22s로 상향(AU-012 의도 승계) · `compose_sfx`가 `--no-anchors` 존중(질감·앰비언스 재사용).
+- `AudioImportPostprocessor`: `amb_*`(긴 루프)를 DecompressOnLoad→**CompressedInMemory**+저비트레이트(40s×3 RAM 낭비 방지). 기존 amb 3종(night/villa/food)도 동일 적용됨.
+
+**남은 것**
+- **① Director 청취 판정** — 3종 인게임 체감(Y키 날씨 순환) + 라우드니스(0.35 볼륨) 적정성. 거슬리면 태그/타겟 조정 재생성.
+- **② 날씨 BGM** 미착수 — Director Suno 수동 예정. 필요 시 곡 목록만 제공(생성 금지).
+- 잔여 ④ travel_loop·ping·loading_tick·done 보류 유지(연출 부재).
+- BOM §8 SFX 행 추가(amb_weather 3종) = 관제 몫(정수는 CREDITS+manifest만 — AU-011 선례).
