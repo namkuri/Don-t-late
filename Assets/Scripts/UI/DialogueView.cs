@@ -214,6 +214,8 @@ namespace DontLate
         private void PlayBlip()
         {
             if (_blipSource == null || _blipClip == null) return;
+            // S-065 후속: 블립도 설정의 효과음 볼륨을 따른다 (자체 소스라 SetSfxVolume 미적용이던 구멍).
+            if (WorldAudioManager.Instance != null) _blipSource.volume = WorldAudioManager.Instance.SfxVolume;
             _blipSource.pitch = Random.Range(0.95f, 1.05f);
             _blipSource.PlayOneShot(_blipClip);
         }
