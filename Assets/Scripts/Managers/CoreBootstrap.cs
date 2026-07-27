@@ -48,6 +48,9 @@ namespace DontLate
             _gameState.money = _gameState.startMoney;
             _gameState.debt = _gameState.startDebt;
             _gameState.bossIntroPlayed = false; // S-052 — 사장님 튜토리얼 리셋
+            _gameState.unlockedDistricts.Clear(); // S-054 — 빌라촌부터 걸어서 개척
+            _gameState.unlockedDistricts.Add(DeliveryOrderSO.DISTRICT_VILLATOWN);
+            _gameState.hasTruck = false;
             _gameState.cargo.Clear();
             _gameState.scannedOrderIds.Clear();
             _gameState.placedDeliveries.Clear();

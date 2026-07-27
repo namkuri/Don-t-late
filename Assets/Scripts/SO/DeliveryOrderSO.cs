@@ -13,6 +13,10 @@ namespace DontLate
         public const string DISTRICT_APARTMENT = "아파트단지"; // S-038 (D-067)
         public const string DISTRICT_HILLSIDE = "언덕주택가"; // S-049 (D-064)
 
+        /// <summary>개척(해금) 순서 정본 (S-054 · D-064 순서) — 앞 구역에서 배송 성공해야 다음이 열린다.</summary>
+        public static readonly string[] DISTRICT_PROGRESSION =
+            { DISTRICT_VILLATOWN, DISTRICT_FOODALLEY, DISTRICT_APARTMENT, DISTRICT_HILLSIDE };
+
         public int orderId;
         public string address;
         /// <summary>배송 구역 라벨 (S-015) — 폰 안내·구역 도착 시 스폰 매칭 키. 이동맵 노드 라벨과 일치해야 한다.</summary>

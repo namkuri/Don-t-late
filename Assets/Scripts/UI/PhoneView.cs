@@ -94,6 +94,14 @@ namespace DontLate
         };
         private static readonly Vector2 MapOriginPos = new Vector2(0.5f, 0.07f); // 출발 마커 위치
 
+        // S-054 — 개척 잠금: unlockedDistricts에 없으면 잠김 (목록이 비면 전체 해금 취급 — 그레이박스 호환).
+        private bool IsPinLocked(MapPin pin)
+        {
+            if (pin.locked) return true;
+            if (_gameState == null || _gameState.unlockedDistricts.Count == 0) return false;
+            return !_gameState.unlockedDistricts.Contains(pin.district);
+        }
+
         private const float TRAVEL_PANEL_W = 700f;   // 세로 풀스크린(1080 기준) 패널 규격
         private const float TRAVEL_PANEL_H = 1010f;
         private const float TRAVEL_HIDDEN_Y = -1080f;
@@ -1091,11 +1099,11 @@ namespace DontLate
                 int index = i;
                 MapPin pin = Pins[i];
                 Button b = MakeButton(map.transform, "Pin_" + pin.label,
-                    pin.locked ? pin.label + "\n<size=70%>준비 중</size>" : pin.label,
+                    IsPinLocked(pin) ? pin.label + "\n<size=70%>잠김 — 개척 필요</size>" : pin.label,
                     () => OnPinTapped(index));
                 RectTransform rect = (RectTransform)b.transform;
-                PlaceOnMap(rect, pin.pos, new Vector2(158f, pin.locked ? 78f : 58f));
-                if (pin.locked)
+                PlaceOnMap(rect, pin.pos, new Vector2(158f, IsPinLocked(pin) ? 78f : 58f));
+                if (IsPinLocked(pin))
                 {
                     b.image.color = new Color(0.25f, 0.27f, 0.32f, 0.9f);
                     b.GetComponentInChildren<TMP_Text>().color = new Color(0.65f, 0.68f, 0.75f);
@@ -1110,7 +1118,8 @@ namespace DontLate
             infoRect.anchoredPosition = new Vector2(0f, 86f);
             infoRect.sizeDelta = new Vector2(0f, 62f);
 
-            _departButton = MakeButton(screen.transform, "Depart", "목적지로 출발", DepartSelected);
+            bool walking = _gameState != null && !_gameState.hasTruck && _gameState.unlockedDistricts.Count > 0; // S-054
+            _departButton = MakeButton(screen.transform, "Depart", walking ? "걸어서 출발 (느림)" : "목적지로 출발", DepartSelected);
             RectTransform departRect = (RectTransform)_departButton.transform;
             departRect.anchorMin = departRect.anchorMax = departRect.pivot = new Vector2(0.5f, 0f);
             departRect.sizeDelta = new Vector2(320f, 72f);
@@ -1143,7 +1152,7 @@ namespace DontLate
         {
             // AU-011: 핀 탭 = map_pin · 활성 핀은 경로가 그려지므로 map_route 동반 (잠금 핀은 pin만 — 막다른 감).
             WorldAudioManager.Instance?.PlayMapPinSfx();
-            if (!Pins[index].locked) WorldAudioManager.Instance?.PlayMapRouteSfx();
+            if (!IsPinLocked(Pins[index])) WorldAudioManager.Instance?.PlayMapRouteSfx();
             _selectedPin = index;
             RefreshMap();
         }
@@ -1183,14 +1192,17 @@ namespace DontLate
         // 출발 — 로직은 매니저 위임(시간=DayNight·목적지=Delivery·전이=SceneFlow). 구 TravelMapView.Depart 승계.
         private void DepartSelected()
         {
-            if (_selectedPin < 0 || !_inTravel || Pins[_selectedPin].locked) return;
+            if (_selectedPin < 0 || !_inTravel || IsPinLocked(Pins[_selectedPin])) return;
             if (WorldSceneFlowManager.Instance == null || WorldDayNightManager.Instance == null
                 || WorldDeliveryManager.Instance == null) return;
             if (WorldSceneFlowManager.Instance.IsTransitioning) return;
 
             MapPin pin = Pins[_selectedPin];
             WorldAudioManager.Instance?.PlayMapDepartSfx(); // AU-011
-            WorldDayNightManager.Instance.AdvanceMinutes(pin.far ? _tuning.travelFarMinutes : _tuning.travelNearMinutes);
+            // S-054 — 트럭 전에는 도보(시간 2.5배 소모), 트럭 수령 후 "곧바로"(기존 시간).
+            float minutes = pin.far ? _tuning.travelFarMinutes : _tuning.travelNearMinutes;
+            if (_gameState != null && !_gameState.hasTruck && _gameState.unlockedDistricts.Count > 0) minutes *= 2.5f;
+            WorldDayNightManager.Instance.AdvanceMinutes(minutes);
             WorldDeliveryManager.Instance.SetDestination(pin.district);
             // S-038·S-049: 아파트·언덕은 별도 씬(D-067) — 나머지는 공용 District.
             GameScene target = pin.district == DeliveryOrderSO.DISTRICT_APARTMENT ? GameScene.Apartment

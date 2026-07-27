@@ -94,6 +94,7 @@ namespace DontLate
         public DeliveryDaySummary SettleDeliveries()
         {
             var summary = new DeliveryDaySummary();
+            _settledDistricts.Clear(); // S-054 — 이번 정산에서 성공한 구역
             int penalty = _tuning != null ? _tuning.latePenalty : 500;
 
             foreach (DeliveryOrderSO order in _gameState.cargo.ToArray())
@@ -121,6 +122,7 @@ namespace DontLate
                         day = _gameState.day,
                         minuteOfDay = Mathf.FloorToInt(_gameState.minuteOfDay)
                     });
+                    if (!string.IsNullOrEmpty(order.district)) _settledDistricts.Add(order.district); // S-054
                     WorldEvents.RaiseDeliveryCompleted(DeliveryData.From(order));
                 }
                 else
@@ -137,9 +139,38 @@ namespace DontLate
             _gameState.cargo.Clear();
             _gameState.scannedOrderIds.Clear();
             _gameState.placedDeliveries.Clear();
+            AdvanceProgression(summary); // S-054 — 개척 판정 (성공 구역 기준)
             Debug.Log("[배송] 일괄 정산 — 성공 " + summary.SuccessCount + " · 실패 " + summary.FailCount
                     + " · 보상 " + summary.RewardTotal + " · 벌금 " + summary.PenaltyTotal);
             return summary;
+        }
+
+        private readonly System.Collections.Generic.HashSet<string> _settledDistricts =
+            new System.Collections.Generic.HashSet<string>();
+
+        // S-054 진행 시스템 — 개척 최전선 구역에서 배송 성공하면 다음 구역 해금.
+        // 최전선이 언덕주택가(마지막)면 회사 트럭 수령. unlockedDistricts가 비면(테스트·그레이박스) 판정 안 함.
+        private void AdvanceProgression(DeliveryDaySummary summary)
+        {
+            if (summary.SuccessCount <= 0 || _gameState.unlockedDistricts.Count == 0) return;
+
+            string[] progression = DeliveryOrderSO.DISTRICT_PROGRESSION;
+            int frontier = -1;
+            for (int i = 0; i < progression.Length; i++)
+                if (_gameState.unlockedDistricts.Contains(progression[i])) frontier = i;
+            if (frontier < 0 || !_settledDistricts.Contains(progression[frontier])) return;
+
+            if (frontier + 1 < progression.Length)
+            {
+                string next = progression[frontier + 1];
+                _gameState.unlockedDistricts.Add(next);
+                WorldEvents.RaiseDistrictUnlocked(next);
+            }
+            else if (!_gameState.hasTruck)
+            {
+                _gameState.hasTruck = true;
+                WorldEvents.RaiseTruckAwarded();
+            }
         }
 
         public bool IsInCargo(DeliveryOrderSO order) => _gameState.cargo.Contains(order);

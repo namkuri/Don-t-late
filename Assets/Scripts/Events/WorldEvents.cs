@@ -215,6 +215,24 @@ namespace DontLate
             WeatherChanged?.Invoke(weather);
         }
 
+        /// <summary>배송 구역 해금 (S-054 진행 시스템) — 정산에서 개척 판정 시 1회.</summary>
+        public static event Action<string> DistrictUnlocked;
+
+        public static void RaiseDistrictUnlocked(string district)
+        {
+            Log("DistrictUnlocked → " + district);
+            DistrictUnlocked?.Invoke(district);
+        }
+
+        /// <summary>회사 트럭 수령 (S-054) — 전 구역 개척 완료 보상. 세션당 1회.</summary>
+        public static event Action TruckAwarded;
+
+        public static void RaiseTruckAwarded()
+        {
+            Log("TruckAwarded — 지도앱 즉시 이동 해금");
+            TruckAwarded?.Invoke();
+        }
+
         /// <summary>적설(지면 쌓임) 유무 전환 (AU-018 ③ — 발소리 스노 스왑용). 저빈도: 임계 통과 시 1회.</summary>
         public static event Action<bool> SnowCoverChanged;
 

@@ -68,6 +68,10 @@ namespace DontLate
         {
             int serial = _gameState.nextOrderSerial++;
             var pick = Destinations[serial % Destinations.Length];
+            // S-054 — 개척 진행: 해금된 구역의 주소만 발주 (unlockedDistricts 비면 전체 허용 — 테스트 호환).
+            if (_gameState.unlockedDistricts.Count > 0)
+                for (int hop = 0; hop < Destinations.Length && !_gameState.unlockedDistricts.Contains(pick.district); hop++)
+                    pick = Destinations[(serial + hop + 1) % Destinations.Length];
 
             DeliveryOrderSO order = ScriptableObject.CreateInstance<DeliveryOrderSO>();
             order.name = "RuntimeOrder_" + serial;
