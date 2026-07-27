@@ -16,12 +16,12 @@ namespace DontLate
             new Dictionary<GameScene, GameScene[]>
             {
                 { GameScene.Main, new[] { GameScene.Home } },
-                { GameScene.Home, new[] { GameScene.Camp } },
-                { GameScene.Camp, new[] { GameScene.Travel, GameScene.Home, GameScene.District } }, // S-054b 엣지 워크
-                { GameScene.Travel, new[] { GameScene.District, GameScene.Camp, GameScene.Apartment, GameScene.Hillside } },
-                { GameScene.District, new[] { GameScene.Travel, GameScene.Home, GameScene.Camp, GameScene.District, GameScene.Apartment } }, // S-053 ④·S-054b
-                { GameScene.Apartment, new[] { GameScene.Travel, GameScene.Home, GameScene.Camp, GameScene.District, GameScene.Hillside } }, // S-038·S-054b
-                { GameScene.Hillside, new[] { GameScene.Travel, GameScene.Home, GameScene.Camp, GameScene.Apartment } },  // S-049·S-054b
+                { GameScene.Home, new[] { GameScene.Camp, GameScene.Main } },
+                { GameScene.Camp, new[] { GameScene.Travel, GameScene.Home, GameScene.District, GameScene.Main } }, // S-054b·S-065
+                { GameScene.Travel, new[] { GameScene.District, GameScene.Camp, GameScene.Apartment, GameScene.Hillside, GameScene.Main } },
+                { GameScene.District, new[] { GameScene.Travel, GameScene.Home, GameScene.Camp, GameScene.District, GameScene.Apartment, GameScene.Main } }, // S-053 ④·S-054b·S-065
+                { GameScene.Apartment, new[] { GameScene.Travel, GameScene.Home, GameScene.Camp, GameScene.District, GameScene.Hillside, GameScene.Main } }, // S-038·S-054b·S-065
+                { GameScene.Hillside, new[] { GameScene.Travel, GameScene.Home, GameScene.Camp, GameScene.Apartment, GameScene.Main } },  // S-049·S-054b·S-065
             };
 
         [SerializeField] private GameStateSO _gameState;

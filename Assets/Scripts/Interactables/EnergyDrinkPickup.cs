@@ -15,6 +15,14 @@ namespace DontLate
 
         public void Interact(PlayerContext ctx)
         {
+            // S-064 — 가방 수납 우선. 가득이면 기존처럼 손에 든다.
+            if (BagStorage.TryAdd(ctx.Player.GameState, "drink", "에너지드링크", stackable: true, holdable: true))
+            {
+                if (BagView.Instance != null) BagView.Instance.Refresh();
+                Destroy(gameObject);
+                return;
+            }
+
             if (!ctx.Player.Status.TryHoldDrink(transform)) return; // 이미 다른 드링크를 들고 있음
 
             // 손에 들어간 뒤엔 픽업체가 아니다 — 물리·콜라이더·본 컴포넌트 은퇴.

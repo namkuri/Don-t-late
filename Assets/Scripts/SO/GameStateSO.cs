@@ -59,6 +59,15 @@ namespace DontLate
         /// <summary>회사 트럭 수령 여부 (S-054) — 전 구역 개척 보상. 지도앱 즉시 이동 해금.</summary>
         public bool hasTruck;
 
+        // ── S-063 캐릭터 진행 ──
+        public string nickname = "늦지마맨";
+        public int playerLevel = 1;
+        /// <summary>숙련도 — 배송 성공 +·주행 50m +1·실패 −. 만충 시 레벨업 (판정은 MasteryProgress).</summary>
+        public float mastery;
+
+        // ── S-064 가방 (기본 5칸) ──
+        public List<BagItem> bagItems = new List<BagItem>();
+
         [Header("세션 초기값")]
         public int startDay = 1;
         public float startMinuteOfDay = 8f * 60f;
@@ -74,6 +83,17 @@ namespace DontLate
         public int reward;
         public int day;
         public int minuteOfDay;
+    }
+
+    /// <summary>가방 아이템 1칸 (S-064) — stackable이면 count 겹침, holdable이면 좌클릭으로 손에 든다.</summary>
+    [System.Serializable]
+    public struct BagItem
+    {
+        public string id;
+        public string label;
+        public int count;
+        public bool stackable;
+        public bool holdable;
     }
 
     /// <summary>비콘에 내려놓은 배송 기록 (S-034 ④) — 정산 때 주소 일치를 일괄 판정한다.</summary>

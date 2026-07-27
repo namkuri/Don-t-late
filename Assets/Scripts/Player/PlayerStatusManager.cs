@@ -34,15 +34,50 @@ namespace DontLate
             WorldEvents.DeliveryFailed += OnDeliveryFailed;
             WorldEvents.SceneTransitionCompleted += OnSceneArrivedStatus;
             WorldEvents.WeatherChanged += OnWeatherChangedStatus;
+            WorldEvents.BagHoldRequested += OnBagHoldRequested;   // S-064
+            WorldEvents.BagItemConsumed += OnBagItemConsumed;     // S-064
         }
         private void OnDisable()
         {
             WorldEvents.DeliveryFailed -= OnDeliveryFailed;
             WorldEvents.SceneTransitionCompleted -= OnSceneArrivedStatus;
             WorldEvents.WeatherChanged -= OnWeatherChangedStatus;
+            WorldEvents.BagHoldRequested -= OnBagHoldRequested;
+            WorldEvents.BagItemConsumed -= OnBagItemConsumed;
         }
 
         private void OnWeatherChangedStatus(WeatherType weather) => _weather = weather;
+
+        // ── 가방 연동 (S-064) — 손 들기·즉시 사용 ──
+        private void OnBagHoldRequested(BagItem item)
+        {
+            if (_heldDrink != null) { Debug.Log("[가방] 이미 손에 음료가 있다"); return; }
+            TryHoldDrink(CreateDrinkVisual().transform);
+            Debug.Log("[가방] " + item.label + " 손에 들었다 — 우클릭 마시기/좌클릭 던지기");
+        }
+
+        private void OnBagItemConsumed(BagItem item)
+        {
+            // 현재 사용 효과가 정의된 아이템 = 음료(스태미나 회복 + 날씨 보너스). 이후 아이템별 분기 확장.
+            float amount = _hub.Tuning.energyDrinkRecover;
+            if (_weather == WeatherType.Heat) { amount *= 1.5f; Debug.Log("[가방] 캬 — 시원하다! (폭염 보너스)"); }
+            else if (_weather == WeatherType.Snow) { amount *= 1.5f; Debug.Log("[가방] 후 — 따뜻하다! (한파 보너스)"); }
+            RecoverStamina(amount);
+            WorldAudioManager.Instance?.PlayDrinkSfx();
+            Debug.Log("[가방] " + item.label + " 사용 — 스태미나 회복");
+        }
+
+        // 가방에서 꺼낸 음료 시각물 — 자판기 캔과 동형 (작은 빨간 캡슐).
+        private GameObject CreateDrinkVisual()
+        {
+            GameObject can = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            can.name = "BagDrink";
+            can.transform.localScale = new Vector3(0.18f, 0.14f, 0.18f);
+            var renderer = can.GetComponent<Renderer>();
+            renderer.material.color = new Color(0.88f, 0.29f, 0.21f);
+            can.GetComponent<Collider>().enabled = false;
+            return can;
+        }
 
         private void OnSceneArrivedStatus(GameScene scene) => _inHillside = scene == GameScene.Hillside;
 

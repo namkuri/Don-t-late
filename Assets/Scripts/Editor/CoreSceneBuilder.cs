@@ -66,7 +66,9 @@ namespace DontLate.EditorTools
             BuildManagers(gameState, tuning);
             BuildCore(gameState);
             BuildFadeCanvas();
-            BuildHUDCanvas(gameState);
+            BagView bagView = BuildBagCanvas(gameState);        // S-064
+            SettingsView settingsView = BuildSettingsCanvas();  // S-065
+            BuildHUDCanvas(gameState, bagView, settingsView);
             BuildDialogueCanvas();
             BuildMinigameCanvas();
             BuildPhoneCanvas();
@@ -327,7 +329,7 @@ namespace DontLate.EditorTools
 
         // ── HUD 캔버스 (Core 상주) ───────────────────────────
 
-        private static void BuildHUDCanvas(GameStateSO gameState)
+        private static void BuildHUDCanvas(GameStateSO gameState, BagView bagView, SettingsView settingsView)
         {
             TMP_FontAsset font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FONT_PATH);
             if (font == null)
@@ -360,22 +362,69 @@ namespace DontLate.EditorTools
             AnchorCorner(clock.rectTransform, new Vector2(1f, 1f), new Vector2(-40f, -30f), new Vector2(460f, 60f));
             SetField(hud, "_clockLabel", clock);
 
-            // 돈·빚 (우상, 시계 아래).
-            TMP_Text money = CreateText(content.transform, "Money", "₩0", font,
-                34f, Color.white, TextAlignmentOptions.TopRight);
-            AnchorCorner(money.rectTransform, new Vector2(1f, 1f), new Vector2(-40f, -104f), new Vector2(460f, 48f));
+            // ── S-063 상단 바 ─────────────────────────────
+            Color chipColor = new Color(0.10f, 0.12f, 0.16f, 0.85f);
+
+            // 캐릭터 카드 — Lv·닉네임 + 숙련도(앰버)·스태미나(초록) 게이지.
+            Image charCard = CreateImage(content.transform, "CharacterCard", chipColor);
+            AnchorCorner(charCard.rectTransform, new Vector2(0f, 1f), new Vector2(40f, -20f), new Vector2(400f, 116f));
+
+            TMP_Text level = CreateText(charCard.transform, "Level", "Lv.1  늦지마맨", font,
+                34f, Color.white, TextAlignmentOptions.TopLeft);
+            AnchorCorner(level.rectTransform, new Vector2(0f, 1f), new Vector2(20f, -12f), new Vector2(360f, 44f));
+            SetField(hud, "_levelLabel", level);
+
+            Image masteryBg = CreateImage(charCard.transform, "MasteryBg", new Color(0.06f, 0.07f, 0.10f, 1f));
+            AnchorCorner(masteryBg.rectTransform, new Vector2(0f, 0f), new Vector2(20f, 44f), new Vector2(360f, 16f));
+            Image masteryFill = CreateImage(masteryBg.transform, "MasteryFill", AMBER);
+            StretchFull(masteryFill.rectTransform);
+            masteryFill.type = Image.Type.Filled;
+            masteryFill.fillMethod = Image.FillMethod.Horizontal;
+            masteryFill.fillAmount = 0f;
+            SetField(hud, "_masteryFill", masteryFill);
+
+            Image staminaBg = CreateImage(charCard.transform, "StaminaBg", new Color(0.06f, 0.07f, 0.10f, 1f));
+            AnchorCorner(staminaBg.rectTransform, new Vector2(0f, 0f), new Vector2(20f, 16f), new Vector2(360f, 16f));
+            Image staminaFill = CreateImage(staminaBg.transform, "StaminaFill", new Color(0.45f, 0.85f, 0.55f, 1f));
+            StretchFull(staminaFill.rectTransform);
+            staminaFill.type = Image.Type.Filled;
+            staminaFill.fillMethod = Image.FillMethod.Horizontal;
+            staminaFill.fillAmount = 1f;
+            SetField(hud, "_staminaFill", staminaFill);
+
+            // 현금 칩.
+            Image moneyChip = CreateImage(content.transform, "MoneyChip", chipColor);
+            AnchorCorner(moneyChip.rectTransform, new Vector2(0f, 1f), new Vector2(460f, -20f), new Vector2(250f, 64f));
+            TMP_Text money = CreateText(moneyChip.transform, "Money", "₩0", font,
+                32f, Color.white, TextAlignmentOptions.Center);
+            StretchFull(money.rectTransform);
             SetField(hud, "_moneyLabel", money);
 
+            // 당일 배송수량 칩.
+            Image countChip = CreateImage(content.transform, "DeliveryCountChip", chipColor);
+            AnchorCorner(countChip.rectTransform, new Vector2(0f, 1f), new Vector2(730f, -20f), new Vector2(220f, 64f));
+            TMP_Text countLabel = CreateText(countChip.transform, "Count", "박스 0/0", font,
+                30f, Color.white, TextAlignmentOptions.Center);
+            StretchFull(countLabel.rectTransform);
+            SetField(hud, "_deliveryCountLabel", countLabel);
+
+            // 가방·설정 버튼 (시계 왼쪽).
+            BuildTopBarButton(content.transform, "BagButton", "가방", font, new Vector2(-700f, -20f),
+                bagView != null ? new UnityEngine.Events.UnityAction(bagView.Toggle) : null);
+            BuildTopBarButton(content.transform, "SettingsButton", "설정", font, new Vector2(-560f, -20f),
+                settingsView != null ? new UnityEngine.Events.UnityAction(settingsView.Toggle) : null);
+
+            // 빚 (우상, 시계 아래).
             TMP_Text debt = CreateText(content.transform, "Debt", "빚 ₩10,000", font,
                 30f, new Color(0.95f, 0.55f, 0.55f, 1f), TextAlignmentOptions.TopRight);
-            AnchorCorner(debt.rectTransform, new Vector2(1f, 1f), new Vector2(-40f, -156f), new Vector2(460f, 44f));
+            AnchorCorner(debt.rectTransform, new Vector2(1f, 1f), new Vector2(-40f, -104f), new Vector2(460f, 44f));
             SetField(hud, "_debtLabel", debt);
 
-            // 배송 카드 (좌상) — 배경 + 주소 + 남은시간.
+            // 배송 카드 (좌상 — 상단 바 아래) — 배경 + 주소 + 남은시간.
             GameObject card = CreateImage(content.transform, "DeliveryCard",
                 new Color(0.10f, 0.12f, 0.16f, 0.85f)).gameObject;
             Image cardBg = card.GetComponent<Image>();
-            AnchorCorner(cardBg.rectTransform, new Vector2(0f, 1f), new Vector2(40f, -30f), new Vector2(560f, 150f));
+            AnchorCorner(cardBg.rectTransform, new Vector2(0f, 1f), new Vector2(40f, -152f), new Vector2(560f, 150f));
             SetField(hud, "_cardRoot", card);
             SetField(hud, "_cardBackground", cardBg);
 
@@ -389,23 +438,234 @@ namespace DontLate.EditorTools
             AnchorCorner(remaining.rectTransform, new Vector2(0f, 0f), new Vector2(24f, 18f), new Vector2(512f, 48f));
             SetField(hud, "_remainingLabel", remaining);
 
-            // 스태미나 바 (좌하) — 배경 + 채움.
-            Image staBg = CreateImage(content.transform, "StaminaBg", new Color(0.10f, 0.12f, 0.16f, 0.85f));
-            AnchorCorner(staBg.rectTransform, new Vector2(0f, 0f), new Vector2(40f, 40f), new Vector2(380f, 34f));
-
-            Image staFill = CreateImage(staBg.transform, "StaminaFill", new Color(0.45f, 0.85f, 0.55f, 1f));
-            StretchFull(staFill.rectTransform);
-            staFill.type = Image.Type.Filled;
-            staFill.fillMethod = Image.FillMethod.Horizontal;
-            staFill.fillOrigin = (int)Image.OriginHorizontal.Left;
-            staFill.fillAmount = 1f;
-            SetField(hud, "_staminaFill", staFill);
-
             // "E" 상호작용 안내 (하단 중앙) — 기본 숨김.
             TMP_Text ePrompt = CreateText(content.transform, "EPrompt", "[E] 상호작용", font,
                 38f, CYAN, TextAlignmentOptions.Center);
             AnchorMiddleBottom(ePrompt.rectTransform, new Vector2(0f, 120f), new Vector2(640f, 60f));
             SetField(hud, "_ePrompt", ePrompt.gameObject);
+        }
+
+        // ── 상단 바 버튼 (S-063) ─────────────────────────────
+
+        private static void BuildTopBarButton(Transform parent, string name, string label,
+            TMP_FontAsset font, Vector2 anchoredPos, UnityEngine.Events.UnityAction onClick)
+        {
+            GameObject go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+            Image image = go.AddComponent<Image>();
+            image.color = new Color(0.16f, 0.20f, 0.28f, 0.95f);
+            RectTransform rect = (RectTransform)go.transform;
+            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(1f, 1f);
+            rect.sizeDelta = new Vector2(120f, 64f);
+            rect.anchoredPosition = anchoredPos;
+            Button button = go.AddComponent<Button>();
+            button.targetGraphic = image;
+            if (onClick != null) UnityEditor.Events.UnityEventTools.AddPersistentListener(button.onClick, onClick);
+            TMP_Text text = CreateText(go.transform, "Label", label, font, 28f, Color.white,
+                TextAlignmentOptions.Center);
+            StretchFull(text.rectTransform);
+        }
+
+        // ── 가방 캔버스 (S-064) ──────────────────────────────
+
+        private static BagView BuildBagCanvas(GameStateSO gameState)
+        {
+            TMP_FontAsset font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FONT_PATH);
+
+            GameObject canvasGo = new GameObject("BagCanvas");
+            Canvas canvas = canvasGo.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 60;
+            CanvasScaler scaler = canvasGo.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            canvasGo.AddComponent<GraphicRaycaster>();
+
+            BagView view = canvasGo.AddComponent<BagView>();
+            SetField(view, "_gameState", gameState);
+
+            Image panel = CreateImage(canvasGo.transform, "Panel", CYAN);
+            RectTransform panelRect = panel.rectTransform;
+            panelRect.anchorMin = panelRect.anchorMax = panelRect.pivot = new Vector2(0.5f, 0.5f);
+            panelRect.sizeDelta = new Vector2(680f, 300f);
+            Image inner = CreateImage(panel.transform, "Inner", NAVY);
+            inner.raycastTarget = true;
+            RectTransform innerRect = inner.rectTransform;
+            innerRect.anchorMin = Vector2.zero; innerRect.anchorMax = Vector2.one;
+            innerRect.offsetMin = new Vector2(3f, 3f); innerRect.offsetMax = new Vector2(-3f, -3f);
+
+            TMP_Text title = CreateText(inner.transform, "Title", "가방", font, 36f, Color.white,
+                TextAlignmentOptions.TopLeft);
+            AnchorCorner(title.rectTransform, new Vector2(0f, 1f), new Vector2(24f, -16f), new Vector2(200f, 48f));
+
+            GameObject closeGo = new GameObject("CloseButton", typeof(RectTransform));
+            closeGo.transform.SetParent(inner.transform, false);
+            Image closeImg = closeGo.AddComponent<Image>();
+            closeImg.color = new Color(0.55f, 0.25f, 0.25f, 1f);
+            RectTransform closeRect = (RectTransform)closeGo.transform;
+            closeRect.anchorMin = closeRect.anchorMax = closeRect.pivot = new Vector2(1f, 1f);
+            closeRect.sizeDelta = new Vector2(72f, 48f);
+            closeRect.anchoredPosition = new Vector2(-16f, -12f);
+            Button closeButton = closeGo.AddComponent<Button>();
+            closeButton.targetGraphic = closeImg;
+            UnityEditor.Events.UnityEventTools.AddPersistentListener(closeButton.onClick,
+                new UnityEngine.Events.UnityAction(view.Close));
+            TMP_Text closeLabel = CreateText(closeGo.transform, "Label", "←", font, 30f, Color.white,
+                TextAlignmentOptions.Center);
+            StretchFull(closeLabel.rectTransform);
+
+            var slots = new BagSlot[5];
+            for (int i = 0; i < 5; i++)
+            {
+                GameObject slotGo = new GameObject("Slot_" + i, typeof(RectTransform));
+                slotGo.transform.SetParent(inner.transform, false);
+                Image slotBg = slotGo.AddComponent<Image>();
+                slotBg.color = new Color(0.14f, 0.17f, 0.24f, 0.9f);
+                RectTransform slotRect = (RectTransform)slotGo.transform;
+                slotRect.anchorMin = slotRect.anchorMax = slotRect.pivot = new Vector2(0f, 0.5f);
+                slotRect.sizeDelta = new Vector2(112f, 112f);
+                slotRect.anchoredPosition = new Vector2(32f + i * 126f, -20f);
+
+                TMP_Text label = CreateText(slotGo.transform, "Label", string.Empty, font, 22f, Color.white,
+                    TextAlignmentOptions.Center);
+                StretchFull(label.rectTransform);
+
+                TMP_Text count = CreateText(slotGo.transform, "Count", string.Empty, font, 22f, CYAN,
+                    TextAlignmentOptions.BottomRight);
+                StretchFull(count.rectTransform);
+
+                BagSlot slot = slotGo.AddComponent<BagSlot>();
+                SetField(slot, "_view", view);
+                SetField(slot, "_index", i);
+                SetField(slot, "_background", slotBg);
+                SetField(slot, "_label", label);
+                SetField(slot, "_countLabel", count);
+                slots[i] = slot;
+            }
+            SerializedObject viewSerialized = new SerializedObject(view);
+            SerializedProperty slotsProp = viewSerialized.FindProperty("_slots");
+            slotsProp.arraySize = slots.Length;
+            for (int i = 0; i < slots.Length; i++)
+                slotsProp.GetArrayElementAtIndex(i).objectReferenceValue = slots[i];
+            viewSerialized.ApplyModifiedPropertiesWithoutUndo();
+
+            GameObject context = new GameObject("ContextMenu", typeof(RectTransform));
+            context.transform.SetParent(canvasGo.transform, false);
+            Image contextBg = context.AddComponent<Image>();
+            contextBg.color = new Color(0.08f, 0.10f, 0.15f, 0.98f);
+            RectTransform contextRect = (RectTransform)context.transform;
+            contextRect.sizeDelta = new Vector2(150f, 118f);
+
+            Button MakeContextButton(string btnName, string btnLabel, float y, Color color)
+            {
+                GameObject go = new GameObject(btnName, typeof(RectTransform));
+                go.transform.SetParent(context.transform, false);
+                Image img = go.AddComponent<Image>();
+                img.color = color;
+                RectTransform rect = (RectTransform)go.transform;
+                rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 1f);
+                rect.sizeDelta = new Vector2(130f, 46f);
+                rect.anchoredPosition = new Vector2(0f, y);
+                Button b = go.AddComponent<Button>();
+                b.targetGraphic = img;
+                TMP_Text t = CreateText(go.transform, "Label", btnLabel, font, 26f, Color.white,
+                    TextAlignmentOptions.Center);
+                StretchFull(t.rectTransform);
+                return b;
+            }
+
+            Button useButton = MakeContextButton("UseButton", "사용", -10f, new Color(0.21f, 0.55f, 0.50f, 1f));
+            Button dropButton = MakeContextButton("DropButton", "버리기", -62f, new Color(0.55f, 0.30f, 0.28f, 1f));
+
+            SetField(view, "_panel", panel.gameObject);
+            SetField(view, "_contextMenu", context);
+            SetField(view, "_useButton", useButton);
+            SetField(view, "_dropButton", dropButton);
+            EditorUtility.SetDirty(view);
+            panel.gameObject.SetActive(false);
+            context.SetActive(false);
+            return view;
+        }
+
+        // ── 설정 캔버스 (S-065) ──────────────────────────────
+
+        private static SettingsView BuildSettingsCanvas()
+        {
+            TMP_FontAsset font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FONT_PATH);
+
+            GameObject canvasGo = new GameObject("SettingsCanvas");
+            Canvas canvas = canvasGo.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 62;
+            CanvasScaler scaler = canvasGo.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            canvasGo.AddComponent<GraphicRaycaster>();
+
+            SettingsView view = canvasGo.AddComponent<SettingsView>();
+
+            Image panel = CreateImage(canvasGo.transform, "Panel", CYAN);
+            RectTransform panelRect = panel.rectTransform;
+            panelRect.anchorMin = panelRect.anchorMax = panelRect.pivot = new Vector2(0.5f, 0.5f);
+            panelRect.sizeDelta = new Vector2(560f, 420f);
+            Image inner = CreateImage(panel.transform, "Inner", NAVY);
+            inner.raycastTarget = true;
+            RectTransform innerRect = inner.rectTransform;
+            innerRect.anchorMin = Vector2.zero; innerRect.anchorMax = Vector2.one;
+            innerRect.offsetMin = new Vector2(3f, 3f); innerRect.offsetMax = new Vector2(-3f, -3f);
+
+            TMP_Text title = CreateText(inner.transform, "Title", "설정", font, 36f, Color.white,
+                TextAlignmentOptions.TopLeft);
+            AnchorCorner(title.rectTransform, new Vector2(0f, 1f), new Vector2(24f, -16f), new Vector2(200f, 48f));
+
+            Slider MakeVolumeSlider(string name, string labelText, float y)
+            {
+                TMP_Text label = CreateText(inner.transform, name + "Label", labelText, font, 28f, Color.white,
+                    TextAlignmentOptions.Left);
+                AnchorCorner(label.rectTransform, new Vector2(0f, 1f), new Vector2(32f, y), new Vector2(160f, 44f));
+
+                GameObject sliderGo = DefaultControls.CreateSlider(new DefaultControls.Resources());
+                sliderGo.name = name;
+                sliderGo.transform.SetParent(inner.transform, false);
+                RectTransform sliderRect = (RectTransform)sliderGo.transform;
+                sliderRect.anchorMin = sliderRect.anchorMax = sliderRect.pivot = new Vector2(0f, 1f);
+                sliderRect.sizeDelta = new Vector2(300f, 30f);
+                sliderRect.anchoredPosition = new Vector2(200f, y - 8f);
+                return sliderGo.GetComponent<Slider>();
+            }
+
+            Slider bgm = MakeVolumeSlider("BgmSlider", "배경음", -90f);
+            Slider sfx = MakeVolumeSlider("SfxSlider", "효과음", -160f);
+
+            Button MakePanelButton(string name, string labelText, float y, Color color)
+            {
+                GameObject go = new GameObject(name, typeof(RectTransform));
+                go.transform.SetParent(inner.transform, false);
+                Image img = go.AddComponent<Image>();
+                img.color = color;
+                RectTransform rect = (RectTransform)go.transform;
+                rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0f);
+                rect.sizeDelta = new Vector2(360f, 64f);
+                rect.anchoredPosition = new Vector2(0f, y);
+                Button b = go.AddComponent<Button>();
+                b.targetGraphic = img;
+                TMP_Text t = CreateText(go.transform, "Label", labelText, font, 28f, Color.white,
+                    TextAlignmentOptions.Center);
+                StretchFull(t.rectTransform);
+                return b;
+            }
+
+            Button titleButton = MakePanelButton("TitleButton", "처음 화면으로", 110f, new Color(0.55f, 0.30f, 0.28f, 1f));
+            Button closeButton = MakePanelButton("CloseButton", "뒤로가기", 32f, new Color(0.21f, 0.42f, 0.55f, 1f));
+
+            SetField(view, "_panel", panel.gameObject);
+            SetField(view, "_bgmSlider", bgm);
+            SetField(view, "_sfxSlider", sfx);
+            SetField(view, "_titleButton", titleButton);
+            SetField(view, "_closeButton", closeButton);
+            EditorUtility.SetDirty(view);
+            panel.gameObject.SetActive(false);
+            return view;
         }
 
         // ── 대화 캔버스 (Core 상주) ──────────────────────────

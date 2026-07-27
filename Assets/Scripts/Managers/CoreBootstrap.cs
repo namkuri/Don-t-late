@@ -51,6 +51,9 @@ namespace DontLate
             _gameState.unlockedDistricts.Clear(); // S-054 — 빌라촌부터 걸어서 개척
             _gameState.unlockedDistricts.Add(DeliveryOrderSO.DISTRICT_VILLATOWN);
             _gameState.hasTruck = false;
+            _gameState.playerLevel = 1;   // S-063
+            _gameState.mastery = 0f;
+            _gameState.bagItems.Clear();  // S-064
             _gameState.cargo.Clear();
             _gameState.scannedOrderIds.Clear();
             _gameState.placedDeliveries.Clear();

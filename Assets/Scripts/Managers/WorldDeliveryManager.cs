@@ -123,6 +123,7 @@ namespace DontLate
                         minuteOfDay = Mathf.FloorToInt(_gameState.minuteOfDay)
                     });
                     if (!string.IsNullOrEmpty(order.district)) _settledDistricts.Add(order.district); // S-054
+                    MasteryProgress.Add(_gameState, MasteryProgress.SUCCESS_GAIN); // S-063
                     WorldEvents.RaiseDeliveryCompleted(DeliveryData.From(order));
                 }
                 else
@@ -132,6 +133,7 @@ namespace DontLate
                     _gameState.money -= penalty;
                     if (_gameState.money < 0) { _gameState.debt += -_gameState.money; _gameState.money = 0; } // 잔액 부족분은 빚
                     _gameState.lateCount++;
+                    MasteryProgress.Add(_gameState, -MasteryProgress.FAIL_LOSS); // S-063
                     WorldEvents.RaiseDeliveryFailed(DeliveryData.From(order));
                 }
             }

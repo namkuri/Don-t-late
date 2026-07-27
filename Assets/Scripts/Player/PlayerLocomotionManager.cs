@@ -18,6 +18,7 @@ namespace DontLate
         private readonly HashSet<WalkableVolume> _volumes = new HashSet<WalkableVolume>();
         private float _verticalVelocity;
         private float _strideAccum;
+        private float _masteryAccum; // S-063 — 주행 거리 누적
         private bool _wasGrounded = true; // AU-018 ③ — 착지 엣지 감지(공중→접지 전환에 land음)
 
         /// <summary>수평 속도(월드). 애니메이션·회전이 읽는다.</summary>
@@ -135,7 +136,15 @@ namespace DontLate
                 return;
             }
 
-            _strideAccum += PlanarVelocity.magnitude * Time.deltaTime;
+            float moved = PlanarVelocity.magnitude * Time.deltaTime;
+            _masteryAccum += moved; // S-063 — 주행 50m당 숙련도 +1 (밸런스 추후)
+            if (_masteryAccum >= MasteryProgress.RUN_METERS_PER_POINT)
+            {
+                _masteryAccum -= MasteryProgress.RUN_METERS_PER_POINT;
+                MasteryProgress.Add(_hub.GameState, 1f);
+            }
+
+            _strideAccum += moved;
             if (_strideAccum < _footstepStride) return;
 
             _strideAccum -= _footstepStride;

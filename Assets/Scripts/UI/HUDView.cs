@@ -35,6 +35,11 @@ namespace DontLate
         [SerializeField] private TMP_Text _moneyLabel;
         [SerializeField] private TMP_Text _debtLabel;
 
+        // S-063 상단 바 — 캐릭터 진행·당일 배송수량.
+        [SerializeField] private TMP_Text _levelLabel;
+        [SerializeField] private Image _masteryFill;
+        [SerializeField] private TMP_Text _deliveryCountLabel;
+
         [Header("상호작용 안내 (하단 중앙)")]
         [SerializeField] private GameObject _ePrompt;
 
@@ -244,6 +249,16 @@ namespace DontLate
             if (_gameState == null) return;
             if (_moneyLabel != null) _moneyLabel.text = $"₩{_gameState.money:N0}";
             if (_debtLabel != null) _debtLabel.text = $"빚 ₩{_gameState.debt:N0}";
+
+            // S-063 — 레벨·숙련도·당일 배송수량 (시계 틱과 함께 갱신).
+            if (_levelLabel != null) _levelLabel.text = $"Lv.{_gameState.playerLevel}  {_gameState.nickname}";
+            if (_masteryFill != null)
+                _masteryFill.fillAmount = Mathf.Clamp01(_gameState.mastery / MasteryProgress.MaxFor(_gameState.playerLevel));
+            if (_deliveryCountLabel != null)
+            {
+                int done = _gameState.placedDeliveries.Count;
+                _deliveryCountLabel.text = "박스 " + done + "/" + (done + _gameState.cargo.Count);
+            }
         }
 
     }

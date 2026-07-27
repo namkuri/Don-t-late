@@ -233,6 +233,29 @@ namespace DontLate
             TruckAwarded?.Invoke();
         }
 
+        /// <summary>가방에서 좌클릭 — 손에 들기 요청 (S-064). Player 도메인이 받아 시각물 생성.</summary>
+        public static event Action<BagItem> BagHoldRequested;
+
+        /// <summary>플레이어(수신자)가 씬에 있는가 — 없는 씬(집 등)에서 아이템 유실 방지 (S-064).</summary>
+        public static bool HasBagHoldListener => BagHoldRequested != null;
+
+        public static void RaiseBagHoldRequested(BagItem item)
+        {
+            Log("BagHoldRequested → " + item.label);
+            BagHoldRequested?.Invoke(item);
+        }
+
+        /// <summary>가방 컨텍스트 "사용" (S-064) — 효과는 아이템별 (Player 도메인 몫).</summary>
+        public static event Action<BagItem> BagItemConsumed;
+
+        public static bool HasBagConsumeListener => BagItemConsumed != null;
+
+        public static void RaiseBagItemConsumed(BagItem item)
+        {
+            Log("BagItemConsumed → " + item.label);
+            BagItemConsumed?.Invoke(item);
+        }
+
         /// <summary>적설(지면 쌓임) 유무 전환 (AU-018 ③ — 발소리 스노 스왑용). 저빈도: 임계 통과 시 1회.</summary>
         public static event Action<bool> SnowCoverChanged;
 

@@ -125,6 +125,15 @@ namespace DontLate
             if (_active != null) _active.volume = _volume;
         }
 
+        // S-065 설정 팝업 — SFX 볼륨.
+        public float SfxVolume => _sfxVolume;
+
+        public void SetSfxVolume(float value)
+        {
+            _sfxVolume = Mathf.Clamp01(value);
+            if (_sfxSource != null) _sfxSource.volume = _sfxVolume;
+        }
+
         /// <summary>현재 슬롯 풀의 다음 곡으로 즉시 전환.</summary>
         public void NextTrack()
         {
