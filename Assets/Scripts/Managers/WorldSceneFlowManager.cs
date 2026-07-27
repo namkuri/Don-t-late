@@ -17,11 +17,11 @@ namespace DontLate
             {
                 { GameScene.Main, new[] { GameScene.Home } },
                 { GameScene.Home, new[] { GameScene.Camp } },
-                { GameScene.Camp, new[] { GameScene.Travel, GameScene.Home } },
+                { GameScene.Camp, new[] { GameScene.Travel, GameScene.Home, GameScene.District } }, // S-054b 엣지 워크
                 { GameScene.Travel, new[] { GameScene.District, GameScene.Camp, GameScene.Apartment, GameScene.Hillside } },
-                { GameScene.District, new[] { GameScene.Travel, GameScene.Home, GameScene.Camp } },  // S-053 ④ 캠프 직행
-                { GameScene.Apartment, new[] { GameScene.Travel, GameScene.Home, GameScene.Camp } }, // S-038·S-053 ④
-                { GameScene.Hillside, new[] { GameScene.Travel, GameScene.Home, GameScene.Camp } },  // S-049·S-053 ④
+                { GameScene.District, new[] { GameScene.Travel, GameScene.Home, GameScene.Camp, GameScene.District, GameScene.Apartment } }, // S-053 ④·S-054b
+                { GameScene.Apartment, new[] { GameScene.Travel, GameScene.Home, GameScene.Camp, GameScene.District, GameScene.Hillside } }, // S-038·S-054b
+                { GameScene.Hillside, new[] { GameScene.Travel, GameScene.Home, GameScene.Camp, GameScene.Apartment } },  // S-049·S-054b
             };
 
         [SerializeField] private GameStateSO _gameState;

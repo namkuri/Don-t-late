@@ -55,6 +55,10 @@ namespace DontLate.EditorTools
             NpcBuildKit.BuildErrandNpc("ErrandGranny", "할머니", new Vector3(12f, 0f, -1.8f),
                 new Vector3(-6f, 0f, -1.8f), gameState, 1500);
 
+            // S-054b 엣지 워크 — 좌=이전 동네/캠프, 우=다음 동네(미해금이면 안내 후 차단).
+            EdgeGateBuildKit.BuildGate("EdgeGate_Prev", new Vector3(-19f, 0f, 0f), DontLate.DistrictEdgeGate.Direction.Prev, gameState);
+            EdgeGateBuildKit.BuildGate("EdgeGate_Next", new Vector3(19f, 0f, 0f), DontLate.DistrictEdgeGate.Direction.Next, gameState);
+
             EditorSceneManager.SaveScene(scene, DISTRICT_PATH);
             Debug.Log("[DistrictSceneBuilder] District.unity 조립 완료 — 매니저 제외 무대 + 슬롯 마커 "
                     + (BUILDING_SLOTS + PROP_SLOTS) + "개.");

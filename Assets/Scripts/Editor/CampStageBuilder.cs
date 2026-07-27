@@ -44,6 +44,8 @@ namespace DontLate.EditorTools
             BuildDrink(drink, highlight);
             BuildVendingMachine(tuning, drink, highlight);
             BuildBossNpc(gameState, highlight);                                  // S-052 ① 사장님
+            EdgeGateBuildKit.BuildGate("EdgeGate_Next", new Vector3(14f, 0f, 0f),
+                DontLate.DistrictEdgeGate.Direction.Next, gameState);             // S-054b 도보 개척 출구
             NpcBuildKit.BuildPedestrian("Walker_A", new Vector3(-9f, 0f, 2.4f), new Color(0.45f, 0.52f, 0.62f), 5f);
             NpcBuildKit.BuildPedestrian("Walker_B", new Vector3(4f, 0f, 2.8f), new Color(0.60f, 0.48f, 0.40f), 6f); // S-052 ② 행인
             GreyboxStageBuilder.BuildPlayer(gameState, tuning);

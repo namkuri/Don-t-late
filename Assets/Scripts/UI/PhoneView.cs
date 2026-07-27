@@ -1118,8 +1118,8 @@ namespace DontLate
             infoRect.anchoredPosition = new Vector2(0f, 86f);
             infoRect.sizeDelta = new Vector2(0f, 62f);
 
-            bool walking = _gameState != null && !_gameState.hasTruck && _gameState.unlockedDistricts.Count > 0; // S-054
-            _departButton = MakeButton(screen.transform, "Depart", walking ? "걸어서 출발 (느림)" : "목적지로 출발", DepartSelected);
+            _departButton = MakeButton(screen.transform, "Depart",
+                IsWalkingEra ? "트럭 없음 — 걸어서 개척" : "목적지로 출발", DepartSelected); // S-054b
             RectTransform departRect = (RectTransform)_departButton.transform;
             departRect.anchorMin = departRect.anchorMax = departRect.pivot = new Vector2(0.5f, 0f);
             departRect.sizeDelta = new Vector2(320f, 72f);
@@ -1186,23 +1186,24 @@ namespace DontLate
                 + " · 예상 <color=#35e0c8>" + Mathf.RoundToInt(minutes) + "분</color>";
             _routeLine.gameObject.SetActive(true);
             LayoutRoute(MapOriginPos, pin.pos);
-            _departButton.interactable = _inTravel;
+            _departButton.interactable = _inTravel && !IsWalkingEra; // S-054b — 트럭 전 비활성
         }
 
         // 출발 — 로직은 매니저 위임(시간=DayNight·목적지=Delivery·전이=SceneFlow). 구 TravelMapView.Depart 승계.
+        // S-054b — 트럭 전에는 지도 출발 불가 (이동은 씬 가장자리 도보 게이트).
+        private bool IsWalkingEra => _gameState != null && !_gameState.hasTruck && _gameState.unlockedDistricts.Count > 0;
+
         private void DepartSelected()
         {
             if (_selectedPin < 0 || !_inTravel || IsPinLocked(Pins[_selectedPin])) return;
+            if (IsWalkingEra) { Debug.Log("[지도] 트럭이 없다 — 동네 가장자리로 걸어가자."); return; }
             if (WorldSceneFlowManager.Instance == null || WorldDayNightManager.Instance == null
                 || WorldDeliveryManager.Instance == null) return;
             if (WorldSceneFlowManager.Instance.IsTransitioning) return;
 
             MapPin pin = Pins[_selectedPin];
             WorldAudioManager.Instance?.PlayMapDepartSfx(); // AU-011
-            // S-054 — 트럭 전에는 도보(시간 2.5배 소모), 트럭 수령 후 "곧바로"(기존 시간).
-            float minutes = pin.far ? _tuning.travelFarMinutes : _tuning.travelNearMinutes;
-            if (_gameState != null && !_gameState.hasTruck && _gameState.unlockedDistricts.Count > 0) minutes *= 2.5f;
-            WorldDayNightManager.Instance.AdvanceMinutes(minutes);
+            WorldDayNightManager.Instance.AdvanceMinutes(pin.far ? _tuning.travelFarMinutes : _tuning.travelNearMinutes);
             WorldDeliveryManager.Instance.SetDestination(pin.district);
             // S-038·S-049: 아파트·언덕은 별도 씬(D-067) — 나머지는 공용 District.
             GameScene target = pin.district == DeliveryOrderSO.DISTRICT_APARTMENT ? GameScene.Apartment

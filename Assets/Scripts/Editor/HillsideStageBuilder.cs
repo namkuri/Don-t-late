@@ -104,6 +104,9 @@ namespace DontLate.EditorTools
             NpcBuildKit.BuildErrandNpc("ErrandGranny", "할머니", new Vector3(2f, 0f, 1.8f),
                 new Vector3(11f, 6.6f, 0.4f), gameState, 2500);
 
+            // S-054b 엣지 워크 — 왼쪽 끝 = 이전 동네(아파트단지). 오른쪽은 개척 종점(게이트 없음).
+            EdgeGateBuildKit.BuildGate("EdgeGate_Prev", new Vector3(-19.5f, 0f, 0f), DontLate.DistrictEdgeGate.Direction.Prev, gameState);
+
             // ── 플레이어·카메라(Y 팔로우) ────────────────────
             GreyboxStageBuilder.BuildPlayer(gameState, tuning);
             GameObject player = GameObject.Find("__gb_Player");

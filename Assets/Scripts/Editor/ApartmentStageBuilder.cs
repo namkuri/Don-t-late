@@ -90,6 +90,10 @@ namespace DontLate.EditorTools
             NpcBuildKit.BuildErrandNpc("ErrandGrandpa", "할아버지", new Vector3(-16f, 0f, -1.8f),
                 new Vector3(-4f, 0f, 1.8f), gameState, 1200);
 
+            // S-054b 엣지 워크 — 마당 왼쪽 끝, z로 분리(앞=이전 먹자골목, 뒤=다음 언덕주택가).
+            EdgeGateBuildKit.BuildGate("EdgeGate_Prev", new Vector3(-19.5f, 0f, -1.7f), DontLate.DistrictEdgeGate.Direction.Prev, gameState, 40f, 2.6f);
+            EdgeGateBuildKit.BuildGate("EdgeGate_Next", new Vector3(-19.5f, 0f, 1.7f), DontLate.DistrictEdgeGate.Direction.Next, gameState, 40f, 2.6f);
+
             GreyboxStageBuilder.BuildPlayer(gameState, tuning);
             GameObject player = GameObject.Find("__gb_Player");
             if (player != null) player.transform.position = new Vector3(-16f, 0.1f, 0f);

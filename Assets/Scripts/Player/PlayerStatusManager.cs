@@ -27,16 +27,22 @@ namespace DontLate
 
         private bool _inHillside; // S-049 — 오르막 스태미나 가중
 
+        private WeatherType _weather; // S-060 — 온도 페널티·음료 보너스 판정
+
         private void OnEnable()
         {
             WorldEvents.DeliveryFailed += OnDeliveryFailed;
             WorldEvents.SceneTransitionCompleted += OnSceneArrivedStatus;
+            WorldEvents.WeatherChanged += OnWeatherChangedStatus;
         }
         private void OnDisable()
         {
             WorldEvents.DeliveryFailed -= OnDeliveryFailed;
             WorldEvents.SceneTransitionCompleted -= OnSceneArrivedStatus;
+            WorldEvents.WeatherChanged -= OnWeatherChangedStatus;
         }
+
+        private void OnWeatherChangedStatus(WeatherType weather) => _weather = weather;
 
         private void OnSceneArrivedStatus(GameScene scene) => _inHillside = scene == GameScene.Hillside;
 
@@ -75,6 +81,7 @@ namespace DontLate
                         : drain * (tuning.staminaDrainCarryMultiplier - 1f); // 무게 미지정 주문 폴백
                 }
                 if (_inHillside) drain *= 1.4f; // S-049 — 오르막 동네는 힘들다
+                if (_weather == WeatherType.Heat || _weather == WeatherType.Snow) drain *= 1.35f; // S-060 — 덥거나 추우면 더 힘들다
                 Stamina -= drain * Time.deltaTime;
             }
             else
@@ -170,7 +177,11 @@ namespace DontLate
         {
             Destroy(_heldDrink.gameObject);
             _heldDrink = null;
-            RecoverStamina(_hub.Tuning.energyDrinkRecover); // 내부에서 힐 이펙트(PlayDrinkEffect)까지 발화
+            // S-060 — 덥거나 추운 날 음료는 시원함/따뜻함 보너스(회복 1.5배). 종류 분화(찬/뜨거운)는 상점(S-056)에서.
+            float amount = _hub.Tuning.energyDrinkRecover;
+            if (_weather == WeatherType.Heat) { amount *= 1.5f; Debug.Log("[드링크] 캬 — 시원하다! (폭염 보너스)"); }
+            else if (_weather == WeatherType.Snow) { amount *= 1.5f; Debug.Log("[드링크] 후 — 따뜻하다! (한파 보너스)"); }
+            RecoverStamina(amount); // 내부에서 힐 이펙트(PlayDrinkEffect)까지 발화
             WorldAudioManager.Instance?.PlayDrinkSfx();     // AU-009
             Debug.Log("[드링크] 섭취 — 스태미나 회복 (우클릭)");
         }
