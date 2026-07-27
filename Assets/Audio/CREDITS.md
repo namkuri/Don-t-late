@@ -306,3 +306,14 @@ Suno 프롬프트로 직접 생성 → 공장이 반입·트림·배선.
 - **배선**: `WeatherChanged` 구독 → 날씨 ∈ {Rain·Snow·Heat·Fog} 이고 곡 있으면 시간대(낮/밤) 슬롯을 override,
   Clear·Cloudy는 기존 Day/Night 곡 유지(amb 우선순위와 동형). 단곡이라 PlaylistTick 셀프 크로스페이드로 루프.
 - 라우드니스: 4곡 rms -16.6~-17.2dB(Suno 자체 정규화 일관) · peak -3.2~-3.8dB. 정규화 불요.
+
+## sfx_footstep 교체 (걷는 소리 재생성) — ElevenLabs · 2026-07-28
+
+Director 판정: 기존 걷는 소리가 **쇳소리(metallic)** — 원인 = 토이 앵커의 synth pluck 고역 링.
+후보 다수 청취 끝에 **rubber sole 클린 탭**(`--no-anchors`, 비금속·비grit·중역 존재감) 채택.
+같은 파일명 덮어씀(guid 불변 = 코드·씬 재작업 0). ⚠ SFX는 API가 seed 미수용 → 복원 불가(seed 로컬 기록).
+
+- 채택 프롬프트(창작 태그): `single rubber sole footstep, soft firm step with a clean dry tap, present and smooth, no scuff no ring`
+- prompt SHA1 `b529abed6cc1` · seed(로컬) 1957209730 · 생성 0.5s → 트림 0.22s
+- 후공정: 트림 → 소프트 컴프레션(tanh, 크레스트 감소=존재감) → 피크 -1dB. 임포트 실측 rms **-9.4dB**(가청 확보 — 저역 muffled 후보들이 작은 스피커서 안 들린 문제 해결).
+- 탐색 이력: 저역 thud 계열(boot/concrete/muffled)은 스피커서 약함 · 거친 scuff는 가청이나 거슬림 → "중역 클린 탭"이 가청∧매끈∧비금속 교점.
