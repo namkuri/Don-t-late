@@ -83,9 +83,11 @@ namespace DontLate
 
         private void Update()
         {
-            // S-045 ③: Y키 = 날씨 순환 (검증·튜닝용 — 심사 전 제거 후보).
+            // S-045 ③: Y키 = 날씨 순환 (검증·튜닝용). S-067 ⑦ — 릴리스 빌드 자동 제외.
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (Keyboard.current != null && Keyboard.current.yKey.wasPressedThisFrame)
                 SetWeather((WeatherType)(((int)Weather + 1) % 6));
+#endif
 
             DriftClouds();
             LerpGrade();

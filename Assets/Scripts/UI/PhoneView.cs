@@ -843,16 +843,19 @@ namespace DontLate
             rect.anchorMax = Vector2.one;
             rect.offsetMin = rect.offsetMax = Vector2.zero;
 
-            // S-028 ④ 테스트 전용 — 튜닝·시연용 입금 버튼. 릴리스 전 삭제 예정 (님 지시).
-            Button cheat = MakeButton(screen.transform, "TestDeposit", "[테스트] +₩1,000", () =>
+            // S-028 ④ 테스트 전용 입금 버튼 — S-067 ⑦: 에디터/개발빌드에서만 생성 (릴리스 자동 제외).
+            if (Application.isEditor || Debug.isDebugBuild)
             {
-                _gameState.money += 1000;
-                RefreshBank();
-            });
-            RectTransform cheatRect = (RectTransform)cheat.transform;
-            cheatRect.anchorMin = cheatRect.anchorMax = cheatRect.pivot = new Vector2(0.5f, 0f);
-            cheatRect.sizeDelta = new Vector2(300f, 56f);
-            cheatRect.anchoredPosition = new Vector2(0f, 8f);
+                Button cheat = MakeButton(screen.transform, "TestDeposit", "[테스트] +₩1,000", () =>
+                {
+                    _gameState.money += 1000;
+                    RefreshBank();
+                });
+                RectTransform cheatRect = (RectTransform)cheat.transform;
+                cheatRect.anchorMin = cheatRect.anchorMax = cheatRect.pivot = new Vector2(0.5f, 0f);
+                cheatRect.sizeDelta = new Vector2(300f, 56f);
+                cheatRect.anchoredPosition = new Vector2(0f, 8f);
+            }
         }
 
         private void BuildFurnitureScreen()
