@@ -108,3 +108,23 @@
 기대: 구름은 반입 즉시 자동 장착(스왑 소켓 기시공 — 3종 로테이션). 부분 납품 환영. A-004는 ui_map_town만 잔여(컨셉 2장은 2026-07-24 취소).
 
 실패 시: 라이선스 기록 누락 = 반입 차단 (생성 도구 한 줄).
+
+---
+
+## A-006 · 발주 2026-07-28 00:30 → ClaudeCode (본 세션 실행 — 아트 테스트 씬 + 웹 배포 · 민지님 요청)
+
+요구 (남규님 전달): 아트 테스트 씬 하나 만들어서 배포 — 민지님이 Unity 없이 반입 에셋을
+게임 룩(픽셀화 렌더·실그림자·낮밤)에서 확인하는 진열대.
+
+구현: [ArtTestSceneBuilder](../../Assets/Scripts/Editor/ArtTestSceneBuilder.cs) — Prefabs/Auto·Hand 전량 +
+chr_courier를 자동 수집해 4u 간격 진열(발높이 정규화·이름표), 게임 카메라 리그(480×270 픽셀화) 그대로,
+[ArtTestController](../../Assets/Scripts/Utils/ArtTestController.cs)로 ←→/A·D 이동·T 낮밤 사이클.
+**새 에셋 반입 후 "DontLate/Build/Art Test Scene" 재실행하면 자동 편입** (수집이 폴더 기반).
+배포: 단독 WebGL 빌드 → gh-pages `/art-test/` (본게임 루트와 분리).
+
+### 결과 (A-006) · 2026-07-28 00:40 (리드 25분)
+- 씬·빌더·컨트롤러 시공 → WebGL 단독 빌드 35MB Succeeded → gh-pages `/art-test/` 배포.
+- **https://namkuri.github.io/Don-t-late/art-test/** (200 확인 · 본게임 루트 무영향 200 확인).
+- 조작: ←→/A·D 카메라 이동 · T 낮밤 사이클 토글. 진열 8종(chr_courier·prop_box_parcel·prop_streetlamp·store_2·BeaconPad·StreetLamp 등) + 시안 이름표.
+- 갱신 절차: 새 에셋 반입 → "DontLate/Build/Art Test WebGL Build" → gh-pages art-test 재push (관제가 수행).
+- 검증: 컴파일 ○ 콘솔 0 ○ Play 캡처 3회(카메라 리그·이름표 교정 2회) ○ 배포 200 ○.
