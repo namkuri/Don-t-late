@@ -52,6 +52,9 @@ unity-cli exec 'UnityEngine.ScreenCapture.CaptureScreenshot("Screenshots/x.png")
 - **커밋 가능**: `Assets/**/*.cs`, SO 클래스·에셋, 문서, **프리팹(빌더·팩토리 산출물 — D-061 개정)**, 씬 **`.meta`**, `Assets/Settings/`·`ProjectSettings/`(D-032, 수정은 남규만).
 - **커밋 금지**: `.unity` 씬 **본문** — 씬은 빌더가 정본, 각 PC에서 `DontLate/Build ...` 메뉴로 재현(병합 지옥 방지).
 - 커밋 메시지 형식: `[P2] PlayerLocomotionManager: Z레인 이동+캐리 페널티 (via ClaudeCode) [self-tested]`
+- **발주 커밋 ≠ 납품 커밋 (D-060 — 위반 이력 있음, 2026-07-28 CLAUDE.md 승격)**: 발주 접수 즉시
+  대장(orders/*.md)에 발주만 append → `[발주] S-0XX: 제목` 커밋·push **먼저**(post-commit 훅 📦 알림 = 팀 착수 예고)
+  → 그 다음 시공 → 결과+코드는 별도 납품 커밋. 관제 자기발주·급한 지시도 예외 없음.
 - 현재 브랜치 `feature/jjs`, 메인은 `main`.
 
 ## 코드 규칙 요약 (상세는 code-rules 문서)
