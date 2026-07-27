@@ -34,18 +34,24 @@ namespace DontLate
         {
             if (_gameState == null || _boxes == null) return;
 
+            // S-068 ③ — 하루 배송건 고정: 첫 진입 때 확정된 주문은 정산 전엔 바뀌지 않는다.
+            // 정산(daySettled) 후 재방문에만 전체 리롤. (구 IsConsumed 시간·이력 교체 폐지 — 재방문마다
+            // "완전 새 주문"으로 보이던 원흉. 마감 지난 건은 그대로 남아 지각 실패로 정산된다.)
+            bool reroll = _gameState.daySettled;
+            if (reroll) _gameState.daySettled = false;
+
             foreach (PickupBox box in _boxes)
             {
                 if (box == null || box.Order == null) continue;
-                if (IsConsumed(box.Order))
+                if (reroll)
                 {
                     DeliveryOrderSO fresh = GenerateOrder();
                     box.SetOrder(fresh);
-                    Debug.Log("[주문판] 소진 건 교체 → #" + fresh.orderId + " " + fresh.address
-                            + " (" + fresh.district + " · 마감 " + (fresh.deadlineMinuteOfDay / 60f).ToString("0.0") + "시)");
+                    Debug.Log("[주문판] 하루 마감 — 새 주문 → #" + fresh.orderId + " " + fresh.address
+                            + " (" + fresh.district + ")");
                 }
 
-                // S-034 ①: 이미 트럭에 실은 건의 상자는 캠프에서 치운다 — 안 실은 것만 남는다.
+                // 픽업(=적재 등록)해 들고 나간 건의 상자만 치운다 — 스캔만 한 건 그대로.
                 box.gameObject.SetActive(!_gameState.cargo.Contains(box.Order));
             }
         }

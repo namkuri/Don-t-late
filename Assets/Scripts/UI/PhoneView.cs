@@ -145,6 +145,7 @@ namespace DontLate
             WorldEvents.MinigameEnded += OnMinigameEnded; // S-037 — 부재중(타임아웃) 시 폰 접힘
             WorldEvents.SceneTransitionCompleted += OnSceneChanged; // S-032 ①
             WorldEvents.DebtSettled += OnSettled; // S-034 ① — 정산 후 상차 리스트 초기화
+            WorldEvents.WeatherChanged += OnWeatherChangedPhone; // S-068 ⑦ — 날씨앱 실시간 갱신
         }
 
         private void OnDisable()
@@ -161,6 +162,7 @@ namespace DontLate
             WorldEvents.MinigameEnded -= OnMinigameEnded;
             WorldEvents.SceneTransitionCompleted -= OnSceneChanged;
             WorldEvents.DebtSettled -= OnSettled;
+            WorldEvents.WeatherChanged -= OnWeatherChangedPhone;
         }
 
         private void OnDestroy() { _toggle.Dispose(); _close.Dispose(); }
@@ -409,11 +411,17 @@ namespace DontLate
             rect.offsetMin = new Vector2(18f, 12f); rect.offsetMax = new Vector2(-18f, -24f);
         }
 
+        // S-068 ⑦ — 이모지 글리프가 폰트에 없어 네모로 깨짐 → 한글만 (아이콘은 A-007 실아트로 교체 예정).
         private static string WeatherName(WeatherType weather) => weather switch
         {
-            WeatherType.Clear => "맑음 ☀", WeatherType.Cloudy => "흐림 ☁", WeatherType.Rain => "비 ☔",
-            WeatherType.Snow => "눈 ☃", WeatherType.Fog => "안개 ≋", WeatherType.Heat => "폭염 ♨", _ => "?"
+            WeatherType.Clear => "맑음", WeatherType.Cloudy => "흐림", WeatherType.Rain => "비",
+            WeatherType.Snow => "눈", WeatherType.Fog => "안개", WeatherType.Heat => "폭염", _ => "?"
         };
+
+        private void OnWeatherChangedPhone(WeatherType _)
+        {
+            if (_screen == Screen.Weather) RefreshWeather(); // 열려 있으면 즉시 갱신
+        }
 
         private void RefreshWeather()
         {

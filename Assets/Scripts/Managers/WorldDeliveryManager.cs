@@ -152,6 +152,8 @@ namespace DontLate
             _gameState.scannedOrderIds.Clear();
             _gameState.placedDeliveries.Clear();
             AdvanceProgression(summary); // S-054 — 개척 판정 (성공 구역 기준)
+            _gameState.daySettled = true;      // S-068 ③ — 캠프 주문판 리롤 신호
+            _gameState.droppedCargo.Clear();   // 정산 = 하루 마감: 버려둔 짐 기록도 청산
             Debug.Log("[배송] 일괄 정산 — 성공 " + summary.SuccessCount + " · 실패 " + summary.FailCount
                     + " · 보상 " + summary.RewardTotal + " · 벌금 " + summary.PenaltyTotal);
             return summary;

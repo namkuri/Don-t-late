@@ -59,6 +59,8 @@ namespace DontLate
             _gameState.catRanAway = false;
             _gameState.catFedDay = 0;
             _gameState.carriedOrders.Clear(); // S-066
+            _gameState.daySettled = false;    // S-068
+            _gameState.droppedCargo.Clear();
             _gameState.cargo.Clear();
             _gameState.scannedOrderIds.Clear();
             _gameState.placedDeliveries.Clear();

@@ -146,6 +146,9 @@ namespace DontLate
         /// </summary>
         private void DebugPhaseSkip()
         {
+#if !UNITY_EDITOR && !DEVELOPMENT_BUILD
+            return; // S-068 — 시간 스킵 치트는 릴리스 제외
+#endif
             Keyboard keyboard = Keyboard.current;
             if (keyboard == null || !keyboard.tKey.wasPressedThisFrame) return;
 

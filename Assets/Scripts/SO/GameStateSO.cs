@@ -68,6 +68,11 @@ namespace DontLate
         /// <summary>구루마(대차) 보유 (S-056 상점 구매). 도보 시대=캠프에서 밀기, 트럭 시대=배송지 자동 스폰.</summary>
         public bool ownsCart;
 
+        /// <summary>정산 완료 신호 (S-068 ③) — 캠프 주문판이 이걸 보고 하루 주문을 리롤한 뒤 끈다.</summary>
+        public bool daySettled;
+        /// <summary>배송지에 버려둔 짐 위치 (S-068 ③) — 재입장 시 그 자리에 복원.</summary>
+        public List<DroppedCargo> droppedCargo = new List<DroppedCargo>();
+
         /// <summary>씬 전환 중 손에 든 주문 보존 (S-066 ② — 엣지 워크 운반). 도착 씬에서 복원 후 비운다.</summary>
         public List<DeliveryOrderSO> carriedOrders = new List<DeliveryOrderSO>();
 
@@ -94,6 +99,15 @@ namespace DontLate
         public int reward;
         public int day;
         public int minuteOfDay;
+    }
+
+    /// <summary>배송지에 버려둔 짐 (S-068 ③) — 구역·좌표 기록. 스포너가 재입장 시 이 자리에 깐다.</summary>
+    [System.Serializable]
+    public struct DroppedCargo
+    {
+        public int orderId;
+        public string district;
+        public Vector3 position;
     }
 
     /// <summary>가방 아이템 1칸 (S-064) — stackable이면 count 겹침, holdable이면 좌클릭으로 손에 든다.</summary>

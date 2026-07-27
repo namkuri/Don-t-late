@@ -113,20 +113,23 @@ namespace DontLate
             foreach (DeliveryOrderSO order in _hub.GameState.carriedOrders)
             {
                 if (order == null || !TryCarry(order)) continue;
-                AttachCarried(CreateBoxVisual().transform);
+                AttachCarried(CreateBoxVisual(order).transform);
             }
             // 버퍼는 지우지 않는다 — 스포너가 "손에 든 건 스폰 제외" 판정에 참조 (다음 전이 때 재작성).
             Debug.Log("[운반] 들고 온 짐 " + (CarriedOrder2 != null ? 2 : 1) + "건 복원");
         }
 
         // 복원용 택배 상자 비주얼 — 캠프 상자와 동색 주황 큐브.
-        private GameObject CreateBoxVisual()
+        // S-068 ④: PickupBox를 붙여 두어 버려도(던져도) E로 다시 잡을 수 있다.
+        private GameObject CreateBoxVisual(DeliveryOrderSO order)
         {
             GameObject box = GameObject.CreatePrimitive(PrimitiveType.Cube);
             box.name = "CarriedBox";
             box.transform.localScale = Vector3.one * 0.55f;
             box.GetComponent<Renderer>().material.color = new Color(1f, 0.624f, 0.271f);
-            box.GetComponent<Collider>().enabled = false;
+            box.GetComponent<Collider>().enabled = false; // 손에 있는 동안 잠금 — 드롭 시 DropVisualAsPhysics가 켠다
+            PickupBox pickup = box.AddComponent<PickupBox>();
+            pickup.Initialize(order, null, requireInCargo: false, requireScanned: false);
             return box;
         }
 

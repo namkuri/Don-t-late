@@ -149,6 +149,8 @@ namespace DontLate
         {
             _sfxVolume = Mathf.Clamp01(value);
             if (_sfxSource != null) _sfxSource.volume = _sfxVolume;
+            // S-068 ② — 앰비언스(빗소리 등)도 효과음 슬라이더를 따른다 (기본 0.7 기준 정규화).
+            if (_ambSource != null) _ambSource.volume = _ambVolume * (_sfxVolume / 0.7f);
         }
 
         /// <summary>현재 슬롯 풀의 다음 곡으로 즉시 전환.</summary>
@@ -356,7 +358,7 @@ namespace DontLate
             if (_ambSource.clip == target && _ambSource.isPlaying) return;
 
             _ambSource.clip = target;
-            _ambSource.volume = _ambVolume;
+            _ambSource.volume = _ambVolume * (_sfxVolume / 0.7f); // S-068 ② — 효과음 슬라이더 연동
             _ambSource.Play();
         }
 

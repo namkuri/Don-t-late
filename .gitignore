@@ -169,3 +169,4 @@ __pycache__/
 # AU-007·008 판정 통과 SFX — 실음원 전량 커밋 (D-042 절차: 통과분만 해제)
 !/[Aa]ssets/[Aa]udio/SFX/*.wav
 !/[Aa]ssets/[Aa]udio/SFX/*.wav.meta
+ProfilerCaptures/

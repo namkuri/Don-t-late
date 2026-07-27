@@ -393,6 +393,7 @@ namespace DontLate.EditorTools
             AnchorCorner(masteryBg.rectTransform, new Vector2(0f, 0f), new Vector2(20f, 44f), new Vector2(360f, 16f));
             Image masteryFill = CreateImage(masteryBg.transform, "MasteryFill", AMBER);
             StretchFull(masteryFill.rectTransform);
+            masteryFill.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd"); // S-068 ⑥ — sprite 없으면 fillAmount 무시
             masteryFill.type = Image.Type.Filled;
             masteryFill.fillMethod = Image.FillMethod.Horizontal;
             masteryFill.fillAmount = 0f;
@@ -402,6 +403,7 @@ namespace DontLate.EditorTools
             AnchorCorner(staminaBg.rectTransform, new Vector2(0f, 0f), new Vector2(20f, 16f), new Vector2(360f, 16f));
             Image staminaFill = CreateImage(staminaBg.transform, "StaminaFill", new Color(0.45f, 0.85f, 0.55f, 1f));
             StretchFull(staminaFill.rectTransform);
+            staminaFill.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd"); // S-068 ⑥
             staminaFill.type = Image.Type.Filled;
             staminaFill.fillMethod = Image.FillMethod.Horizontal;
             staminaFill.fillAmount = 1f;

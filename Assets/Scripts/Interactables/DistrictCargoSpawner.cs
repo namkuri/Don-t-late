@@ -24,6 +24,28 @@ namespace DontLate
         [Tooltip("층별 비콘 앵커 — 인덱스 0=2층, 1=3층… 설정 시 order.floor로 층을 찾는다.")]
         [SerializeField] private Transform[] _floorBeaconAnchors;
 
+        private void OnEnable() => WorldEvents.SceneTransitionStarted += OnSceneLeaving;
+        private void OnDisable() => WorldEvents.SceneTransitionStarted -= OnSceneLeaving;
+
+        // S-068 ③ — 씬을 떠날 때 바닥에 남은 짐(활성 PickupBox·cargo 소속)의 위치를 기록한다.
+        private void OnSceneLeaving(GameScene _)
+        {
+            if (_gameState == null) return;
+            string district = _gameState.currentDistrict;
+            _gameState.droppedCargo.RemoveAll(d => d.district == district);
+            foreach (PickupBox box in Object.FindObjectsByType<PickupBox>())
+            {
+                if (box == null || box.Order == null || !box.gameObject.activeInHierarchy) continue;
+                if (!_gameState.cargo.Contains(box.Order)) continue;
+                _gameState.droppedCargo.Add(new DroppedCargo
+                {
+                    orderId = box.Order.orderId,
+                    district = district,
+                    position = box.transform.position
+                });
+            }
+        }
+
         private void Start()
         {
             string district = _gameState != null ? _gameState.currentDistrict : null;
@@ -45,9 +67,15 @@ namespace DontLate
                 bool carriedIn = _gameState.carriedOrders.Exists(c => c != null && c.orderId == matching[i].orderId);
                 if (!carriedIn)
                 {
-                    Vector3 boxPos = _boxOrigin != null
-                        ? _boxOrigin.position + new Vector3(i * 1.2f, 0f, 0f)
-                        : new Vector3(-16f + i * 1.2f, 0f, -1.2f);
+                    // S-068 ③ — 지난번 버려둔 자리가 기록돼 있으면 그 자리에 되살린다.
+                    int orderId = matching[i].orderId;
+                    int droppedIndex = _gameState.droppedCargo.FindIndex(
+                        d => d.orderId == orderId && d.district == district);
+                    Vector3 boxPos = droppedIndex >= 0
+                        ? _gameState.droppedCargo[droppedIndex].position
+                        : (_boxOrigin != null
+                            ? _boxOrigin.position + new Vector3(i * 1.2f, 0f, 0f)
+                            : new Vector3(-16f + i * 1.2f, 0f, -1.2f));
                     SpawnBox(matching[i], boxPos);
                 }
 
