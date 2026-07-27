@@ -199,6 +199,10 @@ namespace DontLate.EditorTools
             SetField(audio, "_ambWeatherRain", LoadSfx("amb_weather_rain"));      // AU-018 ① 날씨 앰비언스 3종
             SetField(audio, "_ambWeatherSnow", LoadSfx("amb_weather_snow"));
             SetField(audio, "_ambWeatherHeat", LoadSfx("amb_weather_heat"));
+            SetField(audio, "_bgmRain", LoadBgm("Neon Rain"));                    // AU-018 ② 날씨 BGM 4종(원제)
+            SetField(audio, "_bgmSnow", LoadBgm("Neon Snowfall"));
+            SetField(audio, "_bgmHeat", LoadBgm("Midnight Heatwave"));
+            SetField(audio, "_bgmFog", LoadBgm("Sodium Fog"));
             SetField(audio, "_gameState", AssetDatabase.LoadAssetAtPath<GameStateSO>(DATA_ROOT + "/GameState.asset"));
 
             // 태양은 Core 소유(D-021 교정) — 콘텐츠 씬은 자체 Directional Light를 두지 않는다.
@@ -256,6 +260,12 @@ namespace DontLate.EditorTools
         internal static AudioClip LoadSfx(string bomId)
         {
             return AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/SFX/" + bomId + ".wav");
+        }
+
+        /// <summary>원제(파일명)로 BGM 클립을 집는다 — BGM은 원제 유지가 스왑 계약(AU-018 ② 날씨 곡).</summary>
+        internal static AudioClip LoadBgm(string fileName)
+        {
+            return AssetDatabase.LoadAssetAtPath<AudioClip>(BGM_FOLDER + "/" + fileName + ".wav");
         }
 
         /// <summary>
