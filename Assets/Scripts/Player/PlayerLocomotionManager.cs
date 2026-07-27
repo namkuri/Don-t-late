@@ -34,11 +34,12 @@ namespace DontLate
         private const float FALL_LIMIT_Y = -6f;
         private Vector3 _lastGroundedPosition;
 
-        // S-049: 언덕 × 비 = 미끄럼 — 목표 속도로 즉시가 아니라 관성으로 수렴 (빙판 감).
+        // S-049 → S-053 ①: 비 오는 날은 어디서든 미끄럼 — 관성 수렴. 언덕 비포장은 더 미끄럽다.
         private bool _inHillside;
         private bool _raining;
         private Vector3 _planarInertia;
-        private const float SLIPPERY_ACCEL = 6f; // 낮을수록 미끄럽다
+        private const float SLIPPERY_ACCEL_RAIN = 7.5f;      // 일반 노면 (낮을수록 미끄럽다)
+        private const float SLIPPERY_ACCEL_HILL = 4.5f;      // 언덕 비포장 × 비
 
         private void OnEnable()
         {
@@ -86,10 +87,11 @@ namespace DontLate
             if (_hub.Status.IsCarrying) speed *= tuning.carrySpeedPenalty;
 
             Vector3 targetPlanar = new Vector3(input.x * speed, 0f, input.y * speed * tuning.depthSpeedRatio);
-            if (_inHillside && _raining)
+            if (_raining)
             {
-                // S-049 미끄럼 — 가감속이 굼떠진다 (멈추려 해도 밀리고, 출발도 굼뜸).
-                _planarInertia = Vector3.MoveTowards(_planarInertia, targetPlanar, SLIPPERY_ACCEL * Time.deltaTime);
+                // S-053 ① 미끄럼 — 가감속이 굼떠진다 (멈추려 해도 밀리고, 출발도 굼뜸).
+                float accel = _inHillside ? SLIPPERY_ACCEL_HILL : SLIPPERY_ACCEL_RAIN;
+                _planarInertia = Vector3.MoveTowards(_planarInertia, targetPlanar, accel * Time.deltaTime);
                 PlanarVelocity = _planarInertia;
             }
             else

@@ -1199,3 +1199,22 @@
 Director 인게임 테스트: "테스트해봤을 때 괜찮았어" — **청취 판정 통과**(오디오 레인 사람 게이트 충족).
 - AU-013~015 타이틀 BGM(Suno·시작화면 재생·보컬제거본) · AU-017 SFX 재생성 · AU-019 맵이동 선택본(pin_1·route_5·depart_2) 전부 통과.
 - 상태: PR #14 반영 완료. **머지만 관제 게이트로 잔여**(Director 지시 "머지 빼고 진행"). review→done 전이는 관제 머지 시점.
+
+---
+
+## S-053 · 발주 2026-07-27 17:15 → ClaudeCode (본 세션 실행 — 남규님 개선 5건 배치)
+
+요구 (남규님 원문 "버그 또는 개선 사항"): ① 비 오는 날에도(어디서든) 미끄러짐 ② 집 안 눈 쌓임 제거
+③ 물류캠프→집 버튼 ④ 거리→캠프 버튼 ⑤ SnowCover 평면 quad 개선(눈 안 쌓이는 곳 소멸 — 셰이더 등).
+
+### 결과 · 2026-07-27 17:47 (리드 32분)
+- ① 미끄럼 전역화: Rain이면 어느 씬이든 이동 관성(가속 7.5/s), 언덕 비포장은 더 미끄럽게(4.5/s) — Hillside 한정 조건 해제.
+- ② Home을 실내 취급(_indoorScene) — 적설 즉시 0 스냅. 실측: Home+Snow에서 snowMix=0·HasSnowCover=False (창밖 강설 연출은 z오프셋이라 유지).
+- ③ Camp에 "집으로" 버튼(우상단) — Camp→Home 전이 기존 허용. 실측: HomeButton 생성 ○.
+- ④ 배송 3씬(District·Apartment·Hillside)에 "캠프로 (추가 상차)" 버튼 + Transitions 허용 추가. 실측: District→Camp 실전이 ○.
+- ⑤ **SnowCover 평면 quad 폐기 → 그레이박스 스노 셰이더** ([GreyboxSnow.shader](../../Assets/Art/Shaders/GreyboxSnow.shader) 신설):
+  전역 `_DL_SnowMix`(WorldWeatherManager 구동)에 따라 **모든 월드 윗면**(normal.y 램프)에 눈이 쌓인다 —
+  옥상·상자 위·인도·경사까지 커버("눈 안 쌓이는 곳" 소멸). 메인 라이트 그림자·추가 라이트(가로등)·포그 지원,
+  ShadowCaster/DepthOnly는 URP Lit UsePass. GB_ 머티리얼 팩토리가 비이미시브 전량을 스노 셰이더로 이식(멱등 마이그레이션).
+  실측: snowMix=1에서 건물 옥상·박스 상면·바닥 전면 적설 캡처(Screenshots/s053_snow_shader.png). 실퇴적 파티클·발자국은 그대로 주역.
+- 검증: 컴파일 ○ 콘솔 0 ○ 테스트 32/32 ○ ★ 재조립 ○ Play 실측(위) ○.

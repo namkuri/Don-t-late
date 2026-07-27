@@ -28,7 +28,6 @@ namespace DontLate
         private ParticleSystem _snow;
         private GameObject _hazeRoot; // S-044 ③ — 일렁 셰이더 쿼드 (파티클 박스룩 폐지)
         private Transform _cloudRoot;
-        private Renderer _snowCover;   // S-045 ⑤ — 지면 쌓임(알파 성장)
         private float _snowAmount;
         private SpriteRenderer[] _clouds;
         private DayPhase _phase = DayPhase.Morning;
@@ -190,7 +189,7 @@ namespace DontLate
         private void OnSceneChanged(GameScene scene)
         {
             _sceneZOffset = scene == GameScene.Home ? 10f : 0f; // S-044 ① — 방 뒷벽(z3) 너머 창밖
-            _indoorScene = scene == GameScene.Apartment;        // S-050 ④ — 실내엔 눈 안 쌓임
+            _indoorScene = scene == GameScene.Apartment || scene == GameScene.Home; // S-050 ④·S-053 ② — 실내엔 눈 안 쌓임
             RefreshGradeTarget();
         }
 
@@ -288,7 +287,6 @@ namespace DontLate
                 lifetime: 12f); // S-046 ① — 14u 상공에서 지면까지 (2.2s는 공중 소멸)
             ConfigureSnowPile(_snow);   // S-046 ③ — 낙하 지점 실누적 (반드시 _snow 생성 후)
             _hazeRoot = BuildHazeQuads();
-            BuildSnowCover();
             BuildClouds();
         }
 
@@ -386,40 +384,19 @@ namespace DontLate
                 ParticleSystemSubEmitterProperties.InheritNothing);
         }
 
-        // 눈 쌓임 보조 톤 (S-045 ⑤ → S-046 ③ 강등) — 실누적 아래 옅은 바탕.
-        private void BuildSnowCover()
-        {
-            GameObject quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            quad.name = "SnowCover";
-            Object.Destroy(quad.GetComponent<Collider>());
-            quad.transform.SetParent(transform, false);
-            quad.transform.localPosition = new Vector3(0f, 0.03f, 0f);
-            quad.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-            quad.transform.localScale = new Vector3(110f, 9f, 1f);
-            _snowCover = quad.GetComponent<Renderer>();
-            _snowCover.material = MakeParticleMaterial(new Color(0.96f, 0.97f, 1f, 0f));
-            quad.SetActive(false);
-        }
-
         private void UpdateSnowCover()
         {
-            if (_snowCover == null) return;
             if (_indoorScene) _snowAmount = 0f; // S-050 ④ — 실내 진입 즉시 걷힘 (HasSnowCover도 false → 발자국 없음)
-            float target = !_indoorScene && Weather == WeatherType.Snow ? 0.30f : 0f; // S-046 ③ — 보조 톤으로 강등
+            float target = !_indoorScene && Weather == WeatherType.Snow ? 0.30f : 0f;
             float rate = Weather == WeatherType.Snow ? 0.030f : 0.018f; // 쌓임은 느긋(~24s), 녹음은 더 느긋
             _snowAmount = Mathf.MoveTowards(_snowAmount, target, rate * Time.deltaTime);
 
             bool covered = HasSnowCover; // AU-018 ③ — 기존 게이트(>0.25) 전환 시 발소리 스왑 통지
             if (covered != _snowCovered) { _snowCovered = covered; WorldEvents.RaiseSnowCoverChanged(covered); }
 
-            bool visible = _snowAmount > 0.01f;
-            if (_snowCover.gameObject.activeSelf != visible) _snowCover.gameObject.SetActive(visible);
-            if (visible && _snowCover.material.HasProperty("_BaseColor"))
-            {
-                Color color = _snowCover.material.GetColor("_BaseColor");
-                color.a = _snowAmount;
-                _snowCover.material.SetColor("_BaseColor", color);
-            }
+            // S-053 ⑤ — 평면 quad 폐기: 그레이박스 스노 셰이더 전역 파라미터로 모든 윗면에 쌓인다
+            // (경사·상자·지붕 포함 — "눈 안 쌓이는 곳" 소멸). 실퇴적 파티클은 그대로 주역.
+            Shader.SetGlobalFloat("_DL_SnowMix", Mathf.Clamp01(_snowAmount / 0.30f));
         }
 
         /// <summary>플레이어 발자국용 — 지금 눈이 쌓여 있는가 (PlayerEffects가 WeatherChanged와 함께 사용).</summary>

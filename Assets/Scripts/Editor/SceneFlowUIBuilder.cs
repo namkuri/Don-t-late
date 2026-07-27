@@ -145,6 +145,11 @@ namespace DontLate.EditorTools
             CreateButton(root, "AdvanceButton", buttonText, target, font, CYAN,
                 new Vector2(0.5f, 0f), new Vector2(0f, 150f), new Vector2(600f, 104f), 40f);
 
+            // S-053 ③: 캠프 → 집 귀가 버튼 (상차 없이 하루를 접는 동선).
+            if (sceneName == "Camp")
+                CreateButton(root, "HomeButton", "집으로", GameScene.Home, font, new Color(0.55f, 0.62f, 0.75f, 1f),
+                    new Vector2(1f, 1f), new Vector2(-40f, -220f), new Vector2(300f, 70f), 28f);
+
             EditorSceneManager.SaveScene(scene, SCENES_ROOT + "/" + sceneName + ".unity");
         }
 
@@ -250,6 +255,10 @@ namespace DontLate.EditorTools
             // S-028 ③: 다른 구역 이동 — 집 강제 복귀는 루프상 안 맞음. Travel(구역 선택)로 재진입.
             CreateButton(root, "TravelButton", "다른 구역으로", GameScene.Travel, font, AMBER,
                 new Vector2(1f, 1f), new Vector2(-40f, -310f), new Vector2(380f, 74f), 30f);
+
+            // S-053 ④: 캠프 직행 — 추가 물량 실으러 되돌아가는 동선 단축.
+            CreateButton(root, "CampButton", "캠프로 (추가 상차)", GameScene.Camp, font, new Color(0.55f, 0.62f, 0.75f, 1f),
+                new Vector2(1f, 1f), new Vector2(-40f, -400f), new Vector2(380f, 74f), 30f);
 
             // 정산 패널 — 시안 테두리 + 네이비 내부 + 확인 버튼.
             GameObject panel = CreateImage(root, "SettlementPanel", CYAN).gameObject;

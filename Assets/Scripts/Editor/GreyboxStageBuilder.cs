@@ -1193,12 +1193,18 @@ namespace DontLate.EditorTools
         {
             string path = GREYBOX_ROOT + "/GB_" + name + ".mat";
             Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
-            if (material != null) return material;
+            if (material != null)
+            {
+                MigrateToSnowShader(material, emissive); // S-053 ⑤ — 기존 에셋도 스노 셰이더로 이식(멱등)
+                return material;
+            }
 
             EnsureFolder(DATA_ROOT);
             EnsureFolder(GREYBOX_ROOT);
 
-            material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            // S-053 ⑤: 비이미시브 = 스노 셰이더(전역 _DL_SnowMix로 윗면 적설) / 이미시브는 URP Lit 유지.
+            Shader shader = emissive ? Shader.Find("Universal Render Pipeline/Lit") : Shader.Find("DontLate/GreyboxSnow");
+            material = new Material(shader);
             material.color = color;
             if (emissive)
             {
@@ -1208,6 +1214,18 @@ namespace DontLate.EditorTools
             AssetDatabase.CreateAsset(material, path);
             AssetDatabase.SaveAssets();
             return material;
+        }
+
+        // 기존 GB_ 머티리얼을 스노 셰이더로 이식 — 색만 승계 (S-053 ⑤).
+        private static void MigrateToSnowShader(Material material, bool emissive)
+        {
+            if (emissive) return;
+            Shader snow = Shader.Find("DontLate/GreyboxSnow");
+            if (snow == null || material.shader == snow) return;
+            Color color = material.HasProperty("_BaseColor") ? material.GetColor("_BaseColor") : material.color;
+            material.shader = snow;
+            material.color = color;
+            EditorUtility.SetDirty(material);
         }
 
         private static void EnsureFolder(string path)
