@@ -50,6 +50,15 @@ namespace DontLate
         private float _activeDeadline;
         private bool _hasCard;
 
+        // S-069 — 시계 틱(초당 2회)마다 5개 라벨을 무조건 재조립하던 TMP GC 억제:
+        // 값이 실제로 바뀐 라벨만 다시 쓴다 (TMP.SetArraySizes가 GC 최상위 기여였다).
+        private int _shownMoney = int.MinValue;
+        private int _shownDebt = int.MinValue;
+        private int _shownLevel = int.MinValue;
+        private int _shownDone = int.MinValue;
+        private int _shownCargo = int.MinValue;
+        private int _shownRemaining = int.MinValue;
+
         private void OnEnable()
         {
             WorldEvents.ClockTicked += OnClockTicked;
@@ -105,7 +114,11 @@ namespace DontLate
             if (_hasCard && _remainingLabel != null)
             {
                 int remaining = Mathf.FloorToInt(_activeDeadline - clock.MinuteOfDay);
-                _remainingLabel.text = remaining > 0 ? $"마감까지 {remaining}분" : "지각";
+                if (remaining != _shownRemaining)
+                {
+                    _shownRemaining = remaining;
+                    _remainingLabel.text = remaining > 0 ? $"마감까지 {remaining}분" : "지각";
+                }
             }
         }
 
@@ -247,17 +260,35 @@ namespace DontLate
         private void RefreshEconomy()
         {
             if (_gameState == null) return;
-            if (_moneyLabel != null) _moneyLabel.text = $"₩{_gameState.money:N0}";
-            if (_debtLabel != null) _debtLabel.text = $"빚 ₩{_gameState.debt:N0}";
+            if (_moneyLabel != null && _gameState.money != _shownMoney)
+            {
+                _shownMoney = _gameState.money;
+                _moneyLabel.text = $"₩{_gameState.money:N0}";
+            }
+            if (_debtLabel != null && _gameState.debt != _shownDebt)
+            {
+                _shownDebt = _gameState.debt;
+                _debtLabel.text = $"빚 ₩{_gameState.debt:N0}";
+            }
 
             // S-063 — 레벨·숙련도·당일 배송수량 (시계 틱과 함께 갱신).
-            if (_levelLabel != null) _levelLabel.text = $"Lv.{_gameState.playerLevel}  {_gameState.nickname}";
+            if (_levelLabel != null && _gameState.playerLevel != _shownLevel)
+            {
+                _shownLevel = _gameState.playerLevel;
+                _levelLabel.text = $"Lv.{_gameState.playerLevel}  {_gameState.nickname}";
+            }
             if (_masteryFill != null)
                 _masteryFill.fillAmount = Mathf.Clamp01(_gameState.mastery / MasteryProgress.MaxFor(_gameState.playerLevel));
             if (_deliveryCountLabel != null)
             {
                 int done = _gameState.placedDeliveries.Count;
-                _deliveryCountLabel.text = "박스 " + done + "/" + (done + _gameState.cargo.Count);
+                int cargo = _gameState.cargo.Count;
+                if (done != _shownDone || cargo != _shownCargo)
+                {
+                    _shownDone = done;
+                    _shownCargo = cargo;
+                    _deliveryCountLabel.text = "박스 " + done + "/" + (done + cargo);
+                }
             }
         }
 

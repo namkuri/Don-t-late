@@ -247,7 +247,7 @@ namespace DontLate.EditorTools
             light.spotAngle = 60f;
             light.color = ParseColor("#ff9f45");
             light.intensity = 22f; // 4u 높이·range 8에서 지면에 앰버 풀이 또렷하게 보이는 값 (사람 튜닝 대상)
-            light.shadows = LightShadows.Soft;
+            light.shadows = LightShadows.None; // S-069 — 가로등 8개 × 그림자 패스가 WebGL District 저하의 주범
 
             StreetLampLight lamp = temp.AddComponent<StreetLampLight>();
             SetReference(lamp, "_light", light);
