@@ -32,6 +32,11 @@ namespace DontLate.EditorTools
             GreyboxStageBuilder.ConfigureCamera();
             PullCameraIntoRoom();
 
+                        // S-059 — 집 고양이 (데려온 뒤에만 활성 — HomeCat 자체 판정).
+            GameObject catGo = GreyboxStageBuilder.CreateEmpty("HomeCat", new Vector3(1.6f, 0f, 1.2f));
+            HomeCat homeCat = catGo.AddComponent<HomeCat>();
+            GreyboxStageBuilder.SetReference(homeCat, "_gameState", AssetDatabase.LoadAssetAtPath<GameStateSO>("Assets/Data/GameState.asset"));
+
             EditorSceneManager.SaveScene(scene, HOME_PATH);
             Debug.Log("[Home] 방 무대 조립 완료 — 연출 전용(조작 없음), 진행은 하단 버튼.");
         }

@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a5e3ef5ec1efc4b4397e1c503ec59084, type: 3}
+  m_Name: Scenario_Cat_Meet
+  m_EditorClassIdentifier: Assembly-CSharp::DontLate.DialogueScenarioSO
+  lines:
+  - speaker: "\uACE0\uC591\uC774"
+    text: "...\uC57C\uC639. (\uACBD\uACC4\uD558\uB2E4\uAC00 \uCF54\uB97C \uD081\uD081\uAC70\uB9B0\uB2E4
+      \u2014 \uB530\uB77C\uC624\uACE0 \uC2F6\uC5B4 \uD558\uB294 \uB208\uCE58\uB2E4)"
+    portrait: {fileID: 0}
+  - speaker: "\uACE0\uC591\uC774"
+    text: "\uC57C\uC639! (\uBA3C\uC800 \uC9D1 \uCABD\uC73C\uB85C \uB6F0\uC5B4\uAC14\uB2E4.
+      \uC0AC\uB8CC\uB97C \uCC59\uACA8\uC918\uC57C \uD560 \uAC83 \uAC19\uB2E4 \u2014
+      \uC1FC\uD551 \uC571)"
+    portrait: {fileID: 0}

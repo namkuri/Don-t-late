@@ -21,7 +21,7 @@ namespace DontLate
         /// <summary>가구 배치 대기 id — Home 씬 HomeFurniturePlacer가 소비 (S-019 ④).</summary>
         public static string PendingPlacementId;
 
-        private enum Screen { Home, Delivery, Music, Invest, Bank, Furniture, Call, Map, Shop, Social }
+        private enum Screen { Home, Delivery, Music, Invest, Bank, Furniture, Call, Map, Shop, Social, Weather }
 
         [SerializeField] private RectTransform _panel;
         [SerializeField] private TMP_FontAsset _font;
@@ -283,6 +283,7 @@ namespace DontLate
                     Screen.Map => "지도",
                     Screen.Shop => "쇼핑",
                     Screen.Social => "소셜",
+                    Screen.Weather => "날씨",
                     _ => "홈"
                 };
             RefreshCurrent();
@@ -299,7 +300,131 @@ namespace DontLate
                 case Screen.Call: RefreshCall(); break;
                 case Screen.Furniture: RefreshFurniture(); break;
                 case Screen.Map: RefreshMap(); break;
+                case Screen.Weather: RefreshWeather(); break;
+                case Screen.Shop: RefreshShop(); break;
             }
+        }
+
+
+        // ── 쇼핑 앱 (S-056) — 구루마·음료·고양이 용품 ──
+        private Transform _shopList;
+
+        private struct ShopItem
+        {
+            public string id; public string label; public int price;
+            public bool stackable; public bool holdable;
+        }
+
+        private static readonly ShopItem[] ShopItems =
+        {
+            new ShopItem { id = "cart", label = "구루마 (대차)", price = 8000 },
+            new ShopItem { id = "drink", label = "에너지드링크", price = 1500, stackable = true, holdable = true },
+            new ShopItem { id = "cat_food", label = "고양이 사료", price = 2000, stackable = true },
+            new ShopItem { id = "cat_toy", label = "고양이 장난감", price = 3000, stackable = true },
+            new ShopItem { id = "cat_tower", label = "캣타워", price = 10000 },
+        };
+
+        private void BuildShopScreen()
+        {
+            GameObject screen = NewScreen(Screen.Shop);
+            _shopList = screen.transform;
+        }
+
+        private void RefreshShop()
+        {
+            if (_shopList == null) return;
+            foreach (Transform child in _shopList) Destroy(child.gameObject); // 재구축 (품목 적음)
+
+            for (int i = 0; i < ShopItems.Length; i++)
+            {
+                ShopItem item = ShopItems[i];
+                bool cartOwned = item.id == "cart" && _gameState != null && _gameState.ownsCart;
+
+                GameObject row = new GameObject("Shop_" + item.id, typeof(RectTransform));
+                row.transform.SetParent(_shopList, false);
+                Image rowBg = row.AddComponent<Image>();
+                rowBg.color = new Color(0.12f, 0.15f, 0.22f, 0.95f);
+                RectTransform rowRect = (RectTransform)row.transform;
+                rowRect.anchorMin = new Vector2(0f, 1f); rowRect.anchorMax = new Vector2(1f, 1f);
+                rowRect.pivot = new Vector2(0.5f, 1f);
+                rowRect.sizeDelta = new Vector2(-16f, 74f);
+                rowRect.anchoredPosition = new Vector2(0f, -6f - i * 82f);
+
+                TMP_Text label = MakeText(row.transform, "Label",
+                    item.label + "\n<size=70%>₩" + item.price.ToString("N0") + "</size>",
+                    24f, Color.white, TextAlignmentOptions.Left);
+                RectTransform labelRect = label.rectTransform;
+                labelRect.anchorMin = Vector2.zero; labelRect.anchorMax = Vector2.one;
+                labelRect.offsetMin = new Vector2(14f, 4f); labelRect.offsetMax = new Vector2(-110f, -4f);
+
+                Button buy = MakeButton(row.transform, "Buy", cartOwned ? "보유" : "구매", () => BuyShopItem(item));
+                RectTransform buyRect = (RectTransform)buy.transform;
+                buyRect.anchorMin = buyRect.anchorMax = buyRect.pivot = new Vector2(1f, 0.5f);
+                buyRect.sizeDelta = new Vector2(92f, 52f);
+                buyRect.anchoredPosition = new Vector2(-10f, 0f);
+                buy.interactable = !cartOwned;
+            }
+        }
+
+        private void BuyShopItem(ShopItem item)
+        {
+            if (WorldDebtManager.Instance == null || _gameState == null) return;
+            if (item.id == "cart" && _gameState.ownsCart) return;
+
+            if (item.id != "cart" && _gameState.bagItems.Count >= BagStorage.CAPACITY
+                && !(_gameState.bagItems.Exists(b => b.id == item.id && b.stackable)))
+            {
+                Debug.Log("[쇼핑] 가방이 가득 찼다");
+                return;
+            }
+
+            if (!WorldDebtManager.Instance.TrySpend(item.price))
+            {
+                Debug.Log("[쇼핑] 잔액 부족");
+                return;
+            }
+
+            if (item.id == "cart")
+            {
+                _gameState.ownsCart = true;
+                Debug.Log("[쇼핑] 구루마 구매 — 캠프에 준비된다 (트럭 생기면 배송지 자동 스폰)");
+            }
+            else
+            {
+                BagStorage.TryAdd(_gameState, item.id, item.label, item.stackable, item.holdable);
+                if (BagView.Instance != null) BagView.Instance.Refresh();
+            }
+            RefreshShop();
+        }
+
+        // ── 날씨 앱 (S-058) — 오늘·내일 날씨와 기온 ──
+        private TMP_Text _weatherBody;
+
+        private void BuildWeatherScreen()
+        {
+            GameObject screen = NewScreen(Screen.Weather);
+            _weatherBody = MakeText(screen.transform, "Body", string.Empty, 30f, Color.white, TextAlignmentOptions.Top);
+            RectTransform rect = _weatherBody.rectTransform;
+            rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one;
+            rect.offsetMin = new Vector2(18f, 12f); rect.offsetMax = new Vector2(-18f, -24f);
+        }
+
+        private static string WeatherName(WeatherType weather) => weather switch
+        {
+            WeatherType.Clear => "맑음 ☀", WeatherType.Cloudy => "흐림 ☁", WeatherType.Rain => "비 ☔",
+            WeatherType.Snow => "눈 ☃", WeatherType.Fog => "안개 ≋", WeatherType.Heat => "폭염 ♨", _ => "?"
+        };
+
+        private void RefreshWeather()
+        {
+            if (_weatherBody == null || WorldWeatherManager.Instance == null) return;
+            WeatherType today = WorldWeatherManager.Instance.Weather;
+            WeatherType tomorrow = WorldWeatherManager.Instance.TomorrowWeather;
+            _weatherBody.text = "<size=130%><b>오늘</b></size>" + "\n"
+                + WeatherName(today) + "  " + WorldWeatherManager.TemperatureFor(today) + "°C" + "\n" + "\n"
+                + "<size=130%><b>내일</b></size>" + "\n"
+                + WeatherName(tomorrow) + "  " + WorldWeatherManager.TemperatureFor(tomorrow) + "°C" + "\n" + "\n"
+                + "<size=70%>비 오면 길이 미끄럽고, 덥거나 추우면 몸이 빨리 지친다.</size>";
         }
 
         // S-062 ⑦ — 쇼핑(S-056)·소셜(S-061) 자리 표시 화면. 정식 시공 때 교체.
@@ -386,7 +511,8 @@ namespace DontLate
             BuildBankScreen();
             BuildCallScreen(); // S-031 ⑧
             BuildFurnitureScreen();
-            BuildPlaceholderScreen(Screen.Shop, "쇼핑", "배달앱 상점 준비 중 (S-056)\n구루마·음료·고양이 용품이 들어온다");
+            BuildShopScreen();     // S-056
+            BuildWeatherScreen();  // S-058
             BuildPlaceholderScreen(Screen.Social, "소셜", "SNS 준비 중 (S-061)\n동네 사람들 소식과 호감도가 보인다");
             BuildMapScreen();  // S-036
         }
@@ -416,6 +542,7 @@ namespace DontLate
                 ("지", "지도", Screen.Map, new Color(0.30f, 0.62f, 0.85f)),      // S-062 ⑦
                 ("쇼", "쇼핑", Screen.Shop, new Color(0.90f, 0.42f, 0.45f)),     // S-062 ⑦ — S-056 상점 예정지
                 ("소", "소셜", Screen.Social, new Color(0.95f, 0.75f, 0.30f)),   // S-062 ⑦ — S-061 SNS 예정지
+                ("날", "날씨", Screen.Weather, new Color(0.45f, 0.72f, 0.95f)),   // S-058
             };
             for (int i = 0; i < apps.Length; i++)
             {

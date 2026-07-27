@@ -107,6 +107,9 @@ namespace DontLate.EditorTools
             // S-054b 엣지 워크 — 왼쪽 끝 = 이전 동네(아파트단지). 오른쪽은 개척 종점(게이트 없음).
             EdgeGateBuildKit.BuildGate("EdgeGate_Prev", new Vector3(-19.5f, 0f, 0f), DontLate.DistrictEdgeGate.Direction.Prev, gameState);
 
+            // S-059 — 달동네 고양이 (정상 마당 · 데려오면 집에 정착).
+            BuildCat(gameState);
+
             // ── 플레이어·카메라(Y 팔로우) ────────────────────
             GreyboxStageBuilder.BuildPlayer(gameState, tuning);
             GameObject player = GameObject.Find("__gb_Player");
@@ -197,6 +200,48 @@ namespace DontLate.EditorTools
             if (basePos.y > 0.3f)
                 BuildBox(id + "_stilt", new Vector3(basePos.x, basePos.y * 0.5f, basePos.z),
                     new Vector3(2.2f, basePos.y, 1.5f), _wallMat);
+        }
+
+        // S-059 고양이 — 작은 주황 덩어리 + 상호작용 트리거.
+        private static void BuildCat(GameStateSO gameState)
+        {
+            GameObject root = GreyboxStageBuilder.CreateEmpty("Cat", new Vector3(41f, 9.5f, -0.8f));
+            Material fur = GreyboxStageBuilder.GetOrCreateMaterial("CatFur", new Color(0.85f, 0.55f, 0.25f), false);
+            Material highlight = GreyboxStageBuilder.GetOrCreateMaterial("Highlight", GreyboxStageBuilder.ParseColor("#35e0c8"), true);
+
+            GameObject body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            Object.DestroyImmediate(body.GetComponent<Collider>());
+            body.name = "Body";
+            body.transform.SetParent(root.transform, false);
+            body.transform.localPosition = new Vector3(0f, 0.16f, 0f);
+            body.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            body.transform.localScale = new Vector3(0.22f, 0.26f, 0.22f);
+            Renderer bodyRenderer = body.GetComponent<Renderer>();
+            bodyRenderer.sharedMaterial = fur;
+
+            GameObject head = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            Object.DestroyImmediate(head.GetComponent<Collider>());
+            head.name = "Head";
+            head.transform.SetParent(root.transform, false);
+            head.transform.localPosition = new Vector3(0.22f, 0.3f, 0f);
+            head.transform.localScale = Vector3.one * 0.22f;
+            head.GetComponent<Renderer>().sharedMaterial = fur;
+
+            SphereCollider trigger = root.AddComponent<SphereCollider>();
+            trigger.isTrigger = true;
+            trigger.radius = 0.6f;
+            trigger.center = new Vector3(0f, 0.25f, 0f);
+
+            DialogueScenarioSO meet = NpcBuildKit.GetOrCreateScenario("Scenario_Cat_Meet",
+                ("고양이", "...야옹. (경계하다가 코를 킁킁거린다 — 따라오고 싶어 하는 눈치다)"),
+                ("고양이", "야옹! (먼저 집 쪽으로 뛰어갔다. 사료를 챙겨줘야 할 것 같다 — 쇼핑 앱)"));
+
+            HillsideCat cat = root.AddComponent<HillsideCat>();
+            GreyboxStageBuilder.SetReference(cat, "_gameState", gameState);
+            GreyboxStageBuilder.SetReference(cat, "_meetScenario", meet);
+            GreyboxStageBuilder.SetReference(cat, "_highlightRenderer", bodyRenderer);
+            GreyboxStageBuilder.SetReference(cat, "_normalMaterial", fur);
+            GreyboxStageBuilder.SetReference(cat, "_highlightMaterial", highlight);
         }
 
         private static GameObject BuildBox(string name, Vector3 position, Vector3 size, Material material)

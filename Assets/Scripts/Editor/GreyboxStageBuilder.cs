@@ -425,7 +425,7 @@ namespace DontLate.EditorTools
         // 배달 대차 (S-038 → S-040 물리 재설계 — 1.5배 바구니). 루트 콜라이더 = 트리거(센서 포커스).
         // 바닥·사방 벽 = CartWall 레이어 실콜라이더 — 상자는 가두고 플레이어는 통과(낙사 회귀 방지).
         // 위는 개방 — 던지면 튀어나갈 수 있다 (남규님 스펙).
-        internal static void BuildDeliveryCart(Vector3 position)
+        internal static void BuildDeliveryCart(Vector3 position, bool requiresTruck = false)
         {
             Material cartMat = GetOrCreateMaterial("Cart", new Color(0.30f, 0.55f, 0.42f), false);
             Material highlight = GetOrCreateMaterial("Highlight", ParseColor("#35e0c8"), true);
@@ -457,6 +457,18 @@ namespace DontLate.EditorTools
             drop.transform.localPosition = new Vector3(0f, 1.5f, 0f);
 
             DeliveryCart cart = root.AddComponent<DeliveryCart>();
+            // S-056 — 구루마 소유 게이트 배선.
+            {
+                var cartComp = root.GetComponentInChildren<DeliveryCart>();
+                if (cartComp != null)
+                {
+                    SetReference(cartComp, "_stateForOwnership",
+                        AssetDatabase.LoadAssetAtPath<GameStateSO>("Assets/Data/GameState.asset"));
+                    var so = new SerializedObject(cartComp);
+                    so.FindProperty("_requiresTruck").boolValue = requiresTruck;
+                    so.ApplyModifiedPropertiesWithoutUndo();
+                }
+            }
             SetReference(cart, "_renderer", root.transform.Find("Bed").GetComponent<Renderer>());
             SetReference(cart, "_normalMaterial", cartMat);
             SetReference(cart, "_highlightMaterial", highlight);

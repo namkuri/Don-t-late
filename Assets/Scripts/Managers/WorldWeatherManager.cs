@@ -22,6 +22,16 @@ namespace DontLate
         [SerializeField] private float _gradeLerpSpeed = 0.5f;
 
         public WeatherType Weather { get; private set; } = WeatherType.Clear;
+        /// <summary>내일 예보 (S-058 날씨앱) — 오늘 추첨 때 함께 뽑고, 다음 날 그대로 승계된다.</summary>
+        public WeatherType TomorrowWeather { get; private set; } = WeatherType.Clear;
+        private bool _hasForecast;
+
+        /// <summary>날씨별 대표 기온(°C) — 날씨앱 표시용 (S-058, 그레이박스 근사).</summary>
+        public static int TemperatureFor(WeatherType weather) => weather switch
+        {
+            WeatherType.Heat => 34, WeatherType.Clear => 24, WeatherType.Cloudy => 20,
+            WeatherType.Rain => 17, WeatherType.Fog => 14, WeatherType.Snow => -2, _ => 20
+        };
 
         private int _lastRolledDay = -1;
         private ParticleSystem _rain;
@@ -110,16 +120,24 @@ namespace DontLate
         private void Reroll()
         {
             _lastRolledDay = _gameState != null ? _gameState.day : 0;
+            // S-058 — 예보 승계: 어제 예보가 오늘 날씨가 된다 (예보 신뢰). 내일 것은 새로 추첨.
+            WeatherType today = _hasForecast ? TomorrowWeather : Draw();
+            TomorrowWeather = Draw();
+            _hasForecast = true;
+            SetWeather(today);
+        }
+
+        private WeatherType Draw()
+        {
             int total = 0;
             foreach (var w in Weights) total += w.weight;
             int roll = Random.Range(0, total);
-            WeatherType picked = WeatherType.Clear;
             foreach (var w in Weights)
             {
                 roll -= w.weight;
-                if (roll < 0) { picked = w.type; break; }
+                if (roll < 0) return w.type;
             }
-            SetWeather(picked);
+            return WeatherType.Clear;
         }
 
         /// <summary>디버그·튜닝용 강제 설정 (unity-cli exec 검증 포함).</summary>

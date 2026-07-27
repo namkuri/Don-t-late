@@ -233,6 +233,15 @@ namespace DontLate
             TruckAwarded?.Invoke();
         }
 
+        /// <summary>차에 치임 (S-057) — 병원비 청구·미배송 실패 처리는 WorldDeliveryManager 몫.</summary>
+        public static event Action PlayerHitByCar;
+
+        public static void RaisePlayerHitByCar()
+        {
+            Log("PlayerHitByCar — 병원행");
+            PlayerHitByCar?.Invoke();
+        }
+
         /// <summary>가방에서 좌클릭 — 손에 들기 요청 (S-064). Player 도메인이 받아 시각물 생성.</summary>
         public static event Action<BagItem> BagHoldRequested;
 

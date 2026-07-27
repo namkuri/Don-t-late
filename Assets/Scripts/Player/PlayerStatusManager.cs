@@ -23,6 +23,13 @@ namespace DontLate
         public DeliveryOrderSO CarriedOrder { get; private set; }
         public bool IsCarrying => CarriedOrder != null;
 
+        // S-055 — 두 개 들기: 누적 배송 성공 5건이면 습득. 2번 슬롯은 머리 위에 쌓인다.
+        public DeliveryOrderSO CarriedOrder2 { get; private set; }
+        public bool CanDoubleCarry => _hub.GameState != null && _hub.GameState.completedCount >= 5;
+        public bool CarryFull => IsCarrying && (CarriedOrder2 != null || !CanDoubleCarry);
+        private Transform _carriedVisual2;
+        private bool _fillSecondSlot;
+
         private void Awake() => _hub = GetComponent<PlayerManager>();
 
         private bool _inHillside; // S-049 — 오르막 스태미나 가중
@@ -58,7 +65,8 @@ namespace DontLate
 
         private void OnBagItemConsumed(BagItem item)
         {
-            // 현재 사용 효과가 정의된 아이템 = 음료(스태미나 회복 + 날씨 보너스). 이후 아이템별 분기 확장.
+            if (item.id != "drink") return; // S-059 — 사료·장난감 등은 해당 도메인(고양이 등)이 받는다
+            // 음료 = 스태미나 회복 + 날씨 보너스.
             float amount = _hub.Tuning.energyDrinkRecover;
             if (_weather == WeatherType.Heat) { amount *= 1.5f; Debug.Log("[가방] 캬 — 시원하다! (폭염 보너스)"); }
             else if (_weather == WeatherType.Snow) { amount *= 1.5f; Debug.Log("[가방] 후 — 따뜻하다! (한파 보너스)"); }
@@ -115,6 +123,10 @@ namespace DontLate
                         ? CarriedOrder.weight * tuning.staminaDrainPerKg
                         : drain * (tuning.staminaDrainCarryMultiplier - 1f); // 무게 미지정 주문 폴백
                 }
+                if (CarriedOrder2 != null) // S-055 — 두 번째 상자 무게 가중
+                    drain += CarriedOrder2.weight > 0f
+                        ? CarriedOrder2.weight * tuning.staminaDrainPerKg
+                        : drain * (tuning.staminaDrainCarryMultiplier - 1f);
                 if (_inHillside) drain *= 1.4f; // S-049 — 오르막 동네는 힘들다
                 if (_weather == WeatherType.Heat || _weather == WeatherType.Snow) drain *= 1.35f; // S-060 — 덥거나 추우면 더 힘들다
                 Stamina -= drain * Time.deltaTime;
@@ -130,10 +142,21 @@ namespace DontLate
 
         public bool TryCarry(DeliveryOrderSO order)
         {
-            if (IsCarrying) return false;
-            CarriedOrder = order;
-            WorldEvents.RaiseCarryStateChanged(true);
-            return true;
+            if (!IsCarrying)
+            {
+                CarriedOrder = order;
+                _fillSecondSlot = false;
+                WorldEvents.RaiseCarryStateChanged(true);
+                return true;
+            }
+            if (CanDoubleCarry && CarriedOrder2 == null) // S-055 두 개 들기
+            {
+                CarriedOrder2 = order;
+                _fillSecondSlot = true;
+                Debug.Log("[숙련] 두 개 들기 — 상자를 하나 더 얹었다");
+                return true;
+            }
+            return false;
         }
 
         public DeliveryOrderSO ReleaseCarry(bool dropAsPhysics = false)
@@ -148,7 +171,17 @@ namespace DontLate
                 _carriedVisual = null;
             }
 
-            WorldEvents.RaiseCarryStateChanged(false);
+            // S-055 — 2번 슬롯 승격: 위에 얹힌 상자가 손으로 내려온다.
+            if (CarriedOrder2 != null)
+            {
+                CarriedOrder = CarriedOrder2;
+                CarriedOrder2 = null;
+                _carriedVisual = _carriedVisual2;
+                _carriedVisual2 = null;
+                if (_carriedVisual != null) _carriedVisual.localPosition = Vector3.zero;
+            }
+
+            WorldEvents.RaiseCarryStateChanged(IsCarrying);
             return released;
         }
 
@@ -255,15 +288,30 @@ namespace DontLate
         /// <summary>든 물건의 겉모습을 캐리 앵커에 붙인다. 내려놓을 때 함께 사라진다.</summary>
         public void AttachCarried(Transform visual)
         {
-            _carriedVisual = visual;
             visual.SetParent(_carryAnchor, false);
-            visual.localPosition = Vector3.zero;
             visual.localRotation = Quaternion.identity;
+            if (_fillSecondSlot) // S-055 — 2번 슬롯은 머리 위
+            {
+                _carriedVisual2 = visual;
+                visual.localPosition = new Vector3(0f, 0.62f, 0f);
+                _fillSecondSlot = false;
+            }
+            else
+            {
+                _carriedVisual = visual;
+                visual.localPosition = Vector3.zero;
+            }
         }
 
         /// <summary>지각으로 실패한 건이 지금 든 것이면 손에서 내려놓는다.</summary>
         private void OnDeliveryFailed(DeliveryData data)
         {
+            if (CarriedOrder2 != null && CarriedOrder2.orderId == data.OrderId) // S-055
+            {
+                CarriedOrder2 = null;
+                if (_carriedVisual2 != null) { Destroy(_carriedVisual2.gameObject); _carriedVisual2 = null; }
+                return;
+            }
             if (CarriedOrder == null || CarriedOrder.orderId != data.OrderId) return;
             ReleaseCarry();
         }

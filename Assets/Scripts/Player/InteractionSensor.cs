@@ -40,7 +40,7 @@ namespace DontLate
             IInteractable nearest = null;
             float nearestDistance = float.MaxValue;
 
-            bool carrying = _hub.Status.IsCarrying;
+            bool carrying = _hub.Status.CarryFull; // S-055 — 두 개 들기면 꽉 찼을 때만 제외
             for (int i = 0; i < count; i++)
             {
                 if (!_hits[i].TryGetComponent(out IInteractable candidate)) continue;

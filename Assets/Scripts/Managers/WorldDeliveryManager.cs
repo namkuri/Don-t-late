@@ -34,8 +34,18 @@ namespace DontLate
             if (Instance == this) Instance = null;
         }
 
-        private void OnEnable() => WorldEvents.DeliveryFailed += OnDeliveryFailed;
-        private void OnDisable() => WorldEvents.DeliveryFailed -= OnDeliveryFailed;
+        private const int HOSPITAL_FEE = 3000; // S-057 — 병원비 (밸런스 추후)
+
+        private void OnEnable()
+        {
+            WorldEvents.DeliveryFailed += OnDeliveryFailed;
+            WorldEvents.PlayerHitByCar += OnPlayerHitByCar; // S-057
+        }
+        private void OnDisable()
+        {
+            WorldEvents.DeliveryFailed -= OnDeliveryFailed;
+            WorldEvents.PlayerHitByCar -= OnPlayerHitByCar;
+        }
 
         /// <summary>이동맵 노드 선택 시 목적 구역 기록 (S-015). District 스포너가 이 값으로 짐·비콘을 깐다.</summary>
         public void SetDestination(string district)
@@ -145,6 +155,31 @@ namespace DontLate
             Debug.Log("[배송] 일괄 정산 — 성공 " + summary.SuccessCount + " · 실패 " + summary.FailCount
                     + " · 보상 " + summary.RewardTotal + " · 벌금 " + summary.PenaltyTotal);
             return summary;
+        }
+
+        // S-057 — 교통사고: 병원비 청구 + 아직 배치 못 한 짐 전량 실패 정산 + 집으로 후송.
+        private void OnPlayerHitByCar()
+        {
+            _gameState.money -= HOSPITAL_FEE;
+            if (_gameState.money < 0) { _gameState.debt += -_gameState.money; _gameState.money = 0; }
+            WorldEvents.RaiseMoneySpent(HOSPITAL_FEE);
+
+            int failed = 0;
+            foreach (DeliveryOrderSO order in _gameState.cargo.ToArray())
+            {
+                if (order == null) continue;
+                _gameState.cargo.Remove(order);
+                _gameState.lateCount++;
+                MasteryProgress.Add(_gameState, -MasteryProgress.FAIL_LOSS);
+                WorldEvents.RaiseDeliveryFailed(DeliveryData.From(order));
+                failed++;
+            }
+            _gameState.cargo.Clear();
+            _gameState.scannedOrderIds.Clear();
+
+            Debug.Log("[교통사고] 병원비 -₩" + HOSPITAL_FEE.ToString("N0") + " · 미배송 " + failed + "건 실패 — 집으로 후송");
+            if (WorldSceneFlowManager.Instance != null && !WorldSceneFlowManager.Instance.IsTransitioning)
+                WorldSceneFlowManager.Instance.Request(GameScene.Home);
         }
 
         private readonly System.Collections.Generic.HashSet<string> _settledDistricts =

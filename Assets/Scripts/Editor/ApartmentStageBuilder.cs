@@ -75,7 +75,7 @@ namespace DontLate.EditorTools
             dock.GetComponent<Renderer>().sharedMaterial = dockMat;
 
             // ── 대차 ─────────────────────────────────────────
-            GreyboxStageBuilder.BuildDeliveryCart(new Vector3(-9f, 0f, 0f));
+            GreyboxStageBuilder.BuildDeliveryCart(new Vector3(-9f, 0f, 0f), requiresTruck: true); // S-056 — 트럭 시대 자동 스폰
 
             // ── 실물리 엘리베이터 (캐빈 + 층 호출 패널) ──────
             BuildElevator(tuning, cabinMat, panelMat, highlight);

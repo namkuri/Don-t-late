@@ -55,6 +55,15 @@ namespace DontLate.EditorTools
             NpcBuildKit.BuildErrandNpc("ErrandGranny", "할머니", new Vector3(12f, 0f, -1.8f),
                 new Vector3(-6f, 0f, -1.8f), gameState, 1500);
 
+            // S-057 — 교차(Z) 골목 도로: 진행축과 직각으로 차가 관통한다. 보고 건너라.
+            Material road = GreyboxStageBuilder.GetOrCreateMaterial("CrossRoad", new Color(0.16f, 0.17f, 0.19f), false);
+            GameObject crossRoad = GreyboxStageBuilder.CreatePrimitive(PrimitiveType.Cube, "CrossRoad", new Vector3(2f, 0.01f, 0f));
+            Object.DestroyImmediate(crossRoad.GetComponent<Collider>());
+            crossRoad.transform.localScale = new Vector3(4.2f, 0.02f, 20f);
+            crossRoad.GetComponent<Renderer>().sharedMaterial = road;
+            GameObject trafficGo = GreyboxStageBuilder.CreateEmpty("Traffic", new Vector3(2f, 0f, 0f));
+            trafficGo.AddComponent<TrafficRoad>();
+
             // S-054b 엣지 워크 — 좌=이전 동네/캠프, 우=다음 동네(미해금이면 안내 후 차단).
             EdgeGateBuildKit.BuildGate("EdgeGate_Prev", new Vector3(-19f, 0f, 0f), DontLate.DistrictEdgeGate.Direction.Prev, gameState);
             EdgeGateBuildKit.BuildGate("EdgeGate_Next", new Vector3(19f, 0f, 0f), DontLate.DistrictEdgeGate.Direction.Next, gameState);

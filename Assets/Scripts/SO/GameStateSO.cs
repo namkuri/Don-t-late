@@ -65,6 +65,14 @@ namespace DontLate
         /// <summary>숙련도 — 배송 성공 +·주행 50m +1·실패 −. 만충 시 레벨업 (판정은 MasteryProgress).</summary>
         public float mastery;
 
+        /// <summary>구루마(대차) 보유 (S-056 상점 구매). 도보 시대=캠프에서 밀기, 트럭 시대=배송지 자동 스폰.</summary>
+        public bool ownsCart;
+
+        // ── S-059 고양이 ──
+        public bool catFriend;   // 언덕에서 데려옴
+        public bool catRanAway;  // 하루 넘게 굶겨 떠남
+        public int catFedDay;    // 마지막 급여 day
+
         // ── S-064 가방 (기본 5칸) ──
         public List<BagItem> bagItems = new List<BagItem>();
 

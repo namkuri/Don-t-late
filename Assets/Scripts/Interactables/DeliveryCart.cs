@@ -15,6 +15,17 @@ namespace DontLate
         private const float BASKET_RADIUS = 1.6f; // MoveTo 동반 판정 (수평)
         private const float BASKET_HEIGHT = 2.0f;
 
+        [Tooltip("구루마 소유 게이트 (S-056) — 미구매면 비활성. 배송지 카트는 트럭 시대에만.")]
+        [SerializeField] private GameStateSO _stateForOwnership;
+        [SerializeField] private bool _requiresTruck;
+
+        private void OnEnable()
+        {
+            if (_stateForOwnership == null) return;
+            bool available = _stateForOwnership.ownsCart && (!_requiresTruck || _stateForOwnership.hasTruck);
+            if (!available) gameObject.SetActive(false); // S-056 — 상점에서 사면 열린다
+        }
+
         [SerializeField] private Renderer _renderer;
         [SerializeField] private Material _normalMaterial;
         [SerializeField] private Material _highlightMaterial;

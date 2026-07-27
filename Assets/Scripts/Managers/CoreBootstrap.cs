@@ -54,6 +54,10 @@ namespace DontLate
             _gameState.playerLevel = 1;   // S-063
             _gameState.mastery = 0f;
             _gameState.bagItems.Clear();  // S-064
+            _gameState.ownsCart = false;  // S-056
+            _gameState.catFriend = false;  // S-059
+            _gameState.catRanAway = false;
+            _gameState.catFedDay = 0;
             _gameState.cargo.Clear();
             _gameState.scannedOrderIds.Clear();
             _gameState.placedDeliveries.Clear();
