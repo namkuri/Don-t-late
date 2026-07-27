@@ -54,6 +54,7 @@ SFX_REQUIRED = ["no background music", "no vocals"]
 SFX_STYLE_EN = ("Style: cozy cute toy-like game sound, soft wooden marimba and rounded synth plucks, "
                 "playful little pitch bends, gentle and warm, light and bouncy.")
 SFX_RANGE = (0.5, 5.0)          # text_to_sound_effects 제약
+AMB_MAX = 22.0                  # 앰비언스 한정 캡 해제 (AU-012 의도 · API 실상한 22s). amb_* 만 적용.
 DEFAULT_LENGTH = {"bgm": bgm_rules.DEFAULT_TRACK_SECONDS, "sfx": 2.0}   # BGM 기본 60초 (완화 정책)
 DEFAULT_LOOP_BARS = 16
 
@@ -83,13 +84,14 @@ SEED_TAGS = {
 
 # ---------- SFX 조립 ----------
 
-def compose_sfx(item, note, length):
+def compose_sfx(item, note, length, no_anchors=False):
     parts = [note.strip().rstrip(".") + "."]
     event = re.search(r"`([A-Za-z]\w+)`", item["desc"])
     if event:
         parts.append(f"It plays when the game event {event.group(1)} fires.")
     parts.append(f"Duration about {length:.1f} seconds.")
-    parts.append(SFX_STYLE_EN)
+    if not no_anchors:  # 토이톤 앵커 — 질감·앰비언스는 --no-anchors로 뺀다(사실적 환경음).
+        parts.append(SFX_STYLE_EN)
     parts.append(SFX_CONSTRAINTS)
     return " ".join(parts)
 
@@ -303,9 +305,10 @@ def cmd_build(args):
             raise SystemExit("[차단] 규격 위반:\n  - " + "\n  - ".join(problems))
         meta = {"slot": slot, "bpm": bpm, "loop_bars": args.loop_bars, **info}
     else:
-        if not (SFX_RANGE[0] <= length <= SFX_RANGE[1]):
-            raise SystemExit(f"[차단] SFX 길이 {length}s — {SFX_RANGE[0]}~{SFX_RANGE[1]}초만 지원한다.")
-        prompt = compose_sfx(item, note, length)
+        sfx_max = AMB_MAX if args.bom_id.startswith("amb_") else SFX_RANGE[1]
+        if not (SFX_RANGE[0] <= length <= sfx_max):
+            raise SystemExit(f"[차단] SFX 길이 {length}s — {SFX_RANGE[0]}~{sfx_max}초만 지원한다.")
+        prompt = compose_sfx(item, note, length, no_anchors=args.no_anchors)
         missing = verify(prompt, "sfx")
         if missing:
             raise SystemExit(f"[차단] 금칙어 누락: {missing}")

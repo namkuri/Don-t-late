@@ -8,6 +8,8 @@ namespace DontLate.EditorTools
     /// 계약 경로: Assets/Audio/BGM · Assets/Audio/SFX. 그 밖은 절대 건드리지 않는다.
     /// - BGM: Compressed In Memory · 스테레오 유지 · 백그라운드 로드
     /// - SFX: Decompress On Load · 모노 강제(BOM §8 "2D")
+    /// - amb_*(SFX 폴더 내 긴 루프 베드): Compressed In Memory · 모노 · 백그라운드·저비트레이트
+    ///   (40s 루프를 DecompressOnLoad하면 RAM 낭비 — 긴 루프는 BGM식 로드가 정답. AU-018 ①)
     /// ⚠ Streaming 금지 — WebGL은 Web Audio API 기반이라 Streaming 로드타입을 지원하지 않는다 (D-040).
     /// </summary>
     public class AudioImportPostprocessor : AssetPostprocessor
@@ -37,17 +39,20 @@ namespace DontLate.EditorTools
 
             var importer = (AudioImporter)assetImporter;
             bool isBgm = category == BGM;
+            // amb_*(SFX 폴더 내 긴 앰비언스 루프) — DecompressOnLoad 대신 BGM식 압축 상주로.
+            bool isAmbLoop = !isBgm && System.IO.Path.GetFileName(assetPath).StartsWith("amb_");
+            bool compressedInMemory = isBgm || isAmbLoop;
 
-            importer.forceToMono = !isBgm;
-            importer.loadInBackground = isBgm;
+            importer.forceToMono = !isBgm;                 // amb도 모노 유지(amb 관례·예산)
+            importer.loadInBackground = compressedInMemory;
             importer.ambisonic = false;
 
             AudioImporterSampleSettings settings = importer.defaultSampleSettings;
-            settings.loadType = isBgm
+            settings.loadType = compressedInMemory
                 ? AudioClipLoadType.CompressedInMemory
                 : AudioClipLoadType.DecompressOnLoad;
             settings.compressionFormat = AudioCompressionFormat.Vorbis;
-            settings.quality = isBgm ? BGM_QUALITY : SFX_QUALITY;
+            settings.quality = isBgm || isAmbLoop ? BGM_QUALITY : SFX_QUALITY;  // 긴 루프는 저비트레이트
             settings.preloadAudioData = false;
             importer.defaultSampleSettings = settings;
         }

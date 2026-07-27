@@ -260,3 +260,20 @@ late-night introspective, hazy, instrumental, 88 BPM
 | `sfx_land` | 단일 생성 (0.5s→trim 0.25s) | `b89fd307e1c3` | 1251878742 | 피크 -1.0dB · RMS -17.6dB |
 | `sfx_footstep_snow` | 단일 생성 (0.5s→trim 0.28s) | `69144d354128` | 27761564 | 피크 -1.0dB · RMS -20.5dB |
 | `sfx_box_damage` | --raw 비토이톤 (0.5s→trim 0.22s) | `09be3099e6cc` | 70264330 | 피크 -1.0dB · RMS -16.1dB |
+
+### AU-018 ① 날씨 앰비언스 3종 (2026-07-27 · 남규님 지시 · 계정·권리 위 표와 동일)
+
+Rain·Snow·Heat 날씨별 앰비언스 루프 베드. **사실적 환경음**이라 토이톤 앵커를 뺀다(`--no-anchors` —
+compose_sfx가 앵커를 존중하도록 파이프라인 수정). API 상한 22s를 넘기려 **2테이크 등파워 크로스페이드
+스티칭 → 심리스 루프 랩**(scratchpad `stitch_amb.py`)으로 **40s 루프** 제작(D-068 "≥30s·클립 내 무반복" 정신 승계).
+후공정 = RMS -20dB 타겟 + 피크 -1dB 소프트리밋(3종 라우드니스 일관). ⚠ SFX는 API가 seed 미수용 → 복원 불가(로컬 기록).
+
+- **눈은 본래 조용** — 1차 "hushed stillness" 태그가 API를 무음(RMS -53)으로 유도 → 바람 중심 태그로 재생성(가청).
+- **캡 해제**: `prompt_builder`의 SFX 5.0s 캡을 `amb_*` 한정 22s로 상향(AU-012 의도 승계) · `compose_sfx`가 `--no-anchors` 존중.
+- **임포터**: `amb_*`(긴 루프)는 DecompressOnLoad 대신 CompressedInMemory+저비트레이트(40s×3 RAM 낭비 방지).
+
+| bom_id | 출처 | 프롬프트 SHA1 | seed(로컬·take B) | 후공정 실측(스티칭 후) |
+|---|---|---|---|---|
+| `amb_weather_rain` | 22s×2 스티칭 → 40s 루프 | `b53475782b7e` | 2057602207 | 피크 -1.7dB · RMS -22.5dB |
+| `amb_weather_snow` | 22s×2 스티칭 → 40s 루프 (바람 중심 재생성) | `08c6d9f90402` | 915216587 | 피크 -1.3dB · RMS -20.5dB |
+| `amb_weather_heat` | 22s×2 스티칭 → 40s 루프 | `943f6741648a` | 605911711 | 피크 -4.8dB · RMS -20.9dB |

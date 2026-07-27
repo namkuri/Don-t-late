@@ -68,6 +68,11 @@ namespace DontLate
         [SerializeField] private AudioClip _sfxLand;
         [SerializeField] private AudioClip _sfxFootstepSnow; // 적설 시 발소리 스왑
 
+        [Header("날씨 앰비언스 3종 (AU-018 ①) — Rain·Snow·Heat 루프 베드")]
+        [SerializeField] private AudioClip _ambWeatherRain;
+        [SerializeField] private AudioClip _ambWeatherSnow;
+        [SerializeField] private AudioClip _ambWeatherHeat;
+
         [Header("믹스")]
         [SerializeField, Range(0f, 1f)] private float _volume = 0.5f;
         [SerializeField, Range(0f, 1f)] private float _sfxVolume = 0.7f;
@@ -98,6 +103,7 @@ namespace DontLate
         private bool _titleScene;
         private bool _inDistrict; // AU-011 — 구역 앰비언스는 District 체류 중에만
         private bool _snowCover;  // AU-018 ③ — 적설 발소리 스왑 (SnowCoverChanged 캐시)
+        private WeatherType _weather = WeatherType.Clear; // AU-018 ① — 날씨 앰비언스 선택
         private DayPhase _phase;
         // S-009: BGM은 첫 대화(Home 인트로 전화)가 끝난 뒤에야 시작한다.
         [Tooltip("켜면 첫 DialogueEnded까지 BGM을 보류한다 (Home 인트로 연출).")]
@@ -199,6 +205,7 @@ namespace DontLate
             WorldEvents.PhoneRang += OnPhoneRang;
             WorldEvents.SceneTransitionStarted += OnSceneTransitionStarted;
             WorldEvents.SnowCoverChanged += OnSnowCoverChanged; // AU-018 ③
+            WorldEvents.WeatherChanged += OnWeatherChanged;     // AU-018 ①
         }
 
         private void OnDisable()
@@ -217,6 +224,7 @@ namespace DontLate
             WorldEvents.PhoneRang -= OnPhoneRang;
             WorldEvents.SceneTransitionStarted -= OnSceneTransitionStarted;
             WorldEvents.SnowCoverChanged -= OnSnowCoverChanged; // AU-018 ③
+            WorldEvents.WeatherChanged -= OnWeatherChanged;     // AU-018 ①
         }
 
         private void OnDestroy()
@@ -304,15 +312,23 @@ namespace DontLate
                 PlaySfx(_sfxArrive);
         }
 
-        /// <summary>앰비언스 루프 채널 (AU-009 → AU-011 확장) —
-        /// District 체류 중엔 구역 전용(빌라촌·먹자골목)이 시간대보다 우선(구역감이 목적),
-        /// 그 외 씬은 기존 규칙(저녁·밤 = amb_night). 타이틀 씬은 항상 무음.</summary>
+        /// <summary>앰비언스 루프 채널 (AU-009 → AU-011 → AU-018 ① 확장) —
+        /// 우선순위: 날씨(Rain·Snow·Heat) &gt; 구역(빌라촌·먹자골목) &gt; 시간대(저녁·밤 amb_night).
+        /// 날씨가 가장 위인 이유 = "날씨 체감"이 이번 발주 목적. Clear·Cloudy·Fog는 날씨 클립이 없어
+        /// 자연히 구역/시간대로 폴백(발주 "Clear는 기존 구역 앰비언스 겸용"). 타이틀 씬은 항상 무음.</summary>
         private void UpdateAmbient()
         {
             AudioClip target = null;
             if (!_titleScene)
             {
-                if (_inDistrict && _gameState != null)
+                target = _weather switch   // AU-018 ① — 체감 날씨가 최우선
+                {
+                    WeatherType.Rain => _ambWeatherRain,
+                    WeatherType.Snow => _ambWeatherSnow,
+                    WeatherType.Heat => _ambWeatherHeat,
+                    _ => null
+                };
+                if (target == null && _inDistrict && _gameState != null)
                 {
                     if (_gameState.currentDistrict == DeliveryOrderSO.DISTRICT_VILLATOWN) target = _ambVillatown;
                     else if (_gameState.currentDistrict == DeliveryOrderSO.DISTRICT_FOODALLEY) target = _ambFoodalley;
@@ -347,6 +363,7 @@ namespace DontLate
         private void OnPhoneRang(PhoneCall call) => PlaySfx(_sfxPhoneRing);            // AU-009
         private void OnSceneTransitionStarted(GameScene scene) => PlaySfx(_sfxSceneWhoosh); // AU-009
         private void OnSnowCoverChanged(bool covered) => _snowCover = covered;              // AU-018 ③
+        private void OnWeatherChanged(WeatherType weather) { _weather = weather; UpdateAmbient(); } // AU-018 ①
 
         // 이벤트 없는 지점(자판기·던지기·코인·폰 개폐)의 Instance 명령 API (AU-008).
         // 컴포넌트가 클립을 들지 않게 해 배선을 빌더 한 곳(Core)으로 모은다.

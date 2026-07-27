@@ -196,6 +196,9 @@ namespace DontLate.EditorTools
             SetField(audio, "_sfxJump", LoadSfx("sfx_jump"));
             SetField(audio, "_sfxLand", LoadSfx("sfx_land"));
             SetField(audio, "_sfxFootstepSnow", LoadSfx("sfx_footstep_snow"));
+            SetField(audio, "_ambWeatherRain", LoadSfx("amb_weather_rain"));      // AU-018 ① 날씨 앰비언스 3종
+            SetField(audio, "_ambWeatherSnow", LoadSfx("amb_weather_snow"));
+            SetField(audio, "_ambWeatherHeat", LoadSfx("amb_weather_heat"));
             SetField(audio, "_gameState", AssetDatabase.LoadAssetAtPath<GameStateSO>(DATA_ROOT + "/GameState.asset"));
 
             // 태양은 Core 소유(D-021 교정) — 콘텐츠 씬은 자체 Directional Light를 두지 않는다.
