@@ -62,6 +62,9 @@ namespace DontLate
         [Header("SFX — 배송지 도착 차임 (AU-018 ④)")]
         [SerializeField] private AudioClip _sfxArrive;
 
+        [Header("SFX — 교통사고 (S-066 ③ · AU-020)")]
+        [SerializeField] private AudioClip _sfxCarCrash; // 끼익!! 쿵! — 클립 도착 전엔 무음 소켓
+
         [Header("SFX — 액션 4종 (AU-018 ③)")]
         [SerializeField] private AudioClip _sfxBoxDamage;   // 상자 HP 닳음(미파손)
         [SerializeField] private AudioClip _sfxJump;
@@ -365,6 +368,7 @@ namespace DontLate
         // AU-018 ③ — 액션 3종 (Instance 명령 — 이벤트 없는 지점, PlayThrowSfx 선례).
         public void PlayBoxDamageSfx() => PlaySfx(_sfxBoxDamage);
         public void PlayJumpSfx() => PlaySfx(_sfxJump);
+        public void PlayCarCrashSfx() => PlaySfx(_sfxCarCrash); // S-066 ③
         public void PlayLandSfx() => PlaySfx(_sfxLand);
 
         // AU-010 — 정산 요약(판정 재료가 SettlementView에만 있음)·가구 확정·공용 UI 틱.

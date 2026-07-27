@@ -58,6 +58,7 @@ namespace DontLate
             _gameState.catFriend = false;  // S-059
             _gameState.catRanAway = false;
             _gameState.catFedDay = 0;
+            _gameState.carriedOrders.Clear(); // S-066
             _gameState.cargo.Clear();
             _gameState.scannedOrderIds.Clear();
             _gameState.placedDeliveries.Clear();

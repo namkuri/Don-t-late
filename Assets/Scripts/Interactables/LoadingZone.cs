@@ -23,6 +23,13 @@ namespace DontLate
 
         public void Interact(PlayerContext ctx)
         {
+            // S-066 ① — 트럭이 없으면 실을 곳이 없다: 들고 걸어가는 시대.
+            if (!ctx.Player.GameState.hasTruck)
+            {
+                Debug.Log("[LoadingZone] 아직 회사 트럭이 없다 — 들고 동네 가장자리로 걸어가자.");
+                return;
+            }
+
             PlayerStatusManager status = ctx.Player.Status;
             if (!status.IsCarrying)
             {

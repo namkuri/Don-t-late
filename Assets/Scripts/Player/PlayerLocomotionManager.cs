@@ -60,6 +60,15 @@ namespace DontLate
         // S-041: CC는 리지드바디를 밀지 않는다 — 히트 시 수평 속도를 실어 대차·상자를 민다.
         private const float PUSH_SPEED = 2.2f;
 
+        // S-066 ③ — 차 충돌 넉백: 수평은 감쇠 속도로, 수직은 점프 속도로 실린다.
+        private Vector3 _knockback;
+
+        public void ApplyKnockback(Vector3 impulse)
+        {
+            _knockback = new Vector3(impulse.x, 0f, impulse.z);
+            _verticalVelocity = Mathf.Max(_verticalVelocity, impulse.y);
+        }
+
         private void OnControllerColliderHit(ControllerColliderHit hit)
         {
             Rigidbody body = hit.collider.attachedRigidbody;
@@ -115,7 +124,8 @@ namespace DontLate
                 _verticalVelocity += tuning.gravity * Time.deltaTime;
             }
 
-            Vector3 delta = (PlanarVelocity + Vector3.up * _verticalVelocity) * Time.deltaTime;
+            _knockback = Vector3.MoveTowards(_knockback, Vector3.zero, 18f * Time.deltaTime); // S-066 ③ 감쇠
+            Vector3 delta = (PlanarVelocity + _knockback + Vector3.up * _verticalVelocity) * Time.deltaTime;
             delta.z = ResolveDepth(transform.position + delta) - transform.position.z;
             _cc.Move(delta);
 

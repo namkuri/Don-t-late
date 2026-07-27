@@ -66,7 +66,19 @@ namespace DontLate
                 Debug.Log("[PickupBox] #" + _order.orderId + " 은 바코드 미스캔 — Tab으로 폰을 열고 박스를 클릭해 송장을 찍어라.");
                 return;
             }
+            // S-066 ① — 캠프 상자(스캔 대상)는 픽업 상한 = 적재 상한 (등록 안 되면 정산도 안 되므로 정직하게 거부).
+            if (_requireScanned && !WorldDeliveryManager.Instance.IsInCargo(_order)
+                && ctx.Player.GameState.cargo.Count >= ctx.Player.Tuning.maxCargo)
+            {
+                Debug.Log("[PickupBox] 오늘 적재 상한(" + ctx.Player.Tuning.maxCargo + ") — 더 받을 수 없다.");
+                return;
+            }
+
             if (!ctx.Player.Status.TryCarry(_order)) return;
+
+            // S-066 ① — 픽업 시점에 오늘 배송 목록(cargo) 등록: 트럭 없이 들고 걸어가도 정산이 인정된다.
+            // (트럭 상차 시 AcceptOrder는 중복 가드가 있어 안전.)
+            if (_requireScanned) WorldDeliveryManager.Instance.AcceptOrder(_order);
 
             WorldDeliveryManager.Instance.NotifyPickedUp(_order);
             WorldDeliveryManager.Instance.UnplaceDelivery(_order.orderId); // S-034 ④ — 다시 들면 배치 철회

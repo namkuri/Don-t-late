@@ -34,16 +34,22 @@ namespace DontLate
                 if (!string.IsNullOrEmpty(district) && order.district != district) continue;
                 // S-034: 이미 다른 구역 비콘에 내려놓은 건은 재스폰하지 않는다 (배치 기록이 정본).
                 if (_gameState.placedDeliveries.Exists(p => p.orderId == order.orderId)) continue;
+
                 matching.Add(order);
             }
 
             var perFloorCount = new Dictionary<int, int>();
             for (int i = 0; i < matching.Count; i++)
             {
-                Vector3 boxPos = _boxOrigin != null
-                    ? _boxOrigin.position + new Vector3(i * 1.2f, 0f, 0f)
-                    : new Vector3(-16f + i * 1.2f, 0f, -1.2f);
-                SpawnBox(matching[i], boxPos);
+                // S-066 ② — 도보로 손에 들고 온 짐은 상자 재스폰 없음(중복 방지). 비콘은 내려놓을 곳이라 유지.
+                bool carriedIn = _gameState.carriedOrders.Exists(c => c != null && c.orderId == matching[i].orderId);
+                if (!carriedIn)
+                {
+                    Vector3 boxPos = _boxOrigin != null
+                        ? _boxOrigin.position + new Vector3(i * 1.2f, 0f, 0f)
+                        : new Vector3(-16f + i * 1.2f, 0f, -1.2f);
+                    SpawnBox(matching[i], boxPos);
+                }
 
                 if (_floorBeaconAnchors != null && _floorBeaconAnchors.Length > 0)
                 {

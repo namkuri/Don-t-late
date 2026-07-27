@@ -43,6 +43,7 @@ namespace DontLate
             WorldEvents.WeatherChanged += OnWeatherChangedStatus;
             WorldEvents.BagHoldRequested += OnBagHoldRequested;   // S-064
             WorldEvents.BagItemConsumed += OnBagItemConsumed;     // S-064
+            WorldEvents.SceneTransitionStarted += OnSceneLeaving; // S-066 ② — 든 짐 보존
         }
         private void OnDisable()
         {
@@ -51,6 +52,7 @@ namespace DontLate
             WorldEvents.WeatherChanged -= OnWeatherChangedStatus;
             WorldEvents.BagHoldRequested -= OnBagHoldRequested;
             WorldEvents.BagItemConsumed -= OnBagItemConsumed;
+            WorldEvents.SceneTransitionStarted -= OnSceneLeaving;
         }
 
         private void OnWeatherChangedStatus(WeatherType weather) => _weather = weather;
@@ -93,6 +95,39 @@ namespace DontLate
         {
             Stamina = _hub.Tuning.staminaMax;
             NotifyStamina(force: true);
+            RestoreCarriedFromState(); // S-066 ② — 엣지 워크로 넘어온 짐 복원
+        }
+
+        // ── S-066 ② — 씬 전환 시 든 짐 보존/복원 (씬 오브젝트는 파괴되므로 GameState 경유) ──
+        private void OnSceneLeaving(GameScene _)
+        {
+            if (_hub.GameState == null) return;
+            _hub.GameState.carriedOrders.Clear();
+            if (CarriedOrder != null) _hub.GameState.carriedOrders.Add(CarriedOrder);
+            if (CarriedOrder2 != null) _hub.GameState.carriedOrders.Add(CarriedOrder2);
+        }
+
+        private void RestoreCarriedFromState()
+        {
+            if (_hub.GameState == null || _hub.GameState.carriedOrders.Count == 0) return;
+            foreach (DeliveryOrderSO order in _hub.GameState.carriedOrders)
+            {
+                if (order == null || !TryCarry(order)) continue;
+                AttachCarried(CreateBoxVisual().transform);
+            }
+            // 버퍼는 지우지 않는다 — 스포너가 "손에 든 건 스폰 제외" 판정에 참조 (다음 전이 때 재작성).
+            Debug.Log("[운반] 들고 온 짐 " + (CarriedOrder2 != null ? 2 : 1) + "건 복원");
+        }
+
+        // 복원용 택배 상자 비주얼 — 캠프 상자와 동색 주황 큐브.
+        private GameObject CreateBoxVisual()
+        {
+            GameObject box = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            box.name = "CarriedBox";
+            box.transform.localScale = Vector3.one * 0.55f;
+            box.GetComponent<Renderer>().material.color = new Color(1f, 0.624f, 0.271f);
+            box.GetComponent<Collider>().enabled = false;
+            return box;
         }
 
         private void Update()

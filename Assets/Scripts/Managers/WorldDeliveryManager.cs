@@ -177,9 +177,8 @@ namespace DontLate
             _gameState.cargo.Clear();
             _gameState.scannedOrderIds.Clear();
 
-            Debug.Log("[교통사고] 병원비 -₩" + HOSPITAL_FEE.ToString("N0") + " · 미배송 " + failed + "건 실패 — 집으로 후송");
-            if (WorldSceneFlowManager.Instance != null && !WorldSceneFlowManager.Instance.IsTransitioning)
-                WorldSceneFlowManager.Instance.Request(GameScene.Home);
+            Debug.Log("[교통사고] 병원비 -₩" + HOSPITAL_FEE.ToString("N0") + " · 미배송 " + failed + "건 실패");
+            WorldEvents.RaiseCarAccident(HOSPITAL_FEE, failed); // S-066 ③ — 팝업이 "치료 후 집으로"를 안내
         }
 
         private readonly System.Collections.Generic.HashSet<string> _settledDistricts =

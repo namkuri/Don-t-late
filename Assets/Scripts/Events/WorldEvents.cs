@@ -242,6 +242,15 @@ namespace DontLate
             PlayerHitByCar?.Invoke();
         }
 
+        /// <summary>교통사고 정산 통지 (S-066 ③) — 병원비·실패 건수. AccidentView가 팝업을 연다.</summary>
+        public static event Action<int, int> CarAccident;
+
+        public static void RaiseCarAccident(int hospitalFee, int failedCount)
+        {
+            Log("CarAccident 병원비 " + hospitalFee + " · 실패 " + failedCount + "건");
+            CarAccident?.Invoke(hospitalFee, failedCount);
+        }
+
         /// <summary>가방에서 좌클릭 — 손에 들기 요청 (S-064). Player 도메인이 받아 시각물 생성.</summary>
         public static event Action<BagItem> BagHoldRequested;
 

@@ -68,6 +68,7 @@ namespace DontLate.EditorTools
             BuildFadeCanvas();
             BagView bagView = BuildBagCanvas(gameState);        // S-064
             SettingsView settingsView = BuildSettingsCanvas();  // S-065
+            BuildAccidentCanvas();                              // S-066 ③
             BuildHUDCanvas(gameState, bagView, settingsView);
             BuildDialogueCanvas();
             BuildMinigameCanvas();
@@ -196,6 +197,7 @@ namespace DontLate.EditorTools
             SetField(audio, "_sfxJump", LoadSfx("sfx_jump"));
             SetField(audio, "_sfxLand", LoadSfx("sfx_land"));
             SetField(audio, "_sfxFootstepSnow", LoadSfx("sfx_footstep_snow"));
+            SetField(audio, "_sfxCarCrash", LoadSfx("sfx_car_crash"));            // S-066 ③ (AU-020 — 도착 전 null 무음)
             SetField(audio, "_gameState", AssetDatabase.LoadAssetAtPath<GameStateSO>(DATA_ROOT + "/GameState.asset"));
 
             // 태양은 Core 소유(D-021 교정) — 콘텐츠 씬은 자체 Directional Light를 두지 않는다.
@@ -666,6 +668,72 @@ namespace DontLate.EditorTools
             EditorUtility.SetDirty(view);
             panel.gameObject.SetActive(false);
             return view;
+        }
+
+        // ── 교통사고 캔버스 (S-066 ③) ───────────────────────
+
+        private static void BuildAccidentCanvas()
+        {
+            TMP_FontAsset font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FONT_PATH);
+
+            GameObject canvasGo = new GameObject("AccidentCanvas");
+            Canvas canvas = canvasGo.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 70;
+            CanvasScaler scaler = canvasGo.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            canvasGo.AddComponent<GraphicRaycaster>();
+
+            AccidentView view = canvasGo.AddComponent<AccidentView>();
+
+            // 붉은 플래시 — 풀스크린.
+            Image flash = CreateImage(canvasGo.transform, "RedFlash", new Color(0.85f, 0.1f, 0.08f, 0f));
+            StretchFull(flash.rectTransform);
+            flash.raycastTarget = false;
+
+            // 팝업 패널 — 붉은 테두리 + 네이비 내부.
+            Image panel = CreateImage(canvasGo.transform, "Panel", new Color(0.85f, 0.30f, 0.25f, 1f));
+            RectTransform panelRect = panel.rectTransform;
+            panelRect.anchorMin = panelRect.anchorMax = panelRect.pivot = new Vector2(0.5f, 0.5f);
+            panelRect.sizeDelta = new Vector2(560f, 420f);
+            Image inner = CreateImage(panel.transform, "Inner", NAVY);
+            inner.raycastTarget = true;
+            RectTransform innerRect = inner.rectTransform;
+            innerRect.anchorMin = Vector2.zero; innerRect.anchorMax = Vector2.one;
+            innerRect.offsetMin = new Vector2(4f, 4f); innerRect.offsetMax = new Vector2(-4f, -4f);
+
+            TMP_Text title = CreateText(inner.transform, "Title", "교통사고!", font, 44f,
+                new Color(1f, 0.44f, 0.38f), TextAlignmentOptions.Top);
+            AnchorCorner(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -22f), new Vector2(400f, 60f));
+
+            TMP_Text body = CreateText(inner.transform, "Body", string.Empty, font, 30f, Color.white,
+                TextAlignmentOptions.Top);
+            RectTransform bodyRect = body.rectTransform;
+            bodyRect.anchorMin = Vector2.zero; bodyRect.anchorMax = Vector2.one;
+            bodyRect.offsetMin = new Vector2(36f, 110f); bodyRect.offsetMax = new Vector2(-36f, -96f);
+
+            GameObject homeGo = new GameObject("HomeButton", typeof(RectTransform));
+            homeGo.transform.SetParent(inner.transform, false);
+            Image homeImg = homeGo.AddComponent<Image>();
+            homeImg.color = new Color(0.208f, 0.878f, 0.784f, 1f);
+            RectTransform homeRect = (RectTransform)homeGo.transform;
+            homeRect.anchorMin = homeRect.anchorMax = homeRect.pivot = new Vector2(0.5f, 0f);
+            homeRect.sizeDelta = new Vector2(360f, 76f);
+            homeRect.anchoredPosition = new Vector2(0f, 26f);
+            Button homeButton = homeGo.AddComponent<Button>();
+            homeButton.targetGraphic = homeImg;
+            TMP_Text homeLabel = CreateText(homeGo.transform, "Label", "치료 후 집으로", font, 30f, NAVY,
+                TextAlignmentOptions.Center);
+            StretchFull(homeLabel.rectTransform);
+
+            SetField(view, "_panel", panel.gameObject);
+            SetField(view, "_bodyLabel", body);
+            SetField(view, "_homeButton", homeButton);
+            SetField(view, "_redFlash", flash);
+            EditorUtility.SetDirty(view);
+            panel.gameObject.SetActive(false);
+            flash.gameObject.SetActive(false);
         }
 
         // ── 대화 캔버스 (Core 상주) ──────────────────────────

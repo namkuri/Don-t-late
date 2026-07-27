@@ -45,6 +45,10 @@ namespace DontLate
             if (player.Status.IsCarrying) player.Status.ReleaseCarry(dropAsPhysics: true);
             if (player.Status.IsCarrying) player.Status.ReleaseCarry(dropAsPhysics: true); // 승격분
 
+            // S-066 ③ — 사람이 날아간다 + 끼익!쿵! (클립 소켓 비면 무음 — AU-020).
+            player.Locomotion.ApplyKnockback(new Vector3(Random.Range(-2.5f, 2.5f), 7.5f, Mathf.Sign(_velocityZ) * 5.5f));
+            WorldAudioManager.Instance?.PlayCarCrashSfx();
+
             Debug.Log("[교통사고] 차에 치였다!");
             WorldEvents.RaisePlayerHitByCar();
         }

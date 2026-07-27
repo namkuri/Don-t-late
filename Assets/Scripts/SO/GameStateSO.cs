@@ -68,6 +68,9 @@ namespace DontLate
         /// <summary>구루마(대차) 보유 (S-056 상점 구매). 도보 시대=캠프에서 밀기, 트럭 시대=배송지 자동 스폰.</summary>
         public bool ownsCart;
 
+        /// <summary>씬 전환 중 손에 든 주문 보존 (S-066 ② — 엣지 워크 운반). 도착 씬에서 복원 후 비운다.</summary>
+        public List<DeliveryOrderSO> carriedOrders = new List<DeliveryOrderSO>();
+
         // ── S-059 고양이 ──
         public bool catFriend;   // 언덕에서 데려옴
         public bool catRanAway;  // 하루 넘게 굶겨 떠남
