@@ -711,3 +711,19 @@ L129 직접 ++ 후 L130 Raise가 자기 구독 핸들러(L144 OnDeliveryFailed)�
 - **② 날씨 BGM** 미착수 — Director Suno 수동 예정. 필요 시 곡 목록만 제공(생성 금지).
 - 잔여 ④ travel_loop·ping·loading_tick·done 보류 유지(연출 부재).
 - BOM §8 SFX 행 추가(amb_weather 3종) = 관제 몫(정수는 CREDITS+manifest만 — AU-011 선례).
+
+---
+
+## AU-021 · 발주 2026-07-29 00:40 → 정수 공장 (개척 해금 팡파레 SFX — S-086 소켓 충전 · Director 세션 내 승인)
+
+요구 (남규님 지시 S-086 ②): 정산에서 개척 해금/트럭 지급 라인이 찍히는 순간의 **빵빠레** 1클립.
+- 계약: `sfx_fanfare` (wav · Audio/SFX/). 길이 ~2.0s 권장 (상행 런 → 밝은 벨 착지).
+- 톤: 큐트 토이톤 유지 — `sfx_settle_ok`(상행 축하음)의 **증폭판**(개척 정점). settle_ok보다 크고 화려하게.
+  ⚠ 팡파레는 본질이 짧은 축하 멜로디 스팅 → GAME-SFX-RULES §3 "melody/jingle" 금지의 **의도적 예외**
+  (`sfx_scene_whoosh`의 riser 예외 선례). 토이 마림바+벨 계열이라 팔레트 정합.
+- 훅 기시공(S-086 · PR #21): WorldAudioManager `_sfxFanfare` 소켓 + `PlayFanfareSfx()`(도착 전 settle_ok
+  폴백) + CoreSceneBuilder `LoadSfx("sfx_fanfare")` 배선. 반입 즉시 자동 배선(#21 머지 후).
+- 후공정: 트림 → 피크 -1dB (트랜지언트라 peak 한계 예상, RMS는 SFX 타겟). 라이선스 CREDITS+manifest 관례대로.
+- ⚠ **프롬프트는 ElevenLabs 전송 전 Director 검토 게이트** (남규님 지시 2026-07-29).
+
+수용기준: 정산 개척 해금에서 1회 재생 · settle_ok보다 큰 축하감 · 셀프검증(임포트 에러 0·청취) · 브랜치→PR.
