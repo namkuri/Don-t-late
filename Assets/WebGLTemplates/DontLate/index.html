@@ -20,7 +20,8 @@
             var ext = gl.getExtension('WEBGL_debug_renderer_info');
             renderer = String(ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER));
           }
-          var software = !gl || /swiftshader|software|llvmpipe/i.test(renderer);
+          console.log('[DontLate] S-077 가속 진단 — WebGL renderer: ' + (renderer || '(판별 불가)'));
+          var software = !gl || renderer === '' || /swiftshader|software|llvmpipe|basic render/i.test(renderer);
           if (!software) return;
           var banner = document.createElement('div');
           banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;'
