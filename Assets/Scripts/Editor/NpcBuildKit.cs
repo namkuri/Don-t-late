@@ -110,13 +110,29 @@ namespace DontLate.EditorTools
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        /// <summary>행인 1명 — 위치·색·배회 반경.</summary>
-        internal static void BuildPedestrian(string name, Vector3 position, Color color, float patrolHalf)
+        /// <summary>행인 1명 — 위치·색·배회 반경. signal을 주면 교차 도로 신호를 지킨다 (S-076 ②).</summary>
+        internal static void BuildPedestrian(string name, Vector3 position, Color color, float patrolHalf,
+            TrafficLight signal = null, float roadX = 0f)
         {
             var (go, _) = BuildFigure(name, position, "NpcWalker_" + name, color, 1.7f);
+
+            // S-076 ② — 차 피격 감지용 몸통 트리거 + 키네마틱 RB (플레이어는 통과 유지 — 트리거라 밀지 않음).
+            BoxCollider hitBox = go.AddComponent<BoxCollider>();
+            hitBox.isTrigger = true;
+            hitBox.center = new Vector3(0f, 0.85f, 0f);
+            hitBox.size = new Vector3(0.5f, 1.7f, 0.5f);
+            Rigidbody body = go.AddComponent<Rigidbody>();
+            body.isKinematic = true;
+            body.useGravity = false;
+
             PedestrianNpc npc = go.AddComponent<PedestrianNpc>();
             SerializedObject serialized = new SerializedObject(npc);
             serialized.FindProperty("_patrolHalf").floatValue = patrolHalf;
+            if (signal != null)
+            {
+                serialized.FindProperty("_signal").objectReferenceValue = signal;
+                serialized.FindProperty("_roadX").floatValue = roadX;
+            }
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
     }

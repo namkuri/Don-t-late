@@ -53,10 +53,7 @@ namespace DontLate.EditorTools
             DestroyRoot("__gb_Beacon");
             AttachCargoSpawner(gameState);
 
-            // S-052 ②③ — 행인 3 + 심부름 할머니 (길 건너까지 짐 옮기기).
-            NpcBuildKit.BuildPedestrian("Walker_A", new Vector3(-8f, 0f, 2.2f), new Color(0.45f, 0.52f, 0.62f), 6f);
-            NpcBuildKit.BuildPedestrian("Walker_B", new Vector3(6f, 0f, 2.6f), new Color(0.60f, 0.48f, 0.40f), 7f);
-            NpcBuildKit.BuildPedestrian("Walker_C", new Vector3(18f, 0f, 2.0f), new Color(0.50f, 0.58f, 0.45f), 5f);
+            // S-052 ③ — 심부름 할머니 (길 건너까지 짐 옮기기). 행인 3명은 신호등 생성 뒤에 (S-076 ② 주입).
             NpcBuildKit.BuildErrandNpc("ErrandGranny", "할머니", new Vector3(12f, 0f, -1.8f),
                 new Vector3(-6f, 0f, -1.8f), gameState, 1500);
 
@@ -83,7 +80,25 @@ namespace DontLate.EditorTools
                 line.GetComponent<Renderer>().sharedMaterial = zebra;
             }
 
+            // S-076 ③ — 중앙선(황색): 방향별 1차선 시각 표지. 횡단보도 구간은 비운다.
+            Material centerLine = GreyboxStageBuilder.GetOrCreateMaterial("RoadCenterLine", new Color(0.94f, 0.78f, 0.22f), false);
+            foreach (float zHalf in new[] { -6.75f, 6.75f })
+            {
+                GameObject line = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                line.name = "CenterLine";
+                line.transform.position = new Vector3(ROAD_X, 0.025f, zHalf);
+                line.transform.localScale = new Vector3(0.14f, 0.012f, 6.5f);
+                Object.DestroyImmediate(line.GetComponent<Collider>());
+                line.GetComponent<Renderer>().sharedMaterial = centerLine;
+            }
+
             TrafficLight signal = BuildTrafficLight(new Vector3(ROAD_X + 2.6f, 0f, -3.4f));
+
+            // S-052 ② 행인 3 — S-076 ②: 신호를 지키고, 전방 회피·뛰는 플레이어 구경까지.
+            NpcBuildKit.BuildPedestrian("Walker_A", new Vector3(-8f, 0f, 2.2f), new Color(0.45f, 0.52f, 0.62f), 6f, signal, ROAD_X);
+            NpcBuildKit.BuildPedestrian("Walker_B", new Vector3(6f, 0f, 2.6f), new Color(0.60f, 0.48f, 0.40f), 7f, signal, ROAD_X);
+            NpcBuildKit.BuildPedestrian("Walker_C", new Vector3(18f, 0f, 2.0f), new Color(0.50f, 0.58f, 0.45f), 5f, signal, ROAD_X);
+
             GameObject trafficGo = GreyboxStageBuilder.CreateEmpty("Traffic", new Vector3(ROAD_X, 0f, 0f));
             TrafficRoad trafficRoad = trafficGo.AddComponent<TrafficRoad>();
             SerializedObject trafficSo = new SerializedObject(trafficRoad);
@@ -118,17 +133,19 @@ namespace DontLate.EditorTools
             head.name = "Head";
             head.transform.SetParent(root.transform, false);
             head.transform.localPosition = new Vector3(0f, 3.35f, 0f);
-            head.transform.localScale = new Vector3(0.42f, 0.9f, 0.3f);
+            head.transform.localScale = new Vector3(0.42f, 1.25f, 0.3f); // S-076 ① — 3등 수용
             Object.DestroyImmediate(head.GetComponent<Collider>());
             head.GetComponent<Renderer>().sharedMaterial = pole;
 
             Material lampBase = GreyboxStageBuilder.GetOrCreateMaterial("SignalLamp", Color.gray, true); // 이미시브 지원
-            Renderer red = MakeLamp(root.transform, "RedLamp", new Vector3(0f, 3.55f, -0.18f), lampBase);
-            Renderer green = MakeLamp(root.transform, "GreenLamp", new Vector3(0f, 3.15f, -0.18f), lampBase);
+            Renderer red = MakeLamp(root.transform, "RedLamp", new Vector3(0f, 3.72f, -0.18f), lampBase);
+            Renderer yellow = MakeLamp(root.transform, "YellowLamp", new Vector3(0f, 3.35f, -0.18f), lampBase); // S-076 ①
+            Renderer green = MakeLamp(root.transform, "GreenLamp", new Vector3(0f, 2.98f, -0.18f), lampBase);
 
             TrafficLight light = root.AddComponent<TrafficLight>();
             SerializedObject so = new SerializedObject(light);
             so.FindProperty("_redLamp").objectReferenceValue = red;
+            so.FindProperty("_yellowLamp").objectReferenceValue = yellow;
             so.FindProperty("_greenLamp").objectReferenceValue = green;
             so.ApplyModifiedPropertiesWithoutUndo();
             return light;

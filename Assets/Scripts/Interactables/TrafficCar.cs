@@ -39,6 +39,16 @@ namespace DontLate
 
         private void OnTriggerEnter(Collider other)
         {
+            // S-076 ② — 행인 피격: 그 자리에서 사라진다 (씬 재입장 시 복귀 — 씬 오브젝트 리로드).
+            PedestrianNpc pedestrian = other.GetComponentInParent<PedestrianNpc>();
+            if (pedestrian != null)
+            {
+                Debug.Log("[교통사고] 행인이 차에 치였다 — 소멸 (씬 재입장 시 복귀).");
+                WorldAudioManager.Instance?.PlayCarCrashSfx();
+                Destroy(pedestrian.gameObject);
+                return;
+            }
+
             // 짐·대차 짐 — 날려버린다.
             Rigidbody body = other.attachedRigidbody;
             if (body != null && !body.isKinematic && other.GetComponentInParent<PlayerManager>() == null)

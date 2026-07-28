@@ -79,7 +79,9 @@ namespace DontLate
             if (car == null) return; // 두 대 다 주행 중이면 이번 주기는 건너뜀
 
             _direction = -_direction; // 번갈아 반대편에서
-            car.transform.position = transform.position + new Vector3(0f, 0.55f, -_halfSpan * _direction);
+            // S-076 ③ — 방향별 1차선 (우측통행): 진행 방향 기준 오른쪽 차선으로 스폰.
+            float laneX = _direction > 0 ? 1.05f : -1.05f;
+            car.transform.position = transform.position + new Vector3(laneX, 0.55f, -_halfSpan * _direction);
             car.GetComponent<Renderer>().sharedMaterial = MaterialFor(Random.Range(0, CarColors.Length));
             car.gameObject.SetActive(true);
             car.Launch(_direction * _carSpeed, _halfSpan, _signal, _stopLineZ);
