@@ -46,6 +46,7 @@ namespace DontLate
 
         [Header("SFX — 신규 기능 갭 4종 (AU-010)")]
         [SerializeField] private AudioClip _sfxSettleOk;
+        [SerializeField] private AudioClip _sfxFanfare;   // S-086 — bom_id: sfx_fanfare (AU-021)
         [SerializeField] private AudioClip _sfxSettleBad;
         [SerializeField] private AudioClip _sfxFurniturePlace;
         [SerializeField] private AudioClip _sfxUiTick;
@@ -413,6 +414,8 @@ namespace DontLate
 
         // AU-010 — 정산 요약(판정 재료가 SettlementView에만 있음)·가구 확정·공용 UI 틱.
         public void PlaySettleOkSfx() => PlaySfx(_sfxSettleOk);
+        /// <summary>개척 해금 팡파레 (S-086) — sfx_fanfare 도착 전엔 정산 상행음 폴백.</summary>
+        public void PlayFanfareSfx() => PlaySfx(_sfxFanfare != null ? _sfxFanfare : _sfxSettleOk);
         public void PlaySettleBadSfx() => PlaySfx(_sfxSettleBad);
         public void PlayFurniturePlaceSfx() => PlaySfx(_sfxFurniturePlace);
         public void PlayUiTickSfx() => PlaySfx(_sfxUiTick);

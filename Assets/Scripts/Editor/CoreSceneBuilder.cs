@@ -171,6 +171,7 @@ namespace DontLate.EditorTools
             SetField(audio, "_sfxLateBuzzer", LoadSfx("sfx_late_buzzer"));
             SetField(audio, "_sfxBoxBreak", LoadSfx("sfx_box_break"));   // AU-008 신기능 7종
             SetField(audio, "_sfxBarcode", LoadSfx("sfx_barcode"));
+            SetField(audio, "_sfxFanfare", LoadSfx("sfx_fanfare")); // S-086
             SetField(audio, "_sfxPenalty", LoadSfx("sfx_penalty"));
             SetField(audio, "_sfxVending", LoadSfx("sfx_vending"));
             SetField(audio, "_sfxThrow", LoadSfx("sfx_throw"));

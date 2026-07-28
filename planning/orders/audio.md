@@ -711,3 +711,12 @@ L129 직접 ++ 후 L130 Raise가 자기 구독 핸들러(L144 OnDeliveryFailed)�
 - **② 날씨 BGM** 미착수 — Director Suno 수동 예정. 필요 시 곡 목록만 제공(생성 금지).
 - 잔여 ④ travel_loop·ping·loading_tick·done 보류 유지(연출 부재).
 - BOM §8 SFX 행 추가(amb_weather 3종) = 관제 몫(정수는 CREDITS+manifest만 — AU-011 선례).
+
+---
+
+## AU-021 · sfx_fanfare — 개척 해금 팡파레 (발주 2026-07-28 23:23 · 관제)
+
+- **용도**: 정산 화면에서 새 구역 해금/트럭 지급 라인이 찍히는 순간 (S-086 콘페티와 동시).
+- **스펙**: 1.5~2.5초 승리 팡파레 — 밝은 브라스/신스 상행 3~5음, 끝에 반짝임. 기존 정산
+  상행음(sfx_settle_ok)보다 화려하게. 파일명 = **sfx_fanfare** (Audio/SFX/ — 소켓 자동 스왑).
+- 클립 도착 전엔 sfx_settle_ok 폴백으로 재생 중.

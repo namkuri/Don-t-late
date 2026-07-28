@@ -110,7 +110,13 @@ namespace DontLate
 
                 sb.Append(line).Append('\n');
                 _bodyLabel.text = sb.ToString();
-                if (!string.IsNullOrEmpty(line)) WorldAudioManager.Instance?.PlayUiTickSfx(); // 줄 틱
+                // S-086 — 해금·트럭 라인은 팡파레+콘페티, 나머지는 줄 틱.
+                if (line.Contains("해금!") || line.Contains("트럭 지급!"))
+                {
+                    WorldAudioManager.Instance?.PlayFanfareSfx();
+                    BurstConfetti();
+                }
+                else if (!string.IsNullOrEmpty(line)) WorldAudioManager.Instance?.PlayUiTickSfx(); // 줄 틱
             }
             if (_confirmButton != null) _confirmButton.gameObject.SetActive(true); // 맨 마지막에 맨 아래
             _printRoutine = null;
@@ -122,6 +128,63 @@ namespace DontLate
             if (_printRoutine == null || _panel == null || !_panel.activeSelf) return;
             var mouse = UnityEngine.InputSystem.Mouse.current;
             if (mouse != null && mouse.leftButton.wasPressedThisFrame) _skipOnce = true;
+        }
+
+        // ── S-086 — 개척 해금 콘페티: 화면 중간쯤에서 색조각이 터져 날린다 ──
+        // UI 캔버스 위 오버레이(정산 패널 위에도 보임) · unscaled(정산 정지 중에도 흐름) ·
+        // 1회성 50조각이라 풀링 없이 생성-자멸.
+
+        private static readonly Color[] CONFETTI_COLORS =
+        {
+            new Color(0.208f, 0.878f, 0.784f), new Color(1f, 0.624f, 0.271f),
+            new Color(1f, 0.55f, 0.65f), new Color(0.55f, 0.75f, 1f), new Color(1f, 0.9f, 0.4f),
+        };
+
+        private void BurstConfetti()
+        {
+            Canvas canvas = GetComponentInParent<Canvas>();
+            Transform root = canvas != null ? canvas.transform : transform;
+            Vector2 center = new Vector2(UnityEngine.Screen.width * 0.5f, UnityEngine.Screen.height * 0.55f);
+            for (int i = 0; i < 50; i++)
+            {
+                Image piece = new GameObject("Confetti", typeof(RectTransform)).AddComponent<Image>();
+                piece.transform.SetParent(root, false);
+                piece.color = CONFETTI_COLORS[Random.Range(0, CONFETTI_COLORS.Length)];
+                piece.raycastTarget = false;
+                RectTransform rect = piece.rectTransform;
+                rect.sizeDelta = new Vector2(Random.Range(8f, 16f), Random.Range(5f, 9f));
+                rect.position = new Vector3(center.x + Random.Range(-30f, 30f), center.y + Random.Range(-20f, 20f), 0f);
+                float angle = Random.Range(35f, 145f) * Mathf.Deg2Rad; // 위쪽 부채꼴로 분출
+                float power = Random.Range(280f, 720f);
+                StartCoroutine(ConfettiFly(rect, piece,
+                    new Vector2(Mathf.Cos(angle) * power, Mathf.Sin(angle) * power),
+                    Random.Range(-540f, 540f)));
+            }
+        }
+
+        private System.Collections.IEnumerator ConfettiFly(RectTransform rect, Image piece, Vector2 velocity, float spin)
+        {
+            const float LIFE = 2.4f;
+            const float GRAVITY = -880f;
+            float t = 0f;
+            while (t < LIFE && rect != null)
+            {
+                // 프레임 스파이크(로드·탭 전환)에 조각이 순간이동 소멸하지 않게 상한.
+                float dt = Mathf.Min(Time.unscaledDeltaTime, 0.05f);
+                t += dt;
+                velocity += new Vector2(0f, GRAVITY * dt);
+                velocity.x *= 1f - 0.9f * dt; // 공기 저항 — 팔랑임
+                rect.position += (Vector3)(velocity * dt);
+                rect.localRotation = Quaternion.Euler(0f, 0f, spin * t);
+                if (t > LIFE - 0.6f)
+                {
+                    Color color = piece.color;
+                    color.a = (LIFE - t) / 0.6f;
+                    piece.color = color;
+                }
+                yield return null;
+            }
+            if (rect != null) Destroy(rect.gameObject);
         }
 
         private void Confirm()
