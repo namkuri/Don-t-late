@@ -80,6 +80,10 @@ namespace DontLate
                     break;
                 }
 
+                // S-082 ③ — 상자는 마우스 호버 전용: 더미에서 거리 기반으로 엉뚱한 상자가
+                // 잡히던 것 폐지 (문·패드·게이트는 근접 폴백 유지 — 마우스 없이도 동작).
+                if (candidate is PickupBox) continue;
+
                 float distance = (_hits[i].transform.position - transform.position).sqrMagnitude;
                 if (distance >= nearestDistance) continue;
 

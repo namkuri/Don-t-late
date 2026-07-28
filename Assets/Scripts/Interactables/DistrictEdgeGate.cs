@@ -44,6 +44,14 @@ namespace DontLate
             {
                 _pendingArrival = null; // 게이트 구성이 다른 씬(집 등) — 힌트 소거만
             }
+            // S-082 ④ — 집에서 나와 캠프 도착: 왼쪽(집 방향) 엣지 앞에서 시작.
+            else if (_pendingArrival == null && _direction == Direction.Prev
+                     && _gameState.currentScene == GameScene.Camp
+                     && WorldSceneFlowManager.Instance != null
+                     && WorldSceneFlowManager.Instance.PreviousScene == GameScene.Home)
+            {
+                StartCoroutine(SpawnPlayerHere());
+            }
         }
 
         private void OnDistrictUnlocked(string _) => RefreshLockWall();

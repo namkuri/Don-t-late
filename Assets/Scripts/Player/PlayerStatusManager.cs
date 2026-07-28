@@ -102,6 +102,8 @@ namespace DontLate
 
         private void Start()
         {
+            // S-082 ⑤ — 날씨 드레인 배율도 씬 진입 즉시 현재 날씨로 (플레이어 재탄생 구멍).
+            if (WorldWeatherManager.Instance != null) _weather = WorldWeatherManager.Instance.Weather;
             // S-081 ① — 씬 전환마다 풀 충전되던 것: GameState 영속값 복원 (음수=하루 첫 진입 → 풀).
             Stamina = _hub.GameState != null && _hub.GameState.stamina >= 0f
                 ? _hub.GameState.stamina : _hub.Tuning.staminaMax;
@@ -424,18 +426,9 @@ namespace DontLate
                     .Init(labelOrder, _hub.GameState, _overlayFont);
         }
 
-        /// <summary>지각으로 실패한 건이 지금 든 것이면 손에서 내려놓는다.</summary>
-        private void OnDeliveryFailed(DeliveryData data)
-        {
-            if (CarriedOrder2 != null && CarriedOrder2.orderId == data.OrderId) // S-055
-            {
-                CarriedOrder2 = null;
-                if (_carriedVisual2 != null) { Destroy(_carriedVisual2.gameObject); _carriedVisual2 = null; }
-                return;
-            }
-            if (CarriedOrder == null || CarriedOrder.orderId != data.OrderId) return;
-            ReleaseCarry();
-        }
+        // S-082 ② — 지각 강제 하차 폐지: 지각해도 손의 짐은 유지 — 끝까지 배달할 수 있다
+        // (S-075 ② 지각 배달 완화의 완성. 구 동작: 실패 이벤트가 손에서 짐을 앗아갔다).
+        private void OnDeliveryFailed(DeliveryData data) { }
 
         public void RecoverStamina(float amount)
         {

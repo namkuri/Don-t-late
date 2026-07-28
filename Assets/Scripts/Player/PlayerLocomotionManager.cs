@@ -55,6 +55,14 @@ namespace DontLate
         }
 
         private void OnSceneArrivedLoco(GameScene scene) => _inHillside = scene == GameScene.Hillside;
+
+        // S-082 ⑤ — 플레이어는 씬마다 새로 태어난다: WeatherChanged 재수신 전까지 비를 몰라
+        // "캠프에선 안 미끄러짐"이 나던 구멍 — 현재 날씨를 기동 시 즉시 조회.
+        private void Start()
+        {
+            if (WorldWeatherManager.Instance != null)
+                _raining = WorldWeatherManager.Instance.Weather == WeatherType.Rain;
+        }
         private void OnWeatherChangedLoco(WeatherType weather) => _raining = weather == WeatherType.Rain;
 
         // S-041: CC는 리지드바디를 밀지 않는다 — 히트 시 수평 속도를 실어 대차·상자를 민다.
