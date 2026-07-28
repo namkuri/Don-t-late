@@ -284,6 +284,21 @@ namespace DontLate
         }
 
         /// <summary>적설(지면 쌓임) 유무 전환 (AU-018 ③ — 발소리 스노 스왑용). 저빈도: 임계 통과 시 1회.</summary>
+        // ── NPC 호감도 (S-079 ④) — 저빈도 상태 통지 ──
+        public static event Action<string> NpcMet;
+        public static void RaiseNpcMet(string npcId)
+        {
+            Log("NpcMet → " + npcId);
+            NpcMet?.Invoke(npcId);
+        }
+
+        public static event Action<string, int> NpcAffinityChanged;
+        public static void RaiseNpcAffinityChanged(string npcId, int affinity)
+        {
+            Log("NpcAffinityChanged " + npcId + " → " + affinity);
+            NpcAffinityChanged?.Invoke(npcId, affinity);
+        }
+
         public static event Action<bool> SnowCoverChanged;
 
         public static void RaiseSnowCoverChanged(bool covered)

@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cfb3a5944faabbc4b9ee8c05b01918a8, type: 3}
+  m_Name: npc_camp_walker_b
+  m_EditorClassIdentifier: Assembly-CSharp::DontLate.NpcSO
+  npcId: camp_walker_b
+  displayName: "\uC57C\uAC04 \uC0B0\uCC45\uB7EC"
+  portrait: {fileID: 0}
+  intro: "\uC7A0\uC774 \uC548 \uC640\uC11C \uAC77\uB294 \uC911\uC774\uB77C\uACE0
+    \uD55C\uB2E4."
+  placeholderColor: {r: 0.6, g: 0.48, b: 0.4, a: 1}

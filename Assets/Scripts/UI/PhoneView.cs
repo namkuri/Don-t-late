@@ -40,6 +40,8 @@ namespace DontLate
         [SerializeField] private Sprite[] _appIcons;
         [Tooltip("Travel 지도 앱 배경 일러 (S-036). 실아트(A-004)가 오면 여기 꽂는다 — bom_id: ui_map_town")]
         [SerializeField] private Sprite _mapSprite;
+        [Tooltip("NPC 프로필 카탈로그 (S-079 ④ — 소셜앱). 빌더 주입.")]
+        [SerializeField] private NpcSO[] _npcCatalog;
 
         private readonly List<DeliveryData> _scanned = new List<DeliveryData>();
         private readonly Dictionary<int, int> _status = new Dictionary<int, int>(); // 0진행 1완료 2지각
@@ -228,7 +230,16 @@ namespace DontLate
             RefreshCurrent();
         }
 
-        private void OnBarcodeScanned(DeliveryData data) { _scanned.Add(data); RefreshCurrent(); }
+        // S-078 ① — 중복 가드: 사고(스캔 기록만 리셋) 후 재스캔 등으로 같은 주문이 두 번 오면
+        // 기존 행을 갱신한다 (리스트에 같은 운송장이 두 줄 찍히던 원흉).
+        private void OnBarcodeScanned(DeliveryData data)
+        {
+            int existing = _scanned.FindIndex(d => d.OrderId == data.OrderId);
+            if (existing >= 0) _scanned[existing] = data;
+            else _scanned.Add(data);
+            _status.Remove(data.OrderId); // 재스캔 = 재도전 — 사고 실패 표기를 진행으로 되돌린다
+            RefreshCurrent();
+        }
         private void OnDeliveryCompleted(DeliveryData data) { _status[data.OrderId] = 1; RefreshCurrent(); }
         private void OnDeliveryFailed(DeliveryData data) { _status[data.OrderId] = 2; RefreshCurrent(); }
 
@@ -322,6 +333,7 @@ namespace DontLate
                 case Screen.Map: RefreshMap(); break;
                 case Screen.Weather: RefreshWeather(); break;
                 case Screen.Shop: RefreshShop(); break;
+                case Screen.Social: RefreshSocial(); break; // S-079 ④
             }
         }
 
@@ -453,6 +465,146 @@ namespace DontLate
                 + "<size=70%>비 오면 길이 미끄럽고, 덥거나 추우면 몸이 빨리 지친다.</size>";
         }
 
+        // ── S-079 ④ — 소셜앱: 만난 NPC 리스트(프로필+호감도 게이지), 휠/드래그 스크롤 ──
+
+        private RectTransform _socialContent;
+
+        private void BuildSocialScreen()
+        {
+            GameObject screen = NewScreen(Screen.Social);
+
+            GameObject viewport = new GameObject("SocialViewport", typeof(RectTransform));
+            viewport.transform.SetParent(screen.transform, false);
+            RectTransform vpRect = (RectTransform)viewport.transform;
+            vpRect.anchorMin = Vector2.zero;
+            vpRect.anchorMax = Vector2.one;
+            vpRect.offsetMin = new Vector2(4f, 4f);
+            vpRect.offsetMax = new Vector2(-4f, -4f);
+            Image vpBg = viewport.AddComponent<Image>(); // 스크롤 드래그 타겟
+            vpBg.color = new Color(1f, 1f, 1f, 0.02f);
+            viewport.AddComponent<RectMask2D>();
+
+            _socialContent = new GameObject("List", typeof(RectTransform)).GetComponent<RectTransform>();
+            _socialContent.SetParent(viewport.transform, false);
+            _socialContent.anchorMin = new Vector2(0f, 1f);
+            _socialContent.anchorMax = new Vector2(1f, 1f);
+            _socialContent.pivot = new Vector2(0.5f, 1f);
+            _socialContent.sizeDelta = new Vector2(0f, 100f);
+
+            ScrollRect scroll = viewport.AddComponent<ScrollRect>();
+            scroll.viewport = vpRect;
+            scroll.content = _socialContent;
+            scroll.horizontal = false;
+            scroll.scrollSensitivity = 24f;
+        }
+
+        private void RefreshSocial()
+        {
+            if (_socialContent == null || _gameState == null) return;
+            for (int i = _socialContent.childCount - 1; i >= 0; i--)
+                Destroy(_socialContent.GetChild(i).gameObject);
+
+            const float ROW_H = 84f;
+            float y = 0f;
+            foreach (NpcAffinity entry in _gameState.npcAffinities)
+            {
+                NpcSO npc = FindNpc(entry.npcId);
+                BuildSocialRow(entry, npc, y);
+                y -= ROW_H;
+            }
+            if (_gameState.npcAffinities.Count == 0)
+            {
+                TMP_Text empty = MakeText(_socialContent, "Empty",
+                    "아직 아는 사람이 없다\n<size=70%><color=#8a93a8>동네 사람들과 이야기해 보자</color></size>",
+                    24f, new Color(0.75f, 0.80f, 0.90f), TextAlignmentOptions.Center);
+                Anchor(empty.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -30f), 80f);
+            }
+            _socialContent.sizeDelta = new Vector2(0f, Mathf.Max(100f, -y + 8f));
+        }
+
+        private NpcSO FindNpc(string npcId)
+        {
+            if (_npcCatalog == null) return null;
+            foreach (NpcSO npc in _npcCatalog)
+                if (npc != null && npc.npcId == npcId) return npc;
+            return null;
+        }
+
+        private void BuildSocialRow(NpcAffinity entry, NpcSO npc, float y)
+        {
+            GameObject row = new GameObject("Row_" + entry.npcId, typeof(RectTransform));
+            row.transform.SetParent(_socialContent, false);
+            RectTransform rowRect = (RectTransform)row.transform;
+            rowRect.anchorMin = new Vector2(0f, 1f);
+            rowRect.anchorMax = new Vector2(1f, 1f);
+            rowRect.pivot = new Vector2(0.5f, 1f);
+            rowRect.sizeDelta = new Vector2(0f, 78f);
+            rowRect.anchoredPosition = new Vector2(0f, y - 4f);
+            Image rowBg = row.AddComponent<Image>();
+            rowBg.sprite = RoundedSprite();
+            rowBg.type = Image.Type.Sliced;
+            rowBg.color = new Color(1f, 1f, 1f, 0.06f);
+            rowBg.raycastTarget = false;
+
+            // 프로필 — 실아트 초상 소켓, 비면 색 블록+이니셜.
+            Image portrait = new GameObject("Portrait", typeof(RectTransform)).AddComponent<Image>();
+            portrait.transform.SetParent(row.transform, false);
+            RectTransform pRect = portrait.rectTransform;
+            pRect.anchorMin = pRect.anchorMax = new Vector2(0f, 0.5f);
+            pRect.pivot = new Vector2(0f, 0.5f);
+            pRect.sizeDelta = new Vector2(58f, 58f);
+            pRect.anchoredPosition = new Vector2(10f, 0f);
+            portrait.raycastTarget = false;
+            if (npc != null && npc.portrait != null) portrait.sprite = npc.portrait;
+            else
+            {
+                portrait.sprite = RoundedSprite();
+                portrait.type = Image.Type.Sliced;
+                portrait.color = npc != null ? npc.placeholderColor : new Color(0.45f, 0.52f, 0.62f);
+                string initial = npc != null && !string.IsNullOrEmpty(npc.displayName)
+                    ? npc.displayName.Substring(0, 1) : "?";
+                TMP_Text mono = MakeText(portrait.transform, "Initial", initial, 30f, Color.white, TextAlignmentOptions.Center);
+                RectTransform mRect = mono.rectTransform;
+                mRect.anchorMin = Vector2.zero; mRect.anchorMax = Vector2.one;
+                mRect.offsetMin = mRect.offsetMax = Vector2.zero;
+            }
+
+            TMP_Text name = MakeText(row.transform, "Name",
+                (npc != null ? npc.displayName : entry.npcId), 26f, Color.white, TextAlignmentOptions.TopLeft);
+            RectTransform nRect = name.rectTransform;
+            nRect.anchorMin = new Vector2(0f, 1f); nRect.anchorMax = new Vector2(1f, 1f);
+            nRect.pivot = new Vector2(0.5f, 1f);
+            nRect.offsetMin = new Vector2(80f, -40f); nRect.offsetMax = new Vector2(-64f, -8f);
+
+            // 호감도 게이지 — 배경 위 fill을 width로 (sprite 없는 fillAmount 함정 회피 — S-068 교훈).
+            Image gaugeBg = new GameObject("GaugeBg", typeof(RectTransform)).AddComponent<Image>();
+            gaugeBg.transform.SetParent(row.transform, false);
+            gaugeBg.color = new Color(0.10f, 0.12f, 0.16f, 0.9f);
+            gaugeBg.raycastTarget = false;
+            RectTransform gbRect = gaugeBg.rectTransform;
+            gbRect.anchorMin = new Vector2(0f, 0f); gbRect.anchorMax = new Vector2(1f, 0f);
+            gbRect.pivot = new Vector2(0.5f, 0f);
+            gbRect.offsetMin = new Vector2(80f, 14f); gbRect.offsetMax = new Vector2(-64f, 28f);
+
+            Image gaugeFill = new GameObject("GaugeFill", typeof(RectTransform)).AddComponent<Image>();
+            gaugeFill.transform.SetParent(gaugeBg.transform, false);
+            gaugeFill.color = new Color(1f, 0.55f, 0.65f); // 핑크 — 호감
+            gaugeFill.raycastTarget = false;
+            RectTransform gfRect = gaugeFill.rectTransform;
+            float t = Mathf.Clamp01(entry.affinity / (float)NpcAffinityLedger.MAX);
+            gfRect.anchorMin = new Vector2(0f, 0f);
+            gfRect.anchorMax = new Vector2(t, 1f); // 왼쪽 기점 — 비율만큼
+            gfRect.offsetMin = new Vector2(2f, 2f); gfRect.offsetMax = new Vector2(-2f, -2f);
+
+            TMP_Text value = MakeText(row.transform, "Value", entry.affinity + "%", 20f,
+                new Color(1f, 0.55f, 0.65f), TextAlignmentOptions.MidlineRight);
+            RectTransform vRect = value.rectTransform;
+            vRect.anchorMin = new Vector2(1f, 0f); vRect.anchorMax = new Vector2(1f, 0f);
+            vRect.pivot = new Vector2(1f, 0f);
+            vRect.sizeDelta = new Vector2(54f, 26f);
+            vRect.anchoredPosition = new Vector2(-8f, 10f);
+        }
+
         // S-062 ⑦ — 쇼핑(S-056)·소셜(S-061) 자리 표시 화면. 정식 시공 때 교체.
         private void BuildPlaceholderScreen(Screen target, string title, string body)
         {
@@ -539,7 +691,7 @@ namespace DontLate
             BuildFurnitureScreen();
             BuildShopScreen();     // S-056
             BuildWeatherScreen();  // S-058
-            BuildPlaceholderScreen(Screen.Social, "소셜", "SNS 준비 중 (S-061)\n동네 사람들 소식과 호감도가 보인다");
+            BuildSocialScreen(); // S-079 ④ — 만난 NPC 리스트+호감도 게이지 (플레이스홀더 은퇴)
             BuildMapScreen();  // S-036
         }
 

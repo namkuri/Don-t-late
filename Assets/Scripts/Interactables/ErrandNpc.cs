@@ -38,6 +38,7 @@ namespace DontLate
         public void Interact(PlayerContext ctx)
         {
             if (WorldDialogueManager.Instance == null || WorldDialogueManager.Instance.IsPlaying) return;
+            NpcAffinityLedger.Meet(_gameState, "granny"); // S-079 ④ — 대화 접점 = 소셜앱 등재
 
             switch (_phase)
             {
@@ -60,6 +61,7 @@ namespace DontLate
                     {
                         _gameState.money += _reward;
                         _gameState.totalEarned += _reward;
+                        NpcAffinityLedger.Add(_gameState, "granny", 10); // S-079 ④ — 심부름 완수 호감
                     }
                     if (_thanksScenario != null) WorldDialogueManager.Instance.PlayScenario(_thanksScenario);
                     Debug.Log("[심부름] 보상 지급 +₩" + _reward);

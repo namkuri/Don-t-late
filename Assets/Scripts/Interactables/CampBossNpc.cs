@@ -123,6 +123,7 @@ namespace DontLate
             if (WorldDialogueManager.Instance == null || WorldDialogueManager.Instance.IsPlaying) return;
             if (_cheerScenarios == null || _cheerScenarios.Length == 0) return;
             FaceTowards(ctx.Transform.position);
+            NpcAffinityLedger.Meet(_gameState, "boss"); // S-079 ④ — 소셜앱 등재
             WorldDialogueManager.Instance.PlayScenario(_cheerScenarios[Random.Range(0, _cheerScenarios.Length)]);
         }
 

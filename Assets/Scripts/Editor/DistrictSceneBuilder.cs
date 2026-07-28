@@ -66,16 +66,17 @@ namespace DontLate.EditorTools
             crossRoad.transform.localScale = new Vector3(4.2f, 0.02f, 20f);
             crossRoad.GetComponent<Renderer>().sharedMaterial = road;
 
-            // 횡단보도 — 보행 구간(z -3~3)에 X방향 흰 줄 (그레이박스 텍스처 대용).
+            // 횡단보도 — S-079 ②: 줄을 z(도로 진행) 방향 길쭉·x 나열로 90도 회전(남규님 판정),
+            // y도 도로면 위로 올려 z-fighting 묻힘 해소.
             Material zebra = GreyboxStageBuilder.GetOrCreateMaterial("Crosswalk", new Color(0.92f, 0.93f, 0.95f), false);
             GameObject zebraRoot = GreyboxStageBuilder.CreateEmpty("Crosswalk", new Vector3(ROAD_X, 0f, 0f));
-            for (int stripe = 0; stripe < 7; stripe++)
+            for (int stripe = 0; stripe < 5; stripe++)
             {
                 GameObject line = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 line.name = "Stripe_" + stripe;
                 line.transform.SetParent(zebraRoot.transform, false);
-                line.transform.localPosition = new Vector3(0f, 0.025f, -2.7f + stripe * 0.9f);
-                line.transform.localScale = new Vector3(3.6f, 0.015f, 0.4f);
+                line.transform.localPosition = new Vector3(-1.6f + stripe * 0.8f, 0.045f, 0f);
+                line.transform.localScale = new Vector3(0.42f, 0.015f, 5.6f);
                 Object.DestroyImmediate(line.GetComponent<Collider>());
                 line.GetComponent<Renderer>().sharedMaterial = zebra;
             }
@@ -95,9 +96,9 @@ namespace DontLate.EditorTools
             TrafficLight signal = BuildTrafficLight(new Vector3(ROAD_X + 2.6f, 0f, -3.4f));
 
             // S-052 ② 행인 3 — S-076 ②: 신호를 지키고, 전방 회피·뛰는 플레이어 구경까지.
-            NpcBuildKit.BuildPedestrian("Walker_A", new Vector3(-8f, 0f, 2.2f), new Color(0.45f, 0.52f, 0.62f), 6f, signal, ROAD_X);
-            NpcBuildKit.BuildPedestrian("Walker_B", new Vector3(6f, 0f, 2.6f), new Color(0.60f, 0.48f, 0.40f), 7f, signal, ROAD_X);
-            NpcBuildKit.BuildPedestrian("Walker_C", new Vector3(18f, 0f, 2.0f), new Color(0.50f, 0.58f, 0.45f), 5f, signal, ROAD_X);
+            NpcBuildKit.BuildPedestrian("Walker_A", new Vector3(-8f, 0f, 2.2f), new Color(0.45f, 0.52f, 0.62f), 6f, signal, ROAD_X, "walker_a", gameState);
+            NpcBuildKit.BuildPedestrian("Walker_B", new Vector3(6f, 0f, 2.6f), new Color(0.60f, 0.48f, 0.40f), 7f, signal, ROAD_X, "walker_b", gameState);
+            NpcBuildKit.BuildPedestrian("Walker_C", new Vector3(18f, 0f, 2.0f), new Color(0.50f, 0.58f, 0.45f), 5f, signal, ROAD_X, "walker_c", gameState);
 
             GameObject trafficGo = GreyboxStageBuilder.CreateEmpty("Traffic", new Vector3(ROAD_X, 0f, 0f));
             TrafficRoad trafficRoad = trafficGo.AddComponent<TrafficRoad>();

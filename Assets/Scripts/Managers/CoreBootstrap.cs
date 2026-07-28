@@ -62,6 +62,8 @@ namespace DontLate
             _gameState.daySettled = false;    // S-068
             _gameState.dayOrders.Clear();     // S-072 ⑩
             _gameState.destroyedOrderIds.Clear(); // S-074 ③
+            _gameState.npcAffinities.Clear();     // S-079 ④
+            _gameState.stamina = -1f;             // S-081 ①
             _gameState.droppedCargo.Clear();
             _gameState.cargo.Clear();
             _gameState.scannedOrderIds.Clear();

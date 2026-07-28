@@ -102,7 +102,9 @@ namespace DontLate
 
         private void Start()
         {
-            Stamina = _hub.Tuning.staminaMax;
+            // S-081 ① — 씬 전환마다 풀 충전되던 것: GameState 영속값 복원 (음수=하루 첫 진입 → 풀).
+            Stamina = _hub.GameState != null && _hub.GameState.stamina >= 0f
+                ? _hub.GameState.stamina : _hub.Tuning.staminaMax;
             NotifyStamina(force: true);
             RestoreCarriedFromState(); // S-066 ② — 엣지 워크로 넘어온 짐 복원
         }
@@ -111,6 +113,7 @@ namespace DontLate
         private void OnSceneLeaving(GameScene _)
         {
             if (_hub.GameState == null) return;
+            _hub.GameState.stamina = Stamina; // S-081 ① — 씬 간 영속
             _hub.GameState.carriedOrders.Clear();
             if (CarriedOrder != null) _hub.GameState.carriedOrders.Add(CarriedOrder);
             if (CarriedOrder2 != null) _hub.GameState.carriedOrders.Add(CarriedOrder2);

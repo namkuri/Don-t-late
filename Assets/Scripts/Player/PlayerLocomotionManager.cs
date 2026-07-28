@@ -93,7 +93,9 @@ namespace DontLate
             TuningConfigSO tuning = _hub.Tuning;
             Vector2 input = _hub.Input.MoveVector;
 
-            float speed = _hub.Input.RunHeld ? tuning.runSpeed : tuning.moveSpeed;
+            // S-081 ② — 탈진(스태미나 0): 달리기 불가 (점프도 아래에서 차단).
+            bool exhausted = _hub.Status != null && _hub.Status.Stamina <= 0f;
+            float speed = _hub.Input.RunHeld && !exhausted ? tuning.runSpeed : tuning.moveSpeed;
             if (_hub.Status.IsCarrying) speed *= tuning.carrySpeedPenalty;
             speed *= _hub.Status.SpeedMultiplier; // S-074 ⑧ — 드링크 버프 (+30%)
 
@@ -114,7 +116,7 @@ namespace DontLate
             if (_cc.isGrounded)
             {
                 _verticalVelocity = -1f; // 접지 유지용 약한 하향
-                if (_hub.Input.JumpPressed)
+                if (_hub.Input.JumpPressed && !exhausted) // S-081 ②
                 {
                     _verticalVelocity = Mathf.Sqrt(-2f * tuning.gravity * tuning.jumpHeight);
                     WorldAudioManager.Instance?.PlayJumpSfx(); // AU-018 ③

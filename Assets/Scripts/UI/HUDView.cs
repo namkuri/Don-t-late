@@ -187,6 +187,9 @@ namespace DontLate
         private void SpawnFloatingAmount(string text, Color color, TMP_Text anchorLabel)
         {
             if (anchorLabel == null) return;
+            // S-080 ② — 정산 정지 중엔 억제: 일괄 판정이 N건 이벤트를 같은 프레임에 쏘면 플로팅이
+            // 겹쳐 마지막 금액만 보였다("+1,700만 뜸"의 원흉). 상세는 정산 패널 리스트가 전담.
+            if (Time.timeScale == 0f) return;
 
             GameObject go = new GameObject("FloatAmount", typeof(RectTransform));
             go.transform.SetParent(anchorLabel.transform.parent, false);

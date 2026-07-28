@@ -57,6 +57,18 @@ namespace DontLate.EditorTools
             importer.filterMode = FilterMode.Point;
             importer.textureCompression = TextureImporterCompression.Uncompressed; // 압축 None
             importer.maxTextureSize = 256;
+
+            // S-079 ③ — 3D 표면 텍스처는 밉맵 필수: 밉 없이 Point만 쓰면 원거리에서 모아레
+            // (물결·얼룩 — 남규님 실측). UI·Portraits(화면 고정 스케일)는 밉 불필요라 끈다.
+            string category = GetCategory(assetPath);
+            bool surface = category == "Buildings" || category == "Props"
+                || category == "Backgrounds" || category == "Characters";
+            importer.mipmapEnabled = surface;
+            if (surface)
+            {
+                importer.mipmapFilter = TextureImporterMipFilter.BoxFilter;
+                importer.anisoLevel = 4; // 낮은 카메라 각도의 바닥류 완화
+            }
         }
 
         // 애니메이션을 끄는 정적 카테고리 (소품·건물·배경 — 애니 불필요).

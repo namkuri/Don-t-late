@@ -38,6 +38,19 @@ namespace DontLate.EditorTools
             head.transform.localScale = Vector3.one * (height * 0.24f);
             head.GetComponent<Renderer>().sharedMaterial = skinMat;
 
+            // S-080 ③ — 눈 2개 (로컬 +z = 바라보는 방향 표지): 응시 여부를 눈으로 판별하게.
+            Material eyeMat = GreyboxStageBuilder.GetOrCreateMaterial("NpcEye", new Color(0.08f, 0.09f, 0.12f), false);
+            foreach (float side in new[] { -1f, 1f })
+            {
+                GameObject eye = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                eye.name = side < 0 ? "EyeL" : "EyeR";
+                Object.DestroyImmediate(eye.GetComponent<Collider>());
+                eye.transform.SetParent(head.transform, false);
+                eye.transform.localPosition = new Vector3(side * 0.22f, 0.12f, 0.42f);
+                eye.transform.localScale = new Vector3(0.14f, 0.2f, 0.12f);
+                eye.GetComponent<Renderer>().sharedMaterial = eyeMat;
+            }
+
             return (root, bodyRenderer);
         }
 
@@ -110,11 +123,12 @@ namespace DontLate.EditorTools
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        /// <summary>행인 1명 — 위치·색·배회 반경. signal을 주면 교차 도로 신호를 지킨다 (S-076 ②).</summary>
+        /// <summary>행인 1명 — 위치·색·배회 반경. signal을 주면 교차 도로 신호를 지킨다 (S-076 ②).
+        /// npcId·gameState를 주면 E 인사로 소셜앱에 등재된다 (S-080 ①).</summary>
         internal static void BuildPedestrian(string name, Vector3 position, Color color, float patrolHalf,
-            TrafficLight signal = null, float roadX = 0f)
+            TrafficLight signal = null, float roadX = 0f, string npcId = null, GameStateSO gameState = null)
         {
-            var (go, _) = BuildFigure(name, position, "NpcWalker_" + name, color, 1.7f);
+            var (go, bodyRenderer) = BuildFigure(name, position, "NpcWalker_" + name, color, 1.7f);
 
             // S-076 ② — 차 피격 감지용 몸통 트리거 + 키네마틱 RB (플레이어는 통과 유지 — 트리거라 밀지 않음).
             BoxCollider hitBox = go.AddComponent<BoxCollider>();
@@ -133,6 +147,12 @@ namespace DontLate.EditorTools
                 serialized.FindProperty("_signal").objectReferenceValue = signal;
                 serialized.FindProperty("_roadX").floatValue = roadX;
             }
+            // S-080 ① — 인사 인터랙션·소셜 등재 배선.
+            if (!string.IsNullOrEmpty(npcId)) serialized.FindProperty("_npcId").stringValue = npcId;
+            if (gameState != null) serialized.FindProperty("_gameState").objectReferenceValue = gameState;
+            serialized.FindProperty("_bodyRenderer").objectReferenceValue = bodyRenderer;
+            serialized.FindProperty("_highlightMaterial").objectReferenceValue =
+                GreyboxStageBuilder.GetOrCreateMaterial("Highlight", GreyboxStageBuilder.ParseColor("#35e0c8"), true);
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
     }

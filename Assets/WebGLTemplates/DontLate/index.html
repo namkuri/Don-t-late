@@ -23,12 +23,34 @@
           console.log('[DontLate] S-077 가속 진단 — WebGL renderer: ' + (renderer || '(판별 불가)'));
           var software = !gl || renderer === '' || /swiftshader|software|llvmpipe|basic render/i.test(renderer);
           if (!software) return;
+
+          // S-078 ② — 브라우저별 설정 주소. chrome:// 류 내부 주소는 웹 링크로 열 수 없어(보안
+          // 차단) '주소 복사' 버튼으로 대신한다 — 주소창에 붙여넣기 한 번.
+          var ua = navigator.userAgent;
+          var settingsUrl = /Edg\//.test(ua) ? 'edge://settings/system'
+                          : /Firefox\//.test(ua) ? 'about:preferences#general'
+                          : 'chrome://settings/system';
+          var settingName = /Firefox\//.test(ua) ? '"권장 성능 설정 사용" 해제 후 하드웨어 가속'
+                          : '"가능한 경우 그래픽 가속 사용"';
+
           var banner = document.createElement('div');
           banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;'
             + 'background:#ff9f45;color:#10131a;font:bold 14px/1.5 sans-serif;'
             + 'padding:10px 44px 10px 14px;text-align:center;';
-          banner.innerHTML = '⚠ 그래픽 가속이 꺼져 있어 게임이 느릴 수 있습니다 — 크롬 '
-            + '<b>설정 → 시스템 → "가능한 경우 그래픽 가속 사용"</b>을 켜고 브라우저를 재시작해 주세요.';
+          banner.innerHTML = '⚠ 그래픽 가속이 꺼져 있어 게임이 느릴 수 있습니다 — 주소창에 '
+            + '<code style="background:#10131a;color:#ffd9a8;padding:1px 6px;border-radius:3px;">' + settingsUrl + '</code> 를 열어 '
+            + '<b>' + settingName + '</b>을 켜고 브라우저를 재시작해 주세요. ';
+          var copy = document.createElement('button');
+          copy.textContent = '주소 복사';
+          copy.style.cssText = 'margin-left:8px;padding:2px 10px;border:2px solid #10131a;'
+            + 'background:#ffd9a8;color:#10131a;font:bold 13px sans-serif;cursor:pointer;border-radius:4px;';
+          copy.onclick = function () {
+            var done = function () { copy.textContent = '복사됨! 주소창에 붙여넣기'; };
+            if (navigator.clipboard && navigator.clipboard.writeText)
+              navigator.clipboard.writeText(settingsUrl).then(done, function () {});
+            else { window.prompt('아래 주소를 복사해 주소창에 붙여넣으세요', settingsUrl); }
+          };
+          banner.appendChild(copy);
           var close = document.createElement('span');
           close.textContent = '✕';
           close.style.cssText = 'position:absolute;right:14px;top:10px;cursor:pointer;';

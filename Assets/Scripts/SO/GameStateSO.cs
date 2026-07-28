@@ -75,6 +75,11 @@ namespace DontLate
         public List<DeliveryOrderSO> dayOrders = new List<DeliveryOrderSO>();
         /// <summary>파손된 주문 (S-074 ③) — 정산에서 실패로 청산하고 비운다. 상자 재스폰 금지 판정에도 쓴다.</summary>
         public List<int> destroyedOrderIds = new List<int>();
+        /// <summary>씬 간 스태미나 영속 (S-081 ①) — 음수=미초기화(풀 충전으로 시작). 정산 시 리셋.</summary>
+        public float stamina = -1f;
+
+        /// <summary>만난 NPC와 호감도 (S-079 ④) — 등재=만남. 증감은 NpcAffinityLedger 경유.</summary>
+        public List<NpcAffinity> npcAffinities = new List<NpcAffinity>();
         /// <summary>배송지에 버려둔 짐 위치 (S-068 ③) — 재입장 시 그 자리에 복원.</summary>
         public List<DroppedCargo> droppedCargo = new List<DroppedCargo>();
 
@@ -104,6 +109,14 @@ namespace DontLate
         public int reward;
         public int day;
         public int minuteOfDay;
+    }
+
+    /// <summary>NPC 호감도 1건 (S-079 ④) — npcId는 NpcSO.npcId와 일치.</summary>
+    [System.Serializable]
+    public struct NpcAffinity
+    {
+        public string npcId;
+        public int affinity;
     }
 
     /// <summary>배송지에 버려둔 짐 (S-068 ③) — 구역·좌표 기록. 스포너가 재입장 시 이 자리에 깐다.</summary>

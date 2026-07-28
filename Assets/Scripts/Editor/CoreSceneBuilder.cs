@@ -1014,6 +1014,7 @@ namespace DontLate.EditorTools
             SetField(view, "_tuning", AssetDatabase.LoadAssetAtPath<TuningConfigSO>(DATA_ROOT + "/Tuning.asset"));
             SetField(view, "_gameState", AssetDatabase.LoadAssetAtPath<GameStateSO>(DATA_ROOT + "/GameState.asset"));
             SetField(view, "_furnitureCatalog", GetOrCreateFurnitureCatalog()); // S-019 ④
+            SetField(view, "_npcCatalog", GetOrCreateNpcCatalog());            // S-079 ④ — 소셜앱
 
             // 폰 본체 — 우하단 앵커(사람 요청 S-011 후속).
             // 실아트(ui_phone_frame — 민지 민트 폰, 723×1353 크롭·화면 개구 실측) 있으면 프레임 사용,
@@ -1045,6 +1046,41 @@ namespace DontLate.EditorTools
         }
 
         // 가구 카탈로그 4종 (S-019 ④ — 그레이박스 색박스, 실모델은 prefab 스왑 계약).
+        // S-079 ④ — NPC 프로필 카탈로그 (Data/Npcs/*.asset — 멱등 생성, 초상은 실아트 소켓).
+        private static NpcSO[] GetOrCreateNpcCatalog()
+        {
+            (string id, string npcName, string intro, Color color)[] npcs =
+            {
+                ("boss", "사장님", "물류캠프의 왕고참. 스캔 안 한 짐은 안 실어준다.", new Color(0.55f, 0.42f, 0.30f)),
+                ("granny", "할머니", "길 건너까지 짐을 옮겨 달라는 단골 심부름 의뢰인.", new Color(0.62f, 0.50f, 0.60f)),
+                ("parkmalsoon", "박말순", "전화 너머의 진상 고객. 목소리가 크다.", new Color(0.70f, 0.35f, 0.35f)),
+                ("walker_a", "회색 코트 아저씨", "빌라촌을 산책하는 조용한 이웃.", new Color(0.45f, 0.52f, 0.62f)),
+                ("walker_b", "장바구니 아주머니", "먹자골목 단골. 오늘 저녁 메뉴 고민 중.", new Color(0.60f, 0.48f, 0.40f)),
+                ("walker_c", "초록 점퍼 청년", "동네 러닝 크루라고 주장한다.", new Color(0.50f, 0.58f, 0.45f)),
+                ("camp_walker_a", "새벽 출근러", "캠프 앞을 지나 첫차를 타러 간다.", new Color(0.45f, 0.52f, 0.62f)),
+                ("camp_walker_b", "야간 산책러", "잠이 안 와서 걷는 중이라고 한다.", new Color(0.60f, 0.48f, 0.40f)),
+            };
+            string folder = DATA_ROOT + "/Npcs";
+            if (!AssetDatabase.IsValidFolder(folder)) AssetDatabase.CreateFolder(DATA_ROOT, "Npcs");
+            var result = new NpcSO[npcs.Length];
+            for (int i = 0; i < npcs.Length; i++)
+            {
+                string path = folder + "/npc_" + npcs[i].id + ".asset";
+                NpcSO npc = AssetDatabase.LoadAssetAtPath<NpcSO>(path);
+                if (npc == null)
+                {
+                    npc = ScriptableObject.CreateInstance<NpcSO>();
+                    npc.npcId = npcs[i].id;
+                    npc.displayName = npcs[i].npcName;
+                    npc.intro = npcs[i].intro;
+                    npc.placeholderColor = npcs[i].color;
+                    AssetDatabase.CreateAsset(npc, path);
+                }
+                result[i] = npc;
+            }
+            return result;
+        }
+
         private static FurnitureSO[] GetOrCreateFurnitureCatalog()
         {
             // 앞 4종 = 구매 그리드 노출분. fur_bed(S-031 ③)는 시드 전용 — 목록·배치 조회에만 잡힌다.
