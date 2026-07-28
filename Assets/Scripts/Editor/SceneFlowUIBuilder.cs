@@ -284,23 +284,39 @@ namespace DontLate.EditorTools
                     new Vector2(1f, 1f), new Vector2(-40f, -400f), new Vector2(380f, 74f), 30f);
             }
 
-            // 정산 패널 — 시안 테두리 + 네이비 내부 + 확인 버튼.
-            GameObject panel = CreateImage(root, "SettlementPanel", CYAN).gameObject;
+            // S-087 — 영수증 스킨: 흰 종이 + 상하 톱니 절취선 + 네이비 잉크 (참고 이미지 정합).
+            Color paper = new Color(0.97f, 0.97f, 0.95f, 1f);
+            Color ink = new Color(0.16f, 0.22f, 0.30f, 1f);
+            GameObject panel = CreateImage(root, "SettlementPanel", paper).gameObject;
             RectTransform panelRect = panel.GetComponent<RectTransform>();
             panelRect.anchorMin = panelRect.anchorMax = panelRect.pivot = new Vector2(0.5f, 0.5f);
-            panelRect.sizeDelta = new Vector2(680f, 700f); // S-075 ⑥ — 항목 리스트 수용 확대
+            panelRect.sizeDelta = new Vector2(620f, 720f);
             panelRect.anchoredPosition = Vector2.zero;
 
-            Image panelInner = CreateImage(panel.transform, "Inner", NAVY);
+            // 톱니 절취선 — 상하 가장자리에 45도 다이아몬드 이빨.
+            foreach (float edge in new[] { 1f, -1f })
+                for (int tooth = 0; tooth < 21; tooth++)
+                {
+                    Image diamond = CreateImage(panel.transform, "Tooth", paper);
+                    RectTransform dRect = diamond.rectTransform;
+                    dRect.anchorMin = dRect.anchorMax = new Vector2(0f, edge > 0 ? 1f : 0f);
+                    dRect.pivot = new Vector2(0.5f, 0.5f);
+                    dRect.sizeDelta = new Vector2(21f, 21f);
+                    dRect.anchoredPosition = new Vector2(15f + tooth * 29.5f, 0f);
+                    dRect.localRotation = Quaternion.Euler(0f, 0f, 45f);
+                    diamond.raycastTarget = false;
+                }
+
+            Image panelInner = CreateImage(panel.transform, "Inner", paper);
             panelInner.raycastTarget = true; // 뒤 클릭 차단
             RectTransform innerRect = panelInner.rectTransform;
             innerRect.anchorMin = Vector2.zero;
             innerRect.anchorMax = Vector2.one;
-            innerRect.offsetMin = new Vector2(3f, 3f);
-            innerRect.offsetMax = new Vector2(-3f, -3f);
+            innerRect.offsetMin = new Vector2(0f, 0f);
+            innerRect.offsetMax = new Vector2(0f, 0f);
 
-            // S-075 ⑥ — 폰트 40→28·하단 여백 140: 항목 리스트가 확인 버튼과 겹치지 않게.
-            TMP_Text body = CreateText(panelInner.transform, "Body", string.Empty, font, 28f, Color.white,
+            // S-075 ⑥ — 폰트 26·하단 여백: 항목 리스트가 확인 버튼과 겹치지 않게. (S-087 — 잉크색)
+            TMP_Text body = CreateText(panelInner.transform, "Body", string.Empty, font, 26f, ink,
                 TextAlignmentOptions.TopLeft, FontStyles.Normal);
             RectTransform bodyRect = body.rectTransform;
             bodyRect.anchorMin = Vector2.zero;
@@ -323,6 +339,7 @@ namespace DontLate.EditorTools
             StretchFull(confirmLabel.rectTransform);
 
             SettlementView view = root.gameObject.AddComponent<SettlementView>();
+            SetField(view, "_gameState", AssetDatabase.LoadAssetAtPath<GameStateSO>("Assets/Data/GameState.asset")); // S-087
             SetField(view, "_openButton", endButton);
             SetField(view, "_panel", panel);
             SetField(view, "_bodyLabel", body);

@@ -60,37 +60,46 @@ namespace DontLate
         private bool _skipOnce;
         private const float LINE_INTERVAL_SECONDS = 0.5f;
 
+        // ── S-087 — 영수증 포맷: 좌(이름)/우(금액) 정렬은 TMP line-height 0 트릭 ──
+        private const string RULE_STARS = "<align=center><color=#4a5568>******************************</color></align>";
+        private const string RULE_DASH = "<align=center><color=#8a93a8>------------------------------</color></align>";
+
+        private static string Row(string left, string right)
+            => "<align=left>" + left + "<line-height=0>\n<align=right>" + right + "<line-height=1em>";
+
+        [SerializeField] private GameStateSO _gameState; // S-087 — 영수증 머리(Day·배송원) 표시용
+
         private void BuildLines(DeliveryDaySummary d, DebtSettlement s)
         {
             _lines.Clear();
-            _lines.Add("<b>오늘 정산</b>");
-            _lines.Add("");
-            _lines.Add("배송 성공  <color=#35e0c8>" + d.SuccessCount + "건  +₩" + d.RewardTotal.ToString("N0") + "</color>");
+            _lines.Add("<align=center><b>정 산   영 수 증</b></align>");
+            _lines.Add(RULE_STARS);
+            _lines.Add(Row("Date:", "Day " + (_gameState != null ? _gameState.day.ToString() : "?")));
+            _lines.Add(Row("배송원:", _gameState != null && !string.IsNullOrEmpty(_gameState.nickname) ? _gameState.nickname : "늦지마맨"));
+            _lines.Add(RULE_DASH);
             if (d.Lines != null)
                 foreach (SettleLine line in d.Lines)
-                    if (line.Success)
-                        _lines.Add("<size=72%>  · " + line.Address + "  <color=#35e0c8>+₩" + line.Amount.ToString("N0") + "</color></size>");
-            _lines.Add("배송 실패  <color=#ff7359>" + d.FailCount + "건  −₩" + d.PenaltyTotal.ToString("N0") + "</color>");
-            if (d.Lines != null)
-                foreach (SettleLine line in d.Lines)
-                    if (!line.Success)
-                        _lines.Add("<size=72%>  · " + line.Address + "  <color=#ff7359>" + line.Note + " −₩" + (-line.Amount).ToString("N0") + "</color></size>");
-            _lines.Add("");
-            _lines.Add("빚 상환   <color=#35e0c8>₩" + s.Repaid.ToString("N0") + "</color>");
-            _lines.Add("잔액       ₩" + s.Money.ToString("N0"));
-            _lines.Add("남은 빚   ₩" + s.Debt.ToString("N0"));
+                    _lines.Add(line.Success
+                        ? Row(line.Address, "<color=#2b9e8e>+" + line.Amount.ToString("N0") + "</color>")
+                        : Row(line.Address + " <color=#e05a48>(" + line.Note + ")</color>",
+                              "<color=#e05a48>−" + (-line.Amount).ToString("N0") + "</color>"));
+            if (d.Lines == null || d.Lines.Count == 0)
+                _lines.Add("<align=center><color=#8a93a8>(배송 내역 없음)</color></align>");
+            _lines.Add(RULE_DASH);
+            _lines.Add(Row("성공 " + d.SuccessCount + "건", "<color=#2b9e8e>+" + d.RewardTotal.ToString("N0") + "</color>"));
+            _lines.Add(Row("실패 " + d.FailCount + "건", "<color=#e05a48>−" + d.PenaltyTotal.ToString("N0") + "</color>"));
+            _lines.Add(Row("빚 상환", s.Repaid.ToString("N0")));
+            _lines.Add(Row("<b>잔액</b>", "<b>" + s.Money.ToString("N0") + "</b>"));
+            _lines.Add(Row("남은 빚", s.Debt.ToString("N0")));
 
-            // S-084 ① — 개척 해금·트럭 수령은 맨 아래에서 하이라이트.
+            // S-084 ① — 개척 해금·트럭 수령 하이라이트 (콘페티 트리거 문구 유지).
             if (!string.IsNullOrEmpty(d.UnlockedDistrict))
-            {
-                _lines.Add("");
-                _lines.Add("<color=#35e0c8><b>새 구역 개척 — " + d.UnlockedDistrict + " 해금!</b></color>");
-            }
+                _lines.Add("<align=center><color=#2b9e8e><b>새 구역 개척 — " + d.UnlockedDistrict + " 해금!</b></color></align>");
             if (d.TruckAwarded)
-            {
-                _lines.Add("");
-                _lines.Add("<color=#35e0c8><b>전 구역 완주 — 회사 트럭 지급!</b></color>");
-            }
+                _lines.Add("<align=center><color=#2b9e8e><b>전 구역 완주 — 회사 트럭 지급!</b></color></align>");
+
+            _lines.Add(RULE_STARS);
+            _lines.Add("<align=center><color=#4a5568>Don't Late Inc.</color></align>");
         }
 
         private System.Collections.IEnumerator PrintLines()
