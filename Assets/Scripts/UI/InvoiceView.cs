@@ -47,6 +47,9 @@ namespace DontLate
         private void Start()
         {
             if (_root != null) _root.SetActive(false);
+            // S-073 — 런타임 오버레이 공유 폰트 등록 (빌더가 주입한 Pretendard — 한글 글리프 보장).
+            if (_customerLabel != null && _customerLabel.font != null)
+                UiOverlayFont.Korean = _customerLabel.font;
         }
 
         private void Update()
@@ -77,7 +80,24 @@ namespace DontLate
             }
             if (overBarcode && !_aiming) BeginAim();
             else if (!overBarcode && _aiming) EndAim();
-            if (_aiming && PhoneView.Instance != null) PhoneView.Instance.UpdateBarcodeAim(aimOffset);
+            if (_aiming && PhoneView.Instance != null)
+            {
+                PhoneView.Instance.UpdateBarcodeAim(aimOffset);
+
+                // S-073 ② — 중앙 조준을 잠깐 유지하면 클릭 없이 자동 촬영 (스치는 오발 방지 0.3초).
+                if (PhoneView.Instance.IsAimCentered)
+                {
+                    _aimHoldTime += Time.unscaledDeltaTime;
+                    if (_aimHoldTime >= AUTO_SHOOT_HOLD_SECONDS && PhoneView.Instance.TryShootBarcode(_order))
+                    {
+                        EndAim();
+                        _root.SetActive(false);
+                        _justOpened = false;
+                        return;
+                    }
+                }
+                else _aimHoldTime = 0f;
+            }
 
             // 닫기: ESC 또는 아무 곳 좌클릭 — 단 바코드 조준 중 좌클릭은 '스캔 촬영'이다 (S-072 ②·④).
             bool click = mouse != null && mouse.leftButton.wasPressedThisFrame && !_justOpened;
@@ -99,12 +119,15 @@ namespace DontLate
 
         private bool _justOpened;
         private bool _aiming;
+        private float _aimHoldTime; // S-073 ② — 중앙 유지 시간 (자동 촬영)
+        private const float AUTO_SHOOT_HOLD_SECONDS = 0.3f;
         private DeliveryOrderSO _order;
         private Image _barcodeBackground; // 호버 하이라이트 대상 (바코드 밴드 배경)
 
         private void BeginAim()
         {
             _aiming = true;
+            _aimHoldTime = 0f;
             if (_barcodeBackground == null && _barcodeRoot != null)
                 _barcodeBackground = _barcodeRoot.GetComponent<Image>();
             if (_barcodeBackground != null)

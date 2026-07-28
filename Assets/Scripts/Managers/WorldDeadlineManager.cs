@@ -54,6 +54,9 @@ namespace DontLate
             {
                 if (order == null) continue;
 
+                // S-073 ① — 배송지 패드에 배치 완료된 건은 마감 면제: 배치=일 끝, 방치해도 지각 없음.
+                if (_gameState.placedDeliveries.Exists(p => p.orderId == order.orderId)) continue;
+
                 float remaining = RemainingMinutes(order);
 
                 if (remaining <= 0f)

@@ -817,6 +817,21 @@ namespace DontLate.EditorTools
             SetField(view, "_barcodeRoot", barcodeBand.rectTransform);
             EditorUtility.SetDirty(view);
             paper.gameObject.SetActive(false);
+
+            // S-073 ③ — 상자 호버 툴팁 (같은 오버레이 캔버스에 얹는다 — 마우스 추적 라벨 1개).
+            BoxTooltipView tooltip = canvasGo.AddComponent<BoxTooltipView>();
+            TMP_Text tooltipLabel = CreateText(canvasGo.transform, "BoxTooltip", string.Empty, font, 24f,
+                Color.white, TextAlignmentOptions.BottomLeft);
+            RectTransform tooltipRect = tooltipLabel.rectTransform;
+            tooltipRect.anchorMin = tooltipRect.anchorMax = Vector2.zero;
+            tooltipRect.pivot = new Vector2(0f, 0f);
+            tooltipRect.sizeDelta = new Vector2(640f, 34f);
+            tooltipLabel.textWrappingMode = TextWrappingModes.NoWrap;
+            tooltipLabel.fontStyle = FontStyles.Bold;
+            tooltipLabel.gameObject.SetActive(false);
+            SetField(tooltip, "_gameState", gameState);
+            SetField(tooltip, "_label", tooltipLabel);
+            EditorUtility.SetDirty(tooltip);
         }
 
         // ── 대화 캔버스 (Core 상주) ──────────────────────────

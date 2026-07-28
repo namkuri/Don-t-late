@@ -764,8 +764,11 @@ namespace DontLate
                     ? new Color(0.208f, 0.878f, 0.784f, 0.34f)  // 민트 — 찍을 수 있다
                     : new Color(1f, 0.624f, 0.271f, 0.28f);     // 앰버 — 더 중앙으로
             if (_aimHint != null)
-                _aimHint.text = _aimCentered ? "지금! 클릭해서 촬영" : "바코드를 중앙에 맞춰 클릭";
+                _aimHint.text = _aimCentered ? "고정! 자동 촬영 중…" : "바코드를 중앙에 맞춰라";
         }
+
+        /// <summary>조준이 중앙에 맞았는가 — 송장(InvoiceView)의 자동 촬영 타이머가 참조 (S-073 ②).</summary>
+        public bool IsAimCentered => _aimCentered;
 
         /// <summary>조준 촬영 (송장 좌클릭). 중앙 판정 성공 시 운송장 등록까지 — true면 송장을 접는다.</summary>
         public bool TryShootBarcode(DeliveryOrderSO order)

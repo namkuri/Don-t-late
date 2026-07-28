@@ -17,6 +17,9 @@ namespace DontLate
         [Tooltip("씬 전이 복원 상자의 비주얼 — 캠프 박스와 동일 프리팹(Prefabs/Auto/prop_box_parcel). 빌더 주입 (S-070 ③).")]
         [SerializeField] private GameObject _parcelVisualPrefab;
 
+        [Tooltip("오버레이 라벨 폰트(한글) — 든 상자 마감 카운트다운용. 빌더 주입 (S-073 ④).")]
+        [SerializeField] private TMPro.TMP_FontAsset _overlayFont;
+
         private PlayerManager _hub;
         private float _lastNotifiedStamina = -1f;
         private Transform _carriedVisual;
@@ -277,6 +280,9 @@ namespace DontLate
         /// </summary>
         private void DropVisualAsPhysics(Transform visual)
         {
+            // S-073 ④ — 마감 라벨은 '들고 있을 때'만: 손을 떠나면 라벨째 제거.
+            if (visual.TryGetComponent(out CarryDeadlineLabel label)) Destroy(label);
+
             visual.SetParent(null, worldPositionStays: true);
 
             if (visual.TryGetComponent(out Collider collider))
@@ -376,17 +382,25 @@ namespace DontLate
         {
             visual.SetParent(_carryAnchor, false);
             visual.localRotation = Quaternion.identity;
+            DeliveryOrderSO labelOrder; // S-073 ④ — 이 비주얼이 표현하는 주문 (직전 TryCarry 결과)
             if (_fillSecondSlot) // S-055 — 2번 슬롯은 머리 위
             {
                 _carriedVisual2 = visual;
                 visual.localPosition = new Vector3(0f, 0.62f, 0f);
                 _fillSecondSlot = false;
+                labelOrder = CarriedOrder2;
             }
             else
             {
                 _carriedVisual = visual;
                 visual.localPosition = Vector3.zero;
+                labelOrder = CarriedOrder;
             }
+
+            // S-073 ④ — 든 상자 위 마감 카운트다운. 드롭 시 함께 제거된다.
+            if (labelOrder != null && !visual.TryGetComponent(out CarryDeadlineLabel _))
+                visual.gameObject.AddComponent<CarryDeadlineLabel>()
+                    .Init(labelOrder, _hub.GameState, _overlayFont);
         }
 
         /// <summary>지각으로 실패한 건이 지금 든 것이면 손에서 내려놓는다.</summary>

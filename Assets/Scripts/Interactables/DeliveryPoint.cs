@@ -51,6 +51,7 @@ namespace DontLate
             WorldEvents.PackagePickedUp -= OnPackagePickedUp;
             WorldEvents.DeliveryCompleted -= OnDeliverySettled;
             WorldEvents.DeliveryFailed -= OnDeliverySettled;
+            if (_nameLabel != null) _nameLabel.gameObject.SetActive(false); // 패드 소멸 시 라벨 잔존 방지
         }
 
         // S-034 ④: 비콘에 놓기 = 내려놓기일 뿐 — 완료·보상 없음. 주소가 달라도 놓인다(오배치 = 정산 때 실패).
@@ -66,6 +67,7 @@ namespace DontLate
 
             ctx.Player.Status.ReleaseCarry(dropAsPhysics: true);
             WorldDeliveryManager.Instance.PlaceDelivery(carried, Address);
+            if (carried.address == Address) ShowSuccessFloat(); // S-073 ⑥ — 올바른 배치 연출
         }
 
         /// <summary>
@@ -77,6 +79,7 @@ namespace DontLate
             if (!other.TryGetComponent(out PickupBox box) || box.Order == null) return;
             if (WorldDeliveryManager.Instance == null || !WorldDeliveryManager.Instance.IsInCargo(box.Order)) return;
             WorldDeliveryManager.Instance.PlaceDelivery(box.Order, Address);
+            if (box.Order.address == Address) ShowSuccessFloat(); // S-073 ⑥ — 던져 넣기도 연출
         }
 
         /// <summary>패드 밖으로 굴러 나가면 배치 철회 (재픽업은 PickupBox 쪽에서 철회).</summary>
@@ -110,6 +113,90 @@ namespace DontLate
             if (_expectedOrder == null || data.OrderId != _expectedOrder.orderId) return;
             _isDestination = true;
             ApplyHighlight();
+        }
+
+        // ── S-073 ⑤⑥ — 패드 위 풀해상 오버레이: 목적지 건물이름 상시 + "배송성공" 플로팅 ──
+        // (월드 텍스트(_addressLabel)는 픽셀레이트에 뭉개지는 한계가 있어(S-021 ②) 오버레이 병행.
+        //  BoxDurability HP바와 같은 패턴 — 자체 소형 캔버스 + WorldToScreenPoint 추적.)
+
+        private GameObject _overlayCanvasGo;
+        private TMPro.TMP_Text _nameLabel;
+
+        private void OnDestroy()
+        {
+            if (_overlayCanvasGo != null) Destroy(_overlayCanvasGo);
+        }
+
+        private void LateUpdate()
+        {
+            bool show = _isDestination && _expectedOrder != null;
+            if (!show)
+            {
+                if (_nameLabel != null) _nameLabel.gameObject.SetActive(false);
+                return;
+            }
+
+            Camera camera = Camera.main;
+            if (camera == null) return;
+            if (_nameLabel == null) BuildOverlay();
+
+            Vector3 screen = camera.WorldToScreenPoint(transform.position + Vector3.up * 1.6f);
+            if (screen.z < 0f) { _nameLabel.gameObject.SetActive(false); return; }
+            _nameLabel.gameObject.SetActive(true);
+            _nameLabel.rectTransform.position = new Vector3(screen.x, screen.y, 0f);
+            _nameLabel.text = _expectedOrder.address;
+        }
+
+        private void BuildOverlay()
+        {
+            _overlayCanvasGo = new GameObject("PadLabelCanvas");
+            Canvas canvas = _overlayCanvasGo.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 6;
+
+            _nameLabel = MakeOverlayText("PadName", 24f, new Color(0.208f, 0.878f, 0.784f));
+        }
+
+        private TMPro.TMP_Text MakeOverlayText(string name, float size, Color color)
+        {
+            var text = new GameObject(name, typeof(RectTransform)).AddComponent<TMPro.TextMeshProUGUI>();
+            text.transform.SetParent(_overlayCanvasGo.transform, false);
+            // S-073 — 한글 글리프 보장 폰트 (비콘 월드 라벨 폰트는 한글이 없어 네모 — 실캡처 적발).
+            if (UiOverlayFont.Korean != null) text.font = UiOverlayFont.Korean;
+            else if (_addressLabel != null) text.font = _addressLabel.font;
+            text.fontSize = size;
+            text.fontStyle = TMPro.FontStyles.Bold;
+            text.color = color;
+            text.alignment = TMPro.TextAlignmentOptions.Center;
+            text.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
+            text.raycastTarget = false;
+            text.rectTransform.sizeDelta = new Vector2(360f, 34f);
+            return text;
+        }
+
+        private void ShowSuccessFloat()
+        {
+            if (_nameLabel == null) BuildOverlay();
+            TMPro.TMP_Text label = MakeOverlayText("SuccessFloat", 30f, new Color(0.208f, 0.878f, 0.784f));
+            label.text = "배송성공";
+            StartCoroutine(FloatAndFade(label));
+        }
+
+        private System.Collections.IEnumerator FloatAndFade(TMPro.TMP_Text label)
+        {
+            const float DURATION = 1.3f;
+            Camera camera = Camera.main;
+            Color baseColor = label.color;
+            float t = 0f;
+            while (t < 1f && camera != null)
+            {
+                t += Time.deltaTime / DURATION;
+                Vector3 screen = camera.WorldToScreenPoint(transform.position + Vector3.up * 1.9f);
+                label.rectTransform.position = new Vector3(screen.x, screen.y + 70f * t, 0f);
+                label.color = new Color(baseColor.r, baseColor.g, baseColor.b, 1f - t * t);
+                yield return null;
+            }
+            if (label != null) Destroy(label.gameObject);
         }
 
         private void OnDeliverySettled(DeliveryData data)
