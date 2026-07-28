@@ -21,7 +21,9 @@ description: 납품 마감 절차 — 셀프검증(컴파일·콘솔0·테스트
 5. **캡처를 Read로 직접 확인** — 찍었다고 끝이 아니라 눈으로 판정(이 세션에서 카메라·라벨 결함 3건을 캡처 확인으로 잡음).
 6. **결과 기록**: 대장에 `### 결과 · {date 실행값} (리드 N분)` append — 관찰 위주("~확인" ○표기), 실수·교정도 기록.
 7. **납품 커밋**: `git add -A && git reset -- 'Assets/Scenes/*.unity' 'Assets/_Recovery'` (씬 본문 커밋 금지) → `[{ID}] 제목 (via ClaudeCode) [self-tested]` → push.
-8. **디스코드**: `python scripts/discord_notify.py "설명" --file Screenshots/x.png` — **항목 수만큼 반복**(--file은 1개만 지원).
+8. **재배포는 기본 생략 (D-072)** — 유니티 검증으로 갈음. 배포는 남규님 요청·웹 전용 검증 필요
+   건·마일스톤 단위 묶음에만 (빌드+배포가 리드타임을 지배하던 것 폐지).
+9. **디스코드**: `python scripts/discord_notify.py "설명" --file Screenshots/x.png` — **항목 수만큼 반복**(--file은 1개만 지원).
 
 ## 이 세션에서 배운 함정 (재발 4회+)
 - **exec 안 for/foreach = 행잉** — 인덱스 단문으로 풀어 쓴다. 배열 순회가 필요하면 exec 여러 번.
