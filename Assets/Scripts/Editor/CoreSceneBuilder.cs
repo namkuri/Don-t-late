@@ -172,6 +172,7 @@ namespace DontLate.EditorTools
             SetField(audio, "_sfxBoxBreak", LoadSfx("sfx_box_break"));   // AU-008 신기능 7종
             SetField(audio, "_sfxBarcode", LoadSfx("sfx_barcode"));
             SetField(audio, "_sfxFanfare", LoadSfx("sfx_fanfare")); // S-086
+            SetField(audio, "_sfxThunder", LoadSfx("sfx_thunder")); // S-088 ⑥
             SetField(audio, "_sfxPenalty", LoadSfx("sfx_penalty"));
             SetField(audio, "_sfxVending", LoadSfx("sfx_vending"));
             SetField(audio, "_sfxThrow", LoadSfx("sfx_throw"));
@@ -404,6 +405,23 @@ namespace DontLate.EditorTools
             StretchFull(staminaFill.rectTransform);
             ConfigureGaugeFill(staminaFill, 1f); // S-070 ②
             SetField(hud, "_staminaFill", staminaFill);
+
+            // S-088 ④ — 패널티 세그먼트: 오른쪽부터 더움(주황)·추움(파랑)·무거움(갈색)·강풍(회색).
+            (string fieldName, Color color)[] penaltySegments =
+            {
+                ("_penaltyHeatFill", new Color(1f, 0.45f, 0.20f, 0.95f)),
+                ("_penaltyColdFill", new Color(0.35f, 0.60f, 1f, 0.95f)),
+                ("_penaltyCarryFill", new Color(0.55f, 0.40f, 0.25f, 0.95f)),
+                ("_penaltyStormFill", new Color(0.60f, 0.62f, 0.68f, 0.95f)),
+            };
+            foreach (var segment in penaltySegments)
+            {
+                Image seg = CreateImage(staminaBg.transform, segment.fieldName.TrimStart('_'), segment.color);
+                StretchFull(seg.rectTransform);
+                seg.raycastTarget = false;
+                seg.gameObject.SetActive(false);
+                SetField(hud, segment.fieldName, seg);
+            }
 
             // 현금 칩.
             Image moneyChip = CreateImage(content.transform, "MoneyChip", chipColor);

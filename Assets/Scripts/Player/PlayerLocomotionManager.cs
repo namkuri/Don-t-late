@@ -115,7 +115,17 @@ namespace DontLate
             if (_hub.Status.IsCarrying) speed *= tuning.carrySpeedPenalty;
             speed *= _hub.Status.SpeedMultiplier; // S-074 ⑧ — 드링크 버프 (+30%)
 
+            // S-088 ⑤ — 태풍 바람: 맞바람 보행 감속·순풍 가속·정지 시 바람 방향으로 밀림.
+            float windX = WorldWeatherManager.Instance != null ? WorldWeatherManager.Instance.WindX : 0f;
+            if (windX != 0f && Mathf.Abs(input.x) > 0.01f)
+            {
+                bool tailwind = Mathf.Sign(input.x) == Mathf.Sign(windX);
+                speed *= tailwind ? tuning.stormTailwindMultiplier : tuning.stormHeadwindMultiplier;
+            }
+
             Vector3 targetPlanar = new Vector3(input.x * speed, 0f, input.y * speed * tuning.depthSpeedRatio);
+            if (windX != 0f && input.sqrMagnitude < 0.01f)
+                targetPlanar.x += windX * tuning.stormIdlePush; // 가만히 있으면 조금씩 밀린다
             if (_raining || _snowing)
             {
                 // S-053 ① 미끄럼 — 가감속이 굼떠진다. S-084 ③: 눈은 비의 2배(accel 절반), 전역 적용.

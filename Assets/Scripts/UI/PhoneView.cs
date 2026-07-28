@@ -351,6 +351,8 @@ namespace DontLate
         {
             new ShopItem { id = "cart", label = "구루마 (대차)", price = 8000 },
             new ShopItem { id = "drink", label = "에너지드링크", price = 1500, stackable = true, holdable = true },
+            new ShopItem { id = "water", label = "생수 (더위 해소)", price = 800, stackable = true },       // S-088 ④
+            new ShopItem { id = "hot_drink", label = "따뜻한 코코아 (추위 해소)", price = 1200, stackable = true }, // S-088 ④
             new ShopItem { id = "cat_food", label = "고양이 사료", price = 2000, stackable = true },
             new ShopItem { id = "cat_toy", label = "고양이 장난감", price = 3000, stackable = true },
             new ShopItem { id = "cat_tower", label = "캣타워", price = 10000 },
@@ -463,6 +465,22 @@ namespace DontLate
                 + "<size=130%><b>내일</b></size>" + "\n"
                 + WeatherName(tomorrow) + "  " + WorldWeatherManager.TemperatureFor(tomorrow) + "°C" + "\n" + "\n"
                 + "<size=70%>비 오면 길이 미끄럽고, 덥거나 추우면 몸이 빨리 지친다.</size>";
+        }
+
+        // S-088 ② — 앱 아이콘 클릭: 커졌다 작아지는 펀치 후 화면 전환.
+        private System.Collections.IEnumerator PunchThenOpen(Transform tile, Screen target)
+        {
+            float t = 0f;
+            const float DURATION = 0.16f;
+            while (t < DURATION && tile != null)
+            {
+                t += Time.unscaledDeltaTime;
+                float k = Mathf.Sin(Mathf.Clamp01(t / DURATION) * Mathf.PI); // 0→1→0
+                tile.localScale = Vector3.one * (1f + 0.18f * k);
+                yield return null;
+            }
+            if (tile != null) tile.localScale = Vector3.one;
+            ShowScreen(target);
         }
 
         // ── S-079 ④ — 소셜앱: 만난 NPC 리스트(프로필+호감도 게이지), 휠/드래그 스크롤 ──
@@ -743,7 +761,8 @@ namespace DontLate
                 }
                 Button button = tile.AddComponent<Button>();
                 button.targetGraphic = tileImage;
-                button.onClick.AddListener(() => ShowScreen(target));
+                Transform tileTransform = tile.transform;
+                button.onClick.AddListener(() => StartCoroutine(PunchThenOpen(tileTransform, target))); // S-088 ②
 
                 RectTransform rect = (RectTransform)tile.transform;
                 rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0f, 1f);

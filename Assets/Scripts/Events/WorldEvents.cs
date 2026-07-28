@@ -284,6 +284,14 @@ namespace DontLate
         }
 
         /// <summary>적설(지면 쌓임) 유무 전환 (AU-018 ③ — 발소리 스노 스왑용). 저빈도: 임계 통과 시 1회.</summary>
+        // ── 스태미나 패널티 (S-088 ④) — 구성 변화 시만 통지 (저빈도) ──
+        public static event Action<StaminaPenalties> StaminaPenaltyChanged;
+        public static void RaiseStaminaPenaltyChanged(StaminaPenalties penalties)
+        {
+            Log("StaminaPenaltyChanged 합계 " + penalties.Total);
+            StaminaPenaltyChanged?.Invoke(penalties);
+        }
+
         // ── NPC 호감도 (S-079 ④) — 저빈도 상태 통지 ──
         public static event Action<string> NpcMet;
         public static void RaiseNpcMet(string npcId)

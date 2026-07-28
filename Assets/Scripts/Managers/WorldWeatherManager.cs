@@ -22,6 +22,8 @@ namespace DontLate
         [SerializeField] private float _gradeLerpSpeed = 0.5f;
 
         public WeatherType Weather { get; private set; } = WeatherType.Clear;
+        /// <summary>태풍 바람 방향 (S-088 ⑤) — -1(좌) / +1(우) / 0(무풍). Locomotion이 읽는다.</summary>
+        public float WindX { get; private set; }
         /// <summary>내일 예보 (S-058 날씨앱) — 오늘 추첨 때 함께 뽑고, 다음 날 그대로 승계된다.</summary>
         public WeatherType TomorrowWeather { get; private set; } = WeatherType.Clear;
         private bool _hasForecast;
@@ -86,12 +88,13 @@ namespace DontLate
             // S-045 ③: Y키 = 날씨 순환 (검증·튜닝용). S-067 ⑦ — 릴리스 빌드 자동 제외.
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (Keyboard.current != null && Keyboard.current.yKey.wasPressedThisFrame)
-                SetWeather((WeatherType)(((int)Weather + 1) % 6));
+                SetWeather((WeatherType)(((int)Weather + 1) % 7)); // S-088 — Storm 포함
 #endif
 
             DriftClouds();
             LerpGrade();
             UpdateSnowCover();
+            TickThunder(); // S-088 ⑥ — 비·태풍 중 가끔 천둥번개
         }
 
         // S-044 ①: 실내 씬(Home)에선 강수·아지랑이를 창밖 원경(z+)으로 민다.
@@ -115,8 +118,9 @@ namespace DontLate
 
         private static readonly (WeatherType type, int weight)[] Weights =
         {
-            (WeatherType.Clear, 28), (WeatherType.Cloudy, 22), (WeatherType.Rain, 16),
-            (WeatherType.Snow, 10), (WeatherType.Fog, 12), (WeatherType.Heat, 12),
+            (WeatherType.Clear, 26), (WeatherType.Cloudy, 20), (WeatherType.Rain, 15),
+            (WeatherType.Snow, 10), (WeatherType.Fog, 11), (WeatherType.Heat, 11),
+            (WeatherType.Storm, 7), // S-088 ⑤
         };
 
         private void Reroll()
@@ -154,9 +158,21 @@ namespace DontLate
         // ── 파티클·구름 ──────────────────────────────────────
         private void ApplyWeatherVisuals()
         {
-            Toggle(_rain, Weather == WeatherType.Rain);
+            Toggle(_rain, Weather == WeatherType.Rain); // Storm의 간헐 비는 StormRainCycle 코루틴이 굴린다
             Toggle(_snow, Weather == WeatherType.Snow);
             if (_hazeRoot != null) _hazeRoot.SetActive(Weather == WeatherType.Heat);
+
+            // S-088 ⑤ — 태풍: 바람 방향 추첨(좌/우) + 간헐 비 사이클.
+            if (Weather == WeatherType.Storm)
+            {
+                WindX = Random.value < 0.5f ? -1f : 1f;
+                if (_stormRoutine == null) _stormRoutine = StartCoroutine(StormRainCycle());
+            }
+            else
+            {
+                WindX = 0f;
+                if (_stormRoutine != null) { StopCoroutine(_stormRoutine); _stormRoutine = null; }
+            }
 
             int cloudCount = Weather switch
             {
@@ -166,9 +182,10 @@ namespace DontLate
                 WeatherType.Rain => 8,
                 WeatherType.Snow => 6,
                 WeatherType.Fog => 4,
+                WeatherType.Storm => 8, // S-088 ⑤ — 먹구름 가득
                 _ => 3
             };
-            Color cloudColor = Weather == WeatherType.Rain
+            Color cloudColor = Weather == WeatherType.Rain || Weather == WeatherType.Storm
                 ? new Color(0.30f, 0.31f, 0.36f, 0.92f)   // 먹구름
                 : new Color(0.92f, 0.93f, 0.96f, 0.82f);
             for (int i = 0; i < _clouds.Length; i++)
@@ -237,6 +254,7 @@ namespace DontLate
                 case WeatherType.Fog: exposure -= 0.18f; saturation -= 14f; break;
                 case WeatherType.Cloudy: exposure -= 0.12f; saturation -= 8f; break;
                 case WeatherType.Heat: temperature += 22f; saturation += 6f; exposure += 0.06f; filter = new Color(1f, 0.97f, 0.90f); break;
+                case WeatherType.Storm: exposure -= 0.42f; saturation -= 24f; temperature -= 8f; filter = new Color(0.82f, 0.88f, 0.98f); break; // S-088 ⑤ — 어둡다
             }
 
             // 구역 분위기.
@@ -421,6 +439,72 @@ namespace DontLate
 
         /// <summary>플레이어 발자국용 — 지금 눈이 쌓여 있는가 (PlayerEffects가 WeatherChanged와 함께 사용).</summary>
         public bool HasSnowCover => _snowAmount > 0.25f;
+
+        // ── S-088 ⑤ — 태풍 간헐 비: 비가 왔다 그쳤다 한다 ──
+        private Coroutine _stormRoutine;
+
+        private System.Collections.IEnumerator StormRainCycle()
+        {
+            while (Weather == WeatherType.Storm)
+            {
+                Toggle(_rain, true);
+                yield return new WaitForSeconds(Random.Range(8f, 18f));
+                if (Weather != WeatherType.Storm) break;
+                Toggle(_rain, false);
+                yield return new WaitForSeconds(Random.Range(6f, 14f));
+            }
+            Toggle(_rain, Weather == WeatherType.Rain);
+            _stormRoutine = null;
+        }
+
+        // ── S-088 ⑥ — 천둥번개: 비·태풍 중 랜덤 간격 섬광 2연발 + 천둥 SFX ──
+        private float _thunderTimer = 25f;
+        private UnityEngine.UI.Image _flashOverlay;
+
+        private void TickThunder()
+        {
+            bool stormy = Weather == WeatherType.Rain || Weather == WeatherType.Storm;
+            if (!stormy) return;
+            _thunderTimer -= Time.deltaTime;
+            if (_thunderTimer > 0f) return;
+            _thunderTimer = Random.Range(18f, 45f);
+            StartCoroutine(ThunderFlash());
+        }
+
+        private System.Collections.IEnumerator ThunderFlash()
+        {
+            if (_flashOverlay == null)
+            {
+                GameObject canvasGo = new GameObject("ThunderCanvas");
+                canvasGo.transform.SetParent(transform, false);
+                Canvas canvas = canvasGo.AddComponent<Canvas>();
+                canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                canvas.sortingOrder = 90;
+                _flashOverlay = new GameObject("Flash", typeof(RectTransform)).AddComponent<UnityEngine.UI.Image>();
+                _flashOverlay.transform.SetParent(canvasGo.transform, false);
+                _flashOverlay.raycastTarget = false;
+                RectTransform rect = _flashOverlay.rectTransform;
+                rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one;
+                rect.offsetMin = rect.offsetMax = Vector2.zero;
+                _flashOverlay.color = new Color(1f, 1f, 1f, 0f);
+            }
+
+            WorldAudioManager.Instance?.PlayThunderSfx(); // 소켓 비면 무음 (AU-022)
+            // 섬광 2연발 — 번쩍, 짧게 죽었다 다시 번쩍 후 감쇠.
+            foreach (float peak in new[] { 0.55f, 0.8f })
+            {
+                _flashOverlay.color = new Color(1f, 1f, 1f, peak);
+                yield return new WaitForSeconds(0.06f);
+                float alpha = peak;
+                while (alpha > 0.02f)
+                {
+                    alpha = Mathf.MoveTowards(alpha, 0f, Time.deltaTime * 3.2f);
+                    _flashOverlay.color = new Color(1f, 1f, 1f, alpha);
+                    yield return null;
+                }
+            }
+            _flashOverlay.color = new Color(1f, 1f, 1f, 0f);
+        }
 
         // 비 스플래시 (S-044 ②) — 빗방울이 월드 콜라이더에 닿으면 소멸 + 자잘한 물방울 튐.
         private void ConfigureRainSplash(ParticleSystem rain)

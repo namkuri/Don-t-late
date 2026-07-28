@@ -61,8 +61,8 @@ namespace DontLate
         private const float LINE_INTERVAL_SECONDS = 0.5f;
 
         // ── S-087 — 영수증 포맷: 좌(이름)/우(금액) 정렬은 TMP line-height 0 트릭 ──
-        private const string RULE_STARS = "<align=center><color=#4a5568>******************************</color></align>";
-        private const string RULE_DASH = "<align=center><color=#8a93a8>------------------------------</color></align>";
+        private const string RULE_STARS = "<align=center><color=#4a5568>******************************************</color></align>"; // S-088 ① — 폭 맞춤
+        private const string RULE_DASH = "<align=center><color=#8a93a8>----------------------------------------------------</color></align>"; // S-088 ①
 
         private static string Row(string left, string right)
             => "<align=left>" + left + "<line-height=0>\n<align=right>" + right + "<line-height=1em>";

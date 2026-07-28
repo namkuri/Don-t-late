@@ -20,7 +20,18 @@ namespace DontLate
         Rain,    // 비 — 먹구름
         Snow,    // 눈
         Fog,     // 안개
-        Heat     // 폭염 — 아지랑이
+        Heat,    // 폭염 — 아지랑이
+        Storm    // 태풍 (S-088 ⑤) — 어둡고 간헐 비, 좌/우 강풍
+    }
+
+    /// <summary>스태미나 패널티 구간 (S-088 ④) — 각 값은 상한에서 차감되는 크기(0=비활성).</summary>
+    public struct StaminaPenalties
+    {
+        public float Heat;
+        public float Cold;
+        public float Carry;
+        public float Storm;
+        public float Total => Heat + Cold + Carry + Storm;
     }
 
     /// <summary>하루의 시간대. 조명·LUT 전환의 기준.</summary>

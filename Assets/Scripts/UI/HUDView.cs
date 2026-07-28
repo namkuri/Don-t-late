@@ -30,6 +30,11 @@ namespace DontLate
 
         [Header("스태미나 (좌하)")]
         [SerializeField] private Image _staminaFill;
+        [Tooltip("패널티 세그먼트 (S-088 ④) — 오른쪽부터 더움·추움·무거움·강풍 순으로 쌓인다.")]
+        [SerializeField] private Image _penaltyHeatFill;
+        [SerializeField] private Image _penaltyColdFill;
+        [SerializeField] private Image _penaltyCarryFill;
+        [SerializeField] private Image _penaltyStormFill;
 
         [Header("경제 (우상 아래)")]
         [SerializeField] private TMP_Text _moneyLabel;
@@ -71,6 +76,7 @@ namespace DontLate
             WorldEvents.DebtIncreased += OnDebtIncreased;
             WorldEvents.MoneySpent += OnMoneySpent;
             WorldEvents.StaminaChanged += OnStaminaChanged;
+            WorldEvents.StaminaPenaltyChanged += OnStaminaPenaltyChanged; // S-088 ④
             WorldEvents.InteractionFocusChanged += OnInteractionFocusChanged;
             WorldEvents.FocusAddressChanged += OnFocusAddressChanged;
             WorldEvents.SceneTransitionCompleted += OnSceneTransitionCompleted;
@@ -88,6 +94,7 @@ namespace DontLate
             WorldEvents.DebtIncreased -= OnDebtIncreased;
             WorldEvents.MoneySpent -= OnMoneySpent;
             WorldEvents.StaminaChanged -= OnStaminaChanged;
+            WorldEvents.StaminaPenaltyChanged -= OnStaminaPenaltyChanged;
             WorldEvents.InteractionFocusChanged -= OnInteractionFocusChanged;
             WorldEvents.FocusAddressChanged -= OnFocusAddressChanged;
             WorldEvents.SceneTransitionCompleted -= OnSceneTransitionCompleted;
@@ -230,12 +237,53 @@ namespace DontLate
             Destroy(label.gameObject);
         }
 
+        // S-088 ③ — 돈 증가 펀치: 순간 확대+민트 플래시 후 원복.
+        private System.Collections.IEnumerator PunchLabel(TMP_Text label)
+        {
+            Color baseColor = label.color;
+            Transform t = label.transform;
+            float e = 0f;
+            const float DURATION = 0.35f;
+            while (e < DURATION && label != null)
+            {
+                e += Time.unscaledDeltaTime;
+                float k = 1f - e / DURATION;
+                t.localScale = Vector3.one * (1f + 0.35f * k);
+                label.color = Color.Lerp(baseColor, new Color(0.208f, 0.878f, 0.784f), k);
+                yield return null;
+            }
+            if (label != null) { t.localScale = Vector3.one; label.color = baseColor; }
+        }
+
         // ── 스태미나 ──────────────────────────────────────────
         // S-074 ⑦ — 통지값을 목표로 두고 매 프레임 부드럽게 추적: 걷기는 연속으로 흐르고,
         // 뛰기는 드레인 자체가 커서 빠르게 뚝뚝 떨어지는 감각이 남는다.
         private float _staminaTarget = 1f;
 
         private void OnStaminaChanged(float normalized) => _staminaTarget = Mathf.Clamp01(normalized);
+
+        // S-088 ④ — 패널티 구간: 바 오른쪽 끝에서부터 각자 색으로 잠식 표시. anchorMax 오른쪽 기점.
+        private void OnStaminaPenaltyChanged(StaminaPenalties p)
+        {
+            float right = 1f;
+            right = PlacePenalty(_penaltyHeatFill, p.Heat / 100f, right);
+            right = PlacePenalty(_penaltyColdFill, p.Cold / 100f, right);
+            right = PlacePenalty(_penaltyCarryFill, p.Carry / 100f, right);
+            PlacePenalty(_penaltyStormFill, p.Storm / 100f, right);
+        }
+
+        private static float PlacePenalty(Image fill, float width, float rightEdge)
+        {
+            if (fill == null) return rightEdge;
+            bool on = width > 0.001f;
+            fill.gameObject.SetActive(on);
+            if (!on) return rightEdge;
+            RectTransform rect = fill.rectTransform;
+            rect.anchorMin = new Vector2(rightEdge - width, 0f);
+            rect.anchorMax = new Vector2(rightEdge, 1f);
+            rect.offsetMin = rect.offsetMax = Vector2.zero;
+            return rightEdge - width;
+        }
 
         private void Update()
         {
@@ -272,8 +320,10 @@ namespace DontLate
             if (_gameState == null) return;
             if (_moneyLabel != null && _gameState.money != _shownMoney)
             {
+                bool increased = _gameState.money > _shownMoney && _shownMoney != int.MinValue;
                 _shownMoney = _gameState.money;
                 _moneyLabel.text = $"₩{_gameState.money:N0}";
+                if (increased) StartCoroutine(PunchLabel(_moneyLabel)); // S-088 ③ — 증가 순간 커졌다 원복
             }
             if (_debtLabel != null && _gameState.debt != _shownDebt)
             {

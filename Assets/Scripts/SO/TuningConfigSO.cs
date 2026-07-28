@@ -29,6 +29,26 @@ namespace DontLate
         public float staminaDrainPerKg = 0.35f;
         public float staminaDrainCarryMultiplier = 2f; // (구) 무게 미지정 주문 폴백
         public float staminaRecoverPerSecond = 6f;
+
+        [Header("스태미나 패널티 구간 (S-088 ④ — 상한 차감 모델)")]
+        [Tooltip("폭염 패널티 — 생수/에너지드링크로 해소.")]
+        public float staminaPenaltyHeat = 15f;
+        [Tooltip("한파 패널티 — 따뜻한 음료로 해소.")]
+        public float staminaPenaltyCold = 15f;
+        [Tooltip("든 상자 1개당 무거움 패널티.")]
+        public float staminaPenaltyCarryPerBox = 10f;
+        [Tooltip("태풍 강풍 패널티.")]
+        public float staminaPenaltyStorm = 15f;
+        [Tooltip("음료 해소 지속(실시간 초) — 더움/추움 패널티가 이 시간 동안 사라진다.")]
+        public float staminaPenaltyReliefSeconds = 90f;
+
+        [Header("태풍 바람 (S-088 ⑤)")]
+        [Tooltip("맞바람 보행 속도 배율.")]
+        public float stormHeadwindMultiplier = 0.72f;
+        [Tooltip("순풍 보행 속도 배율.")]
+        public float stormTailwindMultiplier = 1.25f;
+        [Tooltip("정지 시 밀리는 속도(u/s).")]
+        public float stormIdlePush = 0.9f;
         public float energyDrinkRecover = 40f;
 
         [Header("취급주의 상자 (S-019 ①)")]

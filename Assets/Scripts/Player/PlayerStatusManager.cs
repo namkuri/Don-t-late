@@ -75,12 +75,21 @@ namespace DontLate
 
         private void OnBagItemConsumed(BagItem item)
         {
+            // S-088 ④ — 생수=더움 해소 · 따뜻한 음료=추움 해소 (회복 없음, 해소 전용).
+            if (item.id == "water" || item.id == "hot_drink")
+            {
+                ApplyRelief(item.id);
+                WorldAudioManager.Instance?.PlayDrinkSfx();
+                Debug.Log("[가방] " + item.label + " — 패널티 해소 (" + _hub.Tuning.staminaPenaltyReliefSeconds + "초)");
+                return;
+            }
             if (item.id != "drink") return; // S-059 — 사료·장난감 등은 해당 도메인(고양이 등)이 받는다
             // 음료 = 스태미나 회복 + 날씨 보너스.
             float amount = _hub.Tuning.energyDrinkRecover;
             if (_weather == WeatherType.Heat) { amount *= 1.5f; Debug.Log("[가방] 캬 — 시원하다! (폭염 보너스)"); }
             else if (_weather == WeatherType.Snow) { amount *= 1.5f; Debug.Log("[가방] 후 — 따뜻하다! (한파 보너스)"); }
             RecoverStamina(amount);
+            ApplyRelief("drink"); // S-088 ④ — 에너지드링크 = 더움 해소도
             ApplyDrinkBuff(); // S-074 ⑧ — 가방에서 바로 마셔도 같은 버프
             WorldAudioManager.Instance?.PlayDrinkSfx();
             Debug.Log("[가방] " + item.label + " 사용 — 스태미나 회복");
@@ -224,7 +233,7 @@ namespace DontLate
                         ? CarriedOrder2.weight * tuning.staminaDrainPerKg
                         : drain * (tuning.staminaDrainCarryMultiplier - 1f);
                 if (_inHillside) drain *= 1.4f; // S-049 — 오르막 동네는 힘들다
-                if (_weather == WeatherType.Heat || _weather == WeatherType.Snow) drain *= 1.35f; // S-060 — 덥거나 추우면 더 힘들다
+                // S-088 ④ — 구 온도 드레인 배율(×1.35)은 상한 차감 모델로 대체.
                 if (DrinkBuffActive) drain *= 0.85f; // S-074 ⑧ — 드링크 버프
                 Stamina -= drain * Time.deltaTime;
             }
@@ -233,7 +242,9 @@ namespace DontLate
                 Stamina += tuning.staminaRecoverPerSecond * Time.deltaTime;
             }
 
-            Stamina = Mathf.Clamp(Stamina, 0f, tuning.staminaMax);
+            // S-088 ④ — 패널티 상한: 활성 패널티 합만큼 사용 가능 최대가 깎인다.
+            TickPenalties();
+            Stamina = Mathf.Clamp(Stamina, 0f, EffectiveStaminaMax);
             NotifyStamina(force: false);
         }
 
@@ -350,9 +361,48 @@ namespace DontLate
             if (_weather == WeatherType.Heat) { amount *= 1.5f; Debug.Log("[드링크] 캬 — 시원하다! (폭염 보너스)"); }
             else if (_weather == WeatherType.Snow) { amount *= 1.5f; Debug.Log("[드링크] 후 — 따뜻하다! (한파 보너스)"); }
             RecoverStamina(amount); // 내부에서 힐 이펙트(PlayDrinkEffect)까지 발화
+            ApplyRelief("drink");   // S-088 ④ — 손 음료도 더움 해소
             ApplyDrinkBuff();       // S-074 ⑧
             WorldAudioManager.Instance?.PlayDrinkSfx();     // AU-009
             Debug.Log("[드링크] 섭취 — 스태미나 회복 (우클릭)");
+        }
+
+        // ── S-088 ④ — 스태미나 패널티 구간: 상한 차감 + 음료 해소 타이머 ──
+
+        private float _heatReliefUntil = -1f;  // 생수·에너지드링크
+        private float _coldReliefUntil = -1f;  // 따뜻한 음료
+        private StaminaPenalties _lastPenalties;
+
+        public StaminaPenalties CurrentPenalties { get; private set; }
+        public float EffectiveStaminaMax => Mathf.Max(10f, _hub.Tuning.staminaMax - CurrentPenalties.Total);
+
+        private void TickPenalties()
+        {
+            TuningConfigSO tuning = _hub.Tuning;
+            var penalties = new StaminaPenalties
+            {
+                Heat = _weather == WeatherType.Heat && Time.time >= _heatReliefUntil ? tuning.staminaPenaltyHeat : 0f,
+                Cold = _weather == WeatherType.Snow && Time.time >= _coldReliefUntil ? tuning.staminaPenaltyCold : 0f,
+                Carry = ((CarriedOrder != null ? 1 : 0) + (CarriedOrder2 != null ? 1 : 0)) * tuning.staminaPenaltyCarryPerBox,
+                Storm = _weather == WeatherType.Storm ? tuning.staminaPenaltyStorm : 0f,
+            };
+            CurrentPenalties = penalties;
+            if (!Mathf.Approximately(penalties.Heat, _lastPenalties.Heat)
+                || !Mathf.Approximately(penalties.Cold, _lastPenalties.Cold)
+                || !Mathf.Approximately(penalties.Carry, _lastPenalties.Carry)
+                || !Mathf.Approximately(penalties.Storm, _lastPenalties.Storm))
+            {
+                _lastPenalties = penalties;
+                WorldEvents.RaiseStaminaPenaltyChanged(penalties);
+            }
+        }
+
+        /// <summary>음료별 패널티 해소 (S-088 ④ — 지속은 튜닝 staminaPenaltyReliefSeconds).</summary>
+        private void ApplyRelief(string itemId)
+        {
+            float until = Time.time + _hub.Tuning.staminaPenaltyReliefSeconds;
+            if (itemId == "water" || itemId == "drink") _heatReliefUntil = until;   // 시원한 것 = 더움 해소
+            if (itemId == "hot_drink") _coldReliefUntil = until;                    // 따뜻한 것 = 추움 해소
         }
 
         // ── S-074 ⑧ — 드링크 버프: 이동 +30% · 드레인 -15% (실시간 45초 = 게임 90분) ──
@@ -432,7 +482,7 @@ namespace DontLate
 
         public void RecoverStamina(float amount)
         {
-            Stamina = Mathf.Clamp(Stamina + amount, 0f, _hub.Tuning.staminaMax);
+            Stamina = Mathf.Clamp(Stamina + amount, 0f, EffectiveStaminaMax); // S-088 ④ — 패널티 상한
             NotifyStamina(force: true);
             if (_hub.Effects != null) _hub.Effects.PlayDrinkEffect(); // S-023 드링크 버스트 (재조립 전 씬 대비 가드)
         }
