@@ -202,6 +202,7 @@ namespace DontLate.EditorTools
             SetField(audio, "_ambWeatherRain", LoadSfx("amb_weather_rain"));      // AU-018 ① 날씨 앰비언스 3종
             SetField(audio, "_ambWeatherSnow", LoadSfx("amb_weather_snow"));
             SetField(audio, "_ambWeatherHeat", LoadSfx("amb_weather_heat"));
+            SetField(audio, "_sfxFanfare", LoadSfx("sfx_fanfare"));               // S-086 개척 해금 팡파레 (AU-021 — 도착 전 null→상행음 폴백)
             SetField(audio, "_bgmRain", LoadBgm("Neon Rain"));                    // AU-018 ② 날씨 BGM 4종(원제)
             SetField(audio, "_bgmSnow", LoadBgm("Neon Snowfall"));
             SetField(audio, "_bgmHeat", LoadBgm("Midnight Heatwave"));

@@ -56,6 +56,9 @@ namespace DontLate
         }
 
         private readonly System.Collections.Generic.List<string> _lines = new System.Collections.Generic.List<string>();
+        // S-086 — 이 인덱스의 줄이 찍히는 순간 콘페티+팡파레(개척 해금·트럭 지급).
+        private readonly System.Collections.Generic.HashSet<int> _celebrateLines = new System.Collections.Generic.HashSet<int>();
+        private ConfettiBurst _confetti;
         private Coroutine _printRoutine;
         private bool _skipOnce;
         private const float LINE_INTERVAL_SECONDS = 0.5f;
@@ -63,6 +66,7 @@ namespace DontLate
         private void BuildLines(DeliveryDaySummary d, DebtSettlement s)
         {
             _lines.Clear();
+            _celebrateLines.Clear();
             _lines.Add("<b>오늘 정산</b>");
             _lines.Add("");
             _lines.Add("배송 성공  <color=#35e0c8>" + d.SuccessCount + "건  +₩" + d.RewardTotal.ToString("N0") + "</color>");
@@ -81,15 +85,18 @@ namespace DontLate
             _lines.Add("남은 빚   ₩" + s.Debt.ToString("N0"));
 
             // S-084 ① — 개척 해금·트럭 수령은 맨 아래에서 하이라이트.
+            // S-086 — 이 줄이 찍히는 순간 콘페티+팡파레가 터진다(인덱스 기록).
             if (!string.IsNullOrEmpty(d.UnlockedDistrict))
             {
                 _lines.Add("");
                 _lines.Add("<color=#35e0c8><b>새 구역 개척 — " + d.UnlockedDistrict + " 해금!</b></color>");
+                _celebrateLines.Add(_lines.Count - 1);
             }
             if (d.TruckAwarded)
             {
                 _lines.Add("");
                 _lines.Add("<color=#35e0c8><b>전 구역 완주 — 회사 트럭 지급!</b></color>");
+                _celebrateLines.Add(_lines.Count - 1);
             }
         }
 
@@ -98,8 +105,9 @@ namespace DontLate
             _bodyLabel.text = string.Empty;
             _skipOnce = false;
             var sb = new System.Text.StringBuilder();
-            foreach (string line in _lines)
+            for (int i = 0; i < _lines.Count; i++)
             {
+                string line = _lines[i];
                 float waited = 0f;
                 while (waited < LINE_INTERVAL_SECONDS && !_skipOnce)
                 {
@@ -111,9 +119,19 @@ namespace DontLate
                 sb.Append(line).Append('\n');
                 _bodyLabel.text = sb.ToString();
                 if (!string.IsNullOrEmpty(line)) WorldAudioManager.Instance?.PlayUiTickSfx(); // 줄 틱
+                if (_celebrateLines.Contains(i)) Celebrate(); // S-086 — 해금·트럭 라인에서 콘페티+팡파레
             }
             if (_confirmButton != null) _confirmButton.gameObject.SetActive(true); // 맨 마지막에 맨 아래
             _printRoutine = null;
+        }
+
+        // S-086 — 개척 해금/트럭 지급 라인이 찍히는 순간 정점 연출. 콘페티는 자기완결 오버레이(배선 불요),
+        // 팡파레는 전용 클립 도착 전엔 상행음 폴백. Unity 파괴 후 재Open이면 == null 이 참이라 재생성된다.
+        private void Celebrate()
+        {
+            if (_confetti == null) _confetti = ConfettiBurst.Create();
+            _confetti.Burst();
+            WorldAudioManager.Instance?.PlayFanfareSfx();
         }
 
         private void Update()

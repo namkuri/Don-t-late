@@ -2049,3 +2049,30 @@ MDA 판정 (D-070): **A2 강화** — 개척 보상의 정점 연출 (JUICE 축)
 
 한계·핸드오프: 이 PC에 WebGL 빌드 모듈 미설치(`webglSupported=False`) → **WebGL 리빌드 + gh-pages
 재배포 + 브라우저 픽셀화 캡처**(수용기준 최종 판정)는 WebGL 모듈 보유 환경(남규) 핸드오프. 코드는 PR 납품.
+
+### 결과 (S-086) · 2026-07-29 00:20 (S-085 처리 후 착수 — 실작업 ~20분)
+
+① UI 콘페티 — 신규 `ConfettiBurst.cs`(UI/, 매니페스트 직교 기록). 자기완결: 오버레이 캔버스를
+스스로 만들고(ScreenSpaceOverlay·sortingOrder 32000) 색조각 50개를 코드로 스폰·애니메이트한다 —
+위로 편향 방사 분출·중력 낙하(2600px/s²)·회전·페이드, 전부 `Time.unscaledDeltaTime`이라 정산
+timeScale=0에서도 흐른다. 씬/프리팹 배선 불요.
+② 팡파레 소켓 — `WorldAudioManager._sfxFanfare` + `PlayFanfareSfx()`(전용 클립 도착 전엔 정산
+상행음 `_sfxSettleOk`로 폴백 — `PlayFootstepSfx` 조건부 선례). CoreSceneBuilder에 `LoadSfx("sfx_fanfare")`
+배선 1행(미존재 시 null→폴백). 실클립은 AU-021(오디오 레인) 후속.
+③ 트리거 — `SettlementView`: `BuildLines`에서 해금/트럭 라인 인덱스를 `_celebrateLines`에 기록,
+`PrintLines`가 그 줄을 찍는 순간 `Celebrate()`(콘페티 Burst + PlayFanfareSfx). 정산 정지·오버레이라
+패널 위에 콘페티가 보인다.
+
+검증(에디터 관찰):
+- 컴파일 ○ · 콘솔 error/warning 0 ○.
+- exec: `ConfettiBurst.Create().Burst()` → pieces=50 스폰. piece 상태 실측 — canvasEnabled·
+  ScreenSpaceOverlay·order 32000·rootCanvas True, piece 색(팔레트)·크기 16px·imgEnabled·activeInHierarchy
+  전부 정상. 마젠타 300px 박스가 타이틀 로고 **위**에 렌더(오버레이 최상위 확인).
+- 팡파레: `_sfxFanfare=null`(소켓 빈 상태) → `PlayFanfareSfx` 폴백=True로 `sfx_settle_ok` 재생·무에러.
+- 캡처: 콘페티 룩 정지 스냅샷(민트·앰버·코랄·하늘·노랑·흰 조각이 회전한 채 중앙 확산, 타이틀 위).
+  ⚠ 라이브 1.8s 트랜지언트는 CLI 캡처 타이밍 한계(신규 UI 1프레임 지연 렌더 + 강중력 낙하)로 정지
+  재현 — 애니 동작(중력·회전·페이드·unscaled)은 코드·지오메트리 실측으로 검증.
+- 통합(실정산 해금에서 발화): 코드 훅(`_celebrateLines` 인덱스 일치)으로 검증. 실플레이 해금 도달은
+  풀 배송런이 필요해 이번 세션 미주행 — 남규 실플레이 시 최종 확인 권장.
+
+잔여(관제 몫): BOM §8 SFX 행 `sfx_fanfare` 추가(AU-021 발주 시). 실 팡파레 클립 = AU-021 오디오 레인.

@@ -106,3 +106,6 @@ P4: Audio·Juice·PlayerEffects
 ### 은퇴 기록 (직교 추가 — 동결 원문 무수정)
 - **TravelMapView.cs 은퇴** (2026-07-24 · PR#13 S-036): Travel 노드 UI가 다이제틱 폰 지도 앱(D-066 —
   PhoneView 내장 지도 화면)으로 대체됨. UI 뷰 표의 TravelMapView 행은 이력으로만 유효.
+- **ConfettiBurst.cs 직교 추가** (UI/ · 2026-07-29 · S-086): 개척 해금·트럭 지급 정산 라인의 UI 콘페티
+  분출(50조각·중력·회전·페이드·unscaled). 자기완결 오버레이 — 씬/프리팹 배선 불요, SettlementView가
+  Create로 띄운다. JuiceManager(P4) 대신 View 트리거로 단발 구현(YAGNI).

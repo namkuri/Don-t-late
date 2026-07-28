@@ -82,6 +82,9 @@ namespace DontLate
         [SerializeField] private AudioClip _bgmHeat;
         [SerializeField] private AudioClip _bgmFog;
 
+        [Header("SFX — 개척 해금 팡파레 (S-086 · AU-021) — 클립 도착 전엔 정산 상행음 폴백")]
+        [SerializeField] private AudioClip _sfxFanfare;
+
         [Header("믹스")]
         [SerializeField, Range(0f, 1f)] private float _volume = 0.5f;
         [SerializeField, Range(0f, 1f)] private float _sfxVolume = 0.7f;
@@ -416,6 +419,9 @@ namespace DontLate
         public void PlaySettleBadSfx() => PlaySfx(_sfxSettleBad);
         public void PlayFurniturePlaceSfx() => PlaySfx(_sfxFurniturePlace);
         public void PlayUiTickSfx() => PlaySfx(_sfxUiTick);
+
+        // S-086 — 개척 해금 팡파레. 전용 클립(AU-021)이 오기 전엔 정산 상행음으로 폴백(PlayFootstepSfx 조건부 선례).
+        public void PlayFanfareSfx() => PlaySfx(_sfxFanfare != null ? _sfxFanfare : _sfxSettleOk);
 
         // AU-011 — 폰 지도 앱 3종 (핀 탭·경로 표시·출발 확정 — PhoneView가 호출).
         public void PlayMapPinSfx() => PlaySfx(_sfxMapPin);
