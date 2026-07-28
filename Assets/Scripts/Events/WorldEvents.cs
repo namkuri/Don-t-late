@@ -114,6 +114,15 @@ namespace DontLate
             InteractionFocusChanged?.Invoke(focused);
         }
 
+        /// <summary>상자 좌클릭 → 송장 표시 요청 (S-071 ② — 센서 발행, InvoiceView 구독). 저빈도.</summary>
+        public static event Action<DeliveryOrderSO> InvoiceRequested;
+
+        public static void RaiseInvoiceRequested(DeliveryOrderSO order)
+        {
+            Log("InvoiceRequested → #" + (order != null ? order.orderId.ToString() : "?"));
+            InvoiceRequested?.Invoke(order);
+        }
+
         public static void RaiseStaminaChanged(float normalized) => StaminaChanged?.Invoke(normalized);
 
         // ── 파손 ──────────────────────────────────────────────

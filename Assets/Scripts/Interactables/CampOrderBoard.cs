@@ -50,6 +50,18 @@ namespace DontLate
                     Debug.Log("[주문판] 하루 마감 — 새 주문 → #" + fresh.orderId + " " + fresh.address
                             + " (" + fresh.district + ")");
                 }
+                // S-071 ① — 미해금 구역 주문은 물리벽에 막혀 배달 불가: 해금 구역으로 재추첨.
+                // (초기 에셋 주문이 해금 필터를 우회하던 구멍 — GenerateOrder 경로만 필터가 있었다.)
+                else if (_gameState.unlockedDistricts.Count > 0
+                         && !_gameState.unlockedDistricts.Contains(box.Order.district)
+                         && !_gameState.cargo.Contains(box.Order))
+                {
+                    string locked = box.Order.district;
+                    DeliveryOrderSO reachable = GenerateOrder();
+                    box.SetOrder(reachable);
+                    Debug.Log("[주문판] 미해금 구역(" + locked + ") 주문 교체 → #"
+                            + reachable.orderId + " " + reachable.address + " (" + reachable.district + ")");
+                }
 
                 // 픽업(=적재 등록)해 들고 나간 건의 상자만 치운다 — 스캔만 한 건 그대로.
                 box.gameObject.SetActive(!_gameState.cargo.Contains(box.Order));

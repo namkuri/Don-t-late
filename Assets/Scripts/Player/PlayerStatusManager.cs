@@ -25,6 +25,8 @@ namespace DontLate
         public float StaminaNormalized => Mathf.Clamp01(Stamina / _hub.Tuning.staminaMax);
         public DeliveryOrderSO CarriedOrder { get; private set; }
         public bool IsCarrying => CarriedOrder != null;
+        /// <summary>손에 든 음료 여부 (S-071 ② — 송장 좌클릭이 음료 던지기와 충돌하지 않게 센서가 참조).</summary>
+        public bool IsHoldingDrink => _heldDrink != null;
 
         // S-055 — 두 개 들기: 누적 배송 성공 5건이면 습득. 2번 슬롯은 머리 위에 쌓인다.
         public DeliveryOrderSO CarriedOrder2 { get; private set; }

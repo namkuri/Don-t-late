@@ -30,6 +30,14 @@ namespace DontLate
         {
             Scan();
             if (_current != null && _hub.Input.InteractPressed) _current.Interact(_context);
+
+            // S-071 ② — 손이 빈 상태에서 포커스 상자를 좌클릭하면 송장 표시.
+            // (들었을 땐 좌클릭=던지기, 음료 들었을 땐 음료 던지기 — 그 경로와 충돌하지 않는 조건만.)
+            var mouse = UnityEngine.InputSystem.Mouse.current;
+            if (mouse != null && mouse.leftButton.wasPressedThisFrame && !PhoneView.IsOpen
+                && !_hub.Status.IsCarrying && !_hub.Status.IsHoldingDrink
+                && _current is PickupBox focusedBox && focusedBox.Order != null)
+                WorldEvents.RaiseInvoiceRequested(focusedBox.Order);
         }
 
         private void Scan()

@@ -69,6 +69,7 @@ namespace DontLate.EditorTools
             BagView bagView = BuildBagCanvas(gameState);        // S-064
             SettingsView settingsView = BuildSettingsCanvas();  // S-065
             BuildAccidentCanvas();                              // S-066 ③
+            BuildInvoiceCanvas(gameState);                      // S-071 ②
             BuildHUDCanvas(gameState, bagView, settingsView);
             BuildDialogueCanvas();
             BuildMinigameCanvas();
@@ -743,6 +744,79 @@ namespace DontLate.EditorTools
             EditorUtility.SetDirty(view);
             panel.gameObject.SetActive(false);
             flash.gameObject.SetActive(false);
+        }
+
+        // ── 송장 캔버스 (S-071 ② — 상자 좌클릭 → 주문 정보) ──
+        private static void BuildInvoiceCanvas(GameStateSO gameState)
+        {
+            TMP_FontAsset font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FONT_PATH);
+
+            GameObject canvasGo = new GameObject("InvoiceCanvas");
+            Canvas canvas = canvasGo.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 60;
+            CanvasScaler scaler = canvasGo.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            canvasGo.AddComponent<GraphicRaycaster>();
+
+            InvoiceView view = canvasGo.AddComponent<InvoiceView>();
+
+            // 송장지 — 흰 종이 + 네이비 헤더 (실물 운송장 무드).
+            Image paper = CreateImage(canvasGo.transform, "Paper", new Color(0.96f, 0.95f, 0.92f, 1f));
+            RectTransform paperRect = paper.rectTransform;
+            paperRect.anchorMin = paperRect.anchorMax = paperRect.pivot = new Vector2(0.5f, 0.5f);
+            paperRect.sizeDelta = new Vector2(620f, 500f);
+
+            Image header = CreateImage(paper.transform, "Header", NAVY);
+            RectTransform headerRect = header.rectTransform;
+            headerRect.anchorMin = new Vector2(0f, 1f); headerRect.anchorMax = new Vector2(1f, 1f);
+            headerRect.pivot = new Vector2(0.5f, 1f);
+            headerRect.offsetMin = new Vector2(0f, -64f); headerRect.offsetMax = Vector2.zero;
+            TMP_Text headerLabel = CreateText(header.transform, "Title", "택배 송장", font, 32f,
+                Color.white, TextAlignmentOptions.Center);
+            StretchFull(headerLabel.rectTransform);
+
+            TMP_Text customer = CreateText(paper.transform, "Customer", string.Empty, font, 30f,
+                new Color(0.12f, 0.13f, 0.18f), TextAlignmentOptions.TopLeft);
+            AnchorCorner(customer.rectTransform, new Vector2(0f, 1f), new Vector2(36f, -84f), new Vector2(548f, 44f));
+
+            TMP_Text address = CreateText(paper.transform, "Address", string.Empty, font, 34f,
+                new Color(0.12f, 0.13f, 0.18f), TextAlignmentOptions.TopLeft);
+            AnchorCorner(address.rectTransform, new Vector2(0f, 1f), new Vector2(36f, -132f), new Vector2(548f, 92f));
+
+            TMP_Text deadline = CreateText(paper.transform, "Deadline", string.Empty, font, 30f,
+                new Color(0.12f, 0.13f, 0.18f), TextAlignmentOptions.TopLeft);
+            AnchorCorner(deadline.rectTransform, new Vector2(0f, 1f), new Vector2(36f, -232f), new Vector2(548f, 44f));
+
+            TMP_Text detail = CreateText(paper.transform, "Detail", string.Empty, font, 26f,
+                new Color(0.30f, 0.32f, 0.38f), TextAlignmentOptions.TopLeft);
+            AnchorCorner(detail.rectTransform, new Vector2(0f, 1f), new Vector2(36f, -282f), new Vector2(548f, 84f));
+
+            // 바코드 밴드 — 흰 바탕 위 세로 줄무늬(런타임 생성) + 번호.
+            Image barcodeBand = CreateImage(paper.transform, "BarcodeBand", Color.white);
+            RectTransform bandRect = barcodeBand.rectTransform;
+            bandRect.anchorMin = new Vector2(0f, 0f); bandRect.anchorMax = new Vector2(1f, 0f);
+            bandRect.pivot = new Vector2(0.5f, 0f);
+            bandRect.offsetMin = new Vector2(36f, 66f); bandRect.offsetMax = new Vector2(-36f, 130f);
+            TMP_Text barcodeNumber = CreateText(paper.transform, "BarcodeNo", string.Empty, font, 22f,
+                new Color(0.30f, 0.32f, 0.38f), TextAlignmentOptions.Center);
+            AnchorCorner(barcodeNumber.rectTransform, new Vector2(0.5f, 0f), new Vector2(0f, 28f), new Vector2(400f, 32f));
+
+            TMP_Text hint = CreateText(paper.transform, "Hint", "ESC 또는 클릭으로 닫기", font, 18f,
+                new Color(0.55f, 0.57f, 0.62f), TextAlignmentOptions.Center);
+            AnchorCorner(hint.rectTransform, new Vector2(0.5f, 0f), new Vector2(0f, 6f), new Vector2(400f, 24f));
+
+            SetField(view, "_gameState", gameState);
+            SetField(view, "_root", paper.gameObject);
+            SetField(view, "_customerLabel", customer);
+            SetField(view, "_addressLabel", address);
+            SetField(view, "_deadlineLabel", deadline);
+            SetField(view, "_detailLabel", detail);
+            SetField(view, "_barcodeNumberLabel", barcodeNumber);
+            SetField(view, "_barcodeRoot", barcodeBand.rectTransform);
+            EditorUtility.SetDirty(view);
+            paper.gameObject.SetActive(false);
         }
 
         // ── 대화 캔버스 (Core 상주) ──────────────────────────
