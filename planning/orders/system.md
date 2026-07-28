@@ -1831,3 +1831,22 @@ MDA 판정 (D-070): 무관(기술 지원) — 단 웹 심사·시연 체감 프�
   브라우저 캐시 구본이 유력. 조치: ① renderer 상시 콘솔 로그("[DontLate] S-077 가속 진단")
   + 감지 폭 확대(빈 renderer·basic render 포함) 재배포·서빙 확인 ② 남규님 Ctrl+F5 후 재판정,
   그래도 안 뜨면 F12 콘솔의 renderer 문자열 회신 요청 — 패턴 정밀 교정용.
+
+---
+
+## S-078 · R28 피드백 2건 — 배송앱 중복 행·가속 안내 브라우저 분기 (발주 2026-07-28 21:06)
+
+요구 (남규님 원문 — R28):
+① 몇 번 배송하다 보면 이미 배치된 건이 배송앱에 또 찍힘 (스샷: DL-0201 두 행).
+② 가속 안내 배너에 chrome://settings/system 링크를 걸어 바로 이동 — 엣지 브라우저면?
+
+판정·설계:
+① 원인 추정 — 사고(PlayerHitByCar)가 scannedOrderIds만 비우고 폰 로컬 _scanned는 안 비워,
+  같은 주문 재픽업(S-075 CanHandle 완화)·재스캔 시 BarcodeScanned 재발행 → 로컬 리스트 중복.
+  수리: PhoneView._scanned 추가 시 orderId 중복 가드(근본 안전망).
+② chrome:// 류 내부 주소는 **웹페이지에서 클릭 이동 불가**(브라우저 보안 차단 — 링크 answer는
+  기술적으로 불가). 대신: UA 분기(Edge=edge://settings/system · 크로미엄=chrome://settings/system ·
+  Firefox=about:preferences)로 문구를 맞추고 **"주소 복사" 버튼** 제공 — 붙여넣기 한 번으로 이동.
+
+수용기준: ①재스캔 시나리오에서 리스트 중복 0 실측 ②배너에 브라우저별 주소+복사 버튼(클립보드 실측).
+MDA 판정 (D-070): 무관(결함·UX 수리).
