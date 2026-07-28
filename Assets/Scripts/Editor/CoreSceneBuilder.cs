@@ -393,20 +393,14 @@ namespace DontLate.EditorTools
             AnchorCorner(masteryBg.rectTransform, new Vector2(0f, 0f), new Vector2(20f, 44f), new Vector2(360f, 16f));
             Image masteryFill = CreateImage(masteryBg.transform, "MasteryFill", AMBER);
             StretchFull(masteryFill.rectTransform);
-            masteryFill.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd"); // S-068 ⑥ — sprite 없으면 fillAmount 무시
-            masteryFill.type = Image.Type.Filled;
-            masteryFill.fillMethod = Image.FillMethod.Horizontal;
-            masteryFill.fillAmount = 0f;
+            ConfigureGaugeFill(masteryFill, 0f); // S-070 ② — 순백 직사각 스프라이트·왼쪽부터 참
             SetField(hud, "_masteryFill", masteryFill);
 
             Image staminaBg = CreateImage(charCard.transform, "StaminaBg", new Color(0.06f, 0.07f, 0.10f, 1f));
             AnchorCorner(staminaBg.rectTransform, new Vector2(0f, 0f), new Vector2(20f, 16f), new Vector2(360f, 16f));
             Image staminaFill = CreateImage(staminaBg.transform, "StaminaFill", new Color(0.45f, 0.85f, 0.55f, 1f));
             StretchFull(staminaFill.rectTransform);
-            staminaFill.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>("UI/Skin/UISprite.psd"); // S-068 ⑥
-            staminaFill.type = Image.Type.Filled;
-            staminaFill.fillMethod = Image.FillMethod.Horizontal;
-            staminaFill.fillAmount = 1f;
+            ConfigureGaugeFill(staminaFill, 1f); // S-070 ②
             SetField(hud, "_staminaFill", staminaFill);
 
             // 현금 칩.
@@ -1171,6 +1165,42 @@ namespace DontLate.EditorTools
             img.color = color;
             img.raycastTarget = false;
             return img;
+        }
+
+        // S-070 ② — 게이지 fill 규격: 순백 직사각 스프라이트 + Filled·Horizontal·왼쪽 기점.
+        // (S-068의 UISprite는 라운드 나인슬라이스라 fill이 알약형·중앙정렬처럼 보였다 — R20 지적.)
+        private const string GAUGE_SPRITE_PATH = "Assets/Art/UI/ui_gauge_fill.png";
+
+        private static void ConfigureGaugeFill(Image img, float initialFill)
+        {
+            img.sprite = GetOrCreateGaugeSprite(); // sprite 없으면 fillAmount 무시 (S-068 ⑥)
+            img.type = Image.Type.Filled;
+            img.fillMethod = Image.FillMethod.Horizontal;
+            img.fillOrigin = (int)Image.OriginHorizontal.Left;
+            img.fillAmount = initialFill;
+        }
+
+        private static Sprite GetOrCreateGaugeSprite()
+        {
+            Sprite existing = AssetDatabase.LoadAssetAtPath<Sprite>(GAUGE_SPRITE_PATH);
+            if (existing != null) return existing;
+
+            var tex = new Texture2D(4, 4, TextureFormat.RGBA32, false);
+            var pixels = new Color32[16];
+            for (int i = 0; i < pixels.Length; i++) pixels[i] = new Color32(255, 255, 255, 255);
+            tex.SetPixels32(pixels);
+            tex.Apply();
+            System.IO.File.WriteAllBytes(GAUGE_SPRITE_PATH, tex.EncodeToPNG());
+            Object.DestroyImmediate(tex);
+            AssetDatabase.ImportAsset(GAUGE_SPRITE_PATH);
+
+            var importer = (TextureImporter)AssetImporter.GetAtPath(GAUGE_SPRITE_PATH);
+            importer.textureType = TextureImporterType.Sprite;
+            importer.spriteImportMode = SpriteImportMode.Single; // 미지정 시 Sprite 서브에셋이 안 생겨 로드 실패 (S-070 실측)
+            importer.filterMode = FilterMode.Point;
+            importer.textureCompression = TextureImporterCompression.Uncompressed;
+            importer.SaveAndReimport();
+            return AssetDatabase.LoadAssetAtPath<Sprite>(GAUGE_SPRITE_PATH);
         }
 
         // 코너 앵커 배치: pivot=anchor로 두고 anchoredPos·size 지정.

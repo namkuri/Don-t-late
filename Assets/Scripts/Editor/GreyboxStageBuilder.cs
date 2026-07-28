@@ -1026,6 +1026,11 @@ namespace DontLate.EditorTools
             carryAnchor.transform.localPosition = new Vector3(0f, 1.05f, 0.45f);
             SetReference(player.GetComponent<PlayerStatusManager>(), "_carryAnchor", carryAnchor.transform);
 
+            // S-070 ③ — 씬 전이 복원 상자가 캠프 박스와 동일 룩을 갖도록 비주얼 프리팹 주입.
+            GameObject parcelPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Auto/prop_box_parcel.prefab");
+            if (parcelPrefab != null)
+                SetReference(player.GetComponent<PlayerStatusManager>(), "_parcelVisualPrefab", parcelPrefab);
+
             GameObject sensor = new GameObject(PREFIX + "Sensor");
             sensor.transform.SetParent(player.transform, false);
             sensor.transform.localPosition = new Vector3(0f, 0.9f, 0f);

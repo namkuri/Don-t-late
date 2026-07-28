@@ -14,6 +14,9 @@ namespace DontLate
         [Tooltip("든 물건이 붙는 위치. 플레이어 자식 트랜스폼.")]
         [SerializeField] private Transform _carryAnchor;
 
+        [Tooltip("씬 전이 복원 상자의 비주얼 — 캠프 박스와 동일 프리팹(Prefabs/Auto/prop_box_parcel). 빌더 주입 (S-070 ③).")]
+        [SerializeField] private GameObject _parcelVisualPrefab;
+
         private PlayerManager _hub;
         private float _lastNotifiedStamina = -1f;
         private Transform _carriedVisual;
@@ -119,18 +122,58 @@ namespace DontLate
             Debug.Log("[운반] 들고 온 짐 " + (CarriedOrder2 != null ? 2 : 1) + "건 복원");
         }
 
-        // 복원용 택배 상자 비주얼 — 캠프 상자와 동색 주황 큐브.
+        // 복원용 택배 상자 — 캠프 박스(CreateParcelBox)와 동일 룩·동일 장비 (S-070 ③:
+        // 주황 큐브로 변형되던 이질감 + 체력바 소실 수리). 프리팹 소켓은 빌더가 주입.
         // S-068 ④: PickupBox를 붙여 두어 버려도(던져도) E로 다시 잡을 수 있다.
         private GameObject CreateBoxVisual(DeliveryOrderSO order)
         {
-            GameObject box = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            box.name = "CarriedBox";
-            box.transform.localScale = Vector3.one * 0.55f;
-            box.GetComponent<Renderer>().material.color = new Color(1f, 0.624f, 0.271f);
-            box.GetComponent<Collider>().enabled = false; // 손에 있는 동안 잠금 — 드롭 시 DropVisualAsPhysics가 켠다
+            GameObject box = new GameObject("CarriedBox");
+            BoxCollider collider = box.AddComponent<BoxCollider>();
+            collider.size = Vector3.one * 0.7f;
+            collider.center = new Vector3(0f, 0.35f, 0f);
+            collider.enabled = false; // 손에 있는 동안 잠금 — 드롭 시 DropVisualAsPhysics가 켠다
+            Rigidbody body = box.AddComponent<Rigidbody>();
+            body.mass = 2f;
+            body.isKinematic = true; // 손 위에선 물리 정지 — 드롭 시 해제
+
+            if (_parcelVisualPrefab != null)
+            {
+                GameObject visual = Instantiate(_parcelVisualPrefab, box.transform);
+                visual.name = "Visual";
+                Bounds bounds = ComputeVisualBounds(visual);
+                if (bounds.size.y > 0.001f)
+                {
+                    // 캠프 CreateParcelBox와 동일 규칙: 높이 0.7u 정규화 + 바닥을 루트 원점에 정렬.
+                    visual.transform.localScale = Vector3.one * (0.7f / bounds.size.y);
+                    bounds = ComputeVisualBounds(visual);
+                    visual.transform.position += box.transform.position
+                        - new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);
+                }
+            }
+            else
+            {
+                GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                cube.transform.SetParent(box.transform, false);
+                cube.transform.localScale = Vector3.one * 0.55f;
+                cube.transform.localPosition = Vector3.up * 0.35f;
+                Destroy(cube.GetComponent<Collider>());
+                cube.GetComponent<Renderer>().material.color = new Color(1f, 0.624f, 0.271f);
+            }
+
+            BoxDurability durability = box.AddComponent<BoxDurability>();
+            durability.Initialize(_hub.Tuning);
             PickupBox pickup = box.AddComponent<PickupBox>();
             pickup.Initialize(order, null, requireInCargo: false, requireScanned: false);
             return box;
+        }
+
+        private static Bounds ComputeVisualBounds(GameObject root)
+        {
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>();
+            if (renderers.Length == 0) return new Bounds(root.transform.position, Vector3.zero);
+            Bounds bounds = renderers[0].bounds; // 월드 기준 — 호출부가 루트 원점 대비로 정렬
+            for (int i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
+            return bounds;
         }
 
         private void Update()

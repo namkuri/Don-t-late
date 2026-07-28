@@ -40,7 +40,24 @@ namespace DontLate
             return _carMaterials[index];
         }
 
-        private void Start() => _timer = Random.Range(0.5f, _maxInterval);
+        // S-070 ① — 풀링: 스폰 주기(3.5~7s)마다 CreatePrimitive/Destroy가 만들던 스파이크 제거.
+        // 도로당 차는 동시 1~2대뿐이라 풀 2대로 충분 — 비활성 재사용, 파괴 없음.
+        private TrafficCar[] _pool;
+
+        private void Start()
+        {
+            _timer = Random.Range(0.5f, _maxInterval);
+            _pool = new TrafficCar[2];
+            for (int i = 0; i < _pool.Length; i++)
+            {
+                GameObject car = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                car.name = "TrafficCar";
+                car.transform.localScale = new Vector3(1.5f, 1.1f, 2.9f);
+                car.GetComponent<BoxCollider>().isTrigger = true;
+                _pool[i] = car.AddComponent<TrafficCar>();
+                car.SetActive(false);
+            }
+        }
 
         private void Update()
         {
@@ -52,17 +69,16 @@ namespace DontLate
 
         private void SpawnCar()
         {
+            TrafficCar car = null;
+            for (int i = 0; i < _pool.Length; i++)
+                if (_pool[i] != null && !_pool[i].gameObject.activeSelf) { car = _pool[i]; break; }
+            if (car == null) return; // 두 대 다 주행 중이면 이번 주기는 건너뜀
+
             _direction = -_direction; // 번갈아 반대편에서
-
-            GameObject car = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            car.name = "TrafficCar";
             car.transform.position = transform.position + new Vector3(0f, 0.55f, -_halfSpan * _direction);
-            car.transform.localScale = new Vector3(1.5f, 1.1f, 2.9f);
             car.GetComponent<Renderer>().sharedMaterial = MaterialFor(Random.Range(0, CarColors.Length));
-            car.GetComponent<BoxCollider>().isTrigger = true;
-
-            TrafficCar mover = car.AddComponent<TrafficCar>();
-            mover.Launch(_direction * _carSpeed, _halfSpan);
+            car.gameObject.SetActive(true);
+            car.Launch(_direction * _carSpeed, _halfSpan);
         }
     }
 }

@@ -21,7 +21,8 @@ namespace DontLate
         private void Update()
         {
             transform.position += new Vector3(0f, 0f, _velocityZ * Time.deltaTime);
-            if (Mathf.Abs(transform.position.z) > _killZ) Destroy(gameObject);
+            // S-070 ① — 풀링: 파괴 대신 비활성 반납 (TrafficRoad가 재사용).
+            if (Mathf.Abs(transform.position.z) > _killZ) gameObject.SetActive(false);
         }
 
         private void OnTriggerEnter(Collider other)
