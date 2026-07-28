@@ -1962,3 +1962,4 @@ MDA 판정 (D-070): **A1 강화** — ②는 "늦어도 간다" 규칙 완성. �
 - ⑤ 캠프 비 미끄럼 — 원인: 플레이어 씬 재탄생 후 WeatherChanged 미수신( _raining=false). 기동 시
   현재 날씨 즉시 조회(Locomotion+Status). 실측: 비 상태 캠프 진입 직후 _raining=True.
 - 검증: 컴파일 ○ 콘솔 0 ○ 테스트 42/42 ○ 실측(위 전부) ○. 재배포 진행.
+- 재배포 완료 (22:39): gh-pages push → data 신본(47,736,751B) 서빙 실측 — S-082 반영 (빌드 Succeeded).
