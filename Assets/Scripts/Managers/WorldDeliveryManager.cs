@@ -11,6 +11,10 @@ namespace DontLate
         public int PenaltyTotal;
         /// <summary>정산 항목별 내역 (S-075 ⑥ — 정산 UI 리스트 연출용). null 가능 — View가 가드.</summary>
         public System.Collections.Generic.List<SettleLine> Lines;
+        /// <summary>이번 정산으로 해금된 구역 (S-084 ① — 없으면 null).</summary>
+        public string UnlockedDistrict;
+        /// <summary>이번 정산으로 회사 트럭 수령 (S-084 ①).</summary>
+        public bool TruckAwarded;
     }
 
     /// <summary>정산 한 줄 (S-075 ⑥) — 주소·금액·성패·사유. 표시 전용 데이터.</summary>
@@ -203,7 +207,7 @@ namespace DontLate
             _gameState.cargo.Clear();
             _gameState.scannedOrderIds.Clear();
             _gameState.placedDeliveries.Clear();
-            AdvanceProgression(summary); // S-054 — 개척 판정 (성공 구역 기준)
+            AdvanceProgression(ref summary); // S-054 — 개척 판정 (성공 구역 기준·S-084 해금 기록)
             _gameState.daySettled = true;      // S-068 ③ — 캠프 주문판 리롤 신호
             _gameState.stamina = -1f;          // S-081 ① — 하루 마감: 다음날 풀 충전
             _gameState.droppedCargo.Clear();   // 정산 = 하루 마감: 버려둔 짐 기록도 청산
@@ -241,7 +245,7 @@ namespace DontLate
 
         // S-054 진행 시스템 — 개척 최전선 구역에서 배송 성공하면 다음 구역 해금.
         // 최전선이 언덕주택가(마지막)면 회사 트럭 수령. unlockedDistricts가 비면(테스트·그레이박스) 판정 안 함.
-        private void AdvanceProgression(DeliveryDaySummary summary)
+        private void AdvanceProgression(ref DeliveryDaySummary summary)
         {
             if (summary.SuccessCount <= 0 || _gameState.unlockedDistricts.Count == 0) return;
 
@@ -255,11 +259,13 @@ namespace DontLate
             {
                 string next = progression[frontier + 1];
                 _gameState.unlockedDistricts.Add(next);
+                summary.UnlockedDistrict = next; // S-084 ① — 정산 화면 표시용
                 WorldEvents.RaiseDistrictUnlocked(next);
             }
             else if (!_gameState.hasTruck)
             {
                 _gameState.hasTruck = true;
+                summary.TruckAwarded = true; // S-084 ①
                 WorldEvents.RaiseTruckAwarded();
             }
         }

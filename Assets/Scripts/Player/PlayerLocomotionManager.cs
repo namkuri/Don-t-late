@@ -38,6 +38,7 @@ namespace DontLate
         // S-049 → S-053 ①: 비 오는 날은 어디서든 미끄럼 — 관성 수렴. 언덕 비포장은 더 미끄럽다.
         private bool _inHillside;
         private bool _raining;
+        private bool _snowing; // S-084 ③ — 눈은 비의 2배 미끄럽다
         private Vector3 _planarInertia;
         private const float SLIPPERY_ACCEL_RAIN = 7.5f;      // 일반 노면 (낮을수록 미끄럽다)
         private const float SLIPPERY_ACCEL_HILL = 4.5f;      // 언덕 비포장 × 비
@@ -61,9 +62,16 @@ namespace DontLate
         private void Start()
         {
             if (WorldWeatherManager.Instance != null)
+            {
                 _raining = WorldWeatherManager.Instance.Weather == WeatherType.Rain;
+                _snowing = WorldWeatherManager.Instance.Weather == WeatherType.Snow; // S-084 ③
+            }
         }
-        private void OnWeatherChangedLoco(WeatherType weather) => _raining = weather == WeatherType.Rain;
+        private void OnWeatherChangedLoco(WeatherType weather)
+        {
+            _raining = weather == WeatherType.Rain;
+            _snowing = weather == WeatherType.Snow; // S-084 ③
+        }
 
         // S-041: CC는 리지드바디를 밀지 않는다 — 히트 시 수평 속도를 실어 대차·상자를 민다.
         private const float PUSH_SPEED = 2.2f;
@@ -108,10 +116,11 @@ namespace DontLate
             speed *= _hub.Status.SpeedMultiplier; // S-074 ⑧ — 드링크 버프 (+30%)
 
             Vector3 targetPlanar = new Vector3(input.x * speed, 0f, input.y * speed * tuning.depthSpeedRatio);
-            if (_raining)
+            if (_raining || _snowing)
             {
-                // S-053 ① 미끄럼 — 가감속이 굼떠진다 (멈추려 해도 밀리고, 출발도 굼뜸).
+                // S-053 ① 미끄럼 — 가감속이 굼떠진다. S-084 ③: 눈은 비의 2배(accel 절반), 전역 적용.
                 float accel = _inHillside ? SLIPPERY_ACCEL_HILL : SLIPPERY_ACCEL_RAIN;
+                if (_snowing) accel *= 0.5f;
                 _planarInertia = Vector3.MoveTowards(_planarInertia, targetPlanar, accel * Time.deltaTime);
                 PlanarVelocity = _planarInertia;
             }

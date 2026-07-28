@@ -79,6 +79,18 @@ namespace DontLate
             _lines.Add("빚 상환   <color=#35e0c8>₩" + s.Repaid.ToString("N0") + "</color>");
             _lines.Add("잔액       ₩" + s.Money.ToString("N0"));
             _lines.Add("남은 빚   ₩" + s.Debt.ToString("N0"));
+
+            // S-084 ① — 개척 해금·트럭 수령은 맨 아래에서 하이라이트.
+            if (!string.IsNullOrEmpty(d.UnlockedDistrict))
+            {
+                _lines.Add("");
+                _lines.Add("<color=#35e0c8><b>새 구역 개척 — " + d.UnlockedDistrict + " 해금!</b></color>");
+            }
+            if (d.TruckAwarded)
+            {
+                _lines.Add("");
+                _lines.Add("<color=#35e0c8><b>전 구역 완주 — 회사 트럭 지급!</b></color>");
+            }
         }
 
         private System.Collections.IEnumerator PrintLines()

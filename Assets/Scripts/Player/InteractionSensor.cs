@@ -14,6 +14,7 @@ namespace DontLate
         [SerializeField] private LayerMask _interactableMask = ~0;
 
         private readonly Collider[] _hits = new Collider[MAX_HITS];
+        private readonly RaycastHit[] _rayHits = new RaycastHit[MAX_HITS]; // S-083 — 마우스 전량 스캔 버퍼
         private PlayerManager _hub;
         private PlayerContext _context;
         private IInteractable _current;
@@ -51,15 +52,26 @@ namespace DontLate
                 transform.position, _hub.Tuning.interactRadius, _hits, _interactableMask, QueryTriggerInteraction.Collide);
 
             // S-075 ④ — 마우스 기준 포커스: 사거리 내 후보 중 마우스 레이가 맞춘 것을 최우선.
-            // 마우스가 아무 후보 위에도 없으면 기존 근접 기준 폴백 (문·게이트 UX 유지).
+            // S-083 — 단일 Raycast는 WalkableVolume 등 큰 트리거가 상자를 가려 무반응이 됐다
+            // (S-082 ③ 회귀의 원흉): 전량 스캔에서 IInteractable 콜라이더 최근접만 채택.
             Collider mouseHitCollider = null;
             {
                 Camera camera = Camera.main;
                 var mouse = UnityEngine.InputSystem.Mouse.current;
-                if (camera != null && mouse != null
-                    && Physics.Raycast(camera.ScreenPointToRay(mouse.position.ReadValue()),
-                        out RaycastHit mouseHit, 100f, _interactableMask, QueryTriggerInteraction.Collide))
-                    mouseHitCollider = mouseHit.collider;
+                if (camera != null && mouse != null)
+                {
+                    int rayCount = Physics.RaycastNonAlloc(
+                        camera.ScreenPointToRay(mouse.position.ReadValue()), _rayHits, 100f,
+                        _interactableMask, QueryTriggerInteraction.Collide);
+                    float bestDistance = float.MaxValue;
+                    for (int i = 0; i < rayCount; i++)
+                    {
+                        if (_rayHits[i].distance >= bestDistance) continue;
+                        if (!_rayHits[i].collider.TryGetComponent(out IInteractable _)) continue;
+                        bestDistance = _rayHits[i].distance;
+                        mouseHitCollider = _rayHits[i].collider;
+                    }
+                }
             }
 
             IInteractable nearest = null;

@@ -1324,12 +1324,18 @@ namespace DontLate
             {
                 DeliveryData d = _scanned[i];
                 int rank = byDeadline.FindIndex(x => x.OrderId == d.OrderId) + 1;
-                string row = (i + 1) + " " + Invoice(d.OrderId) + "  " + rank + "  " + d.Address;
+                // S-084 ④ — 한 줄 유지: 주소는 6자 컷(초과 시 …).
+                string shortAddress = d.Address != null && d.Address.Length > 6
+                    ? d.Address.Substring(0, 6) + "…" : d.Address;
+                string row = (i + 1) + " " + Invoice(d.OrderId) + "  " + rank + "  " + shortAddress;
                 int status = _status.TryGetValue(d.OrderId, out int s) ? s : 0;
                 if (status == 1) sb.Append("<color=#8a93a8>").Append(row).Append(" ✓</color>\n");
                 // S-075 ⑤ — 파손 상태: HP 소진으로 깨진 건은 배송앱에도 '파손'으로.
                 else if (_gameState.destroyedOrderIds.Contains(d.OrderId))
                     sb.Append("<color=#8a93a8><s>").Append(row).Append("</s> 파손</color>\n");
+                // S-084 ④ — 지각이어도 배달(배치)했으면 "배치됨"(빨간색 유지 — 벌점은 이미 받았다).
+                else if (status == 2 && placedIds.Contains(d.OrderId))
+                    sb.Append("<color=#ff7359>").Append(row).Append("  배치됨</color>\n");
                 else if (status == 2) sb.Append("<color=#ff7359><s>").Append(row).Append("</s> 지각</color>\n");
                 else if (!loadedIds.Contains(d.OrderId))
                 {
