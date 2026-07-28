@@ -173,6 +173,9 @@ namespace DontLate
                 WindX = 0f;
                 if (_stormRoutine != null) { StopCoroutine(_stormRoutine); _stormRoutine = null; }
             }
+            ApplyWindToFall(_rain);   // S-089 ① — 강수 기울기 (무풍이면 0)
+            ApplyWindToFall(_snow);
+            ToggleWindStreaks(Weather == WeatherType.Storm); // S-089 ④ — 공중 바람 줄기
 
             int cloudCount = Weather switch
             {
@@ -439,6 +442,57 @@ namespace DontLate
 
         /// <summary>플레이어 발자국용 — 지금 눈이 쌓여 있는가 (PlayerEffects가 WeatherChanged와 함께 사용).</summary>
         public bool HasSnowCover => _snowAmount > 0.25f;
+
+        // ── S-089 ① — 강수 바람 기울기: velocityOverLifetime.x = WindX × 세기 ──
+        private void ApplyWindToFall(ParticleSystem fall)
+        {
+            if (fall == null) return;
+            var velocity = fall.velocityOverLifetime;
+            velocity.enabled = WindX != 0f;
+            velocity.space = ParticleSystemSimulationSpace.World;
+            velocity.x = new ParticleSystem.MinMaxCurve(WindX * 7f, WindX * 10f);
+        }
+
+        // ── S-089 ④ — 공중 바람 줄기: 태풍 시 스트레치 빌보드 파티클이 바람 방향으로 흐른다 ──
+        private ParticleSystem _windStreaks;
+
+        private void ToggleWindStreaks(bool on)
+        {
+            if (on && _windStreaks == null)
+            {
+                GameObject go = new GameObject("WindStreaks");
+                go.transform.SetParent(transform, false);
+                go.transform.localPosition = new Vector3(0f, 5f, 1f);
+                _windStreaks = go.AddComponent<ParticleSystem>();
+                var main = _windStreaks.main;
+                main.startLifetime = new ParticleSystem.MinMaxCurve(1.2f, 2.2f);
+                main.startSpeed = 0f;
+                main.startSize = new ParticleSystem.MinMaxCurve(0.03f, 0.06f);
+                main.startColor = new Color(0.92f, 0.95f, 1f, 0.35f);
+                main.maxParticles = 120;
+                var emission = _windStreaks.emission;
+                emission.rateOverTime = 26f;
+                var shape = _windStreaks.shape;
+                shape.shapeType = ParticleSystemShapeType.Box;
+                shape.scale = new Vector3(46f, 9f, 10f); // 공중 넓게
+                var velocity = _windStreaks.velocityOverLifetime;
+                velocity.enabled = true;
+                velocity.space = ParticleSystemSimulationSpace.World;
+                velocity.x = new ParticleSystem.MinMaxCurve(11f, 17f); // 방향은 아래 스케일로
+                var renderer = go.GetComponent<ParticleSystemRenderer>();
+                renderer.renderMode = ParticleSystemRenderMode.Stretch; // 속도 방향으로 길쭉 — 바람 줄기
+                renderer.velocityScale = 0.28f;
+                renderer.material = MakeParticleMaterial(new Color(0.92f, 0.95f, 1f, 0.35f));
+            }
+            if (_windStreaks == null) return;
+            if (on)
+            {
+                var velocity = _windStreaks.velocityOverLifetime;
+                velocity.x = new ParticleSystem.MinMaxCurve(WindX * 11f, WindX * 17f); // 추첨 방향 반영
+                _windStreaks.Play();
+            }
+            else _windStreaks.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        }
 
         // ── S-088 ⑤ — 태풍 간헐 비: 비가 왔다 그쳤다 한다 ──
         private Coroutine _stormRoutine;

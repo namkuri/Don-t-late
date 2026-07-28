@@ -124,8 +124,9 @@ namespace DontLate
             }
 
             Vector3 targetPlanar = new Vector3(input.x * speed, 0f, input.y * speed * tuning.depthSpeedRatio);
-            if (windX != 0f && input.sqrMagnitude < 0.01f)
-                targetPlanar.x += windX * tuning.stormIdlePush; // 가만히 있으면 조금씩 밀린다
+            // S-089 ② — 밀림은 PlanarVelocity(회전·애니 소스)에 싣지 않는다: 몸은 안 돌고 밀리기만.
+            Vector3 windPush = windX != 0f && input.sqrMagnitude < 0.01f
+                ? new Vector3(windX * tuning.stormIdlePush, 0f, 0f) : Vector3.zero;
             if (_raining || _snowing)
             {
                 // S-053 ① 미끄럼 — 가감속이 굼떠진다. S-084 ③: 눈은 비의 2배(accel 절반), 전역 적용.
@@ -155,7 +156,7 @@ namespace DontLate
             }
 
             _knockback = Vector3.MoveTowards(_knockback, Vector3.zero, 18f * Time.deltaTime); // S-066 ③ 감쇠
-            Vector3 delta = (PlanarVelocity + _knockback + Vector3.up * _verticalVelocity) * Time.deltaTime;
+            Vector3 delta = (PlanarVelocity + windPush + _knockback + Vector3.up * _verticalVelocity) * Time.deltaTime; // S-089 ② — 바람 밀림은 이동에만
             delta.z = ResolveDepth(transform.position + delta) - transform.position.z;
             _cc.Move(delta);
 

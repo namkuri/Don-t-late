@@ -46,6 +46,28 @@ namespace DontLate
             CacheRenderers(); // 비주얼이 Initialize 전에 붙었을 수 있어 재캐시
         }
 
+        // S-089 ③ — 태풍 바람에 상자가 조금씩 흔들린다: 비주얼 자식만 z축 기울기 진동(물리 비침습).
+        private Transform _swayVisual;
+        private float _swayPhase;
+
+        private void Update()
+        {
+            float windX = WorldWeatherManager.Instance != null ? WorldWeatherManager.Instance.WindX : 0f;
+            if (windX == 0f)
+            {
+                if (_swayVisual != null) _swayVisual.localRotation = Quaternion.identity;
+                return;
+            }
+            if (_swayVisual == null)
+            {
+                if (transform.childCount == 0) return;
+                _swayVisual = transform.GetChild(0);
+                _swayPhase = (Mathf.Abs(GetEntityId().GetHashCode()) % 628) * 0.01f; // 상자마다 위상 분산
+            }
+            float lean = -windX * (2.2f + 1.6f * Mathf.Sin(Time.time * 2.4f + _swayPhase));
+            _swayVisual.localRotation = Quaternion.Euler(0f, 0f, lean);
+        }
+
         public void Interact(PlayerContext ctx)
         {
             if (_order == null) return;
