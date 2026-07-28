@@ -17,8 +17,6 @@ namespace DontLate
 
         [SerializeField] private GameStateSO _gameState;
         [SerializeField] private Direction _direction;
-        [Tooltip("도보 이동에 소모되는 게임분.")]
-        [SerializeField] private float _walkMinutes = 40f;
         [Tooltip("미해금일 때 켜지는 물리 벽 (S-062 ④).")]
         [SerializeField] private GameObject _lockWall;
 
@@ -124,8 +122,8 @@ namespace DontLate
                 if (index == -1 && _direction == Direction.Prev)
                 {
                     _pendingArrival = null;
-                    WorldDayNightManager.Instance?.AdvanceMinutes(_walkMinutes);
-                    Debug.Log("[도보] 집으로 걸어간다 (" + _walkMinutes + "게임분).");
+                    // S-075 3 - 엣지 워크 시간 소모 폐지: 실제 걷는 시간이 곧 페널티 (남규님 R25).
+                    Debug.Log("[도보] 집으로 걸어간다.");
                     WorldSceneFlowManager.Instance.Request(GameScene.Home);
                     return;
                 }
@@ -136,7 +134,7 @@ namespace DontLate
             if (targetIndex == -1)
             {
                 _pendingArrival = Direction.Next; // 캠프 도착 — 오른쪽(빌라촌 방향) 게이트 앞 스폰
-                WorldDayNightManager.Instance?.AdvanceMinutes(_walkMinutes);
+                // S-075 3 - 엣지 워크 시간 소모 폐지: 실제 걷는 시간이 곧 페널티 (남규님 R25).
                 WorldSceneFlowManager.Instance.Request(GameScene.Camp);
                 return;
             }
@@ -155,8 +153,8 @@ namespace DontLate
             // Next로 걸어가면 도착지 왼쪽(Prev 게이트) 앞에서, Prev로 걸어가면 오른쪽(Next 게이트) 앞에서 시작.
             _pendingArrival = _direction == Direction.Next ? Direction.Prev : Direction.Next;
             WorldDeliveryManager.Instance?.SetDestination(targetDistrict);
-            WorldDayNightManager.Instance?.AdvanceMinutes(_walkMinutes);
-            Debug.Log("[도보] " + targetDistrict + " 방향으로 걸어간다 (" + _walkMinutes + "게임분).");
+            // S-075 3 - 엣지 워크 시간 소모 폐지: 실제 걷는 시간이 곧 페널티 (남규님 R25).
+            Debug.Log("[도보] " + targetDistrict + " 방향으로 걸어간다.");
             WorldSceneFlowManager.Instance.Request(targetScene);
         }
 

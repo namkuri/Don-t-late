@@ -288,7 +288,7 @@ namespace DontLate.EditorTools
             GameObject panel = CreateImage(root, "SettlementPanel", CYAN).gameObject;
             RectTransform panelRect = panel.GetComponent<RectTransform>();
             panelRect.anchorMin = panelRect.anchorMax = panelRect.pivot = new Vector2(0.5f, 0.5f);
-            panelRect.sizeDelta = new Vector2(640f, 520f);
+            panelRect.sizeDelta = new Vector2(680f, 700f); // S-075 ⑥ — 항목 리스트 수용 확대
             panelRect.anchoredPosition = Vector2.zero;
 
             Image panelInner = CreateImage(panel.transform, "Inner", NAVY);
@@ -299,13 +299,14 @@ namespace DontLate.EditorTools
             innerRect.offsetMin = new Vector2(3f, 3f);
             innerRect.offsetMax = new Vector2(-3f, -3f);
 
-            TMP_Text body = CreateText(panelInner.transform, "Body", string.Empty, font, 40f, Color.white,
+            // S-075 ⑥ — 폰트 40→28·하단 여백 140: 항목 리스트가 확인 버튼과 겹치지 않게.
+            TMP_Text body = CreateText(panelInner.transform, "Body", string.Empty, font, 28f, Color.white,
                 TextAlignmentOptions.TopLeft, FontStyles.Normal);
             RectTransform bodyRect = body.rectTransform;
             bodyRect.anchorMin = Vector2.zero;
             bodyRect.anchorMax = Vector2.one;
-            bodyRect.offsetMin = new Vector2(48f, 130f);
-            bodyRect.offsetMax = new Vector2(-48f, -44f);
+            bodyRect.offsetMin = new Vector2(48f, 140f);
+            bodyRect.offsetMax = new Vector2(-48f, -40f);
 
             GameObject confirm = new GameObject("ConfirmButton", typeof(RectTransform));
             confirm.transform.SetParent(panelInner.transform, false);

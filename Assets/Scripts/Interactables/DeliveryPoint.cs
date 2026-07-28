@@ -59,9 +59,9 @@ namespace DontLate
         {
             DeliveryOrderSO carried = ctx.Player.Status.CarriedOrder;
             if (carried == null) { Debug.Log("[DeliveryPoint] 빈손 — 상자를 들고 와야 내려놓는다."); return; }
-            if (!WorldDeliveryManager.Instance.IsInCargo(carried))
+            if (!WorldDeliveryManager.Instance.CanHandle(carried)) // S-075 ② — 지각 건도 놓을 수 있다
             {
-                Debug.Log("[DeliveryPoint] #" + carried.orderId + " 은 적재 목록에 없다(지각 실패?) — 내려놓기 불가.");
+                Debug.Log("[DeliveryPoint] #" + carried.orderId + " 은 오늘 물량이 아니다 — 내려놓기 불가.");
                 return;
             }
 
@@ -77,7 +77,7 @@ namespace DontLate
         private void OnTriggerEnter(Collider other)
         {
             if (!other.TryGetComponent(out PickupBox box) || box.Order == null) return;
-            if (WorldDeliveryManager.Instance == null || !WorldDeliveryManager.Instance.IsInCargo(box.Order)) return;
+            if (WorldDeliveryManager.Instance == null || !WorldDeliveryManager.Instance.CanHandle(box.Order)) return; // S-075 ②
             WorldDeliveryManager.Instance.PlaceDelivery(box.Order, Address);
             if (box.Order.address == Address) ShowSuccessFloat(); // S-073 ⑥ — 던져 넣기도 연출
         }

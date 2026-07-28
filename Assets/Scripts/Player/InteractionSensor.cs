@@ -50,6 +50,18 @@ namespace DontLate
             int count = Physics.OverlapSphereNonAlloc(
                 transform.position, _hub.Tuning.interactRadius, _hits, _interactableMask, QueryTriggerInteraction.Collide);
 
+            // S-075 ④ — 마우스 기준 포커스: 사거리 내 후보 중 마우스 레이가 맞춘 것을 최우선.
+            // 마우스가 아무 후보 위에도 없으면 기존 근접 기준 폴백 (문·게이트 UX 유지).
+            Collider mouseHitCollider = null;
+            {
+                Camera camera = Camera.main;
+                var mouse = UnityEngine.InputSystem.Mouse.current;
+                if (camera != null && mouse != null
+                    && Physics.Raycast(camera.ScreenPointToRay(mouse.position.ReadValue()),
+                        out RaycastHit mouseHit, 100f, _interactableMask, QueryTriggerInteraction.Collide))
+                    mouseHitCollider = mouseHit.collider;
+            }
+
             IInteractable nearest = null;
             float nearestDistance = float.MaxValue;
 
@@ -61,6 +73,12 @@ namespace DontLate
                 // S-040: 상자를 든 동안엔 다른 상자를 집을 수 없다 — PickupBox가 포커스를 먹으면
                 // 대차·비콘 상호작용이 막힌다 (대차 적재 2개째 불가의 원흉).
                 if (carrying && candidate is PickupBox) continue;
+
+                if (_hits[i] == mouseHitCollider) // 마우스가 짚은 후보 — 즉시 확정
+                {
+                    nearest = candidate;
+                    break;
+                }
 
                 float distance = (_hits[i].transform.position - transform.position).sqrMagnitude;
                 if (distance >= nearestDistance) continue;

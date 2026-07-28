@@ -1175,6 +1175,9 @@ namespace DontLate
                 string row = (i + 1) + " " + Invoice(d.OrderId) + "  " + rank + "  " + d.Address;
                 int status = _status.TryGetValue(d.OrderId, out int s) ? s : 0;
                 if (status == 1) sb.Append("<color=#8a93a8>").Append(row).Append(" ✓</color>\n");
+                // S-075 ⑤ — 파손 상태: HP 소진으로 깨진 건은 배송앱에도 '파손'으로.
+                else if (_gameState.destroyedOrderIds.Contains(d.OrderId))
+                    sb.Append("<color=#8a93a8><s>").Append(row).Append("</s> 파손</color>\n");
                 else if (status == 2) sb.Append("<color=#ff7359><s>").Append(row).Append("</s> 지각</color>\n");
                 else if (!loadedIds.Contains(d.OrderId))
                 {

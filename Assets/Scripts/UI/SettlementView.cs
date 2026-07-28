@@ -47,16 +47,69 @@ namespace DontLate
             if (d.FailCount > 0) WorldAudioManager.Instance?.PlaySettleBadSfx();
             else WorldAudioManager.Instance?.PlaySettleOkSfx();
 
-            if (_bodyLabel != null)
-                _bodyLabel.text =
-                    "오늘 정산\n\n" +
-                    "배송 성공  <color=#35e0c8>" + d.SuccessCount + "건  +₩" + d.RewardTotal.ToString("N0") + "</color>\n" +
-                    "배송 실패  <color=#ff7359>" + d.FailCount + "건  −₩" + d.PenaltyTotal.ToString("N0") + "</color>\n\n" +
-                    "빚 상환   <color=#35e0c8>₩" + s.Repaid.ToString("N0") + "</color>\n" +
-                    "잔액       ₩" + s.Money.ToString("N0") + "\n" +
-                    "남은 빚   ₩" + s.Debt.ToString("N0") + "\n\n" +
-                    "<size=60%><color=#8a93a8>실패 = 미배치·오배치 — 벌금은 잔액에서, 부족분은 빚으로</color></size>";
+            // S-075 ⑥ — 영수증 연출: 줄 배열을 만들어 500ms 간격 순차 출현(클릭=한 줄 스킵),
+            // "집으로" 버튼은 전 줄이 찍힌 뒤 마지막에 나타난다.
+            BuildLines(d, s);
+            if (_confirmButton != null) _confirmButton.gameObject.SetActive(false);
             _panel.SetActive(true);
+            _printRoutine = StartCoroutine(PrintLines());
+        }
+
+        private readonly System.Collections.Generic.List<string> _lines = new System.Collections.Generic.List<string>();
+        private Coroutine _printRoutine;
+        private bool _skipOnce;
+        private const float LINE_INTERVAL_SECONDS = 0.5f;
+
+        private void BuildLines(DeliveryDaySummary d, DebtSettlement s)
+        {
+            _lines.Clear();
+            _lines.Add("<b>오늘 정산</b>");
+            _lines.Add("");
+            _lines.Add("배송 성공  <color=#35e0c8>" + d.SuccessCount + "건  +₩" + d.RewardTotal.ToString("N0") + "</color>");
+            if (d.Lines != null)
+                foreach (SettleLine line in d.Lines)
+                    if (line.Success)
+                        _lines.Add("<size=72%>  · " + line.Address + "  <color=#35e0c8>+₩" + line.Amount.ToString("N0") + "</color></size>");
+            _lines.Add("배송 실패  <color=#ff7359>" + d.FailCount + "건  −₩" + d.PenaltyTotal.ToString("N0") + "</color>");
+            if (d.Lines != null)
+                foreach (SettleLine line in d.Lines)
+                    if (!line.Success)
+                        _lines.Add("<size=72%>  · " + line.Address + "  <color=#ff7359>" + line.Note + " −₩" + (-line.Amount).ToString("N0") + "</color></size>");
+            _lines.Add("");
+            _lines.Add("빚 상환   <color=#35e0c8>₩" + s.Repaid.ToString("N0") + "</color>");
+            _lines.Add("잔액       ₩" + s.Money.ToString("N0"));
+            _lines.Add("남은 빚   ₩" + s.Debt.ToString("N0"));
+        }
+
+        private System.Collections.IEnumerator PrintLines()
+        {
+            _bodyLabel.text = string.Empty;
+            _skipOnce = false;
+            var sb = new System.Text.StringBuilder();
+            foreach (string line in _lines)
+            {
+                float waited = 0f;
+                while (waited < LINE_INTERVAL_SECONDS && !_skipOnce)
+                {
+                    waited += Time.unscaledDeltaTime; // 정산 중 timeScale=0 — unscaled로 흐른다
+                    yield return null;
+                }
+                _skipOnce = false;
+
+                sb.Append(line).Append('\n');
+                _bodyLabel.text = sb.ToString();
+                if (!string.IsNullOrEmpty(line)) WorldAudioManager.Instance?.PlayUiTickSfx(); // 줄 틱
+            }
+            if (_confirmButton != null) _confirmButton.gameObject.SetActive(true); // 맨 마지막에 맨 아래
+            _printRoutine = null;
+        }
+
+        private void Update()
+        {
+            // 클릭 = 다음 줄 즉시 (연출 스킵 한 줄씩).
+            if (_printRoutine == null || _panel == null || !_panel.activeSelf) return;
+            var mouse = UnityEngine.InputSystem.Mouse.current;
+            if (mouse != null && mouse.leftButton.wasPressedThisFrame) _skipOnce = true;
         }
 
         private void Confirm()

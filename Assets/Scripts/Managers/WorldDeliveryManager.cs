@@ -9,6 +9,17 @@ namespace DontLate
         public int FailCount;
         public int RewardTotal;
         public int PenaltyTotal;
+        /// <summary>정산 항목별 내역 (S-075 ⑥ — 정산 UI 리스트 연출용). null 가능 — View가 가드.</summary>
+        public System.Collections.Generic.List<SettleLine> Lines;
+    }
+
+    /// <summary>정산 한 줄 (S-075 ⑥) — 주소·금액·성패·사유. 표시 전용 데이터.</summary>
+    public struct SettleLine
+    {
+        public string Address;
+        public int Amount;
+        public bool Success;
+        public string Note; // "파손"·"미배치"·"오배치" 등
     }
 
     /// <summary>
@@ -95,6 +106,12 @@ namespace DontLate
             _gameState.placedDeliveries.RemoveAll(p => p.orderId == orderId);
         }
 
+        /// <summary>운반·배치 자격 (S-075 ② — 지각 완화): cargo 소속이거나, 지각 실패로 cargo에서
+        /// 빠졌어도 당일 물량(dayOrders)이면 허용 — 늦어도 갖다는 놓을 수 있다(보상은 이미 없음).</summary>
+        public bool CanHandle(DeliveryOrderSO order)
+            => order != null && (IsInCargo(order)
+                || _gameState.dayOrders.Exists(o => o != null && o.orderId == order.orderId));
+
         /// <summary>상자 파손 통지 (S-074 ③ — BoxDurability). 정산에서 실패로 청산되고 그날 재스폰이 막힌다.</summary>
         public void ReportDestroyed(DeliveryOrderSO order)
         {
@@ -112,6 +129,7 @@ namespace DontLate
         public DeliveryDaySummary SettleDeliveries()
         {
             var summary = new DeliveryDaySummary();
+            summary.Lines = new System.Collections.Generic.List<SettleLine>(); // S-075 ⑥
             _settledDistricts.Clear(); // S-054 — 이번 정산에서 성공한 구역
             int penalty = _tuning != null ? _tuning.latePenalty : 500;
 
@@ -128,6 +146,7 @@ namespace DontLate
                 if (_gameState.money < 0) { _gameState.debt += -_gameState.money; _gameState.money = 0; }
                 _gameState.lateCount++;
                 MasteryProgress.Add(_gameState, -MasteryProgress.FAIL_LOSS);
+                summary.Lines.Add(new SettleLine { Address = order.address, Amount = -penalty, Success = false, Note = "파손" });
                 WorldEvents.RaiseDeliveryFailed(DeliveryData.From(order));
             }
             _gameState.destroyedOrderIds.Clear();
@@ -159,6 +178,7 @@ namespace DontLate
                     });
                     if (!string.IsNullOrEmpty(order.district)) _settledDistricts.Add(order.district); // S-054
                     MasteryProgress.Add(_gameState, MasteryProgress.SUCCESS_GAIN); // S-063
+                    summary.Lines.Add(new SettleLine { Address = order.address, Amount = order.reward, Success = true }); // S-075 ⑥
                     WorldEvents.RaiseDeliveryCompleted(DeliveryData.From(order));
                 }
                 else
@@ -169,6 +189,13 @@ namespace DontLate
                     if (_gameState.money < 0) { _gameState.debt += -_gameState.money; _gameState.money = 0; } // 잔액 부족분은 빚
                     _gameState.lateCount++;
                     MasteryProgress.Add(_gameState, -MasteryProgress.FAIL_LOSS); // S-063
+                    summary.Lines.Add(new SettleLine // S-075 ⑥
+                    {
+                        Address = order.address,
+                        Amount = -penalty,
+                        Success = false,
+                        Note = placedIndex >= 0 ? "오배치" : "미배치"
+                    });
                     WorldEvents.RaiseDeliveryFailed(DeliveryData.From(order));
                 }
             }

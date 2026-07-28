@@ -24,6 +24,9 @@ namespace DontLate
         [Tooltip("층별 비콘 앵커 — 인덱스 0=2층, 1=3층… 설정 시 order.floor로 층을 찾는다.")]
         [SerializeField] private Transform[] _floorBeaconAnchors;
 
+        // S-075 ① — 패드 기본 슬롯: 교차 도로(x -2.1~2.1)와 그 여백을 피해 건물 앞에만 (x=0 스폰 금지).
+        private static readonly float[] BEACON_SLOTS_X = { -8f, 8f, 16f, -16f, 24f, -24f, 32f, -32f };
+
         private void OnEnable() => WorldEvents.SceneTransitionStarted += OnSceneLeaving;
         private void OnDisable() => WorldEvents.SceneTransitionStarted -= OnSceneLeaving;
 
@@ -79,7 +82,7 @@ namespace DontLate
                     perFloorCount[floorIndex] = slot + 1;
                     beaconPos = _floorBeaconAnchors[floorIndex].position + new Vector3(slot * 5f, 0f, 0f);
                 }
-                else beaconPos = new Vector3(-8f + i * 8f, 0f, 0f);
+                else beaconPos = new Vector3(BEACON_SLOTS_X[i % BEACON_SLOTS_X.Length], 0f, 0f);
 
                 SpawnBeacon(order, beaconPos);
                 beaconPositions[order.address] = beaconPos;

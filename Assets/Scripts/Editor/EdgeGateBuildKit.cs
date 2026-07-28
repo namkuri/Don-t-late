@@ -11,7 +11,7 @@ namespace DontLate.EditorTools
     {
         /// <summary>도보 게이트 1기 — direction: Next=시안 / Prev=앰버. 화살표는 씬 바깥 방향을 가리킨다.</summary>
         internal static void BuildGate(string name, Vector3 position, DistrictEdgeGate.Direction direction,
-            GameStateSO gameState, float walkMinutes = 40f, float zoneDepth = 6f)
+            GameStateSO gameState, float zoneDepth = 6f)
         {
             bool next = direction == DistrictEdgeGate.Direction.Next;
             Color color = next ? new Color(0.208f, 0.878f, 0.784f) : new Color(1f, 0.624f, 0.271f);
@@ -58,7 +58,7 @@ namespace DontLate.EditorTools
             GreyboxStageBuilder.SetReference(gate, "_lockWall", wall);
             SerializedObject serialized = new SerializedObject(gate);
             serialized.FindProperty("_direction").enumValueIndex = (int)direction;
-            serialized.FindProperty("_walkMinutes").floatValue = walkMinutes;
+            // S-075 3 - _walkMinutes 은퇴 (엣지 워크 시간 소모 폐지).
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 

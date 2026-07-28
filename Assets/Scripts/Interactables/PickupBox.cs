@@ -56,7 +56,7 @@ namespace DontLate
                 return;
             }
             // S-010: 캠프에서 싣지 않은(또는 지각 실패한) 건은 배송 불가 — 침묵 무반응 대신 사유를 남긴다.
-            if (_requireInCargo && !WorldDeliveryManager.Instance.IsInCargo(_order))
+            if (_requireInCargo && !WorldDeliveryManager.Instance.CanHandle(_order)) // S-075 ② — 지각 건도 집을 수 있다
             {
                 Debug.Log("[PickupBox] #" + _order.orderId + " 은 오늘 적재 목록에 없다 — 캠프에서 싣지 않았거나 지각 실패한 건.");
                 return;
