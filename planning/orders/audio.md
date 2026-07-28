@@ -727,3 +727,14 @@ L129 직접 ++ 후 L130 Raise가 자기 구독 핸들러(L144 OnDeliveryFailed)�
 - ⚠ **프롬프트는 ElevenLabs 전송 전 Director 검토 게이트** (남규님 지시 2026-07-29).
 
 수용기준: 정산 개척 해금에서 1회 재생 · settle_ok보다 큰 축하감 · 셀프검증(임포트 에러 0·청취) · 브랜치→PR.
+
+### 결과 (AU-021) · 2026-07-29 01:10 (정수 공장)
+
+- 프롬프트: 대안 B(토이톤+칩튠 브라스 스탭) 승인 → API 450자 한계로 창작태그 트림(요소 전부 유지).
+  전송 태그: `triumphant toy fanfare, quick rising marimba run into a sparkling bell chime and final ding, bright chiptune brass stab, celebratory grand yet cute`.
+- 3 take 생성(seed 상이) → Director 청취 판정 **take1 채택**(차분·성김). take2(풀 2s·중밀도)·take3(짧고 조밀·펀치)는 미채택.
+- 후공정: 트림 → peak -1dB 정규화(트랜지언트라 peak 한계 · RMS→-14 게인보다 peak→-1 게인이 작아 규칙상 peak 한계 — 단일 게인 무클립) → 8ms 페이드. 최종 0.94s 모노.
+- 임포트 실측: `sfx_fanfare.wav` len 0.94s · ch 1(forceMono) · 44100 · Vorbis · DecompressOnLoad — SFX 임포터 규격 정합. 콘솔 에러/워닝 0.
+- 라이선스: CREDITS.md + assets_manifest.md LICENSE 표 등재(2026-07-29).
+- ⚠ 인게임 재생(PlayFanfareSfx)은 소켓이 S-086(PR #21)에 있어 이 브랜치(off main)에선 미검증 — #21 + AU-021 머지 후 CoreSceneBuilder `LoadSfx("sfx_fanfare")` 자동 배선 시 확인.
+- 잔여(관제): BOM §8 SFX 행 `sfx_fanfare` 추가(정수는 CREDITS+manifest만 — AU-011 선례).

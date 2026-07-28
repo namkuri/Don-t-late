@@ -317,3 +317,14 @@ Director 판정: 기존 걷는 소리가 **쇳소리(metallic)** — 원인 = �
 - prompt SHA1 `b529abed6cc1` · seed(로컬) 1957209730 · 생성 0.5s → 트림 0.22s
 - 후공정: 트림 → 소프트 컴프레션(tanh, 크레스트 감소=존재감) → 피크 -1dB. 임포트 실측 rms **-9.4dB**(가청 확보 — 저역 muffled 후보들이 작은 스피커서 안 들린 문제 해결).
 - 탐색 이력: 저역 thud 계열(boot/concrete/muffled)은 스피커서 약함 · 거친 scuff는 가청이나 거슬림 → "중역 클린 탭"이 가청∧매끈∧비금속 교점.
+
+## sfx_fanfare (개척 해금 팡파레) — ElevenLabs · 2026-07-29
+
+S-086 소켓(WorldAudioManager `_sfxFanfare`) 충전 — 정산 개척 해금/트럭 지급 순간 재생.
+팡파레는 축하 멜로디 스팅 본질 → GAME-SFX-RULES §3 melody/jingle 금지의 의도적 예외(whoosh riser 선례).
+3 take 생성 → Director 청취 판정 **take1 채택**(차분·성김).
+
+- 채택 프롬프트(창작 태그): `triumphant toy fanfare, quick rising marimba run into a sparkling bell chime and final ding, bright chiptune brass stab, celebratory grand yet cute` (API 450자 한계로 승인 B에서 트림 — 요소 전부 유지)
+- seed(로컬) 1699124614 · 생성 2.0s → 트림 0.94s. ⚠ SFX는 API가 seed 미수용 → 복원 불가(로컬 wav 보존).
+- 후공정: 트림(≤-40dBFS) → peak -1dB 정규화(트랜지언트라 peak 한계 · RMS -19.4 < -14는 규칙상 정상) → 8ms 페이드아웃. 모노 pcm44100.
+- 배선: #21(S-086) 머지 후 CoreSceneBuilder `LoadSfx("sfx_fanfare")`가 자동 주입. 도착 전엔 settle_ok 폴백.
