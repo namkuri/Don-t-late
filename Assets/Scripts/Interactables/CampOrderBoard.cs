@@ -11,14 +11,20 @@ namespace DontLate
     {
         // 신규 목적지 풀 — district는 이동맵 노드 라벨과 정확히 일치해야 스폰이 맞물린다.
         // S-035(D-064): 빌라촌={OO빌라·반지하·원룸·연립} / 먹자골목={식당·호프·분식·포장마차} 컨셉 정합.
+        // S-074 ④ — 풀 확장 (빌라촌 3→6·먹자 3→5): "초록빌라 202호만 3개" 다양성 붕괴 수리의 일부.
         private static readonly (string address, string district, int floor)[] Destinations =
         {
             ("초록빌라 202호", DeliveryOrderSO.DISTRICT_VILLATOWN, 2),
             ("골목연립 반지하", DeliveryOrderSO.DISTRICT_VILLATOWN, -1),
             ("햇살원룸 3호", DeliveryOrderSO.DISTRICT_VILLATOWN, 1),
+            ("행복빌라 301호", DeliveryOrderSO.DISTRICT_VILLATOWN, 3),
+            ("모퉁이양옥 1층", DeliveryOrderSO.DISTRICT_VILLATOWN, 1),
+            ("파랑대문집 102호", DeliveryOrderSO.DISTRICT_VILLATOWN, 1),
             ("왕만두분식", DeliveryOrderSO.DISTRICT_FOODALLEY, 1),
             ("달빛호프 2층", DeliveryOrderSO.DISTRICT_FOODALLEY, 2),
             ("끝집포장마차", DeliveryOrderSO.DISTRICT_FOODALLEY, 1),
+            ("매운족발집", DeliveryOrderSO.DISTRICT_FOODALLEY, 1),
+            ("골목치킨 2층", DeliveryOrderSO.DISTRICT_FOODALLEY, 2),
             ("늦지마아파트 202호", DeliveryOrderSO.DISTRICT_APARTMENT, 2), // S-038
             ("늦지마아파트 303호", DeliveryOrderSO.DISTRICT_APARTMENT, 3),
             ("늦지마아파트 404호", DeliveryOrderSO.DISTRICT_APARTMENT, 4),
@@ -70,9 +76,10 @@ namespace DontLate
                     box.SetOrder(i < _gameState.dayOrders.Count ? _gameState.dayOrders[i] : null);
                 }
 
-                // 픽업(=적재 등록)해 들고 나간 건의 상자만 치운다 — 스캔만 한 건 그대로.
-                // (파손된 건도 cargo에 남아 있으므로 재등장하지 않고, 정산에서 실패로 청산된다.)
-                box.gameObject.SetActive(box.Order != null && !_gameState.cargo.Contains(box.Order));
+                // 픽업(=적재 등록)해 들고 나간 건과 파손 건(S-074 ③)의 상자는 치운다 — 스캔만 한 건 그대로.
+                box.gameObject.SetActive(box.Order != null
+                    && !_gameState.cargo.Contains(box.Order)
+                    && !_gameState.destroyedOrderIds.Contains(box.Order.orderId));
             }
         }
 
@@ -93,11 +100,21 @@ namespace DontLate
         private DeliveryOrderSO GenerateOrder()
         {
             int serial = _gameState.nextOrderSerial++;
-            var pick = Destinations[serial % Destinations.Length];
-            // S-054 — 개척 진행: 해금된 구역의 주소만 발주 (unlockedDistricts 비면 전체 허용 — 테스트 호환).
-            if (_gameState.unlockedDistricts.Count > 0)
-                for (int hop = 0; hop < Destinations.Length && !_gameState.unlockedDistricts.Contains(pick.district); hop++)
-                    pick = Destinations[(serial + hop + 1) % Destinations.Length];
+
+            // S-074 ④ — 다양성 수리: 구 hop 방식은 미해금 시작점에서 항상 '첫 해금 주소'로 수렴해
+            // 연속 serial이 전부 같은 주소가 됐다("초록빌라 202호만 3개"의 원흉). 해금 풀을 먼저
+            // 추리고 serial로 고르되, 이번 확정(dayOrders)에서 이미 쓴 주소는 가능하면 피한다.
+            var candidates = new System.Collections.Generic.List<(string address, string district, int floor)>();
+            foreach (var destination in Destinations)
+                if (_gameState.unlockedDistricts.Count == 0
+                    || _gameState.unlockedDistricts.Contains(destination.district))
+                    candidates.Add(destination);
+            if (candidates.Count == 0) candidates.AddRange(Destinations); // 방어 — 전부 미해금이면 전체 풀
+
+            var pick = candidates[serial % candidates.Count];
+            for (int hop = 1; hop < candidates.Count
+                 && _gameState.dayOrders.Exists(o => o != null && o.address == pick.address); hop++)
+                pick = candidates[(serial + hop) % candidates.Count];
 
             DeliveryOrderSO order = ScriptableObject.CreateInstance<DeliveryOrderSO>();
             order.name = "RuntimeOrder_" + serial;

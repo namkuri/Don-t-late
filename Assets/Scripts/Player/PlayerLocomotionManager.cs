@@ -95,6 +95,7 @@ namespace DontLate
 
             float speed = _hub.Input.RunHeld ? tuning.runSpeed : tuning.moveSpeed;
             if (_hub.Status.IsCarrying) speed *= tuning.carrySpeedPenalty;
+            speed *= _hub.Status.SpeedMultiplier; // S-074 ⑧ — 드링크 버프 (+30%)
 
             Vector3 targetPlanar = new Vector3(input.x * speed, 0f, input.y * speed * tuning.depthSpeedRatio);
             if (_raining)

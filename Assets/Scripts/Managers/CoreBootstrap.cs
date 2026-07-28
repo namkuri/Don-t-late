@@ -61,6 +61,7 @@ namespace DontLate
             _gameState.carriedOrders.Clear(); // S-066
             _gameState.daySettled = false;    // S-068
             _gameState.dayOrders.Clear();     // S-072 ⑩
+            _gameState.destroyedOrderIds.Clear(); // S-074 ③
             _gameState.droppedCargo.Clear();
             _gameState.cargo.Clear();
             _gameState.scannedOrderIds.Clear();

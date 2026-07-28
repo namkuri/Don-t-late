@@ -1186,8 +1186,11 @@ namespace DontLate
                 }
                 else
                 {
+                    // S-074 ⑤ — 도보 시대엔 "배송중" (상차는 트럭 해금 후에야 실체가 있다).
                     sb.Append(row).Append(placedIds.Contains(d.OrderId)
-                        ? "  <color=#35e0c8>배치됨</color>" : "  <color=#35e0c8><b>상차완료</b></color>").Append('\n');
+                        ? "  <color=#35e0c8>배치됨</color>"
+                        : _gameState.hasTruck ? "  <color=#35e0c8><b>상차완료</b></color>"
+                                              : "  <color=#35e0c8><b>배송중</b></color>").Append('\n');
                     if (_lastClockMinute >= 0)
                     {
                         int remain = Mathf.RoundToInt(d.DeadlineMinuteOfDay) - _lastClockMinute;

@@ -228,9 +228,16 @@ namespace DontLate
         }
 
         // ── 스태미나 ──────────────────────────────────────────
-        private void OnStaminaChanged(float normalized)
+        // S-074 ⑦ — 통지값을 목표로 두고 매 프레임 부드럽게 추적: 걷기는 연속으로 흐르고,
+        // 뛰기는 드레인 자체가 커서 빠르게 뚝뚝 떨어지는 감각이 남는다.
+        private float _staminaTarget = 1f;
+
+        private void OnStaminaChanged(float normalized) => _staminaTarget = Mathf.Clamp01(normalized);
+
+        private void Update()
         {
-            if (_staminaFill != null) _staminaFill.fillAmount = Mathf.Clamp01(normalized);
+            if (_staminaFill == null) return;
+            _staminaFill.fillAmount = Mathf.MoveTowards(_staminaFill.fillAmount, _staminaTarget, Time.deltaTime * 0.6f);
         }
 
         // ── 상호작용 안내 ────────────────────────────────────

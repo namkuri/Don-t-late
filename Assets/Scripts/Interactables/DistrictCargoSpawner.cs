@@ -49,50 +49,76 @@ namespace DontLate
         private void Start()
         {
             string district = _gameState != null ? _gameState.currentDistrict : null;
+
+            // S-074 ② — 패드는 하루 물량(dayOrders) 기준으로 첫 입장부터 전부 선다. 위치는 물량
+            // 확정 순서(dayOrders 인덱스)로 결정적 — 재입장에도 같은 자리다. (구 cargo 기준은
+            // 픽업분만·방문마다 인덱스가 달라 "패드가 옮겨 다니는" 원흉이었다.)
+            // dayOrders가 비면(씬 단독 Play) cargo 폴백.
+            var pool = _gameState.dayOrders.Count > 0 ? _gameState.dayOrders : _gameState.cargo;
             var matching = new List<DeliveryOrderSO>();
-            foreach (DeliveryOrderSO order in _gameState.cargo)
+            foreach (DeliveryOrderSO order in pool)
             {
                 if (order == null) continue;
                 if (!string.IsNullOrEmpty(district) && order.district != district) continue;
-                // S-034: 이미 다른 구역 비콘에 내려놓은 건은 재스폰하지 않는다 (배치 기록이 정본).
-                if (_gameState.placedDeliveries.Exists(p => p.orderId == order.orderId)) continue;
-
                 matching.Add(order);
             }
 
+            var beaconPositions = new Dictionary<string, Vector3>(); // 주소→패드 위치 (배치 상자 복원용)
             var perFloorCount = new Dictionary<int, int>();
+            int boxSlot = 0;
             for (int i = 0; i < matching.Count; i++)
             {
-                // S-066 ② — 도보로 손에 들고 온 짐은 상자 재스폰 없음(중복 방지). 비콘은 내려놓을 곳이라 유지.
-                bool carriedIn = _gameState.carriedOrders.Exists(c => c != null && c.orderId == matching[i].orderId);
-                if (!carriedIn)
-                {
-                    // S-068 ③ — 지난번 버려둔 자리가 기록돼 있으면 그 자리에 되살린다.
-                    int orderId = matching[i].orderId;
-                    int droppedIndex = _gameState.droppedCargo.FindIndex(
-                        d => d.orderId == orderId && d.district == district);
-                    Vector3 boxPos = droppedIndex >= 0
-                        ? _gameState.droppedCargo[droppedIndex].position
-                        : (_boxOrigin != null
-                            ? _boxOrigin.position + new Vector3(i * 1.2f, 0f, 0f)
-                            : new Vector3(-16f + i * 1.2f, 0f, -1.2f));
-                    SpawnBox(matching[i], boxPos);
-                }
+                DeliveryOrderSO order = matching[i];
 
+                Vector3 beaconPos;
                 if (_floorBeaconAnchors != null && _floorBeaconAnchors.Length > 0)
                 {
                     // S-038: 층별 앵커 배치 — order.floor(2층=[0])별로 옆으로 나열.
-                    int floorIndex = Mathf.Clamp(matching[i].floor - 2, 0, _floorBeaconAnchors.Length - 1);
+                    int floorIndex = Mathf.Clamp(order.floor - 2, 0, _floorBeaconAnchors.Length - 1);
                     perFloorCount.TryGetValue(floorIndex, out int slot);
                     perFloorCount[floorIndex] = slot + 1;
-                    SpawnBeacon(matching[i], _floorBeaconAnchors[floorIndex].position + new Vector3(slot * 5f, 0f, 0f));
+                    beaconPos = _floorBeaconAnchors[floorIndex].position + new Vector3(slot * 5f, 0f, 0f);
+                }
+                else beaconPos = new Vector3(-8f + i * 8f, 0f, 0f);
+
+                SpawnBeacon(order, beaconPos);
+                beaconPositions[order.address] = beaconPos;
+            }
+
+            // 상자: cargo(픽업 등록) 소속 건만 실물이 있다. 파손 건은 그날 재스폰 금지 (S-074 ③).
+            int boxCount = 0;
+            foreach (DeliveryOrderSO order in matching)
+            {
+                if (!_gameState.cargo.Contains(order)) continue;
+                if (_gameState.destroyedOrderIds.Contains(order.orderId)) continue;
+                // S-066 ② — 도보로 손에 들고 온 짐은 상자 재스폰 없음(중복 방지).
+                if (_gameState.carriedOrders.Exists(c => c != null && c.orderId == order.orderId)) continue;
+
+                int placedIndex = _gameState.placedDeliveries.FindIndex(p => p.orderId == order.orderId);
+                Vector3 boxPos;
+                if (placedIndex >= 0)
+                {
+                    // S-074 ① — 배치 완료 건은 그 패드 위에 놓인 모습으로 유지 (정산 전까지).
+                    string beaconAddress = _gameState.placedDeliveries[placedIndex].beaconAddress;
+                    if (!beaconPositions.TryGetValue(beaconAddress, out boxPos)) continue; // 딴 구역 패드에 배치 — 여긴 없음
+                    boxPos += new Vector3(0f, 0.1f, 0f);
                 }
                 else
                 {
-                    SpawnBeacon(matching[i], new Vector3(-8f + i * 8f, 0f, 0f));
+                    // S-068 ③ — 지난번 버려둔 자리가 기록돼 있으면 그 자리에 되살린다.
+                    int droppedIndex = _gameState.droppedCargo.FindIndex(
+                        d => d.orderId == order.orderId && d.district == district);
+                    boxPos = droppedIndex >= 0
+                        ? _gameState.droppedCargo[droppedIndex].position
+                        : (_boxOrigin != null
+                            ? _boxOrigin.position + new Vector3(boxSlot * 1.2f, 0f, 0f)
+                            : new Vector3(-16f + boxSlot * 1.2f, 0f, -1.2f));
+                    boxSlot++;
                 }
+                SpawnBox(order, boxPos);
+                boxCount++;
             }
-            Debug.Log("[CargoSpawner] 구역 '" + district + "' — 짐 " + matching.Count + "건 · 비콘 " + matching.Count + "개 스폰.");
+            Debug.Log("[CargoSpawner] 구역 '" + district + "' — 비콘 " + matching.Count + "개 · 짐 " + boxCount + "건 스폰.");
         }
 
         // 트럭에서 내린 짐 — 보도 앞줄에 일렬.

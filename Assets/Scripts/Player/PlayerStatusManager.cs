@@ -9,7 +9,7 @@ namespace DontLate
     public class PlayerStatusManager : MonoBehaviour
     {
         /// <summary>이 비율 이상 변했을 때만 경계 밖으로 알린다(프레임 데이터 방지).</summary>
-        private const float STAMINA_NOTIFY_STEP = 0.05f;
+        private const float STAMINA_NOTIFY_STEP = 0.01f; // S-074 ⑦ — 5% 스텝이 게이지 계단의 원흉 (로그는 원래 없음 — 무비용)
 
         [Tooltip("든 물건이 붙는 위치. 플레이어 자식 트랜스폼.")]
         [SerializeField] private Transform _carryAnchor;
@@ -81,6 +81,7 @@ namespace DontLate
             if (_weather == WeatherType.Heat) { amount *= 1.5f; Debug.Log("[가방] 캬 — 시원하다! (폭염 보너스)"); }
             else if (_weather == WeatherType.Snow) { amount *= 1.5f; Debug.Log("[가방] 후 — 따뜻하다! (한파 보너스)"); }
             RecoverStamina(amount);
+            ApplyDrinkBuff(); // S-074 ⑧ — 가방에서 바로 마셔도 같은 버프
             WorldAudioManager.Instance?.PlayDrinkSfx();
             Debug.Log("[가방] " + item.label + " 사용 — 스태미나 회복");
         }
@@ -187,10 +188,11 @@ namespace DontLate
 
             var mouse = UnityEngine.InputSystem.Mouse.current;
             // S-072 ⑧ — UI 위 클릭(가방 뒤로가기 등)이 던지기로 새던 버그: 포인터가 UI에 있으면 무시.
+            // S-074 ⑥ — 폰이 열려 있어도 클릭 지점이 폰 UI 밖(월드)이면 던지기·마시기 허용.
             bool overUI = UnityEngine.EventSystems.EventSystem.current != null
                 && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject();
-            bool leftClick = mouse != null && mouse.leftButton.wasPressedThisFrame && !PhoneView.IsOpen && !overUI;
-            bool rightClick = mouse != null && mouse.rightButton.wasPressedThisFrame && !PhoneView.IsOpen && !overUI;
+            bool leftClick = mouse != null && mouse.leftButton.wasPressedThisFrame && !overUI;
+            bool rightClick = mouse != null && mouse.rightButton.wasPressedThisFrame && !overUI;
 
             // S-032 ④: 우클릭 = 드링크 마시기 · 좌클릭 = 던지기(상자 우선, 없으면 드링크 — 택배와 동일 감각).
             if (rightClick && _heldDrink != null)
@@ -218,6 +220,7 @@ namespace DontLate
                         : drain * (tuning.staminaDrainCarryMultiplier - 1f);
                 if (_inHillside) drain *= 1.4f; // S-049 — 오르막 동네는 힘들다
                 if (_weather == WeatherType.Heat || _weather == WeatherType.Snow) drain *= 1.35f; // S-060 — 덥거나 추우면 더 힘들다
+                if (DrinkBuffActive) drain *= 0.85f; // S-074 ⑧ — 드링크 버프
                 Stamina -= drain * Time.deltaTime;
             }
             else
@@ -342,8 +345,23 @@ namespace DontLate
             if (_weather == WeatherType.Heat) { amount *= 1.5f; Debug.Log("[드링크] 캬 — 시원하다! (폭염 보너스)"); }
             else if (_weather == WeatherType.Snow) { amount *= 1.5f; Debug.Log("[드링크] 후 — 따뜻하다! (한파 보너스)"); }
             RecoverStamina(amount); // 내부에서 힐 이펙트(PlayDrinkEffect)까지 발화
+            ApplyDrinkBuff();       // S-074 ⑧
             WorldAudioManager.Instance?.PlayDrinkSfx();     // AU-009
             Debug.Log("[드링크] 섭취 — 스태미나 회복 (우클릭)");
+        }
+
+        // ── S-074 ⑧ — 드링크 버프: 이동 +30% · 드레인 -15% (실시간 45초 = 게임 90분) ──
+        private const float DRINK_BUFF_SECONDS = 45f;
+        private float _drinkBuffUntil = -1f;
+
+        private bool DrinkBuffActive => Time.time < _drinkBuffUntil;
+        /// <summary>이동속도 배율 — Locomotion이 매 프레임 읽는다.</summary>
+        public float SpeedMultiplier => DrinkBuffActive ? 1.3f : 1f;
+
+        private void ApplyDrinkBuff()
+        {
+            _drinkBuffUntil = Time.time + DRINK_BUFF_SECONDS;
+            Debug.Log("[드링크] 버프 — 이동 +30% · 스태미나 소모 -15% (" + DRINK_BUFF_SECONDS + "초)");
         }
 
         /// <summary>S-032 ④: 든 드링크를 마우스 방향으로 던진다 — 다시 픽업체가 되어 E로 회수 가능.</summary>

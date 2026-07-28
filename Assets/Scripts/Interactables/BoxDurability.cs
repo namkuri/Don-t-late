@@ -75,7 +75,10 @@ namespace DontLate
                 rb.angularVelocity = Random.insideUnitSphere * 8f;
                 Destroy(shard, 1.6f);
             }
-            Debug.Log("[취급주의] 상자 파손! 주문은 남는다 — 구역을 다시 오면 재스폰.");
+            // S-074 ③ — 파손 = 물건 소멸: 기록해 두면 정산이 실패로 청산하고, 그날 재스폰도 막힌다.
+            if (TryGetComponent(out PickupBox pickup) && pickup.Order != null)
+                WorldDeliveryManager.Instance?.ReportDestroyed(pickup.Order);
+            Debug.Log("[취급주의] 상자 파손! 정산 때 실패로 청산된다.");
             WorldEvents.RaisePackageDestroyed(); // AU-008 — 파손 SFX·연출 구독 지점
             Destroy(gameObject);
         }

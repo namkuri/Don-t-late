@@ -95,6 +95,14 @@ namespace DontLate
             _gameState.placedDeliveries.RemoveAll(p => p.orderId == orderId);
         }
 
+        /// <summary>상자 파손 통지 (S-074 ③ — BoxDurability). 정산에서 실패로 청산되고 그날 재스폰이 막힌다.</summary>
+        public void ReportDestroyed(DeliveryOrderSO order)
+        {
+            if (order == null || _gameState.destroyedOrderIds.Contains(order.orderId)) return;
+            _gameState.destroyedOrderIds.Add(order.orderId);
+            UnplaceDelivery(order.orderId); // 패드 위에서 깨졌으면 배치도 무효
+        }
+
         public bool IsPlaced(int orderId) => _gameState.placedDeliveries.Exists(p => p.orderId == orderId);
 
         /// <summary>
@@ -106,6 +114,23 @@ namespace DontLate
             var summary = new DeliveryDaySummary();
             _settledDistricts.Clear(); // S-054 — 이번 정산에서 성공한 구역
             int penalty = _tuning != null ? _tuning.latePenalty : 500;
+
+            // S-074 ③ — 파손 건 선청산: 실패로 벌금. cargo에서 미리 빼서 아래 미배치 경로와
+            // 이중 가산을 막고, 픽업 전 파손(cargo 미소속)도 같은 경로로 잡는다.
+            foreach (int destroyedId in _gameState.destroyedOrderIds)
+            {
+                DeliveryOrderSO order = _gameState.dayOrders.Find(o => o != null && o.orderId == destroyedId);
+                if (order == null) continue;
+                _gameState.cargo.RemoveAll(o => o != null && o.orderId == destroyedId);
+                summary.FailCount++;
+                summary.PenaltyTotal += penalty;
+                _gameState.money -= penalty;
+                if (_gameState.money < 0) { _gameState.debt += -_gameState.money; _gameState.money = 0; }
+                _gameState.lateCount++;
+                MasteryProgress.Add(_gameState, -MasteryProgress.FAIL_LOSS);
+                WorldEvents.RaiseDeliveryFailed(DeliveryData.From(order));
+            }
+            _gameState.destroyedOrderIds.Clear();
 
             foreach (DeliveryOrderSO order in _gameState.cargo.ToArray())
             {

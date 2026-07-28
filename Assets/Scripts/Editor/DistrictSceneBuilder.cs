@@ -40,6 +40,11 @@ namespace DontLate.EditorTools
             // 매니저·세션 리셋 제외 — District엔 무대만. 상주 매니저(Core)가 처리한다.
             GreyboxStageBuilder.BuildStageContent(gameState, tuning, order);
 
+            // S-074 ⑨ — 교차 도로가 x=0으로 오면서 기본 스폰(0,0,0)이 차도 정중앙이 됐다:
+            // 입장 즉시 교통사고 나던 것(실측 재현) — 스폰을 보도(x=-6)로 옮긴다.
+            GameObject playerGo = GameObject.Find("__gb_Player");
+            if (playerGo != null) playerGo.transform.position = new Vector3(-6f, 0.1f, 0f);
+
             (GameObject slotsRoot, List<Transform> buildingSlots, List<Transform> propSlots) = BuildSlots();
             AttachLayoutGenerator(slotsRoot, buildingSlots, propSlots, gameState);
 
@@ -56,13 +61,35 @@ namespace DontLate.EditorTools
                 new Vector3(-6f, 0f, -1.8f), gameState, 1500);
 
             // S-057 — 교차(Z) 골목 도로: 진행축과 직각으로 차가 관통한다. 보고 건너라.
+            // S-074 ⑨ — 도로를 슬롯 사이(x=0, 건물 슬롯 ±4 스킵됨)로 이설 + 횡단보도 + 신호등.
+            const float ROAD_X = 0f;
             Material road = GreyboxStageBuilder.GetOrCreateMaterial("CrossRoad", new Color(0.16f, 0.17f, 0.19f), false);
-            GameObject crossRoad = GreyboxStageBuilder.CreatePrimitive(PrimitiveType.Cube, "CrossRoad", new Vector3(2f, 0.01f, 0f));
+            GameObject crossRoad = GreyboxStageBuilder.CreatePrimitive(PrimitiveType.Cube, "CrossRoad", new Vector3(ROAD_X, 0.01f, 0f));
             Object.DestroyImmediate(crossRoad.GetComponent<Collider>());
             crossRoad.transform.localScale = new Vector3(4.2f, 0.02f, 20f);
             crossRoad.GetComponent<Renderer>().sharedMaterial = road;
-            GameObject trafficGo = GreyboxStageBuilder.CreateEmpty("Traffic", new Vector3(2f, 0f, 0f));
-            trafficGo.AddComponent<TrafficRoad>();
+
+            // 횡단보도 — 보행 구간(z -3~3)에 X방향 흰 줄 (그레이박스 텍스처 대용).
+            Material zebra = GreyboxStageBuilder.GetOrCreateMaterial("Crosswalk", new Color(0.92f, 0.93f, 0.95f), false);
+            GameObject zebraRoot = GreyboxStageBuilder.CreateEmpty("Crosswalk", new Vector3(ROAD_X, 0f, 0f));
+            for (int stripe = 0; stripe < 7; stripe++)
+            {
+                GameObject line = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                line.name = "Stripe_" + stripe;
+                line.transform.SetParent(zebraRoot.transform, false);
+                line.transform.localPosition = new Vector3(0f, 0.025f, -2.7f + stripe * 0.9f);
+                line.transform.localScale = new Vector3(3.6f, 0.015f, 0.4f);
+                Object.DestroyImmediate(line.GetComponent<Collider>());
+                line.GetComponent<Renderer>().sharedMaterial = zebra;
+            }
+
+            TrafficLight signal = BuildTrafficLight(new Vector3(ROAD_X + 2.6f, 0f, -3.4f));
+            GameObject trafficGo = GreyboxStageBuilder.CreateEmpty("Traffic", new Vector3(ROAD_X, 0f, 0f));
+            TrafficRoad trafficRoad = trafficGo.AddComponent<TrafficRoad>();
+            SerializedObject trafficSo = new SerializedObject(trafficRoad);
+            trafficSo.FindProperty("_signal").objectReferenceValue = signal;
+            trafficSo.FindProperty("_stopLineZ").floatValue = 4.2f; // 횡단보도(±3.1) 앞
+            trafficSo.ApplyModifiedPropertiesWithoutUndo();
 
             // S-054b 엣지 워크 — 좌=이전 동네/캠프, 우=다음 동네(미해금이면 안내 후 차단).
             EdgeGateBuildKit.BuildGate("EdgeGate_Prev", new Vector3(-19f, 0f, 0f), DontLate.DistrictEdgeGate.Direction.Prev, gameState);
@@ -71,6 +98,53 @@ namespace DontLate.EditorTools
             EditorSceneManager.SaveScene(scene, DISTRICT_PATH);
             Debug.Log("[DistrictSceneBuilder] District.unity 조립 완료 — 매니저 제외 무대 + 슬롯 마커 "
                     + (BUILDING_SLOTS + PROP_SLOTS) + "개.");
+        }
+
+        // S-074 ⑨ — 그레이박스 신호등: 기둥 + 등2(적 위·녹 아래). 등화 전환은 TrafficLight가 MPB로.
+        private static TrafficLight BuildTrafficLight(Vector3 position)
+        {
+            GameObject root = GreyboxStageBuilder.CreateEmpty("TrafficLight", position);
+
+            Material pole = GreyboxStageBuilder.GetOrCreateMaterial("LampPole", new Color(0.22f, 0.23f, 0.26f), false);
+            GameObject poleGo = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            poleGo.name = "Pole";
+            poleGo.transform.SetParent(root.transform, false);
+            poleGo.transform.localPosition = new Vector3(0f, 1.6f, 0f);
+            poleGo.transform.localScale = new Vector3(0.16f, 3.2f, 0.16f);
+            Object.DestroyImmediate(poleGo.GetComponent<Collider>());
+            poleGo.GetComponent<Renderer>().sharedMaterial = pole;
+
+            GameObject head = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            head.name = "Head";
+            head.transform.SetParent(root.transform, false);
+            head.transform.localPosition = new Vector3(0f, 3.35f, 0f);
+            head.transform.localScale = new Vector3(0.42f, 0.9f, 0.3f);
+            Object.DestroyImmediate(head.GetComponent<Collider>());
+            head.GetComponent<Renderer>().sharedMaterial = pole;
+
+            Material lampBase = GreyboxStageBuilder.GetOrCreateMaterial("SignalLamp", Color.gray, true); // 이미시브 지원
+            Renderer red = MakeLamp(root.transform, "RedLamp", new Vector3(0f, 3.55f, -0.18f), lampBase);
+            Renderer green = MakeLamp(root.transform, "GreenLamp", new Vector3(0f, 3.15f, -0.18f), lampBase);
+
+            TrafficLight light = root.AddComponent<TrafficLight>();
+            SerializedObject so = new SerializedObject(light);
+            so.FindProperty("_redLamp").objectReferenceValue = red;
+            so.FindProperty("_greenLamp").objectReferenceValue = green;
+            so.ApplyModifiedPropertiesWithoutUndo();
+            return light;
+        }
+
+        private static Renderer MakeLamp(Transform parent, string name, Vector3 localPos, Material material)
+        {
+            GameObject lamp = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            lamp.name = name;
+            lamp.transform.SetParent(parent, false);
+            lamp.transform.localPosition = localPos;
+            lamp.transform.localScale = Vector3.one * 0.3f;
+            Object.DestroyImmediate(lamp.GetComponent<Collider>());
+            Renderer renderer = lamp.GetComponent<Renderer>();
+            renderer.sharedMaterial = material;
+            return renderer;
         }
 
         // 짐·비콘 런타임 스포너 (S-015).
@@ -119,6 +193,7 @@ namespace DontLate.EditorTools
             for (int i = 0; i < BUILDING_SLOTS; i++)
             {
                 float x = buildingStart + i * SLOT_SPACING;
+                if (Mathf.Abs(x) < 5f) continue; // S-074 ⑨ — 교차 도로(x=0) 자리: 건물이 도로를 깔고 앉지 않게
                 buildings.Add(CreateSlot(root.transform, $"slot_building_{i + 1:00}", new Vector3(x, 0f, BUILDING_Z)));
             }
 

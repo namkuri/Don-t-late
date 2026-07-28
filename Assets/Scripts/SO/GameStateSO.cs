@@ -73,6 +73,8 @@ namespace DontLate
         /// <summary>당일 확정 배송 물량 (S-072 ⑩) — 캠프 첫 진입 때 확정, 정산 후에만 리셋.
         /// 씬 오브젝트가 아니라 여기 살아서 캠프 재진입(씬 리로드)에도 물량이 불변이다.</summary>
         public List<DeliveryOrderSO> dayOrders = new List<DeliveryOrderSO>();
+        /// <summary>파손된 주문 (S-074 ③) — 정산에서 실패로 청산하고 비운다. 상자 재스폰 금지 판정에도 쓴다.</summary>
+        public List<int> destroyedOrderIds = new List<int>();
         /// <summary>배송지에 버려둔 짐 위치 (S-068 ③) — 재입장 시 그 자리에 복원.</summary>
         public List<DroppedCargo> droppedCargo = new List<DroppedCargo>();
 

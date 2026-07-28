@@ -120,7 +120,7 @@ namespace DontLate.Tests
         [Test]
         public void GenerateOrder_먹자골목은_마감이_19시_이후로_밀린다_S035()
         {
-            _gameState.nextOrderSerial = 303; // %12==3 → 먹자골목 픽 · %3==0 → 오프셋 300분 (S-049 풀 12종 정합)
+            _gameState.nextOrderSerial = 57; // %17==6 → 먹자골목 픽 · %3==0 → 오프셋 300분 (S-074 풀 17종 정합)
             _gameState.minuteOfDay = 500f;    // 기본 마감 800(13.3시) → 저녁 19시(1140)로 상향
             DeliveryOrderSO order = Generate();
             Assert.AreEqual(DeliveryOrderSO.DISTRICT_FOODALLEY, order.district);

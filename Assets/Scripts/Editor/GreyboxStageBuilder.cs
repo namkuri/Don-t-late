@@ -170,8 +170,9 @@ namespace DontLate.EditorTools
             GameObject prefab = GetOrCreateLampPrefab();
             EnsureLampCone(); // StreetLampLight.prefab에 광추 Cone 보장(멱등) — 프리팹 링크로 전 인스턴스 전파
             int index = 1;
-            float[] front = { -16f, -8f, 0f, 8f, 16f };
-            float[] back = { -12f, -4f, 12f };
+            // S-074 ⑨ — x=0 램프를 도로(x -2.1~2.1) 밖으로 이설 (교차 도로가 가로등을 뚫던 것).
+            float[] front = { -16f, -8f, 5.4f, 12f, 18f };
+            float[] back = { -12f, -5.4f, 12f };
             foreach (float x in front) PlaceLamp(prefab, new Vector3(x, 0f, -2.4f), 0f, ref index);
             foreach (float x in back) PlaceLamp(prefab, new Vector3(x, 0f, 2.4f), 180f, ref index);
         }

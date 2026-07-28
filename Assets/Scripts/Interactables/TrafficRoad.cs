@@ -12,6 +12,10 @@ namespace DontLate
         [SerializeField] private float _maxInterval = 7f;
         [SerializeField] private float _carSpeed = 6.5f;
         [SerializeField] private float _halfSpan = 10f; // z 주행 반경
+        [Tooltip("이 도로의 신호등 (S-074 ⑨) — 비면 무신호 도로(기존 동작).")]
+        [SerializeField] private TrafficLight _signal;
+        [Tooltip("정지선 |z| — 횡단보도 앞.")]
+        [SerializeField] private float _stopLineZ = 4.5f;
 
         private float _timer;
         private int _direction = 1;
@@ -78,7 +82,7 @@ namespace DontLate
             car.transform.position = transform.position + new Vector3(0f, 0.55f, -_halfSpan * _direction);
             car.GetComponent<Renderer>().sharedMaterial = MaterialFor(Random.Range(0, CarColors.Length));
             car.gameObject.SetActive(true);
-            car.Launch(_direction * _carSpeed, _halfSpan);
+            car.Launch(_direction * _carSpeed, _halfSpan, _signal, _stopLineZ);
         }
     }
 }

@@ -10,16 +10,28 @@ namespace DontLate
     {
         private float _velocityZ;
         private float _killZ;
+        private TrafficLight _signal;   // S-074 ⑨ — 적신호면 정지선 앞 대기
+        private float _stopLineZ;
         private static float _lastHitTime = -10f; // 다중 히트 방지 (전 차량 공유)
 
-        public void Launch(float velocityZ, float halfSpan)
+        public void Launch(float velocityZ, float halfSpan, TrafficLight signal = null, float stopLineZ = 4.5f)
         {
             _velocityZ = velocityZ;
             _killZ = halfSpan + 2f;
+            _signal = signal;
+            _stopLineZ = stopLineZ;
         }
 
         private void Update()
         {
+            // S-074 ⑨ — 적신호: 진행 방향 앞 정지선(횡단보도 앞)에 걸리면 대기. 통과 후엔 무시.
+            if (_signal != null && !_signal.IsGreenForCars)
+            {
+                float stopZ = _velocityZ > 0f ? -_stopLineZ : _stopLineZ; // 진입 방향 쪽 정지선
+                float distance = (stopZ - transform.position.z) * Mathf.Sign(_velocityZ);
+                if (distance > 0f && distance < 1.2f) return; // 정지선 직전 — 대기
+            }
+
             transform.position += new Vector3(0f, 0f, _velocityZ * Time.deltaTime);
             // S-070 ① — 풀링: 파괴 대신 비활성 반납 (TrafficRoad가 재사용).
             if (Mathf.Abs(transform.position.z) > _killZ) gameObject.SetActive(false);
