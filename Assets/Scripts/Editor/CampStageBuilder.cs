@@ -38,7 +38,7 @@ namespace DontLate.EditorTools
             GreyboxStageBuilder.BuildGroundMist();
             GreyboxStageBuilder.BuildStarField(); // S-033 ① — 캠프 밤하늘 별 (밤 페이드는 StarField.cs 공용)
             GreyboxStageBuilder.BuildDeliveryCart(new Vector3(-4f, 0f, 1.2f)); // S-039 ④ — 캠프에서도 대차 운반
-            BuildTruck(truck, box, highlight);
+            BuildTruck(truck, box, highlight, gameState);
             System.Collections.Generic.List<PickupBox> boxes = BuildPickupBoxes(box, highlight, tuning);
             BuildOrderBoard(gameState, boxes);
             BuildDrink(drink, highlight);
@@ -61,7 +61,7 @@ namespace DontLate.EditorTools
         }
 
         // 트럭 = 소품 + 적재존(S-009). 짐칸 뒤에서 박스를 든 채 E → LoadingZone이 짐칸에 쌓는다.
-        private static void BuildTruck(Material material, Material boxMaterial, Material highlight)
+        private static void BuildTruck(Material material, Material boxMaterial, Material highlight, GameStateSO gameState)
         {
             GameObject root = GreyboxStageBuilder.CreateEmpty("Truck", new Vector3(9f, 0f, 1.8f));
 
@@ -80,6 +80,22 @@ namespace DontLate.EditorTools
             GameObject stack = new GameObject("StackRoot");
             stack.transform.SetParent(root.transform, false);
             stack.transform.localPosition = new Vector3(-1.6f, 0.5f, 0f);
+
+            // S-072 ⑦ — 트럭 출발 인터랙트: 트럭 앞쪽(운전석 방향) 트리거. 통짜 모델 교체를
+            // 감안해 Cab이 아니라 루트 기준 오프셋에 깐다. 해금(hasTruck) 전엔 포커스가 안 잡힌다.
+            GameObject depart = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            depart.name = "DepartPoint";
+            depart.transform.SetParent(root.transform, false);
+            depart.transform.localPosition = new Vector3(3.4f, 0.6f, -0.6f); // 앞범퍼 앞·보도 쪽
+            depart.transform.localScale = new Vector3(1.2f, 1.2f, 1.2f);
+            Object.DestroyImmediate(depart.GetComponent<Renderer>());       // 보이지 않는 트리거
+            BoxCollider departCollider = depart.GetComponent<BoxCollider>();
+            departCollider.isTrigger = true;
+            TruckDepartPoint departPoint = depart.AddComponent<TruckDepartPoint>();
+            GreyboxStageBuilder.SetReference(departPoint, "_gameState", gameState);
+            GreyboxStageBuilder.SetReference(departPoint, "_renderer", root.transform.Find("Cab").GetComponent<Renderer>());
+            GreyboxStageBuilder.SetReference(departPoint, "_normalMaterial", material);
+            GreyboxStageBuilder.SetReference(departPoint, "_highlightMaterial", highlight);
 
             LoadingZone zone = root.AddComponent<LoadingZone>();
             GreyboxStageBuilder.SetReference(zone, "_stackRoot", stack.transform);

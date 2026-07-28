@@ -142,8 +142,10 @@ namespace DontLate.EditorTools
                 TextAlignmentOptions.Top, FontStyles.Normal);
             AnchorCorner(label.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -78f), new Vector2(1000f, 72f)); // S-030 ②: 상단 중앙 — HUD 카드(좌상)와 중첩 소멸
 
-            CreateButton(root, "AdvanceButton", buttonText, target, font, CYAN,
-                new Vector2(0.5f, 0f), new Vector2(0f, 150f), new Vector2(600f, 104f), 40f);
+            // S-072 ⑥ — 캠프는 출발 버튼 없음: 출발은 엣지 워크(해금 구역 도보)나 트럭 인터랙트 몫.
+            if (sceneName != "Camp")
+                CreateButton(root, "AdvanceButton", buttonText, target, font, CYAN,
+                    new Vector2(0.5f, 0f), new Vector2(0f, 150f), new Vector2(600f, 104f), 40f);
 
             // S-062 ⑥: 캠프 = 정산 거점 — "하루 끝 — 집으로"(정산 패널) 블록 이식.
             // 배송지 FlowCanvas가 비활성이므로 정산 진입점은 캠프(또는 왼쪽 엣지로 무정산 귀가).

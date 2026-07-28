@@ -34,37 +34,45 @@ namespace DontLate
         {
             if (_gameState == null || _boxes == null) return;
 
-            // S-068 ③ — 하루 배송건 고정: 첫 진입 때 확정된 주문은 정산 전엔 바뀌지 않는다.
-            // 정산(daySettled) 후 재방문에만 전체 리롤. (구 IsConsumed 시간·이력 교체 폐지 — 재방문마다
-            // "완전 새 주문"으로 보이던 원흉. 마감 지난 건은 그대로 남아 지각 실패로 정산된다.)
-            bool reroll = _gameState.daySettled;
-            if (reroll) _gameState.daySettled = false;
-
-            foreach (PickupBox box in _boxes)
+            // S-072 ⑩ — 확정 사이클: 첫 진입 시 당일 물량 확정(GameState.dayOrders에 영속) → 스폰 →
+            // 배달 → 정산 → 리셋 → 다음 진입 때만 재확정. S-068 고정이 절반만 동작하던 원흉 =
+            // S-071 미해금 교체가 씬 오브젝트(비영속)에만 반영돼 재진입(씬 리로드)마다 재추첨되던 것.
+            if (_gameState.daySettled)
             {
-                if (box == null || box.Order == null) continue;
-                if (reroll)
+                _gameState.daySettled = false;
+                _gameState.dayOrders.Clear(); // 정산 = 하루 마감 — 물량 리셋
+            }
+
+            bool confirm = _gameState.dayOrders.Count == 0; // 첫 진입(또는 정산 후) — 이번에 확정한다
+            for (int i = 0; i < _boxes.Length; i++)
+            {
+                PickupBox box = _boxes[i];
+                if (box == null) continue;
+
+                if (confirm)
                 {
-                    DeliveryOrderSO fresh = GenerateOrder();
-                    box.SetOrder(fresh);
-                    Debug.Log("[주문판] 하루 마감 — 새 주문 → #" + fresh.orderId + " " + fresh.address
-                            + " (" + fresh.district + ")");
+                    DeliveryOrderSO order = box.Order;
+                    // 리롤(주문 소진 이력 有) 또는 미해금 구역(S-071 ① — 물리벽에 막혀 배달 불가)이면 재추첨.
+                    if (order == null || IsConsumed(order)
+                        || (_gameState.unlockedDistricts.Count > 0
+                            && !_gameState.unlockedDistricts.Contains(order.district)))
+                    {
+                        order = GenerateOrder();
+                        Debug.Log("[주문판] 당일 물량 확정 — 새 주문 → #" + order.orderId + " "
+                                + order.address + " (" + order.district + ")");
+                    }
+                    box.SetOrder(order);
+                    _gameState.dayOrders.Add(order);
                 }
-                // S-071 ① — 미해금 구역 주문은 물리벽에 막혀 배달 불가: 해금 구역으로 재추첨.
-                // (초기 에셋 주문이 해금 필터를 우회하던 구멍 — GenerateOrder 경로만 필터가 있었다.)
-                else if (_gameState.unlockedDistricts.Count > 0
-                         && !_gameState.unlockedDistricts.Contains(box.Order.district)
-                         && !_gameState.cargo.Contains(box.Order))
+                else
                 {
-                    string locked = box.Order.district;
-                    DeliveryOrderSO reachable = GenerateOrder();
-                    box.SetOrder(reachable);
-                    Debug.Log("[주문판] 미해금 구역(" + locked + ") 주문 교체 → #"
-                            + reachable.orderId + " " + reachable.address + " (" + reachable.district + ")");
+                    // 확정분 재배정 — 씬이 리로드돼도 물량은 GameState의 것 그대로.
+                    box.SetOrder(i < _gameState.dayOrders.Count ? _gameState.dayOrders[i] : null);
                 }
 
                 // 픽업(=적재 등록)해 들고 나간 건의 상자만 치운다 — 스캔만 한 건 그대로.
-                box.gameObject.SetActive(!_gameState.cargo.Contains(box.Order));
+                // (파손된 건도 cargo에 남아 있으므로 재등장하지 않고, 정산에서 실패로 청산된다.)
+                box.gameObject.SetActive(box.Order != null && !_gameState.cargo.Contains(box.Order));
             }
         }
 

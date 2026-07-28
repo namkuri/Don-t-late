@@ -51,28 +51,92 @@ namespace DontLate
 
         private void Update()
         {
-            if (_root == null || !_root.activeSelf) return;
-            // 닫기: ESC 또는 아무 곳 좌클릭 (열리게 한 클릭과 같은 프레임은 wasPressed 중복 없음 — 다음 클릭부터).
+            if (_root == null || !_root.activeSelf)
+            {
+                if (_aiming) EndAim();
+                return;
+            }
             var keyboard = UnityEngine.InputSystem.Keyboard.current;
             var mouse = UnityEngine.InputSystem.Mouse.current;
-            if ((keyboard != null && keyboard.escapeKey.wasPressedThisFrame)
-                || (mouse != null && mouse.leftButton.wasPressedThisFrame && !_justOpened))
+
+            // S-072 ② — 바코드 호버 = 폰 스캔 조준 모드. 마우스 오프셋(-1..1)을 폰 카메라 뷰에 중계한다.
+            bool overBarcode = false;
+            Vector2 aimOffset = Vector2.zero;
+            if (mouse != null && _barcodeRoot != null)
+            {
+                Vector2 screen = mouse.position.ReadValue();
+                if (RectTransformUtility.RectangleContainsScreenPoint(_barcodeRoot, screen))
+                {
+                    overBarcode = true;
+                    RectTransformUtility.ScreenPointToLocalPointInRectangle(_barcodeRoot, screen, null, out Vector2 local);
+                    Rect rect = _barcodeRoot.rect;
+                    aimOffset = new Vector2(
+                        Mathf.Clamp((local.x - rect.center.x) / (rect.width * 0.5f), -1f, 1f),
+                        Mathf.Clamp((local.y - rect.center.y) / (rect.height * 0.5f), -1f, 1f));
+                }
+            }
+            if (overBarcode && !_aiming) BeginAim();
+            else if (!overBarcode && _aiming) EndAim();
+            if (_aiming && PhoneView.Instance != null) PhoneView.Instance.UpdateBarcodeAim(aimOffset);
+
+            // 닫기: ESC 또는 아무 곳 좌클릭 — 단 바코드 조준 중 좌클릭은 '스캔 촬영'이다 (S-072 ②·④).
+            bool click = mouse != null && mouse.leftButton.wasPressedThisFrame && !_justOpened;
+            if (_aiming && click)
+            {
+                if (PhoneView.Instance != null && PhoneView.Instance.TryShootBarcode(_order))
+                {
+                    EndAim();
+                    _root.SetActive(false); // 스캔 성립 = 송장 접기
+                }
+            }
+            else if ((keyboard != null && keyboard.escapeKey.wasPressedThisFrame) || click)
+            {
+                if (_aiming) EndAim();
                 _root.SetActive(false);
+            }
             _justOpened = false;
         }
 
         private bool _justOpened;
+        private bool _aiming;
+        private DeliveryOrderSO _order;
+        private Image _barcodeBackground; // 호버 하이라이트 대상 (바코드 밴드 배경)
+
+        private void BeginAim()
+        {
+            _aiming = true;
+            if (_barcodeBackground == null && _barcodeRoot != null)
+                _barcodeBackground = _barcodeRoot.GetComponent<Image>();
+            if (_barcodeBackground != null)
+                _barcodeBackground.color = new Color(0.78f, 1f, 0.96f, 1f); // 시안 틴트 — 조준 중
+            PhoneView.Instance?.OpenBarcodeAim(_order);
+        }
+
+        private void EndAim()
+        {
+            _aiming = false;
+            if (_barcodeBackground != null) _barcodeBackground.color = Color.white;
+            PhoneView.Instance?.CloseBarcodeAim();
+        }
 
         private void OnSceneLeaving(GameScene _)
         {
+            if (_aiming) EndAim();
             if (_root != null) _root.SetActive(false);
         }
+
+        /// <summary>송장이 떠 있는가 — 센서가 같은 클릭으로 재요청해 '닫자마자 재열림' 되는 것을 막는다 (S-072 ④).</summary>
+        public static bool IsOpen { get; private set; }
+
+        private void LateUpdate() => IsOpen = _root != null && _root.activeSelf;
 
         private void OnInvoiceRequested(DeliveryOrderSO order)
         {
             if (_root == null || order == null) return;
             _root.SetActive(true);
             _justOpened = true;
+            _order = order;
+            IsOpen = true;
 
             if (_customerLabel != null)
                 _customerLabel.text = "주문자  " + Customers[Mathf.Abs(order.orderId) % Customers.Length];
@@ -101,17 +165,32 @@ namespace DontLate
         }
 
         // orderId 유래 결정적 줄무늬 — 이미지 바 재사용(풀), 폰트 무관.
+        // S-072 ① — 2패스 정규화: 랜덤 폭 총합을 밴드 폭에 맞게 스케일 (오버플로 바를 숨기던
+        // 구현이 '바코드 짤림'의 원흉 — 활성 직후 rect.width 미계산 프레임도 폴백으로 방어).
         private void RebuildBarcode(int orderId)
         {
             if (_barcodeRoot == null) return;
             float width = _barcodeRoot.rect.width;
-            int bars = 24;
+            if (width <= 1f) width = 548f; // 활성 첫 프레임 레이아웃 미계산 폴백 (송장지 620 - 여백 72)
+
+            const int bars = 24;
+            const float PAD = 10f;
+            var widths = new float[bars];
+            var gaps = new float[bars];
+            float total = 0f;
             uint seed = (uint)(orderId * 2654435761u + 12345u);
-            float x = 0f;
             for (int i = 0; i < bars; i++)
             {
                 seed = seed * 1664525u + 1013904223u;
-                float barWidth = 3f + (seed >> 8) % 7;
+                widths[i] = 3f + (seed >> 8) % 7;
+                gaps[i] = 2f + (seed >> 16) % 4;
+                total += widths[i] + (i < bars - 1 ? gaps[i] : 0f);
+            }
+
+            float scale = (width - PAD * 2f) / total;
+            float x = PAD;
+            for (int i = 0; i < bars; i++)
+            {
                 Image bar = i < _barcodeRoot.childCount
                     ? _barcodeRoot.GetChild(i).GetComponent<Image>()
                     : CreateBar();
@@ -120,9 +199,9 @@ namespace DontLate
                 rect.anchorMax = new Vector2(0f, 1f);
                 rect.pivot = new Vector2(0f, 0.5f);
                 rect.anchoredPosition = new Vector2(x, 0f);
-                rect.sizeDelta = new Vector2(barWidth, 0f);
-                bar.gameObject.SetActive(x + barWidth <= width);
-                x += barWidth + 2f + (seed >> 16) % 4;
+                rect.sizeDelta = new Vector2(widths[i] * scale, 0f);
+                bar.gameObject.SetActive(true);
+                x += (widths[i] + gaps[i]) * scale;
             }
         }
 

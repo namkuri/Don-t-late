@@ -20,6 +20,8 @@ namespace DontLate
         public static bool IsOpen { get; private set; }
         /// <summary>가구 배치 대기 id — Home 씬 HomeFurniturePlacer가 소비 (S-019 ④).</summary>
         public static string PendingPlacementId;
+        /// <summary>UI 층 내 직접 참조용 (S-072 ② — 송장 바코드 조준. BagView와 같은 선례).</summary>
+        public static PhoneView Instance { get; private set; }
 
         private enum Screen { Home, Delivery, Music, Invest, Bank, Furniture, Call, Map, Shop, Social, Weather }
 
@@ -124,6 +126,7 @@ namespace DontLate
 
         private void Awake()
         {
+            Instance = this;
             _toggle = new InputAction("PhoneToggle", InputActionType.Button);
             _toggle.AddBinding("<Keyboard>/tab");
             _close = new InputAction("PhoneClose", InputActionType.Button); // S-032 ③
@@ -201,19 +204,19 @@ namespace DontLate
                     ? _gameState.currentDistrict : "물류캠프";
                 _selectedPin = -1;
                 ApplyPanelLayout();
-                if (!_open) OnToggle(default);   // 지도 앱 자동 오픈
+                if (!_open) TogglePanel();   // 지도 앱 자동 오픈
                 ShowScreen(Screen.Map);
             }
             else if (wasTravel)
             {
                 ApplyPanelLayout();              // 패널 원복
-                if (_open) OnToggle(default);    // Travel 이탈 = 지도 수납
+                if (_open) TogglePanel();    // Travel 이탈 = 지도 수납
                 else if (_slide == null && _panel != null)
                     _panel.anchoredPosition = new Vector2(_panel.anchoredPosition.x, HiddenY);
                 if (_screen == Screen.Map) ShowScreen(Screen.Home);
             }
 
-            if (_inTitle && _open) OnToggle(default); // 타이틀 복귀 시 강제 수납
+            if (_inTitle && _open) TogglePanel(); // 타이틀 복귀 시 강제 수납
             _prevScene = scene;
         }
 
@@ -239,12 +242,27 @@ namespace DontLate
 
         private void OnClosePressed(InputAction.CallbackContext _)
         {
-            if (_open) OnToggle(default); // 열려 있을 때만 닫는다 (S-032 ③)
+            if (_open) TogglePanel(); // 열려 있을 때만 닫는다 (S-032 ③)
         }
 
         private void OnToggle(InputAction.CallbackContext _)
         {
             if (_inTitle && !_open) return; // S-032 ① — 타이틀에선 열지 않는다
+
+            // S-072 ③ — 계층 내비: 앱 화면에서 Tab = 홈으로, 홈에서 Tab = 폰 닫기.
+            // (Travel은 지도가 홈 역할이라 제외 — 기존처럼 바로 수납.)
+            if (_open && !_inTravel && _screen != Screen.Home)
+            {
+                ShowScreen(Screen.Home);
+                return;
+            }
+
+            TogglePanel();
+        }
+
+        // 실제 개폐 — 내부 자동 오픈/수납(Travel 진입·이탈 등)은 계층 내비를 거치지 않고 이걸 부른다.
+        private void TogglePanel()
+        {
             _open = !_open;
             IsOpen = _open;
             WorldAudioManager.Instance?.PlayPhoneToggleSfx(); // AU-008 — 개폐 공용
@@ -667,6 +685,141 @@ namespace DontLate
             scroll.content = listRect;
             scroll.horizontal = false;
             scroll.scrollSensitivity = 24f;
+
+            BuildBarcodeAimPanel(screen.transform); // S-072 ② — 송장 바코드 카메라 뷰
+        }
+
+        // ── S-072 ② — 바코드 스캔 카메라 뷰 (택배앱 상단 오버레이) ──
+        // 송장 바코드 호버 중에만 뜬다. 마우스 오프셋을 받아 뷰 속 바코드가 반대로 흐르고
+        // (카메라 조준감), 중앙에 맞으면 가이드가 민트로 바뀐다 — 그때 클릭이 촬영.
+
+        private GameObject _aimPanel;
+        private RectTransform _aimBarcode;
+        private Image _aimGuide;
+        private TMP_Text _aimHint;
+        private bool _aimCentered;
+        private const float AIM_CENTER_THRESHOLD = 0.35f;
+
+        private void BuildBarcodeAimPanel(Transform parent)
+        {
+            _aimPanel = new GameObject("BarcodeAimPanel", typeof(RectTransform));
+            _aimPanel.transform.SetParent(parent, false);
+            RectTransform panelRect = (RectTransform)_aimPanel.transform;
+            panelRect.anchorMin = new Vector2(0f, 1f);
+            panelRect.anchorMax = new Vector2(1f, 1f);
+            panelRect.pivot = new Vector2(0.5f, 1f);
+            panelRect.offsetMin = new Vector2(6f, -170f);
+            panelRect.offsetMax = new Vector2(-6f, -6f);
+            Image bg = _aimPanel.AddComponent<Image>(); // 카메라 파인더 — 검은 유리
+            bg.color = new Color(0.03f, 0.04f, 0.06f, 0.97f);
+            _aimPanel.AddComponent<RectMask2D>();       // 흐르는 바코드가 파인더 밖으로 안 샌다
+
+            // 중앙 조준 가이드 (색 = 조준 판정 피드백).
+            _aimGuide = new GameObject("Guide", typeof(RectTransform)).AddComponent<Image>();
+            _aimGuide.transform.SetParent(_aimPanel.transform, false);
+            _aimGuide.color = new Color(1f, 0.624f, 0.271f, 0.28f);
+            _aimGuide.raycastTarget = false;
+            RectTransform guideRect = _aimGuide.rectTransform;
+            guideRect.anchorMin = guideRect.anchorMax = guideRect.pivot = new Vector2(0.5f, 0.5f);
+            guideRect.sizeDelta = new Vector2(150f, 78f);
+
+            // 뷰 속 바코드 (줄무늬 컨테이너 — 마우스 오프셋의 반대로 움직인다).
+            _aimBarcode = new GameObject("AimBarcode", typeof(RectTransform)).GetComponent<RectTransform>();
+            _aimBarcode.SetParent(_aimPanel.transform, false);
+            _aimBarcode.anchorMin = _aimBarcode.anchorMax = _aimBarcode.pivot = new Vector2(0.5f, 0.5f);
+            _aimBarcode.sizeDelta = new Vector2(130f, 58f);
+
+            _aimHint = MakeText(_aimPanel.transform, "AimHint", "바코드를 중앙에 맞춰 클릭", 20f,
+                new Color(1f, 0.624f, 0.271f), TextAlignmentOptions.Bottom);
+            Anchor(_aimHint.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0f, 6f), 28f);
+            ((RectTransform)_aimHint.transform).anchoredPosition = new Vector2(0f, 6f);
+
+            _aimPanel.SetActive(false);
+        }
+
+        public void OpenBarcodeAim(DeliveryOrderSO order)
+        {
+            if (order == null || _aimPanel == null) return;
+            if (!_open && !_inTitle) TogglePanel();     // 폰 자동 오픈
+            if (_screen != Screen.Delivery) ShowScreen(Screen.Delivery);
+            _aimPanel.SetActive(true);
+            _aimCentered = false;
+            RebuildAimBarcode(order.orderId);
+        }
+
+        public void CloseBarcodeAim()
+        {
+            _aimCentered = false; // 조준 종료 = 판정 리셋 (구값 잔존으로 빗나간 촬영이 통과되는 것 방지)
+            if (_aimPanel != null) _aimPanel.SetActive(false);
+        }
+
+        public void UpdateBarcodeAim(Vector2 offset)
+        {
+            if (_aimBarcode == null || _aimPanel == null || !_aimPanel.activeSelf) return;
+            // 카메라를 움직이는 감각 — 뷰 속 바코드는 마우스 오프셋의 반대로 흐른다.
+            _aimBarcode.anchoredPosition = new Vector2(-offset.x * 90f, -offset.y * 34f);
+            _aimCentered = offset.magnitude < AIM_CENTER_THRESHOLD;
+            if (_aimGuide != null)
+                _aimGuide.color = _aimCentered
+                    ? new Color(0.208f, 0.878f, 0.784f, 0.34f)  // 민트 — 찍을 수 있다
+                    : new Color(1f, 0.624f, 0.271f, 0.28f);     // 앰버 — 더 중앙으로
+            if (_aimHint != null)
+                _aimHint.text = _aimCentered ? "지금! 클릭해서 촬영" : "바코드를 중앙에 맞춰 클릭";
+        }
+
+        /// <summary>조준 촬영 (송장 좌클릭). 중앙 판정 성공 시 운송장 등록까지 — true면 송장을 접는다.</summary>
+        public bool TryShootBarcode(DeliveryOrderSO order)
+        {
+            if (order == null) return false;
+            if (_aimPanel == null || !_aimPanel.activeSelf) return false; // 조준 중이 아니면 촬영 없음
+            if (!_aimCentered)
+            {
+                ShowWarn("⚠ 흔들렸다 — 바코드를 중앙에 맞춰라");
+                return false;
+            }
+            if (WorldDeliveryManager.Instance == null) return false;
+            if (!WorldDeliveryManager.Instance.RegisterBarcode(order))
+                ShowWarn("⚠ " + Invoice(order.orderId) + " — 이미 등록된 운송장");
+            CloseBarcodeAim();
+            return true; // 중복이어도 촬영은 성립 — 송장을 접는다
+        }
+
+        // 뷰 속 바코드 줄무늬 — 송장과 같은 orderId 결정적 패턴(작게 16바).
+        private void RebuildAimBarcode(int orderId)
+        {
+            if (_aimBarcode == null) return;
+            const int bars = 16;
+            float width = _aimBarcode.sizeDelta.x;
+            var widths = new float[bars];
+            float total = 0f;
+            uint seed = (uint)(orderId * 2654435761u + 12345u);
+            for (int i = 0; i < bars; i++)
+            {
+                seed = seed * 1664525u + 1013904223u;
+                widths[i] = 3f + (seed >> 8) % 7;
+                total += widths[i] + 2f;
+            }
+            float scale = width / total;
+            float x = 0f;
+            for (int i = 0; i < bars; i++)
+            {
+                Image bar;
+                if (i < _aimBarcode.childCount) bar = _aimBarcode.GetChild(i).GetComponent<Image>();
+                else
+                {
+                    bar = new GameObject("Bar", typeof(RectTransform)).AddComponent<Image>();
+                    bar.transform.SetParent(_aimBarcode, false);
+                    bar.color = new Color(0.92f, 0.94f, 0.97f, 1f); // 파인더 속 밝은 줄무늬
+                    bar.raycastTarget = false;
+                }
+                var rect = bar.rectTransform;
+                rect.anchorMin = new Vector2(0f, 0f);
+                rect.anchorMax = new Vector2(0f, 1f);
+                rect.pivot = new Vector2(0f, 0.5f);
+                rect.anchoredPosition = new Vector2(x, 0f);
+                rect.sizeDelta = new Vector2(widths[i] * scale, 0f);
+                x += (widths[i] + 2f) * scale;
+            }
         }
 
         private void BuildMusicScreen()
@@ -968,7 +1121,7 @@ namespace DontLate
             PendingPlacementId = furnitureId;
             _furnitureLabel.text = "<color=#35e0c8>집 바닥 클릭=배치 · R=회전 · ESC=취소 — "
                 + KoreanName(furnitureId) + "</color>";
-            if (_open) OnToggle(default); // 폰 닫고 배치 모드
+            if (_open) TogglePanel(); // 폰 닫고 배치 모드
         }
 
         private string KoreanName(string furnitureId)
@@ -1023,6 +1176,10 @@ namespace DontLate
                 else if (!loadedIds.Contains(d.OrderId))
                 {
                     sb.Append(row).Append("  <color=#ff9f45>미상차</color>\n"); // 캠프에서 실어야 스폰된다
+                    // S-072 ⑨ — 구역 표시 회귀 수리: 미상차 행에도 목적지 구역을 보여준다
+                    // (상차완료 행에만 있던 └ 서브라인이 미상차에선 빠져 있었다).
+                    if (!string.IsNullOrEmpty(d.District))
+                        sb.Append("<size=78%><color=#8a93a8>  └ ").Append(d.District).Append("</color></size>\n");
                 }
                 else
                 {
@@ -1102,7 +1259,7 @@ namespace DontLate
         private void OnPhoneRang(PhoneCall call)
         {
             if (call.ScenarioId != "phone_grumpy") return; // Home 인트로 전화(자동 대화)는 제외
-            if (!_open) OnToggle(default);
+            if (!_open) TogglePanel();
             ShowScreen(Screen.Call);
         }
 
@@ -1111,7 +1268,7 @@ namespace DontLate
         private void OnMinigameEnded(MinigameResult _)
         {
             if (_screen != Screen.Call) return;
-            if (_open) OnToggle(default);
+            if (_open) TogglePanel();
             ShowScreen(Screen.Home); // 재오픈 시 묵은 수신 화면이 남지 않게
         }
 
@@ -1137,7 +1294,7 @@ namespace DontLate
 
             Button decline = MakeButton(screen.transform, "Decline", "거절", () =>
             {
-                if (_open) OnToggle(default);
+                if (_open) TogglePanel();
                 WorldMinigameManager.Instance?.DeclineCall();
             });
             RectTransform declineRect = (RectTransform)decline.transform;

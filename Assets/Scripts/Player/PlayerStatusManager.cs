@@ -183,8 +183,11 @@ namespace DontLate
             TuningConfigSO tuning = _hub.Tuning;
 
             var mouse = UnityEngine.InputSystem.Mouse.current;
-            bool leftClick = mouse != null && mouse.leftButton.wasPressedThisFrame && !PhoneView.IsOpen;
-            bool rightClick = mouse != null && mouse.rightButton.wasPressedThisFrame && !PhoneView.IsOpen;
+            // S-072 ⑧ — UI 위 클릭(가방 뒤로가기 등)이 던지기로 새던 버그: 포인터가 UI에 있으면 무시.
+            bool overUI = UnityEngine.EventSystems.EventSystem.current != null
+                && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject();
+            bool leftClick = mouse != null && mouse.leftButton.wasPressedThisFrame && !PhoneView.IsOpen && !overUI;
+            bool rightClick = mouse != null && mouse.rightButton.wasPressedThisFrame && !PhoneView.IsOpen && !overUI;
 
             // S-032 ④: 우클릭 = 드링크 마시기 · 좌클릭 = 던지기(상자 우선, 없으면 드링크 — 택배와 동일 감각).
             if (rightClick && _heldDrink != null)

@@ -33,8 +33,13 @@ namespace DontLate
 
             // S-071 ② — 손이 빈 상태에서 포커스 상자를 좌클릭하면 송장 표시.
             // (들었을 땐 좌클릭=던지기, 음료 들었을 땐 음료 던지기 — 그 경로와 충돌하지 않는 조건만.)
+            // S-072 ⑤ — 폰이 열려 있어도 송장은 뜬다 (PhoneView.IsOpen 조건 제거). 대신 포인터가
+            // UI 위면 무시(폰·가방 버튼 클릭이 송장으로 새는 것 방지), 송장이 이미 떠 있으면
+            // 그 클릭은 닫기 몫이라 재요청하지 않는다 (닫자마자 재열림 방지 — S-072 ④).
             var mouse = UnityEngine.InputSystem.Mouse.current;
-            if (mouse != null && mouse.leftButton.wasPressedThisFrame && !PhoneView.IsOpen
+            bool overUI = UnityEngine.EventSystems.EventSystem.current != null
+                && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject();
+            if (mouse != null && mouse.leftButton.wasPressedThisFrame && !overUI && !InvoiceView.IsOpen
                 && !_hub.Status.IsCarrying && !_hub.Status.IsHoldingDrink
                 && _current is PickupBox focusedBox && focusedBox.Order != null)
                 WorldEvents.RaiseInvoiceRequested(focusedBox.Order);
