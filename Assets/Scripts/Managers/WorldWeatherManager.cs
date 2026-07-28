@@ -160,6 +160,9 @@ namespace DontLate
         {
             Toggle(_rain, Weather == WeatherType.Rain); // Storm의 간헐 비는 StormRainCycle 코루틴이 굴린다
             Toggle(_snow, Weather == WeatherType.Snow);
+            // S-090 ① — 태풍 진입: 이전 날씨의 눈 입자를 즉시 걷는다 (Stop만으론 수명만큼 잔류).
+            if (Weather == WeatherType.Storm && _snow != null)
+                _snow.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             if (_hazeRoot != null) _hazeRoot.SetActive(Weather == WeatherType.Heat);
 
             // S-088 ⑤ — 태풍: 바람 방향 추첨(좌/우) + 간헐 비 사이클.
@@ -450,7 +453,10 @@ namespace DontLate
             var velocity = fall.velocityOverLifetime;
             velocity.enabled = WindX != 0f;
             velocity.space = ParticleSystemSimulationSpace.World;
+            // S-090 ② — 세 축이 같은 커브 모드여야 한다 (x만 TwoConstants면 에러 다량).
             velocity.x = new ParticleSystem.MinMaxCurve(WindX * 7f, WindX * 10f);
+            velocity.y = new ParticleSystem.MinMaxCurve(0f, 0f);
+            velocity.z = new ParticleSystem.MinMaxCurve(0f, 0f);
         }
 
         // ── S-089 ④ — 공중 바람 줄기: 태풍 시 스트레치 빌보드 파티클이 바람 방향으로 흐른다 ──
@@ -467,11 +473,11 @@ namespace DontLate
                 var main = _windStreaks.main;
                 main.startLifetime = new ParticleSystem.MinMaxCurve(1.2f, 2.2f);
                 main.startSpeed = 0f;
-                main.startSize = new ParticleSystem.MinMaxCurve(0.03f, 0.06f);
-                main.startColor = new Color(0.92f, 0.95f, 1f, 0.35f);
-                main.maxParticles = 120;
+                main.startSize = new ParticleSystem.MinMaxCurve(0.09f, 0.16f); // S-090 ④ — 가시성 강화
+                main.startColor = new Color(0.95f, 0.97f, 1f, 0.6f);
+                main.maxParticles = 160;
                 var emission = _windStreaks.emission;
-                emission.rateOverTime = 26f;
+                emission.rateOverTime = 42f;
                 var shape = _windStreaks.shape;
                 shape.shapeType = ParticleSystemShapeType.Box;
                 shape.scale = new Vector3(46f, 9f, 10f); // 공중 넓게
@@ -479,9 +485,11 @@ namespace DontLate
                 velocity.enabled = true;
                 velocity.space = ParticleSystemSimulationSpace.World;
                 velocity.x = new ParticleSystem.MinMaxCurve(11f, 17f); // 방향은 아래 스케일로
+                velocity.y = new ParticleSystem.MinMaxCurve(0f, 0f);   // S-090 ② — 축 모드 통일
+                velocity.z = new ParticleSystem.MinMaxCurve(0f, 0f);
                 var renderer = go.GetComponent<ParticleSystemRenderer>();
                 renderer.renderMode = ParticleSystemRenderMode.Stretch; // 속도 방향으로 길쭉 — 바람 줄기
-                renderer.velocityScale = 0.28f;
+                renderer.velocityScale = 0.5f; // S-090 ④ — 더 길게
                 renderer.material = MakeParticleMaterial(new Color(0.92f, 0.95f, 1f, 0.35f));
             }
             if (_windStreaks == null) return;
@@ -489,6 +497,8 @@ namespace DontLate
             {
                 var velocity = _windStreaks.velocityOverLifetime;
                 velocity.x = new ParticleSystem.MinMaxCurve(WindX * 11f, WindX * 17f); // 추첨 방향 반영
+                velocity.y = new ParticleSystem.MinMaxCurve(0f, 0f);
+                velocity.z = new ParticleSystem.MinMaxCurve(0f, 0f);
                 _windStreaks.Play();
             }
             else _windStreaks.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);

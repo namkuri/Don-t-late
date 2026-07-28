@@ -237,6 +237,24 @@ namespace DontLate
             Destroy(label.gameObject);
         }
 
+        // S-090 ③ — 금액 롤링 카운터.
+        private Coroutine _moneyRoll;
+
+        private System.Collections.IEnumerator RollMoney(int from, int to)
+        {
+            const float DURATION = 0.4f;
+            float t = 0f;
+            while (t < DURATION && _moneyLabel != null)
+            {
+                t += Time.unscaledDeltaTime;
+                int value = Mathf.RoundToInt(Mathf.Lerp(from, to, Mathf.Clamp01(t / DURATION)));
+                _moneyLabel.text = "₩" + value.ToString("N0");
+                yield return null;
+            }
+            if (_moneyLabel != null) _moneyLabel.text = "₩" + to.ToString("N0");
+            _moneyRoll = null;
+        }
+
         // S-088 ③ — 돈 증가 펀치: 순간 확대+민트 플래시 후 원복.
         private System.Collections.IEnumerator PunchLabel(TMP_Text label)
         {
@@ -320,9 +338,13 @@ namespace DontLate
             if (_gameState == null) return;
             if (_moneyLabel != null && _gameState.money != _shownMoney)
             {
-                bool increased = _gameState.money > _shownMoney && _shownMoney != int.MinValue;
+                bool first = _shownMoney == int.MinValue;
+                bool increased = !first && _gameState.money > _shownMoney;
+                int from = first ? _gameState.money : _shownMoney;
                 _shownMoney = _gameState.money;
-                _moneyLabel.text = $"₩{_gameState.money:N0}";
+                // S-090 ③ — 금액 롤링: 이전 표시값에서 새 값으로 촤르르 (가감 공통 0.4s).
+                if (_moneyRoll != null) StopCoroutine(_moneyRoll);
+                _moneyRoll = StartCoroutine(RollMoney(from, _gameState.money));
                 if (increased) StartCoroutine(PunchLabel(_moneyLabel)); // S-088 ③ — 증가 순간 커졌다 원복
             }
             if (_debtLabel != null && _gameState.debt != _shownDebt)
