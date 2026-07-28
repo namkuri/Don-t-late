@@ -2026,3 +2026,26 @@ MDA 판정 (D-070): **A2 강화** — ①해금 순간의 명시적 보상 연�
   ② 팡파레 SFX 소켓(sfx_fanfare — 클립 도착 전엔 정산 상행음 폴백). AU-021로 정수님 팡파레 발주.
 - 수용기준: 해금 정산에서 콘페티 분출·팡파레 재생 실측·캡처.
 MDA 판정 (D-070): **A2 강화** — 개척 보상의 정점 연출 (JUICE 축).
+
+### 결과 (S-085) · 2026-07-28 23:57 (리드 43분 — 이 중 ~40분 Unity 에디터 미응답 대기)
+
+원인 확정: QualitySettings — 레벨0=Mobile(customRP=`Mobile_RPAsset`→Mobile_Renderer,
+`m_RendererFeatures: []`), 레벨1=PC(`PC_RPAsset`→PC_Renderer, Pixelate FullScreenPass 보유).
+`m_PerPlatformDefaultQuality: WebGL: 0` → WebGL 빌드는 Pixelate 피처 없는 Mobile_Renderer로
+부팅 → 픽셀화 소멸(에디터·Standalone은 레벨1이라 정상).
+
+수리: `CoreBootstrap`에 `[RuntimeInitializeOnLoadMethod(BeforeSceneLoad)] ForcePixelQualityLevel` —
+부팅 즉시 "PC" 레벨을 **이름으로** 찾아 `SetQualityLevel(idx, true)` 강제. URP는 레벨별 파이프라인
+에셋을 쓰므로 레벨 스왑 = 활성 파이프라인 스왑 = Pixelate 부활. ProjectSettings 무수정(D-032 준수) —
+런타임 강제. 에디터·Standalone은 이미 PC라 no-op, WebGL만 Mobile→PC로 플립.
+
+검증(에디터):
+- 컴파일 ○ · 콘솔 error/warning 0 ○.
+- exec 메커니즘 증명: `SetQualityLevel(0)` → 활성 파이프라인 = `Mobile_RPAsset`; "PC" 레벨 →
+  `PC_RPAsset`. `SetQualityLevel`이 런타임에 활성 RenderPipelineAsset을 실제 스왑함을 확인.
+- Play(Standalone 타겟): `names`가 타겟별 필터로 [PC]만 노출 → PC=idx0. **이름 매칭이라 재인덱싱에
+  안전**(인덱스 하드코딩이면 깨졌을 것). 활성=`PC_RPAsset` · 콘솔 0 · 렌더 정상.
+- ⚠ 에디터·Standalone은 이미 PC=no-op라 WebGL 룩 자체를 에디터에서 재현 불가.
+
+한계·핸드오프: 이 PC에 WebGL 빌드 모듈 미설치(`webglSupported=False`) → **WebGL 리빌드 + gh-pages
+재배포 + 브라우저 픽셀화 캡처**(수용기준 최종 판정)는 WebGL 모듈 보유 환경(남규) 핸드오프. 코드는 PR 납품.

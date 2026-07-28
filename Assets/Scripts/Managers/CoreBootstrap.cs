@@ -12,6 +12,25 @@ namespace DontLate
         [SerializeField] private GameStateSO _gameState;
         [SerializeField] private GameScene _firstScene = GameScene.Main;
 
+        // S-085: WebGL은 퀄리티 기본값이 Mobile 레벨(0)이라 Pixelate 렌더러 피처가 빠진
+        // Mobile_Renderer로 빌드된다(에디터·PC는 PC 레벨). URP는 레벨별 파이프라인 에셋을
+        // 쓰므로, 부팅 즉시 "PC" 레벨로 강제하면 파이프라인이 PC_Renderer로 스왑되어
+        // 픽셀화 풀스크린 패스가 전 플랫폼에서 산다. ProjectSettings 수정 없이 런타임 강제.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void ForcePixelQualityLevel()
+        {
+            const string TARGET = "PC";
+            string[] names = QualitySettings.names;
+            for (int i = 0; i < names.Length; i++)
+            {
+                if (names[i] != TARGET) continue;
+                if (QualitySettings.GetQualityLevel() != i)
+                    QualitySettings.SetQualityLevel(i, true); // applyExpensiveChanges: 파이프라인 재구성
+                return;
+            }
+            Debug.LogWarning("[CoreBootstrap] 'PC' 퀄리티 레벨을 찾지 못해 픽셀화 강제를 건너뜀.");
+        }
+
         private void Start()
         {
             // S-041: 대차는 몸으로 민다 — Player×CartWall 충돌 허용(무시 규칙 폐지).
