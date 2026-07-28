@@ -55,6 +55,10 @@ unity-cli exec 'UnityEngine.ScreenCapture.CaptureScreenshot("Screenshots/x.png")
 - **발주 커밋 ≠ 납품 커밋 (D-060 — 위반 이력 있음, 2026-07-28 CLAUDE.md 승격)**: 발주 접수 즉시
   대장(orders/*.md)에 발주만 append → `[발주] S-0XX: 제목` 커밋·push **먼저**(post-commit 훅 📦 알림 = 팀 착수 예고)
   → 그 다음 시공 → 결과+코드는 별도 납품 커밋. 관제 자기발주·급한 지시도 예외 없음.
+- **코드 반입은 PR 또는 main 커밋으로만** (2026-07-28 승격): 타인 코드를 파일 복사·`_intake/` 경유로
+  들여오지 않는다 — 동명 클래스 충돌·GUID 파손의 근원.
+- **발주 대장은 `planning/orders/*.md`에 append-only** (2026-07-28 승격): 발주·결과를 대장에 이어 쓴다 —
+  건별 개별 파일 생성 금지(리드타임 집계·훅 알림이 대장 구조에 걸려 있다).
 - 현재 브랜치 `feature/jjs`, 메인은 `main`.
 
 ## 코드 규칙 요약 (상세는 code-rules 문서)
