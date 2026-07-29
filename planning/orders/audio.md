@@ -677,6 +677,18 @@ L129 직접 ++ 후 L130 Raise가 자기 구독 핸들러(L144 OnDeliveryFailed)�
 
 수용기준: District에서 차에 치일 때 1회 재생 · 셀프검증 · 브랜치→PR.
 
+### 결과 (AU-020) · 2026-07-29 (정수 공장 · PR 예정 feature/jjs-sfx-car-crash)
+
+**셀프검증** — 컴파일/임포트 OK · 콘솔 에러·워닝 **0** · 클립 로드 실증(아래).
+
+- 생성: `--no-anchors` 비토이톤(충격음 vs 토이 앵커 충돌 — box_damage 선례). 스키드→임팩트 순서 프롬프트, 요청 1.4s.
+  3 take(seed 411312833/923410764/1537929964) → **Director 청취 판정 take1 채택**(1.02s 표준). ⚠ SFX seed 미수용 → 로컬 기록.
+- 후공정: stereo→mono → 트림(≤-40dBFS) → 피크 -1.0dB(트랜지언트 peak 한계) → 페이드(in 2ms/out 20ms). 최종 1.02s 모노 · rms -11.9dB.
+- 임포트 실측: `sfx_car_crash.wav` len 1.02s · 1ch(forceMono) · 44100 · Vorbis q0.7 · DecompressOnLoad — SFX 규격 정합.
+- 배선: 소켓 `_sfxCarCrash` 기시공(S-066 ③) → `TrafficCar` 치임 시 `PlayCarCrashSfx()`. CoreSceneBuilder `LoadSfx("sfx_car_crash")` 경로 resolve 확인(ok 1.02s·mono) → Core 재빌드 시 자동 배선.
+- ⚠ 인게임 실발화(District 차 치임 1회 재생)는 소켓 배선이 CoreSceneBuilder에 있어 **Core 재빌드 후** 확인 필요 — 남규 실플레이 최종 권장.
+- 라이선스: CREDITS.md + assets_manifest.md LICENSE 표 등재(2026-07-29). 잔여(관제): BOM §8 SFX 행 `sfx_car_crash` 추가.
+
 ---
 
 ### 결과 · ① 날씨 앰비언스 3종 · 2026-07-27 (정수 공장 · 리드 ~50분)
