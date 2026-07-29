@@ -191,3 +191,9 @@
 | ui_start_button.png | (원명 run_button.png) `Assets/Art/UI/` | ChatGPT 생성(민지·구두 계약 2026-07-22) | 산출물 권리 사용자 귀속·상업 가능(OpenAI 약관) | 2026-07-22 |
 | ui_phone_frame.png | 폰 겉면 프레임 (민트) | ChatGPT 생성 (민지 · 원명 mint_phone.png — UI 구두 계약 라인) | 상업 사용 가능 | 2026-07-23 |
 | ui_gauge_fill.png | 게이지 fill용 4×4 순백 사각 `Assets/Art/UI/` | CoreSceneBuilder 코드 자동 생성 (S-070 ② — 외부 소스 없음) | 자체 생성물 — 제약 없음 | 2026-07-28 |
+| Assets/Art/Props/fur_bed.fbx | 민지 A-008 (_intake/art/Trellis2/Props/Bed_dafault_unity.fbx 스왑) | RunPod 셀프호스팅 TRELLIS (MIT) | S-109 |
+| Assets/Art/Props/fur_plant.fbx | 민지 A-008 (Pot_unity.fbx 스왑) | RunPod 셀프호스팅 TRELLIS (MIT) | S-109 |
+| Assets/Art/Props/fur_rug.fbx | 민지 A-008 (Rug_unity.fbx 스왑) | RunPod 셀프호스팅 TRELLIS (MIT) | S-109 |
+| Assets/Art/Props/fur_tv.fbx | 민지 A-008 (low_tv.fbx 스왑) | RunPod 셀프호스팅 TRELLIS (MIT) | S-109 |
+| Assets/Art/Backgrounds/fx_cloud_a.png | 민지 A-008 (ChatGPT/UI/cloud1.png 스왑) | OpenAI 약관 — Output 사용자 소유 | S-109 |
+| Assets/Art/Backgrounds/fx_cloud_b.png | 민지 A-008 (ChatGPT/UI/cloud2.png 스왑) | OpenAI 약관 — Output 사용자 소유 | S-109 |

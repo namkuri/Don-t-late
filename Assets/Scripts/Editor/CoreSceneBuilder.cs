@@ -1141,6 +1141,8 @@ namespace DontLate.EditorTools
                 so.size = items[i].size;
                 so.color = items[i].color;
                 so.wallMountable = items[i].wall;
+                // S-109 — 실아트 스왑 계약: Art/Props/<id>.fbx → 팩토리 프리팹이 있으면 배선 (없으면 색박스 폴백).
+                so.prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Auto/" + items[i].id + ".prefab");
                 EditorUtility.SetDirty(so);
                 catalog[i] = so;
             }

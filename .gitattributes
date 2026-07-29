@@ -1,2 +1,4 @@
 Assets/_intake/art/**/*.fbx filter=lfs diff=lfs merge=lfs -text
 Assets/_intake/art/**/*.glb filter=lfs diff=lfs merge=lfs -text
+Assets/Art/**/*.fbx filter=lfs diff=lfs merge=lfs -text
+Assets/Art/**/*.glb filter=lfs diff=lfs merge=lfs -text

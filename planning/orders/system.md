@@ -2705,3 +2705,20 @@ MDA 판정 (D-070): 강화 — 아트/오디오 실물 반입(A축)·소켓 계�
 - 수용기준: 스왑분 임포트·재조립 후 인게임 프리뷰 캡처 · unswap 원복 실증 1건 · 필요분
   목록 발신 · 대장(swap-ledger) 기록.
 MDA 판정 (D-070): 강화 — 실아트 반입(A축)·pull 파이프라인 회수.
+
+### 결과 (S-109) · 2026-07-29 23:59 (리드 20분)
+
+- **① 구조화 — scripts/art_swap.py 신설**: `swap <bom_id> <_intake경로>` / `unswap <bom_id>` /
+  `list` — 접두→Art 분류 자동(fur_→Props·fx_→Backgrounds·ui_→UI…), _intake 원본 보존(복사만),
+  [[swap-ledger]] append-only 이력. **unswap→재스왑 원복 사이클 실증**(fur_tv — 대장 기록).
+- **② 1차 스왑 6종**: fur_bed(Bed_dafault)·fur_plant(Pot)·fur_rug(Rug)·fur_tv(low_tv 선택 —
+  3후보 중) + fx_cloud_a/b(cloud1/2). 임포터 자동 처리 → Prefabs/Auto 4종 생성 →
+  **FurnitureSO.prefab 빌더 배선 1줄 보완**(소켓 체인의 마지막 결손) → tv/bed 배선 True 실측 ·
+  Home 시드 침대 실아트 렌더 캡처. 대용량 fbx는 Art도 LFS 추적 확장(_intake와 동일 oid — 스토리지 무증가).
+- **자기 적발 2건**: ⓐ 구름 Sprite 미로드 — spriteImportMode Multiple+슬라이스0(문서화된 실사고
+  재발, 임포터 Backgrounds 규칙 유래) → Single 교정, 씬 guid 직렬화 확인 ⓑ art_swap 출력 cp949.
+- **③ 필요분 산출 (이번 묶음 미충족 — 민지님 재요청 발신)**: fur_lamp · A-003 앱 아이콘 5종 ·
+  A-004 ui_map_town · A-005 fx_cloud_c·ui_map_pin·ui_map_here · A-007 아이콘 4종+9-슬라이스.
+- 검증: 임포트 ○ · 재조립 ○ · 배선 실측 ○ · 프리뷰 캡처. 폴리 예산 리포트는 임포터 경고 모드
+  (콘솔 0 — 데시메이트 자동 적용 확인은 개별 룩 판정 시). D-072 무배포.
+- 시트: [[routing/RT-20260729-22]] done.
