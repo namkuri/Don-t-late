@@ -80,6 +80,11 @@ namespace DontLate
 
         /// <summary>만난 NPC와 호감도 (S-079 ④) — 등재=만남. 증감은 NpcAffinityLedger 경유.</summary>
         public List<NpcAffinity> npcAffinities = new List<NpcAffinity>();
+
+        /// <summary>엔딩 1단 독백 재생됨 (S-104) — 빚 0 + Home 도착 1회. Camp 엔딩 시퀀스의 선행 조건.</summary>
+        public bool endingMonologuePlayed;
+        /// <summary>엔딩 시퀀스 완주됨 (S-104) — 재발동 방지.</summary>
+        public bool endingPlayed;
         /// <summary>배송지에 버려둔 짐 위치 (S-068 ③) — 재입장 시 그 자리에 복원.</summary>
         public List<DroppedCargo> droppedCargo = new List<DroppedCargo>();
 

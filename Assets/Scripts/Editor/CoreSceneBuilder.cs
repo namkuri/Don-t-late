@@ -160,6 +160,11 @@ namespace DontLate.EditorTools
                 weatherSerialized.ApplyModifiedPropertiesWithoutUndo();
             }
 
+            WorldEndingManager ending = managers.AddComponent<WorldEndingManager>(); // S-104
+            SetField(ending, "_gameState", gameState);
+            SetField(ending, "_npcs", GetOrCreateNpcCatalog());
+            SetField(ending, "_creditsView", managers.AddComponent<EndingCreditsView>());
+
             WorldJuiceManager juice = managers.AddComponent<WorldJuiceManager>(); // S-023
             SetField(juice, "_font", AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FONT_PATH));
 
