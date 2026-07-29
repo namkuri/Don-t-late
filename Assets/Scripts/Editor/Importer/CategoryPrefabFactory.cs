@@ -40,8 +40,8 @@ namespace DontLate.EditorTools
             instance.transform.position = Vector3.zero;
             instance.transform.rotation = Quaternion.identity;
 
-            // S-110 — 가구는 목표 치수 정규화 + 바닥중심 스냅 (AI 생성물 크기·원점 미조정 대응).
-            GameObject root = name.StartsWith("fur_") ? NormalizeFurniture(instance, name) : instance;
+            // S-110 가구 → S-111 전 모델 일반화: 목표 치수 정규화 + 바닥중심 스냅 (AI 생성물 크기·원점 미조정 대응).
+            GameObject root = Normalize(instance, name);
 
             AttachFootprintCollider(root);
 
@@ -50,11 +50,12 @@ namespace DontLate.EditorTools
         }
 
         /// <summary>
-        /// S-110 — fur_* 정규화: FurnitureSO.size.y(인체 1.7u 기준 산정 실치수)로 스케일하고,
-        /// 결합 바운즈를 바닥중심 원점에 스냅한다(안전망). 원점 이탈은 경고 리포트 —
-        /// 아트 원본 교정(원점=바닥중심 규격)이 정도이고 스냅은 이중 방어일 뿐이다.
+        /// S-110→S-111 — 전 모델 정규화: 목표 전고(가구=FurnitureSO.size.y 우선, 그 외=ScaleTable
+        /// 키워드 표 — 인체 1.7u·문 2.1~2.4u 기준)로 스케일하고 결합 바운즈를 바닥중심 원점에
+        /// 스냅한다(안전망). 원점 이탈은 경고 리포트 — 아트 원본 교정이 정도, 스냅은 이중 방어.
+        /// 표에 없는 이름은 스케일 유지(스냅·경고만).
         /// </summary>
-        private static GameObject NormalizeFurniture(GameObject instance, string name)
+        private static GameObject Normalize(GameObject instance, string name)
         {
             Bounds bounds = CombinedBounds(instance);
             if (bounds.size.y < 0.001f) return instance;
@@ -64,7 +65,10 @@ namespace DontLate.EditorTools
                 Debug.LogWarning($"[프리팹팩토리] {name} 원점 이탈 — minY={bounds.min.y:0.00} (규격: 원점=바닥중심). 바닥 스냅 안전망 적용했으나 원본 교정 권장.");
 
             var so = AssetDatabase.LoadAssetAtPath<FurnitureSO>($"Assets/Data/Furniture/{name}.asset");
-            float scale = so != null && so.size.y > 0.01f ? so.size.y / bounds.size.y : 1f;
+            float target = so != null && so.size.y > 0.01f ? so.size.y : ScaleTable.TargetHeight(name);
+            float scale = target > 0.01f ? target / bounds.size.y : 1f;
+            if (target > 0.01f)
+                Debug.Log($"[프리팹팩토리] {name} 스케일 캘리브레이션 — 실측고 {bounds.size.y:0.00}u → 목표 {target:0.0}u (×{scale:0.000})");
             instance.transform.localScale = Vector3.one * scale;
 
             GameObject wrapper = new GameObject(name);

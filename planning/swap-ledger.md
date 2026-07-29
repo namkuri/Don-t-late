@@ -14,3 +14,5 @@
 | 2026-07-30 00:22 | unswap | fur_plant | Assets/Art/Props/fur_plant.fbx 제거 -> 코드 폴백 |
 | 2026-07-30 00:22 | unswap | fur_rug | Assets/Art/Props/fur_rug.fbx 제거 -> 코드 폴백 |
 | 2026-07-30 00:22 | unswap | fur_tv | Assets/Art/Props/fur_tv.fbx 제거 -> 코드 폴백 |
+| 2026-07-30 00:41 | batch | (catalog x46) | Assets/_intake/art/Trellis2/Buildings -> Assets/Art/Buildings |
+| 2026-07-30 00:41 | batch | (catalog x36) | Assets/_intake/art/Trellis2/Props -> Assets/Art/Props |

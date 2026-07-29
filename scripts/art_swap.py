@@ -92,6 +92,29 @@ def cmd_unswap(bom_id):
     print("[art_swap] UNSWAP: %s removed -> code fallback (rebuild may be needed)" % rel)
 
 
+
+def cmd_batch(intake_folder, art_category):
+    """폴더 일괄 반입 (카탈로그 — 파일명 유지). 예: batch Assets/_intake/art/Trellis2/Props Props"""
+    src_dir = os.path.join(ROOT, intake_folder)
+    if not os.path.isdir(src_dir):
+        sys.exit("[art_swap] 폴더 없음: " + intake_folder)
+    if "_intake" not in intake_folder.replace("\\", "/"):
+        sys.exit("[art_swap] 소스는 _intake 경로만 허용")
+    dst_dir = os.path.join(ROOT, "Assets", "Art", art_category)
+    if not os.path.isdir(dst_dir):
+        os.makedirs(dst_dir)
+    count = 0
+    for name in sorted(os.listdir(src_dir)):
+        src = os.path.join(src_dir, name)
+        if not os.path.isfile(src) or name.endswith(".meta"):
+            continue
+        dst = os.path.join(dst_dir, name)
+        shutil.copy2(src, dst)
+        count += 1
+    ledger_append(u"batch | (catalog x%d) | %s -> Assets/Art/%s |" % (count, intake_folder.replace("\\", "/"), art_category))
+    print("[art_swap] BATCH: %d files %s -> Art/%s" % (count, intake_folder, art_category))
+
+
 def cmd_list():
     for _, folder in dict(PREFIX_DIR).items():
         pass
@@ -117,6 +140,8 @@ if __name__ == "__main__":
         cmd_swap(sys.argv[2], sys.argv[3])
     elif command == "unswap" and len(sys.argv) == 3:
         cmd_unswap(sys.argv[2])
+    elif command == "batch" and len(sys.argv) == 4:
+        cmd_batch(sys.argv[2], sys.argv[3])
     elif command == "list":
         cmd_list()
     else:
