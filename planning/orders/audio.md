@@ -763,3 +763,27 @@ L129 직접 ++ 후 L130 Raise가 자기 구독 핸들러(L144 OnDeliveryFailed)�
 - 톤: 잔잔·따뜻한 이별+감사 — 낮곡(메이저)보다 느리고, 밤곡(마이너)보다 온기. 60~90초 루프.
 - **파일명 = bgm_ending** (스왑 계약 — Audio/BGM/에 넣으면 관제가 라이브러리 Ending 슬롯 등재).
 - 소켓은 S-107이 기시공 예정 — 클립 도착 즉시 엔딩에서 자동 재생됩니다.
+## AU-021 · 발주 2026-07-29 00:40 → 정수 공장 (개척 해금 팡파레 SFX — S-086 소켓 충전 · Director 세션 내 승인)
+
+요구 (남규님 지시 S-086 ②): 정산에서 개척 해금/트럭 지급 라인이 찍히는 순간의 **빵빠레** 1클립.
+- 계약: `sfx_fanfare` (wav · Audio/SFX/). 길이 ~2.0s 권장 (상행 런 → 밝은 벨 착지).
+- 톤: 큐트 토이톤 유지 — `sfx_settle_ok`(상행 축하음)의 **증폭판**(개척 정점). settle_ok보다 크고 화려하게.
+  ⚠ 팡파레는 본질이 짧은 축하 멜로디 스팅 → GAME-SFX-RULES §3 "melody/jingle" 금지의 **의도적 예외**
+  (`sfx_scene_whoosh`의 riser 예외 선례). 토이 마림바+벨 계열이라 팔레트 정합.
+- 훅 기시공(S-086 · PR #21): WorldAudioManager `_sfxFanfare` 소켓 + `PlayFanfareSfx()`(도착 전 settle_ok
+  폴백) + CoreSceneBuilder `LoadSfx("sfx_fanfare")` 배선. 반입 즉시 자동 배선(#21 머지 후).
+- 후공정: 트림 → 피크 -1dB (트랜지언트라 peak 한계 예상, RMS는 SFX 타겟). 라이선스 CREDITS+manifest 관례대로.
+- ⚠ **프롬프트는 ElevenLabs 전송 전 Director 검토 게이트** (남규님 지시 2026-07-29).
+
+수용기준: 정산 개척 해금에서 1회 재생 · settle_ok보다 큰 축하감 · 셀프검증(임포트 에러 0·청취) · 브랜치→PR.
+
+### 결과 (AU-021) · 2026-07-29 01:10 (정수 공장)
+
+- 프롬프트: 대안 B(토이톤+칩튠 브라스 스탭) 승인 → API 450자 한계로 창작태그 트림(요소 전부 유지).
+  전송 태그: `triumphant toy fanfare, quick rising marimba run into a sparkling bell chime and final ding, bright chiptune brass stab, celebratory grand yet cute`.
+- 3 take 생성(seed 상이) → Director 청취 판정 **take1 채택**(차분·성김). take2(풀 2s·중밀도)·take3(짧고 조밀·펀치)는 미채택.
+- 후공정: 트림 → peak -1dB 정규화(트랜지언트라 peak 한계 · RMS→-14 게인보다 peak→-1 게인이 작아 규칙상 peak 한계 — 단일 게인 무클립) → 8ms 페이드. 최종 0.94s 모노.
+- 임포트 실측: `sfx_fanfare.wav` len 0.94s · ch 1(forceMono) · 44100 · Vorbis · DecompressOnLoad — SFX 임포터 규격 정합. 콘솔 에러/워닝 0.
+- 라이선스: CREDITS.md + assets_manifest.md LICENSE 표 등재(2026-07-29).
+- ⚠ 인게임 재생(PlayFanfareSfx)은 소켓이 S-086(PR #21)에 있어 이 브랜치(off main)에선 미검증 — #21 + AU-021 머지 후 CoreSceneBuilder `LoadSfx("sfx_fanfare")` 자동 배선 시 확인.
+- 잔여(관제): BOM §8 SFX 행 `sfx_fanfare` 추가(정수는 CREDITS+manifest만 — AU-011 선례).
