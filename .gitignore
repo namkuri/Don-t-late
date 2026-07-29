@@ -170,3 +170,7 @@ __pycache__/
 !/[Aa]ssets/[Aa]udio/SFX/*.wav
 !/[Aa]ssets/[Aa]udio/SFX/*.wav.meta
 ProfilerCaptures/
+
+# S-100 — PC별 생성물 (BuildVersionStamp가 굽는다)
+Assets/Resources/build_version.txt
+Assets/Resources/build_version.txt.meta

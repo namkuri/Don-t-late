@@ -306,6 +306,9 @@ namespace DontLate.EditorTools
             CoreBootstrap bootstrap = core.AddComponent<CoreBootstrap>();
             SetField(bootstrap, "_gameState", gameState);
             SetField(bootstrap, "_firstScene", GameScene.Main);
+
+            // S-100 ② — 우하단 버전 라벨 (BuildVersionStamp 산출물 표시 — 팀원 빌드 식별).
+            new GameObject("VersionLabel").AddComponent<VersionLabel>();
         }
 
         private static void BuildFadeCanvas()
