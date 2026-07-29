@@ -1111,8 +1111,15 @@ namespace DontLate.EditorTools
         private static FurnitureSO[] GetOrCreateFurnitureCatalog()
         {
             // 앞 4종 = 구매 그리드 노출분. fur_bed(S-031 ③)는 시드 전용 — 목록·배치 조회에만 잡힌다.
+            // S-114 — 앞 4종 = 구매 그리드 노출: 카탈로그 실물 가구(couch·desk·chair·clock — Prefabs/Auto
+            // 동명 프리팹 자동 연결)로 교체. 반려 재반입 대기분(fur_*)은 뒤(시드·조회 전용) 유지.
             (string id, string label, int price, Vector3 size, Color color, bool wall)[] items =
             {
+                ("couch", "소파", 6500, new Vector3(1.8f, 0.85f, 0.8f), new Color(0.55f, 0.42f, 0.35f), false),
+                ("desk", "책상", 5500, new Vector3(1.2f, 0.75f, 0.6f), new Color(0.5f, 0.38f, 0.28f), false),
+                ("chair", "의자", 3000, new Vector3(0.5f, 0.9f, 0.5f), new Color(0.4f, 0.32f, 0.26f), false),
+                ("teddy_bear", "곰인형", 1800, new Vector3(0.4f, 0.45f, 0.35f), new Color(0.75f, 0.6f, 0.45f), false),
+                ("clock", "시계", 2500, new Vector3(0.35f, 0.35f, 0.1f), new Color(0.85f, 0.8f, 0.7f), true),
                 ("fur_plant", "화분", 2000, new Vector3(0.4f, 0.7f, 0.4f), new Color(0.35f, 0.75f, 0.4f), false),
                 ("fur_lamp", "스탠드", 3500, new Vector3(0.35f, 1.4f, 0.35f), new Color(1f, 0.85f, 0.55f), false),
                 ("fur_rug", "러그", 4000, new Vector3(2.0f, 0.05f, 1.4f), new Color(0.7f, 0.35f, 0.35f), false),

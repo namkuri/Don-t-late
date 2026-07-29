@@ -141,7 +141,8 @@ namespace DontLate
                     float width = profile.minWidth + (float)rng.NextDouble() * (profile.maxWidth - profile.minWidth);
 
                     if (slot == null) continue;
-                    BuildBuilding(root, i + 1, slot, floors, tone, width, profile);
+                    int pick = rng.Next(0, 4096); // S-114 — 건물 프리팹 선택용 결정론 값 (스트림 말미 추가)
+                    BuildBuilding(root, i + 1, slot, floors, tone, width, profile, pick);
                 }
             }
 
@@ -152,7 +153,8 @@ namespace DontLate
                     Transform slot = _propSlots[i];
 
                     bool place = rng.NextDouble() < profile.propChance;
-                    int kind = rng.Next(0, PROP_KINDS);
+                    int poolSize = _propPrefabPool != null && _propPrefabPool.Length > 0 ? _propPrefabPool.Length : PROP_KINDS;
+                    int kind = rng.Next(0, poolSize); // S-114 — 프랍 풀 전체 순환
 
                     if (slot == null || !place) continue;
                     BuildProp(root, i + 1, slot, kind);
@@ -163,7 +165,7 @@ namespace DontLate
         // ── 그레이박스 조립 ──────────────────────────────────
 
         private void BuildBuilding(Transform root, int slotNo, Transform slot, int floors, int tone, float width,
-            DistrictProfile profile)
+            DistrictProfile profile, int pick = 0)
         {
             // 이름에 결정론 값(floors·tone)을 새겨 스냅샷 비교의 지문으로 쓴다.
             GameObject building = new GameObject($"Building_{slotNo:00}_f{floors}_t{tone}");
@@ -173,7 +175,8 @@ namespace DontLate
             bool builtFromPrefab = false;
             if (_buildingPrefabPool != null && _buildingPrefabPool.Length > 0)
             {
-                GameObject prefab = _buildingPrefabPool[tone % _buildingPrefabPool.Length];
+                // S-114 — 구역 어울림 필터 풀에서 슬롯별 결정론 선택 (구 tone 인덱싱은 3종만 순환하던 결함).
+                GameObject prefab = PickBuilding(profile, pick);
                 if (prefab != null)
                 {
                     GameObject instance = Instantiate(prefab, building.transform);
@@ -214,7 +217,8 @@ namespace DontLate
             }
         }
 
-        /// <summary>임포트 건물을 층수 높이에 맞춰 스케일하고 발 y=0·전면 Z=3.0 정렬 (S-011 — 반입물이 1u 정규화라 필수).</summary>
+        /// <summary>S-114 — 프리팹은 ScaleTable 캘리브레이션(실높이·문 2.1~2.4u)을 신뢰: 재스케일 없이
+        /// 발 y=0·전면 Z=3.0 정렬만 한다 (구 층수 재스케일은 아파트를 2층 높이로 눌러 비율 붕괴).</summary>
         private void NormalizeBuilding(GameObject instance, int floors, float slotZ)
         {
             Bounds bounds = new Bounds(instance.transform.position, Vector3.zero);
@@ -226,17 +230,41 @@ namespace DontLate
             }
             if (!initialized || bounds.size.y < 0.01f) return;
 
-            float targetHeight = floors * FLOOR_HEIGHT;
-            instance.transform.localScale *= targetHeight / bounds.size.y;
-
-            initialized = false;
-            foreach (Renderer r in instance.GetComponentsInChildren<Renderer>())
-            {
-                if (!initialized) { bounds = r.bounds; initialized = true; }
-                else bounds.Encapsulate(r.bounds);
-            }
             instance.transform.position += new Vector3(
                 0f, -bounds.min.y, BUILDING_FRONT_Z - bounds.min.z);
+        }
+
+        // ── S-114 — 구역 어울림 건물 필터 (이름 키워드) ──
+        private static readonly string[] VillatownExclude =
+            { "apartment", "tower", "hospital", "center", "church", "amusement", "construction", "police", "hall", "building", "logi" };
+        private static readonly string[] FoodalleyInclude =
+            { "cafe", "pub", "store", "market", "chicken", "hardware", "laundry", "photo", "hall" };
+
+        private GameObject PickBuilding(DistrictProfile profile, int pick)
+        {
+            var candidates = new System.Collections.Generic.List<GameObject>();
+            foreach (GameObject prefab in _buildingPrefabPool)
+            {
+                if (prefab == null) continue;
+                string name = prefab.name.ToLowerInvariant();
+                bool ok = true;
+                if (profile.signs) // 먹자골목 = 상가 위주
+                {
+                    ok = false;
+                    foreach (string keyword in FoodalleyInclude)
+                        if (name.Contains(keyword)) { ok = true; break; }
+                }
+                else // 빌라촌·기본 = 대형·공공 건물 제외
+                {
+                    foreach (string keyword in VillatownExclude)
+                        if (name.Contains(keyword)) { ok = false; break; }
+                }
+                if (ok) candidates.Add(prefab);
+            }
+            if (candidates.Count == 0)
+                foreach (GameObject prefab in _buildingPrefabPool)
+                    if (prefab != null) candidates.Add(prefab); // 필터 전멸 폴백
+            return candidates.Count > 0 ? candidates[pick % candidates.Count] : null;
         }
 
         private void BuildProp(Transform root, int slotNo, Transform slot, int kind)

@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7f6a0c1b9f648f4438cdcdcd90fa1963, type: 3}
-  m_Name: fur_bed
+  m_Name: couch
   m_EditorClassIdentifier: Assembly-CSharp::DontLate.FurnitureSO
-  furnitureId: fur_bed
-  displayName: "\uCE68\uB300"
-  price: 15000
-  size: {x: 2.2, y: 0.5, z: 1.4}
-  color: {r: 0.3, g: 0.42, b: 0.55, a: 1}
-  prefab: {fileID: 0}
+  furnitureId: couch
+  displayName: "\uC18C\uD30C"
+  price: 6500
+  size: {x: 1.8, y: 0.85, z: 0.8}
+  color: {r: 0.55, g: 0.42, b: 0.35, a: 1}
+  prefab: {fileID: 3169779575412800720, guid: 6cbe6b19935dc5c4781219a4677a68c8, type: 3}
   wallMountable: 0

@@ -258,6 +258,23 @@ namespace DontLate.EditorTools
             poolProp.arraySize = pool.Count;
             for (int i = 0; i < pool.Count; i++)
                 poolProp.GetArrayElementAtIndex(i).objectReferenceValue = pool[i];
+
+            // S-114 — 보도 프랍 풀: 거리에 어울리는 소품만 선별 (실내 가구·차량 제외).
+            string[] streetProps =
+            {
+                "basic_tree", "blossom_tree", "Bench_unity", "Trash_Bin_unity", "black_Trash_unity",
+                "White_Trash_unity", "3_trash", "Bending_Mechine", "Signboard_unity", "bycle", "trash_spot",
+            };
+            var propPool = new List<GameObject>();
+            foreach (string propName in streetProps)
+            {
+                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Auto/" + propName + ".prefab");
+                if (prefab != null) propPool.Add(prefab);
+            }
+            SerializedProperty propPoolProp = serialized.FindProperty("_propPrefabPool");
+            propPoolProp.arraySize = propPool.Count;
+            for (int i = 0; i < propPool.Count; i++)
+                propPoolProp.GetArrayElementAtIndex(i).objectReferenceValue = propPool[i];
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 

@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7f6a0c1b9f648f4438cdcdcd90fa1963, type: 3}
-  m_Name: fur_bed
+  m_Name: clock
   m_EditorClassIdentifier: Assembly-CSharp::DontLate.FurnitureSO
-  furnitureId: fur_bed
-  displayName: "\uCE68\uB300"
-  price: 15000
-  size: {x: 2.2, y: 0.5, z: 1.4}
-  color: {r: 0.3, g: 0.42, b: 0.55, a: 1}
-  prefab: {fileID: 0}
-  wallMountable: 0
+  furnitureId: clock
+  displayName: "\uC2DC\uACC4"
+  price: 2500
+  size: {x: 0.35, y: 0.35, z: 0.1}
+  color: {r: 0.85, g: 0.8, b: 0.7, a: 1}
+  prefab: {fileID: 4689733544419818275, guid: b95e3ee0cde54ed4d84e131ec9faae95, type: 3}
+  wallMountable: 1
