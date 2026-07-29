@@ -13,6 +13,8 @@ namespace DontLate.EditorTools
         private static readonly Dictionary<string, float> Exact = new Dictionary<string, float>
         {
             { "door", 2.2f },            // 출입문 그 자체 — 게이지 기준
+            { "prop_box_parcel", 0.6f },  // S-112 — 택배상자 (사람 무릎~허리)
+            { "prop_streetlamp", 4.5f },  // S-112 — 가로등 등주 실높이
             { "old_stair", 3.2f },
             { "belt", 0.9f },            // 컨베이어 벨트
             { "cafe", 3.2f },            // Props의 카페 부스

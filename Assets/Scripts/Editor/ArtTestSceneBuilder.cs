@@ -90,20 +90,25 @@ namespace DontLate.EditorTools
                 refLabel.color = new Color(1f, 0.42f, 0.36f);
             }
 
+            float cursorX = 0f; // S-112 — 실폭 기반 누적 배치: 캘리브레이션 후 대형 건물 겹침 방지
             for (int i = 0; i < entries.Count; i++)
             {
-                Vector3 slot = new Vector3(i * SLOT_SPACING, 0f, 0f);
-                GameObject instance = (GameObject)Object.Instantiate(entries[i].asset, slot, Quaternion.identity);
+                GameObject instance = (GameObject)Object.Instantiate(entries[i].asset, Vector3.zero, Quaternion.identity);
                 instance.name = "__gb_Art_" + entries[i].label;
 
-                // 발 높이 정규화 — 렌더 바운즈 바닥을 y0에.
+                // 실폭 실측 → 좌단을 커서에 맞추고 커서를 폭+여백만큼 전진.
                 Renderer[] renderers = instance.GetComponentsInChildren<Renderer>();
+                Vector3 slot = new Vector3(cursorX, 0f, 0f);
                 if (renderers.Length > 0)
                 {
                     Bounds bounds = renderers[0].bounds;
                     foreach (Renderer r in renderers) bounds.Encapsulate(r.bounds);
-                    instance.transform.position += Vector3.up * (slot.y - bounds.min.y);
+                    slot = new Vector3(cursorX + bounds.extents.x, 0f, 0f);
+                    instance.transform.position = new Vector3(
+                        cursorX + bounds.extents.x - bounds.center.x, -bounds.min.y, -bounds.center.z);
+                    cursorX += bounds.size.x + 2.5f; // 여백 2.5u
                 }
+                else cursorX += SLOT_SPACING;
 
                 // 이름표 (3D TMP — 카메라 정면).
                 if (font != null)
