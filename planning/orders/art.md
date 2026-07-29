@@ -174,3 +174,10 @@ chr_courier를 자동 수집해 4u 간격 진열(발높이 정규화·이름표)
   (Embed Media·원점·폴리 예산·간판 분리)·2D 규격·라이선스 필수(PR 본문 파일당 한 줄 — 유일 차단)
   ③ 열린 발주 리마인드(A-002~007 bom_id 목록)+자발 착수 예고 커밋 관례.
 - 근거 정본: planning/guides/art-mode.md §2 — 가이드는 기존 관례 요약(신규 규칙 발명 없음).
+
+### 자발 착수 · 2026-07-29 — 민지 대량 수동 반입
+
+- `[발주] A-008 민지 수동 아트 251파일을 생성 도구·계약 분류별 _intake 경로로 정리 시작`
+- 제안 목록과 실제 투입 경로: [`planning/bom_propose.md`](../bom_propose.md)
+- 라이선스 확인: Qwen-Image 로컬(Apache-2.0) · ChatGPT 출력물 사용자 소유 ·
+  Mixamo 상업 프로젝트 로열티 프리 · Tripo OpenAPI 유료 사용자 출력 권리.
