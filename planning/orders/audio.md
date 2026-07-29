@@ -740,3 +740,16 @@ L129 직접 ++ 후 L130 Raise가 자기 구독 핸들러(L144 OnDeliveryFailed)�
 - **용도**: 비·태풍 날씨 중 랜덤 간격 번개 섬광과 동시 재생 (S-088 ⑥).
 - **스펙**: 1.5~3초 천둥 — 우르릉 낮은 럼블 + 크랙. 파일명 = **sfx_thunder** (Audio/SFX/ 자동 스왑).
 - 클립 도착 전엔 무음(섬광만).
+
+### 결과 (AU-022) · 2026-07-29 (정수 공장 · PR 예정 feature/jjs-sfx-thunder, base=car_crash 스택)
+
+**셀프검증** — 컴파일/임포트 OK · 콘솔 에러·워닝 **0** · 클립 로드 실증.
+
+- **방향 재협의**: 1차 초안(distant rolling rumble 계열) 3 take **Director 전량 기각** → 프롬프트 단계부터 재확인 요청 수용.
+  용어 설명 후 **A안 "크랙 선행"** 채택 — 섬광 동기 재생이라 날카로운 어택이 선행해야 번쩍(시각)+쩍(청각)이 한 프레임에 인지(B 딥붐은 저역이라 작은 스피커 약함·시작 뭉근, C 롤링럼블은 날카로움 부재로 섬광과 어긋남).
+- 생성: `--no-anchors` 비토이톤. A 프롬프트 3 take(seed 524933213/1946017365/2130492058) → **Director 청취 판정 take2 채택**(1.31s 펀치). ⚠ SFX seed 미수용 → 로컬 기록.
+- 후공정: stereo→mono → 트림(≤-45dBFS) → 피크 -1.0dB(크랙 트랜지언트 peak 한계) → 페이드(in 1ms 어택 보존/out 40ms 럼블 꼬리). 최종 1.31s 모노 · rms -12.6dB.
+- 임포트 실측: `sfx_thunder.wav` len 1.31s · 1ch(forceMono) · 44100 · Vorbis q0.7 · DecompressOnLoad — SFX 규격 정합.
+- 배선: 소켓 `_sfxThunder` 기시공(S-088 ⑥) → `WorldWeatherManager.ThunderFlash()`에서 `PlayThunderSfx()`(섬광과 동시). CoreSceneBuilder `LoadSfx("sfx_thunder")` 경로 resolve 확인(ok 1.31s·mono) → Core 재빌드 시 자동 배선.
+- ⚠ 인게임 실발화(비·태풍 중 섬광+천둥 동시)는 CoreSceneBuilder 배선이라 **Core 재빌드 후** 확인 필요 — 남규 실플레이 최종 권장.
+- 라이선스: CREDITS.md + assets_manifest.md LICENSE 표 등재(2026-07-29). 잔여(관제): BOM §8 SFX 행 `sfx_thunder` 추가.

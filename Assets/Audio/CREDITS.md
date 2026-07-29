@@ -329,3 +329,16 @@ Director 판정: 기존 걷는 소리가 **쇳소리(metallic)** — 원인 = �
 - 후공정: stereo→mono → 트림(≤-40dBFS) → 피크 -1.0dB 정규화(트랜지언트라 peak 한계) → 페이드(in 2ms/out 20ms). 임포트 실측 rms -11.9dB.
 - 배선: `WorldAudioManager._sfxCarCrash` 소켓 기시공(S-066 ③) → `TrafficCar` 치임 시 `PlayCarCrashSfx()`. CoreSceneBuilder `LoadSfx("sfx_car_crash")` 자동 배선(클립 로드 실증 1.02s·mono). 클립 도착 전 무음.
 - 미채택: take2(1.36s 최대밀도·여운 김) · take3(0.73s 즉발 펀치).
+
+## AU-022 천둥 SFX (럼블+크랙) — ElevenLabs · 2026-07-29
+
+비·태풍 중 번개 섬광과 동시 재생(`WorldWeatherManager.ThunderFlash` S-088 ⑥). **비토이톤**(`--no-anchors`).
+방향 판정: 초안 3 take(distant rumble 계열) **Director 전량 기각** → 프롬프트 단계 재협의 → **A안 "크랙 선행"**
+채택(섬광 동기엔 날카로운 어택이 선행해야 번쩍+쩍이 한 방에 인지). 3 take → **Director 청취 판정 take2 채택**.
+⚠ SFX는 API가 seed 미수용 → seed 복원 불가(로컬 기록).
+
+- 채택 프롬프트(창작 태그): `sharp electric thunderclap crack with a bright snapping attack, then a deep rolling rumble tail, powerful and close`
+- prompt SHA1 `18a164910131` · seed(로컬·take2) 1946017365 · 생성 2.20s → 트림 1.31s(꼬리 자연 감쇠 컷)
+- 후공정: stereo→mono → 트림(≤-45dBFS) → 피크 -1.0dB(크랙 트랜지언트 peak 한계) → 페이드(in 1ms 어택 보존/out 40ms 럼블 꼬리). 최종 1.31s 모노 · rms -12.6dB.
+- 배선: `WorldAudioManager._sfxThunder` 소켓 기시공(S-088 ⑥) → `WorldWeatherManager.ThunderFlash()`에서 `PlayThunderSfx()`(섬광과 동시). CoreSceneBuilder `LoadSfx("sfx_thunder")` 자동 배선(클립 로드 실증 1.31s·mono). 클립 도착 전 무음(섬광만).
+- 미채택: take1(2.20s 럼블 꼬리 긴 차분) · take3(2.20s 중간).
