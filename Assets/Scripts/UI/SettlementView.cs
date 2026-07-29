@@ -58,7 +58,7 @@ namespace DontLate
         private readonly System.Collections.Generic.List<string> _lines = new System.Collections.Generic.List<string>();
         private Coroutine _printRoutine;
         private bool _skipOnce;
-        private const float LINE_INTERVAL_SECONDS = 0.5f;
+        private const float LINE_INTERVAL_SECONDS = 0.3f; // S-094 ② — 500ms는 느리다 (남규님 판정)
 
         // ── S-087 — 영수증 포맷: 좌(이름)/우(금액) 정렬은 TMP line-height 0 트릭 ──
         private const string RULE_STARS = "<align=center><color=#4a5568>******************************************</color></align>"; // S-088 ① — 폭 맞춤

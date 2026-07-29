@@ -82,6 +82,9 @@ namespace DontLate
 
         private void OnDeliveryCompleted(DeliveryData data)
         {
+            // S-094 ① — 정산 정지 중엔 억제: 일괄 판정 N건이 같은 프레임에 겹쳐 마지막 금액만
+            // 보였다 (S-080 ② HUD와 동일 뿌리). 상세는 정산 영수증이 전담한다.
+            if (Time.timeScale == 0f) return;
             Restart(ref _flashRoutine, FlashRoutine());
             Restart(ref _popRoutine, PopRoutine("✓ +₩" + data.Reward.ToString("N0")));
             Restart(ref _hitStopRoutine, HitStopRoutine(_completeHitStopSeconds));
