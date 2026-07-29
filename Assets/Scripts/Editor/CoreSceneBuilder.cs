@@ -410,7 +410,7 @@ namespace DontLate.EditorTools
             (string fieldName, Color color)[] penaltySegments =
             {
                 ("_penaltyHeatFill", new Color(1f, 0.45f, 0.20f, 0.95f)),
-                ("_penaltyColdFill", new Color(0.35f, 0.60f, 1f, 0.95f)),
+                ("_penaltyColdFill", new Color(0.62f, 0.86f, 1f, 0.95f)), // S-097 ③ — 버프 파랑(0.31,0.58,1)과 구분: 얼음빛으로
                 ("_penaltyCarryFill", new Color(0.55f, 0.40f, 0.25f, 0.95f)),
                 ("_penaltyStormFill", new Color(0.60f, 0.62f, 0.68f, 0.95f)),
             };

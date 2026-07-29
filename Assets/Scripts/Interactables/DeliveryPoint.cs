@@ -67,7 +67,7 @@ namespace DontLate
 
             ctx.Player.Status.ReleaseCarry(dropAsPhysics: true);
             WorldDeliveryManager.Instance.PlaceDelivery(carried, Address);
-            if (carried.address == Address) ShowSuccessFloat(); // S-073 ⑥ — 올바른 배치 연출
+            if (carried.address == Address) { ShowSuccessFloat(); HideBeacon(); } // S-073 ⑥ + S-097 ① 비콘 소등
         }
 
         /// <summary>
@@ -78,8 +78,34 @@ namespace DontLate
         {
             if (!other.TryGetComponent(out PickupBox box) || box.Order == null) return;
             if (WorldDeliveryManager.Instance == null || !WorldDeliveryManager.Instance.CanHandle(box.Order)) return; // S-075 ②
+            bool alreadyPlaced = WorldDeliveryManager.Instance.IsPlaced(box.Order.orderId);
+            if (box.Order.address == Address) FreezeOnPad(box); // S-097 ① — 성공 배치 상자는 패드 위 고정
+            if (alreadyPlaced) return; // S-097 ① — 재방문 재스폰·E배치 낙하 재진입: 기록·연출 중복 방지
             WorldDeliveryManager.Instance.PlaceDelivery(box.Order, Address);
-            if (box.Order.address == Address) ShowSuccessFloat(); // S-073 ⑥ — 던져 넣기도 연출
+            if (box.Order.address == Address) { ShowSuccessFloat(); HideBeacon(); } // S-073 ⑥ — 던져 넣기도 연출
+        }
+
+        /// <summary>S-097 ① — 올바른 패드에 놓인 상자는 패드 중앙에 스냅하고 물리를 잠근다 (굴러 이탈·재방문 낙하 방지).</summary>
+        private void FreezeOnPad(PickupBox box)
+        {
+            Transform boxTransform = box.transform;
+            boxTransform.position = transform.position + Vector3.up * 0.02f;
+            boxTransform.rotation = Quaternion.identity;
+            if (box.TryGetComponent(out Rigidbody body)) body.isKinematic = true;
+        }
+
+        /// <summary>S-097 ① — 배송성공 시 비콘 빛기둥 제거 (재방문 스폰 시에도 Start에서 호출).</summary>
+        private void HideBeacon()
+        {
+            if (_riseEffect != null) _riseEffect.SetActive(false);
+        }
+
+        private void Start()
+        {
+            // S-097 ① — 이미 이 패드에 배치 완료된 건이면 비콘 없이 선다 (재방문).
+            if (_expectedOrder != null && WorldDeliveryManager.Instance != null
+                && WorldDeliveryManager.Instance.IsPlacedAt(_expectedOrder.orderId, Address))
+                HideBeacon();
         }
 
         /// <summary>패드 밖으로 굴러 나가면 배치 철회 (재픽업은 PickupBox 쪽에서 철회).</summary>

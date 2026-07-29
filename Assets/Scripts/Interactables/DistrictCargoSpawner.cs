@@ -118,14 +118,14 @@ namespace DontLate
                             : new Vector3(-16f + boxSlot * 1.2f, 0f, -1.2f));
                     boxSlot++;
                 }
-                SpawnBox(order, boxPos);
+                SpawnBox(order, boxPos, frozen: placedIndex >= 0); // S-097 ① — 배치 상자는 물리 낙하 없이 고정
                 boxCount++;
             }
             Debug.Log("[CargoSpawner] 구역 '" + district + "' — 비콘 " + matching.Count + "개 · 짐 " + boxCount + "건 스폰.");
         }
 
         // 트럭에서 내린 짐 — 보도 앞줄에 일렬.
-        private void SpawnBox(DeliveryOrderSO order, Vector3 groundPosition)
+        private void SpawnBox(DeliveryOrderSO order, Vector3 groundPosition, bool frozen = false)
         {
             GameObject root = new GameObject("SpawnedBox_" + order.orderId);
             root.transform.position = groundPosition;
@@ -133,7 +133,9 @@ namespace DontLate
             collider.isTrigger = false; // 실물 — 던지기·취급주의 파손 (S-019 ①)
             collider.size = Vector3.one * 0.7f;
             collider.center = new Vector3(0f, 0.35f, 0f);
-            root.AddComponent<Rigidbody>().mass = 2f;
+            Rigidbody body = root.AddComponent<Rigidbody>();
+            body.mass = 2f;
+            body.isKinematic = frozen; // S-097 ① — 재방문 배치 상자: 그 자리 고정 (픽업 시 어차피 kinematic 전환)
             root.AddComponent<BoxDurability>().Initialize(_tuning);
 
             if (_boxVisualPrefab != null)

@@ -126,6 +126,10 @@ namespace DontLate
 
         public bool IsPlaced(int orderId) => _gameState.placedDeliveries.Exists(p => p.orderId == orderId);
 
+        /// <summary>이 주소 패드에 배치돼 있는가 (S-097 ① — 재방문 비콘·연출 억제 판정).</summary>
+        public bool IsPlacedAt(int orderId, string address)
+            => _gameState.placedDeliveries.Exists(p => p.orderId == orderId && p.beaconAddress == address);
+
         /// <summary>
         /// "집으로" 정산 일괄 판정 (S-034 ④): 적재된 각 건 — 배치 주소가 목적지와 일치하면 성공(보상),
         /// 아니면(미배치·오배치) 실패(벌금 — 잔액에서 차감, 부족분은 빚). 판정 후 상차·스캔·배치 전부 초기화.

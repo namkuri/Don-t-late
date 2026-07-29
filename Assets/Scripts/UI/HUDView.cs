@@ -278,7 +278,8 @@ namespace DontLate
         // 뛰기는 드레인 자체가 커서 빠르게 뚝뚝 떨어지는 감각이 남는다.
         private float _staminaTarget = 1f;
 
-        private void OnStaminaChanged(float normalized) => _staminaTarget = Mathf.Clamp01(normalized);
+        // S-097 ③ — 드링크 버프 중엔 1.0 초과분(총량 +10%)이 온다: 바 오른쪽 밖 파란 fill로 그린다.
+        private void OnStaminaChanged(float normalized) => _staminaTarget = Mathf.Clamp(normalized, 0f, 1.2f);
 
         // S-088 ④ — 패널티 구간: 바 오른쪽 끝에서부터 각자 색으로 잠식 표시. anchorMax 오른쪽 기점.
         private void OnStaminaPenaltyChanged(StaminaPenalties p)
@@ -303,10 +304,88 @@ namespace DontLate
             return rightEdge - width;
         }
 
+        private float _staminaShown = 1f; // 표시값 (0~1.2 — fillAmount는 1에서 잘려 별도 추적)
+
         private void Update()
         {
             if (_staminaFill == null) return;
-            _staminaFill.fillAmount = Mathf.MoveTowards(_staminaFill.fillAmount, _staminaTarget, Time.deltaTime * 0.6f);
+            _staminaShown = Mathf.MoveTowards(_staminaShown, _staminaTarget, Time.deltaTime * 0.6f);
+            _staminaFill.fillAmount = Mathf.Min(_staminaShown, 1f);
+            UpdateBuffFill();
+            UpdatePenaltyTooltip();
+        }
+
+        // ── S-097 ③ — 버프 초과분: 바 오른쪽 끝에 이어 붙는 파란 세그먼트 (총량 +10% 가시화) ──
+
+        private Image _buffFill;
+
+        private void UpdateBuffFill()
+        {
+            float overflow = Mathf.Max(0f, _staminaShown - 1f);
+            if (overflow < 0.003f)
+            {
+                if (_buffFill != null) _buffFill.gameObject.SetActive(false);
+                return;
+            }
+            if (_buffFill == null)
+            {
+                _buffFill = new GameObject("BuffFill", typeof(RectTransform)).AddComponent<Image>();
+                _buffFill.transform.SetParent(_staminaFill.rectTransform.parent, false);
+                _buffFill.color = new Color(0.31f, 0.58f, 1f, 1f); // 버프 = 파랑
+                _buffFill.raycastTarget = false;
+            }
+            _buffFill.gameObject.SetActive(true);
+            RectTransform rect = _buffFill.rectTransform;
+            rect.anchorMin = new Vector2(1f, 0f);
+            rect.anchorMax = new Vector2(1f + overflow, 1f);
+            rect.offsetMin = rect.offsetMax = Vector2.zero;
+        }
+
+        // ── S-097 ② — 패널티 세그먼트 호버: 사유 라벨 ──
+
+        private TMP_Text _penaltyTooltip;
+
+        private void UpdatePenaltyTooltip()
+        {
+            var mouse = UnityEngine.InputSystem.Mouse.current;
+            if (mouse == null) return;
+            Vector2 pointer = mouse.position.ReadValue();
+
+            Image hovered = null;
+            string reason = null;
+            if (IsHovering(_penaltyHeatFill, pointer)) { hovered = _penaltyHeatFill; reason = "더움"; }
+            else if (IsHovering(_penaltyColdFill, pointer)) { hovered = _penaltyColdFill; reason = "추움"; }
+            else if (IsHovering(_penaltyCarryFill, pointer)) { hovered = _penaltyCarryFill; reason = "무거움"; }
+            else if (IsHovering(_penaltyStormFill, pointer)) { hovered = _penaltyStormFill; reason = "강풍"; }
+
+            if (hovered == null)
+            {
+                if (_penaltyTooltip != null) _penaltyTooltip.gameObject.SetActive(false);
+                return;
+            }
+            if (_penaltyTooltip == null)
+            {
+                _penaltyTooltip = new GameObject("PenaltyTooltip", typeof(RectTransform)).AddComponent<TMPro.TextMeshProUGUI>();
+                _penaltyTooltip.transform.SetParent(_staminaFill.canvas.transform, false);
+                if (UiOverlayFont.Korean != null) _penaltyTooltip.font = UiOverlayFont.Korean;
+                _penaltyTooltip.fontSize = 18f;
+                _penaltyTooltip.fontStyle = TMPro.FontStyles.Bold;
+                _penaltyTooltip.color = new Color(1f, 0.76f, 0.42f, 1f); // 패널티 = 앰버 톤
+                _penaltyTooltip.alignment = TMPro.TextAlignmentOptions.Center;
+                _penaltyTooltip.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
+                _penaltyTooltip.raycastTarget = false;
+                _penaltyTooltip.rectTransform.sizeDelta = new Vector2(120f, 24f);
+            }
+            _penaltyTooltip.gameObject.SetActive(true);
+            _penaltyTooltip.text = reason;
+            _penaltyTooltip.rectTransform.position =
+                hovered.rectTransform.position + new Vector3(0f, 26f, 0f);
+        }
+
+        private static bool IsHovering(Image segment, Vector2 pointer)
+        {
+            return segment != null && segment.gameObject.activeSelf
+                && RectTransformUtility.RectangleContainsScreenPoint(segment.rectTransform, pointer);
         }
 
         // ── 상호작용 안내 ────────────────────────────────────

@@ -25,7 +25,8 @@ namespace DontLate
         private Transform _carriedVisual;
 
         public float Stamina { get; private set; }
-        public float StaminaNormalized => Mathf.Clamp01(Stamina / _hub.Tuning.staminaMax);
+        /// <summary>기본 최대 대비 비율 — 드링크 버프 중엔 1.0을 넘는다(초과분 = HUD 파란 fill, S-097 ③).</summary>
+        public float StaminaNormalized => Mathf.Max(0f, Stamina / _hub.Tuning.staminaMax);
         public DeliveryOrderSO CarriedOrder { get; private set; }
         public bool IsCarrying => CarriedOrder != null;
         /// <summary>손에 든 음료 여부 (S-071 ② — 송장 좌클릭이 음료 던지기와 충돌하지 않게 센서가 참조).</summary>
@@ -374,7 +375,8 @@ namespace DontLate
         private StaminaPenalties _lastPenalties;
 
         public StaminaPenalties CurrentPenalties { get; private set; }
-        public float EffectiveStaminaMax => Mathf.Max(10f, _hub.Tuning.staminaMax - CurrentPenalties.Total);
+        public float EffectiveStaminaMax
+            => Mathf.Max(10f, _hub.Tuning.staminaMax + DrinkBuffBonus - CurrentPenalties.Total);
 
         private void TickPenalties()
         {
@@ -407,16 +409,22 @@ namespace DontLate
 
         // ── S-074 ⑧ — 드링크 버프: 이동 +30% · 드레인 -15% (실시간 45초 = 게임 90분) ──
         private const float DRINK_BUFF_SECONDS = 45f;
+        private const float DRINK_BUFF_STAMINA_RATIO = 0.1f; // S-097 ③ — 버프 중 총량 +10%
         private float _drinkBuffUntil = -1f;
 
         private bool DrinkBuffActive => Time.time < _drinkBuffUntil;
         /// <summary>이동속도 배율 — Locomotion이 매 프레임 읽는다.</summary>
         public float SpeedMultiplier => DrinkBuffActive ? 1.3f : 1f;
+        /// <summary>버프 중 늘어난 총량 (S-097 ③). 버프가 끝나면 Update의 클램프가 초과분을 걷어낸다.</summary>
+        private float DrinkBuffBonus => DrinkBuffActive ? _hub.Tuning.staminaMax * DRINK_BUFF_STAMINA_RATIO : 0f;
 
         private void ApplyDrinkBuff()
         {
             _drinkBuffUntil = Time.time + DRINK_BUFF_SECONDS;
-            Debug.Log("[드링크] 버프 — 이동 +30% · 스태미나 소모 -15% (" + DRINK_BUFF_SECONDS + "초)");
+            // S-097 ③ — 늘어난 총량만큼 즉시 충전: 이 초과분이 HUD에서 파란 fill로 보인다.
+            Stamina = Mathf.Clamp(Stamina + _hub.Tuning.staminaMax * DRINK_BUFF_STAMINA_RATIO, 0f, EffectiveStaminaMax);
+            NotifyStamina(force: true);
+            Debug.Log("[드링크] 버프 — 이동 +30% · 소모 -15% · 총량 +10% (" + DRINK_BUFF_SECONDS + "초)");
         }
 
         /// <summary>S-032 ④: 든 드링크를 마우스 방향으로 던진다 — 다시 픽업체가 되어 E로 회수 가능.</summary>
