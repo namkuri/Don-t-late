@@ -5,10 +5,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 프로젝트
 
 **늦지마 (Don't Late)** — Unity 6.5 (6000.5.3f1) / URP 3D / 2.5D 배송 게임.
-현재 상태 (2026-07-22 갱신): **매니페스트 34종 중 31종 납품 완료** (S-005~007로 Debt·Minigame·LoadingZone·드링크·TravelMapView·리듬뷰 추가 — 잔여는 P4 3종: Audio 완료 제외 Juice·PlayerEffects + ArtAuditReport).
+현재 상태 (2026-07-29 갱신): **매니페스트 34종 전량 납품 + 확장 시스템 다수** (개척 진행·트럭·엣지 워크·
+날씨 7종(태풍·천둥)·스태미나 패널티 구간·NPC 소셜/호감도·가방·상단 HUD·정산 영수증·바코드 스캔 등 —
+S-001~S-093). 전 씬(Core·Main·Home·Camp·Travel·District·Apartment·Hillside) 조립 완료, 하루 루프 완주,
+WebGL 배포 https://namkuri.github.io/Don-t-late/ 가동.
 `Assets/Scripts/` 아래 Events·SO·Managers·Player·Interactables·UI·Utils 전부 실재한다 — **새로 만들기 전에 먼저 읽어라.**
-미착수는 P3·P4 12종 + 임포터 2종. 남은 작업·블로커는 `docs/plan/remaining-work.md`, 발주 상태는 `planning/TASKS.md`.
-Core 씬·플레이어 프리팹은 **아직 미조립**이라 그레이박스 루프는 완주되지 않았다.
+발주 대장은 `planning/orders/*.md`(정본), 리드타임 집계는 `planning/calibration.md`, BOM은 `planning/BOM.md`.
 
 ## 설계 문서 (자동 로드됨 — 코딩 전 필독)
 

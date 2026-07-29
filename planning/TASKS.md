@@ -1,9 +1,11 @@
 # TASKS.md — 발주 대장 (mode: PRETASK · milestone: M1 뼈대)
 
-> ⚠ 실태 공지 (2026-07-22 회고 [retrospective-2026-07-22.md](retrospective-2026-07-22.md) §4-1):
-> 실발주 대장은 [orders/](orders/) 도메인 파일(system·audio·art·content)로 이동했다 — 36건 전량 완료,
-> 집계는 [calibration.md](calibration.md). 아래 M1 표의 todo 다수는 이미 실태 해소됨(예: M1-11 씬 단독
-> Play → EnsureCoreLoaded.cs로 구조 해결). 행별 done 전이는 판정 주체 확인 후 처리 — 이 표는 이력으로만 유지.
+> ⚠ 실태 공지 (2026-07-29 감사 갱신 — S-093): 실발주 대장은 [orders/](orders/) 도메인 파일이 정본 —
+> **107건+ 발주·리드 집계는 [calibration.md](calibration.md)(81건 기계 집계)**. 이 파일은 M0~M1 이력 보존용.
+> 아래 M1 잔여 todo의 실태: M1-17 캐리 비주얼→S-070 프리팹 룩으로 해소 · M1-09 카메라 RT→픽셀레이트
+> 렌더 피처로 대체 구현(S-085 웹 포함) · M1-04 FadeScreen→시공됨 · M1-05 빌드세팅→8씬 등록·WebGL 배포
+> 가동 · M1-10 Forward+→렌더러 설정 반영 · M1-12/15 문서 동결→Q1 동결(D-037)·BOM 동결(2026-07-29).
+> M0-03 링크 현행: https://namkuri.github.io/Don-t-late/
 
 > 상태: `todo` → `doing` → `review` → `done` / `blocked(원인)` / `hold(의존)`
 > **review→done 전이는 판정 주체만** (기계 기준·reviewer·사람 — HARNESS §6). 작성자 자기보고는 제출일 뿐.

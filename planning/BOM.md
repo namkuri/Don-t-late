@@ -1,10 +1,10 @@
-# BOM.md — 통합 발주 대장 v0.3 (⚠ 미동결 — Q2 게이트에서 수량·eta 확정 후 동결)
+# BOM.md — 통합 발주 대장 v0.4 (✅ 동결 — Q2 게이트 집행 2026-07-29 · S-093 감사 처방)
 
 > v0.2 → v0.3: **에셋만이 아니라 발주 가능한 전부** — 셰이더·스크립트·SO 데이터 인스턴스·씬 셋업 편입 (D-017).
 > 스크립트 정본은 `.claude/rules/dont-late-scripts-manifest.md` — 여기서는 발주 단위·순서·담당만 (중복 정의 금지).
 > **담당 원칙 (D-017)**: 조립·코드·데이터 = **CLI(관제)** / 폴리싱·판정·조명 = **사람(남규)** / 아트 생산 = **민지**.
 > **소켓 좌표 정본 = [[socket-map]]** — bom_id ↔ placeholder ↔ 좌표(x,y,z) ↔ dest 매핑. 씬 발주 완료마다 실물 덤프로 갱신.
-> eta_min 전부 미실측 — Trellis/RunPod(#3) 관통이 채운다. 반입 = 사람 수동 → `_intake/<도구명>/` (D-009).
+> eta_min 실측 대체 — calibration.md 81건 기계 집계 기준 **발주 리드 중앙값 17분·p90 78분**(완료 66건). 개별 미실측 eta는 이 분포를 표준시간으로 사용(AAPP A5). 반입 = 사람 수동 → `_intake/<도구명>/` (D-009).
 
 ## 0. WebGL 예산 배분 (TECH_SPEC: tris<200k · DC<150 · tex 96MB)
 
@@ -264,3 +264,29 @@
 3. **§8-7 간판 이미시브 규칙** — 간판 4종 반입 전
 4. 수량 확정(건물 6종/12채가 예산과 그림에 맞는지 — 민지 생산력 실측 후)
 5. sacrifice 3개 확정: ① 미니게임 1단계 ② Home 흡수 ③ 간판 이미시브 B세트 (+ 후보: 군중 빌보드 전면 컷)
+
+---
+
+## 15. 현행화 부록 (2026-07-29 · S-093 — v0.4 동결분)
+
+> 07-22 이후(S-030~S-092) 태어난 실물 반영. 담당 전부 CLI(관제)·완료 — eta는 calibration 실측.
+> 상세 발주·결과는 planning/orders/system.md 정본, 여기는 BOM 계층 등재만.
+
+| bom_id | 실물 | fab | dest/소켓 | 상태 |
+|---|---|---|---|---|
+| sys_progression | 구역 개척 언락·회사 트럭 지급 (S-054) | code | WorldDeliveryManager | ✅ |
+| sys_edge_walk | 엣지 워크 이동 체제 + 게이트/벽/도착 스폰 (S-054b·062) | code | DistrictEdgeGate·EdgeGateBuildKit | ✅ |
+| sys_day_orders | 하루 물량 확정 사이클·드롭 보존·파손 청산 (S-068~074) | code | GameStateSO·CampOrderBoard·Spawner | ✅ |
+| sys_stamina_penalty | 스태미나 패널티 구간제(더움·추움·무거움·강풍)+해소 음료 (S-088) | code | PlayerStatusManager·TuningConfigSO | ✅ |
+| sys_npc_social | NpcSO 8종·호감도 장부·소셜앱·행인 인사/회피/신호 (S-076~080) | code+data | Data/Npcs·PhoneView | ✅ |
+| sys_traffic | 신호등 3색·방향별 차선·횡단보도·차량 풀링 (S-070~076) | code | TrafficLight·TrafficRoad·TrafficCar | ✅ |
+| sys_weather_v2 | 태풍(바람·간헐 비)·천둥·안개 뭉치·바람 리본 (S-088~092) | code | WorldWeatherManager | ✅ |
+| ui_receipt | 정산 영수증 리스킨+순차 연출+콘페티 (S-075~087) | code | SettlementView·SceneFlowUIBuilder | ✅ |
+| ui_invoice_scan | 송장 UI+바코드 카메라 조준 스캔 (S-071~073) | code | InvoiceView·PhoneView | ✅ |
+| ui_bag_hud | 가방 5칸·상단 HUD·게이지 세그먼트 (S-063~064·088) | code | BagView·HUDView | ✅ |
+| scn_apartment / scn_hillside | 아파트·언덕 씬 무대 (S-038·049) | build | Scenes/ (빌더 정본) | ✅ |
+| web_pixelate_guard | 픽셀레이트 웹 퀄리티 고정+가속 안내 배너 템플릿 (S-077·085) | build | WebGLTemplates/DontLate | ✅ |
+| sfx_fanfare / sfx_thunder | 팡파레·천둥 소켓 (AU-021·022 — 클립 정수님 진행) | audio | Audio/SFX (스왑 계약) | 🔶 소켓만 |
+
+- **동결 선언(Q2)**: 본 문서 v0.4를 동결한다. 이후 신규 실물은 부록 append(직교 추가)만 허용,
+  기존 행 수정은 사람 게이트. 미해소 잔여: 아트 스왑 대기(A-002~007)·오디오 클립 2종 — 소켓 계약으로 흡수됨.

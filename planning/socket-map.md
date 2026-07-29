@@ -22,18 +22,31 @@
 | Main Camera | (0, 8.1, −40.4) | FOV 22° · pitch 10° — [[TASKS]] M1-09 확정 전 잠정 | scn_camera_rig | — |
 | `__gb_Managers` | (0, 0, 0) | ⚠ Greybox 단독 테스트 전용 — District에는 없음(Core 상주) | — | — |
 
-## District.unity (✅ 실측 — 2026-07-20 씬 덤프 · 정본: `DistrictSceneBuilder.cs`)
+## District.unity (✅ 현행화 2026-07-29 — RT-20260729-01 · 정본: `DistrictSceneBuilder.cs`)
 
-| 소켓 | 실측 좌표 | 스왑 대상 | dest |
+| 소켓 | 좌표/규칙 | 스왑 대상 | dest |
 |---|---|---|---|
-| `slot_building_01`~`12` | **(−44, 0, 2.6) ~ (44, 0, 2.6)** — X 간격 8u · Z=2.6 건물 라인 | bld_module_* (민지 카탈로그) | Art/Buildings/ |
-| `slot_prop_01`~`10` | **(−36, 0, −2.6)부터** 보도변 Z=−2.6 열 | prop_streetlamp · prop_street_* | Art/Props/ |
-| 무대 일습 (상자·비콘·문·플레이어) | Greybox와 동일 좌표 (위 표) | 위 표와 동일 | — |
-| Main Camera + Directional Light | 빌더 생성 — FOV 22 · (0, 8.1, −40.4) · pitch 10 · AudioListener는 District 카메라 1개 | scn_camera_rig | — |
+| `slot_building_*` | X −44~44 간격 8u · Z=2.6 — **|X|<5 스킵**(S-074 도로 자리, 실 슬롯 10칸) | bld_module_* | Art/Buildings/ |
+| `slot_prop_01`~`10` | X −36~36 간격 8u · Z=−2.6 보도변 | prop_street_* | Art/Props/ |
+| `CrossRoad` | (0, 0.01, 0) · 4.2×20 — 교차 도로 (차 z주행·방향별 차선 x=±1.05) | env_road_set | Art/Backgrounds/ |
+| `Crosswalk` | x −1.6~1.6 5줄(0.42×5.6·z길쭉 — S-079 90°) y=0.045 | env_road_set | 〃 |
+| `TrafficLight` | (2.6, 0, −3.4) · 3색 등(적 3.72/황 3.35/녹 2.98) | prop_traffic_light | Art/Props/ |
+| `SpawnedBeacon_*` | X ∈ BEACON_SLOTS_X {−8,8,16,−16,24,−24,32,−32} · Z=0 (dayOrders 인덱스 순 — 도로 회피) | prop_beacon | — |
+| `SpawnedBox_*` | 기본 (−16+i×1.2, 0, −1.2) · droppedCargo/placed 위치 우선 | prop_box_parcel | Art/Props/ |
+| `EdgeGate_Prev/Next` | (∓19, 0, 0) — 도보 게이트 | (규칙 볼륨) | — |
+| `Walker_A/B/C` | (−8,0,2.2)/(6,0,2.6)/(18,0,2.0) — 신호 준수 행인 (npcId walker_a~c) | chr_npc_* | Art/Characters/ |
+| `ErrandGranny` | (12,0,−1.8)→(−6,0,−1.8) 심부름 왕복 | chr_npc_granny | 〃 |
+| `__gb_Player` 스폰 | (−6, 0.1, 0) — S-074 도로 회피 이설 (엣지 도착 시 게이트 앞 ±2.5) | chr_courier | Art/Characters/ |
 
-- **매니저 0개 확인** (`hasWorldManager=False`) — Core 상주 패턴 실증: Core→Main→Home→Camp→Travel→District
-  전이 체인 완주 후 **District 안에서 배송 1건 완주** (money +5000, Core의 매니저가 처리).
-- 슬롯 22개 전부 스크립트 없는 빈 마커 (`scriptedChildren=0`) — 런타임 검색 금지 규칙과 무충돌.
+## Camp.unity (✅ 신규 기록 2026-07-29 — 정본: `CampStageBuilder.cs`)
+
+| 소켓 | 좌표 | 스왑 대상 | dest |
+|---|---|---|---|
+| `Truck` | (9, 0, 1.8) — Cargo/Cab/Wheel 파츠 + LoadingZone 트리거(−0.8,1,−1.8) | veh_truck (통짜 예정) | Art/Props/ |
+| `Truck/DepartPoint` | 루트+( 3.4, 0.6, −0.6) 트리거 — hasTruck 시 E→Travel (Cab 비의존 — 통짜 대비) | — | — |
+| `CampBox_01~04` | (−7+i%2×0.9, i/2×0.72, 1.5) 피라미드 — 하루 물량(dayOrders) | prop_box_parcel | Art/Props/ |
+| `EdgeGate_Next/Home` | (14,0,0)/(−14,0,0) | (규칙 볼륨) | — |
+| `Walker_A/B` | (−9,0,2.4)/(4,0,2.8) — npcId camp_walker_a/b | chr_npc_* | Art/Characters/ |
 
 ## Camp.unity (⬜ 예정 좌표 — 씬 빌더 발주 스펙, 조립 후 실측 갱신)
 
