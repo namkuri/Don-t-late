@@ -460,74 +460,113 @@ namespace DontLate
             velocity.z = new ParticleSystem.MinMaxCurve(0f, 0f);
         }
 
-        // ── S-089 ④ — 공중 바람 줄기: 태풍 시 스트레치 빌보드 파티클이 바람 방향으로 흐른다 ──
-        private ParticleSystem _windStreaks;
+        // ── S-092 — 윈드워커식 카툰 바람 리본 (참조: Zelda Wind Waker 스타일) ──
+        // 보이지 않는 헤드가 바람 방향으로 사인 요동하며 날다 원형 고리를 1~2회 말고 지나간다.
+        // TrailRenderer가 얇아지는 흰 리본으로 곡선을 남긴다. 태풍 시만, 간헐 스폰.
+
+        private Coroutine _ribbonSpawner;
+        private readonly System.Collections.Generic.List<GameObject> _windRibbons
+            = new System.Collections.Generic.List<GameObject>();
+        private Material _ribbonMaterial;
 
         private void ToggleWindStreaks(bool on)
         {
-            if (on && _windStreaks == null)
+            if (on && _ribbonSpawner == null)
+                _ribbonSpawner = StartCoroutine(SpawnWindRibbons());
+            if (!on && _ribbonSpawner != null)
             {
-                GameObject go = new GameObject("WindStreaks");
-                go.transform.SetParent(transform, false);
-                go.transform.localPosition = new Vector3(0f, 5f, 1f);
-                _windStreaks = go.AddComponent<ParticleSystem>();
-                var main = _windStreaks.main;
-                main.startLifetime = new ParticleSystem.MinMaxCurve(1.2f, 2.2f);
-                main.startSpeed = 0f;
-                main.startLifetime = new ParticleSystem.MinMaxCurve(1.0f, 2.6f); // S-091 ① — 수명 다양화
-                main.startSize = new ParticleSystem.MinMaxCurve(0.07f, 0.15f);
-                main.startColor = new Color(0.95f, 0.97f, 1f, 0.55f);
-                main.maxParticles = 220;
-                // S-091 ① — 돌풍 군집: 잔잔한 base + 2~3초마다 8~14개 휙—.
-                var emission = _windStreaks.emission;
-                emission.rateOverTime = 14f;
-                emission.SetBursts(new[]
+                StopCoroutine(_ribbonSpawner);
+                _ribbonSpawner = null;
+                foreach (GameObject ribbon in _windRibbons) if (ribbon != null) Destroy(ribbon);
+                _windRibbons.Clear();
+            }
+        }
+
+        private System.Collections.IEnumerator SpawnWindRibbons()
+        {
+            while (true)
+            {
+                yield return new WaitForSeconds(Random.Range(0.6f, 1.8f));
+                _windRibbons.RemoveAll(r => r == null);
+                if (_windRibbons.Count < 5) StartCoroutine(WindRibbonFly());
+            }
+        }
+
+        private System.Collections.IEnumerator WindRibbonFly()
+        {
+            Camera camera = Camera.main;
+            if (camera == null) yield break;
+
+            GameObject head = new GameObject("WindRibbon");
+            _windRibbons.Add(head);
+            float direction = WindX == 0f ? 1f : WindX;
+            float baseY = Random.Range(1.6f, 6.5f);
+            head.transform.position = new Vector3(
+                camera.transform.position.x - direction * 26f, baseY, Random.Range(-1f, 3f));
+
+            if (_ribbonMaterial == null)
+            {
+                _ribbonMaterial = new Material(Shader.Find("Sprites/Default"));
+            }
+            TrailRenderer trail = head.AddComponent<TrailRenderer>();
+            trail.material = _ribbonMaterial;
+            trail.time = 0.85f;
+            trail.minVertexDistance = 0.05f;
+            trail.numCapVertices = 4;
+            trail.widthCurve = new AnimationCurve(
+                new Keyframe(0f, 0.02f), new Keyframe(0.25f, 0.13f), new Keyframe(1f, 0.015f));
+            trail.startColor = new Color(1f, 1f, 1f, 0.55f);
+            trail.endColor = new Color(1f, 1f, 1f, 0f);
+
+            float speed = Random.Range(9f, 14f);
+            float wobbleAmp = Random.Range(0.35f, 0.7f);
+            float wobbleFreq = Random.Range(0.9f, 1.5f);
+            int loopsLeft = Random.Range(1, 3);           // 시그니처 고리 1~2회
+            float nextLoopAt = Random.Range(1.1f, 2.2f);  // 다음 고리까지 비행 시간
+            float loopRadius = Random.Range(0.45f, 0.85f);
+
+            float flightTime = 0f;
+            const float TOTAL = 5.2f;
+            while (flightTime < TOTAL && head != null)
+            {
+                flightTime += Time.deltaTime;
+                nextLoopAt -= Time.deltaTime;
+
+                if (loopsLeft > 0 && nextLoopAt <= 0f)
                 {
-                    new ParticleSystem.Burst(0.5f, 8, 14, 0, 2.6f) { probability = 0.75f },
-                });
-                // 굽이침 — 수직 위주 저주파 노이즈로 줄기가 물결치며 흐른다.
-                var noise = _windStreaks.noise;
-                noise.enabled = true;
-                noise.strength = new ParticleSystem.MinMaxCurve(0f);
-                noise.strengthX = new ParticleSystem.MinMaxCurve(0.6f);
-                noise.strengthY = new ParticleSystem.MinMaxCurve(2.6f);
-                noise.strengthZ = new ParticleSystem.MinMaxCurve(0.4f);
-                noise.separateAxes = true;
-                noise.frequency = 0.35f;
-                noise.scrollSpeed = 0.7f;
-                // 스르륵 나타났다 사라진다 — 알파 0→1→0.
-                var colorLife = _windStreaks.colorOverLifetime;
-                colorLife.enabled = true;
-                Gradient fade = new Gradient();
-                fade.SetKeys(
-                    new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
-                    new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(1f, 0.25f),
-                            new GradientAlphaKey(0.9f, 0.7f), new GradientAlphaKey(0f, 1f) });
-                colorLife.color = fade;
-                var shape = _windStreaks.shape;
-                shape.shapeType = ParticleSystemShapeType.Box;
-                shape.scale = new Vector3(46f, 9f, 10f); // 공중 넓게
-                var velocity = _windStreaks.velocityOverLifetime;
-                velocity.enabled = true;
-                velocity.space = ParticleSystemSimulationSpace.World;
-                velocity.x = new ParticleSystem.MinMaxCurve(11f, 17f); // 방향은 아래 스케일로
-                velocity.y = new ParticleSystem.MinMaxCurve(0f, 0f);   // S-090 ② — 축 모드 통일
-                velocity.z = new ParticleSystem.MinMaxCurve(0f, 0f);
-                var renderer = go.GetComponent<ParticleSystemRenderer>();
-                renderer.renderMode = ParticleSystemRenderMode.Stretch; // 속도 방향으로 길쭉 — 바람 줄기
-                renderer.velocityScale = 0.5f; // S-090 ④ — 더 길게
-                renderer.material = MakeParticleMaterial(new Color(0.92f, 0.95f, 1f, 0.35f));
+                    // 원형 고리 — 전진을 늦추고 한 바퀴 말아 돈다 (윈드워커 시그니처).
+                    loopsLeft--;
+                    nextLoopAt = Random.Range(1.2f, 2.0f);
+                    Vector3 anchor = head.transform.position;
+                    float theta = 0f;
+                    const float LOOP_SECONDS = 0.55f;
+                    while (theta < Mathf.PI * 2f && head != null)
+                    {
+                        float dtLoop = Time.deltaTime;
+                        theta += dtLoop * (Mathf.PI * 2f / LOOP_SECONDS);
+                        float clamped = Mathf.Min(theta, Mathf.PI * 2f);
+                        anchor.x += direction * speed * 0.22f * dtLoop; // 고리 도는 동안도 살짝 전진
+                        head.transform.position = anchor + new Vector3(
+                            direction * loopRadius * Mathf.Sin(clamped),
+                            loopRadius * (1f - Mathf.Cos(clamped)), 0f);
+                        yield return null;
+                    }
+                    continue;
+                }
+
+                Vector3 position = head.transform.position;
+                position.x += direction * speed * Time.deltaTime;
+                position.y = baseY + Mathf.Sin(flightTime * wobbleFreq * Mathf.PI) * wobbleAmp;
+                head.transform.position = position;
+                yield return null;
             }
-            if (_windStreaks == null) return;
-            if (on)
+
+            if (head != null)
             {
-                var velocity = _windStreaks.velocityOverLifetime;
-                velocity.x = new ParticleSystem.MinMaxCurve(WindX * 11f, WindX * 17f); // 추첨 방향 반영
-                velocity.y = new ParticleSystem.MinMaxCurve(0f, 0f);
-                velocity.z = new ParticleSystem.MinMaxCurve(0f, 0f);
-                _windStreaks.Play();
+                trail.emitting = false;
+                yield return new WaitForSeconds(0.9f); // 꼬리가 다 사라질 때까지
+                Destroy(head);
             }
-            else _windStreaks.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         }
 
         // ── S-091 ② — 안개 뭉치: 거리 포그만이던 Fog 날씨에 실체 — 대형 저알파 블롭이
