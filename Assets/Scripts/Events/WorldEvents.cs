@@ -125,6 +125,11 @@ namespace DontLate
 
         public static void RaiseStaminaChanged(float normalized) => StaminaChanged?.Invoke(normalized);
 
+        /// <summary>드링크 버프 스태미나 풀 변화 (S-098 ② — 기본 최대 대비 비율 0~0.1). 연속값 — 로그 금지 목록.</summary>
+        public static event Action<float> BuffStaminaChanged;
+
+        public static void RaiseBuffStaminaChanged(float normalized) => BuffStaminaChanged?.Invoke(normalized);
+
         // ── 파손 ──────────────────────────────────────────────
         /// <summary>취급주의 상자 파손 (AU-008). BoxDurability가 발행 — 상자는 주문을 모르므로 페이로드 없음.</summary>
         public static event Action PackageDestroyed;

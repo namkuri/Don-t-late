@@ -104,7 +104,7 @@ namespace DontLate
                     // S-074 ① — 배치 완료 건은 그 패드 위에 놓인 모습으로 유지 (정산 전까지).
                     string beaconAddress = _gameState.placedDeliveries[placedIndex].beaconAddress;
                     if (!beaconPositions.TryGetValue(beaconAddress, out boxPos)) continue; // 딴 구역 패드에 배치 — 여긴 없음
-                    boxPos += new Vector3(0f, 0.1f, 0f);
+                    boxPos += new Vector3(0f, 0.02f, 0f); // S-098 ① — kinematic 고정 스폰이라 낙하 여유 불요
                 }
                 else
                 {

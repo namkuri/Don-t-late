@@ -78,20 +78,11 @@ namespace DontLate
         {
             if (!other.TryGetComponent(out PickupBox box) || box.Order == null) return;
             if (WorldDeliveryManager.Instance == null || !WorldDeliveryManager.Instance.CanHandle(box.Order)) return; // S-075 ②
-            bool alreadyPlaced = WorldDeliveryManager.Instance.IsPlaced(box.Order.orderId);
-            if (box.Order.address == Address) FreezeOnPad(box); // S-097 ① — 성공 배치 상자는 패드 위 고정
-            if (alreadyPlaced) return; // S-097 ① — 재방문 재스폰·E배치 낙하 재진입: 기록·연출 중복 방지
+            // S-098 ① — 라이브 배치는 물리 유지(던져 놓고 밀치는 손맛). 즉시 스냅(S-097)은 폐지 —
+            // 고정은 씬 재입장 스포너의 frozen 스폰이 맡는다.
+            if (WorldDeliveryManager.Instance.IsPlaced(box.Order.orderId)) return; // 재스폰·낙하 재진입 중복 방지 (S-097 ①)
             WorldDeliveryManager.Instance.PlaceDelivery(box.Order, Address);
             if (box.Order.address == Address) { ShowSuccessFloat(); HideBeacon(); } // S-073 ⑥ — 던져 넣기도 연출
-        }
-
-        /// <summary>S-097 ① — 올바른 패드에 놓인 상자는 패드 중앙에 스냅하고 물리를 잠근다 (굴러 이탈·재방문 낙하 방지).</summary>
-        private void FreezeOnPad(PickupBox box)
-        {
-            Transform boxTransform = box.transform;
-            boxTransform.position = transform.position + Vector3.up * 0.02f;
-            boxTransform.rotation = Quaternion.identity;
-            if (box.TryGetComponent(out Rigidbody body)) body.isKinematic = true;
         }
 
         /// <summary>S-097 ① — 배송성공 시 비콘 빛기둥 제거 (재방문 스폰 시에도 Start에서 호출).</summary>

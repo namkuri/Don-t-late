@@ -76,6 +76,7 @@ namespace DontLate
             WorldEvents.DebtIncreased += OnDebtIncreased;
             WorldEvents.MoneySpent += OnMoneySpent;
             WorldEvents.StaminaChanged += OnStaminaChanged;
+            WorldEvents.BuffStaminaChanged += OnBuffStaminaChanged; // S-098 ②
             WorldEvents.StaminaPenaltyChanged += OnStaminaPenaltyChanged; // S-088 ④
             WorldEvents.InteractionFocusChanged += OnInteractionFocusChanged;
             WorldEvents.FocusAddressChanged += OnFocusAddressChanged;
@@ -94,6 +95,7 @@ namespace DontLate
             WorldEvents.DebtIncreased -= OnDebtIncreased;
             WorldEvents.MoneySpent -= OnMoneySpent;
             WorldEvents.StaminaChanged -= OnStaminaChanged;
+            WorldEvents.BuffStaminaChanged -= OnBuffStaminaChanged;
             WorldEvents.StaminaPenaltyChanged -= OnStaminaPenaltyChanged;
             WorldEvents.InteractionFocusChanged -= OnInteractionFocusChanged;
             WorldEvents.FocusAddressChanged -= OnFocusAddressChanged;
@@ -278,8 +280,13 @@ namespace DontLate
         // 뛰기는 드레인 자체가 커서 빠르게 뚝뚝 떨어지는 감각이 남는다.
         private float _staminaTarget = 1f;
 
-        // S-097 ③ — 드링크 버프 중엔 1.0 초과분(총량 +10%)이 온다: 바 오른쪽 밖 파란 fill로 그린다.
-        private void OnStaminaChanged(float normalized) => _staminaTarget = Mathf.Clamp(normalized, 0f, 1.2f);
+        private void OnStaminaChanged(float normalized) => _staminaTarget = Mathf.Clamp01(normalized);
+
+        // S-098 ② — 버프 스태미나 풀(0~0.1): 초록 fill 오른쪽에 파란 세그먼트로 이어 붙는다.
+        private float _buffTarget;
+        private float _buffShown;
+
+        private void OnBuffStaminaChanged(float normalized) => _buffTarget = Mathf.Clamp(normalized, 0f, 0.2f);
 
         // S-088 ④ — 패널티 구간: 바 오른쪽 끝에서부터 각자 색으로 잠식 표시. anchorMax 오른쪽 기점.
         private void OnStaminaPenaltyChanged(StaminaPenalties p)
@@ -304,25 +311,22 @@ namespace DontLate
             return rightEdge - width;
         }
 
-        private float _staminaShown = 1f; // 표시값 (0~1.2 — fillAmount는 1에서 잘려 별도 추적)
-
         private void Update()
         {
             if (_staminaFill == null) return;
-            _staminaShown = Mathf.MoveTowards(_staminaShown, _staminaTarget, Time.deltaTime * 0.6f);
-            _staminaFill.fillAmount = Mathf.Min(_staminaShown, 1f);
+            _staminaFill.fillAmount = Mathf.MoveTowards(_staminaFill.fillAmount, _staminaTarget, Time.deltaTime * 0.6f);
+            _buffShown = Mathf.MoveTowards(_buffShown, _buffTarget, Time.deltaTime * 0.6f);
             UpdateBuffFill();
             UpdatePenaltyTooltip();
         }
 
-        // ── S-097 ③ — 버프 초과분: 바 오른쪽 끝에 이어 붙는 파란 세그먼트 (총량 +10% 가시화) ──
+        // ── S-098 ② — 버프 스태미나 풀: 초록 fill 끝에 이어 붙는 파란 세그먼트 (음용 즉시 표시) ──
 
         private Image _buffFill;
 
         private void UpdateBuffFill()
         {
-            float overflow = Mathf.Max(0f, _staminaShown - 1f);
-            if (overflow < 0.003f)
+            if (_buffShown < 0.003f)
             {
                 if (_buffFill != null) _buffFill.gameObject.SetActive(false);
                 return;
@@ -331,13 +335,14 @@ namespace DontLate
             {
                 _buffFill = new GameObject("BuffFill", typeof(RectTransform)).AddComponent<Image>();
                 _buffFill.transform.SetParent(_staminaFill.rectTransform.parent, false);
-                _buffFill.color = new Color(0.31f, 0.58f, 1f, 1f); // 버프 = 파랑
+                _buffFill.color = new Color(0.31f, 0.58f, 1f, 1f); // 버프 = 파랑 (추움 얼음빛과 구분)
                 _buffFill.raycastTarget = false;
             }
             _buffFill.gameObject.SetActive(true);
+            float left = _staminaFill.fillAmount; // 초록 fill 바로 옆
             RectTransform rect = _buffFill.rectTransform;
-            rect.anchorMin = new Vector2(1f, 0f);
-            rect.anchorMax = new Vector2(1f + overflow, 1f);
+            rect.anchorMin = new Vector2(left, 0f);
+            rect.anchorMax = new Vector2(left + _buffShown, 1f);
             rect.offsetMin = rect.offsetMax = Vector2.zero;
         }
 
@@ -357,6 +362,9 @@ namespace DontLate
             else if (IsHovering(_penaltyColdFill, pointer)) { hovered = _penaltyColdFill; reason = "추움"; }
             else if (IsHovering(_penaltyCarryFill, pointer)) { hovered = _penaltyCarryFill; reason = "무거움"; }
             else if (IsHovering(_penaltyStormFill, pointer)) { hovered = _penaltyStormFill; reason = "강풍"; }
+            // S-098 ③ — 세그먼트에 안 걸렸으면 바 전체: 스태미나·경험치 이름표.
+            else if (IsHovering(_staminaFill, pointer)) { hovered = _staminaFill; reason = "스태미나"; }
+            else if (IsHovering(_masteryFill, pointer)) { hovered = _masteryFill; reason = "경험치"; }
 
             if (hovered == null)
             {
