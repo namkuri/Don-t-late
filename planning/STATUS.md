@@ -4,16 +4,16 @@
 mode: PRETASK              # 사전과제 모드 (PRETASK.md) — 시계=캘린더 이정표
 t0: "2026-07-20 17:09"     # 1차 관제 세션 기동 (KST)
 deadline: "2026-08-10"     # M5 제출 마감 (D-21)
-milestone: M2              # 🔒 Q1 동결 선언(D-037, 2026-07-21) — 국면 1 공식 종료
-phase: 2                   # PROCESS 국면 2 · 양산 — 다음 게이트 Q2(BOM 동결: fab 태그 보완+eta 합산)
-stage: "M2 — 매니페스트 34/34 완주 · 발주 36건 전량 완료(S-027까지) · PR#4~10 머지 · 잔여=민지 반입 대기(H8·H9·H12)+WebGL 회귀"
+milestone: M3              # 🔒 Q1(D-037)·Q2(BOM v0.4 동결 — S-093, 2026-07-29) 게이트 통과 — 분위기·완성도 국면
+phase: 3                   # PROCESS 국면 3 · 폴리시 — 플레이 피드백 사이클(R19~R48) + 감사 CAPA 가동
+stage: "M3 — 발주 115건(완료 99) · 하루 루프 완주·전 씬 조립·날씨 7종·NPC 소셜·정산 영수증 · AAPP 실가동(RT 시트 16장) · reviewer 7연속+capture-reviewer 게이트 · 잔여=엔딩 조건(발주 0)·아트 스왑 대기(A-002~007)·오디오 클립 2종(AU-021·022)"
 session_host: WINDOWS_LOCAL   # unity-cli 직접 실행 가능 (2026-07-20 17:23 전환)
 pending_decisions:
-  - "B-4 캐릭터 도구·리그 — M0-04 Meshy 관통 실측 후에 결정 (그 전엔 보류)"
-  - "Q2 게이트: BOM 동결 (fab 태그 보완+eta 합산) — 발주 전량 완료로 사거리 진입"
-blocked: []   # M0-03 WebGL→Pages 해소 (2026-07-22 S-028 — https://namkuri.github.io/Don-t-late/ 실기동 확인)
-last_checkpoint: "2026-07-28 01:52 — 중간점검 3차 (retrospective-2026-07-28.md — 전 백로그 3.5/7 이행 · 발주규율 붕괴 적발/복원 · 백로그 8건)"
-clock_note: "정상 — 제출까지 21일"
+  - "엔딩/클리어 조건 — 발주 0건 (감사 v1·v2 연속 지적 — 남규님 기획 결정 대기)"
+  - "A1 긴장감 보강안 채택 (급행/교차/러시아워/예보 — INBOX R20 대기)"
+blocked: []   # M0-03 WebGL→Pages 해소 (S-028) · 배포는 D-072 조건부 — 미배포 누적 S-087~102
+last_checkpoint: "2026-07-29 18:34 — 감사 v2 (bom-aapp-gap-audit-v2.md — 처방 5/6 이행 확인·AAPP 실가동 판정·잔여 클렌징 S-103)"
+clock_note: "정상 — 제출(2026-08-10)까지 12일"
 ```
 
 ## 확정된 사실 (실측 기반 · 2026-07-20)
