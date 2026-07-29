@@ -40,10 +40,48 @@ namespace DontLate.EditorTools
             instance.transform.position = Vector3.zero;
             instance.transform.rotation = Quaternion.identity;
 
-            AttachFootprintCollider(instance);
+            // S-110 — 가구는 목표 치수 정규화 + 바닥중심 스냅 (AI 생성물 크기·원점 미조정 대응).
+            GameObject root = name.StartsWith("fur_") ? NormalizeFurniture(instance, name) : instance;
 
-            PrefabUtility.SaveAsPrefabAsset(instance, prefabPath);
-            Object.DestroyImmediate(instance);
+            AttachFootprintCollider(root);
+
+            PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+            Object.DestroyImmediate(root);
+        }
+
+        /// <summary>
+        /// S-110 — fur_* 정규화: FurnitureSO.size.y(인체 1.7u 기준 산정 실치수)로 스케일하고,
+        /// 결합 바운즈를 바닥중심 원점에 스냅한다(안전망). 원점 이탈은 경고 리포트 —
+        /// 아트 원본 교정(원점=바닥중심 규격)이 정도이고 스냅은 이중 방어일 뿐이다.
+        /// </summary>
+        private static GameObject NormalizeFurniture(GameObject instance, string name)
+        {
+            Bounds bounds = CombinedBounds(instance);
+            if (bounds.size.y < 0.001f) return instance;
+
+            // 원점 이탈 검역 리포트 (스냅 전 실측 — 민지님 재작업 기준 피드백).
+            if (Mathf.Abs(bounds.min.y) > bounds.size.y * 0.1f)
+                Debug.LogWarning($"[프리팹팩토리] {name} 원점 이탈 — minY={bounds.min.y:0.00} (규격: 원점=바닥중심). 바닥 스냅 안전망 적용했으나 원본 교정 권장.");
+
+            var so = AssetDatabase.LoadAssetAtPath<FurnitureSO>($"Assets/Data/Furniture/{name}.asset");
+            float scale = so != null && so.size.y > 0.01f ? so.size.y / bounds.size.y : 1f;
+            instance.transform.localScale = Vector3.one * scale;
+
+            GameObject wrapper = new GameObject(name);
+            instance.transform.SetParent(wrapper.transform, true);
+            bounds = CombinedBounds(instance); // 스케일 반영 재실측
+            instance.transform.position = new Vector3(-bounds.center.x, -bounds.min.y, -bounds.center.z);
+            return wrapper;
+        }
+
+        private static Bounds CombinedBounds(GameObject root)
+        {
+            Renderer[] rends = root.GetComponentsInChildren<Renderer>();
+            if (rends.Length == 0) return new Bounds(root.transform.position, Vector3.zero);
+            Bounds bounds = rends[0].bounds;
+            for (int i = 1; i < rends.Length; i++)
+                bounds.Encapsulate(rends[i].bounds);
+            return bounds;
         }
 
         /// <summary>결합 렌더러 바운즈로 루트에 BoxCollider 를 붙인다.</summary>

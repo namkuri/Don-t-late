@@ -61,6 +61,35 @@ namespace DontLate.EditorTools
             GameObject courier = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/Characters/chr_courier.fbx");
             if (courier != null) entries.Insert(0, ("chr_courier", courier));
 
+            // ── S-110 — 스케일 캘리브레이션 레퍼런스 (진열 0번 앞) ──
+            // 인체 1.7u 마네킹 + 건물 출입문 게이지(2.1~2.4u) — 모든 에셋을 이 옆에서 육안 비율 판정.
+            Material refMat = GreyboxStageBuilder.GetOrCreateMaterial("ScaleRef", new Color(1f, 0.42f, 0.36f), false);
+            GameObject mannequin = GreyboxStageBuilder.CreatePrimitive(PrimitiveType.Capsule, "__gb_Ref_Human_1.7u",
+                new Vector3(-SLOT_SPACING, 0.85f, 0f));
+            mannequin.transform.localScale = new Vector3(0.44f, 0.85f, 0.44f); // 캡슐 높이 2u × 0.85 = 1.7u
+            mannequin.GetComponent<Renderer>().sharedMaterial = refMat;
+
+            GameObject doorMin = GreyboxStageBuilder.CreatePrimitive(PrimitiveType.Cube, "__gb_Ref_Door_2.1u",
+                new Vector3(-SLOT_SPACING * 2f, 1.05f, 0f));
+            doorMin.transform.localScale = new Vector3(0.9f, 2.1f, 0.08f);
+            doorMin.GetComponent<Renderer>().sharedMaterial = refMat;
+            GameObject doorMax = GreyboxStageBuilder.CreatePrimitive(PrimitiveType.Cube, "__gb_Ref_Door_2.4u",
+                new Vector3(-SLOT_SPACING * 2f - 1.4f, 1.2f, 0f));
+            doorMax.transform.localScale = new Vector3(0.9f, 2.4f, 0.08f);
+            doorMax.GetComponent<Renderer>().sharedMaterial = refMat;
+
+            if (font != null)
+            {
+                GameObject refLabelGo = new GameObject("__gb_Label_ScaleRef");
+                refLabelGo.transform.position = new Vector3(-SLOT_SPACING * 1.5f, 3.4f, 0.6f);
+                TextMeshPro refLabel = refLabelGo.AddComponent<TextMeshPro>();
+                refLabel.font = font;
+                refLabel.fontSize = 4.2f;
+                refLabel.alignment = TextAlignmentOptions.Center;
+                refLabel.text = "인체 1.7u · 문 2.1/2.4u";
+                refLabel.color = new Color(1f, 0.42f, 0.36f);
+            }
+
             for (int i = 0; i < entries.Count; i++)
             {
                 Vector3 slot = new Vector3(i * SLOT_SPACING, 0f, 0f);

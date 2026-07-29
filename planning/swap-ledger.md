@@ -10,3 +10,7 @@
 | 2026-07-29 23:42 | swap | fx_cloud_b | Assets/_intake/art/ChatGPT/UI/cloud2.png -> Assets/Art/Backgrounds/fx_cloud_b.png |
 | 2026-07-29 23:49 | unswap | fur_tv | Assets/Art/Props/fur_tv.fbx 제거 -> 코드 폴백 |
 | 2026-07-29 23:49 | swap | fur_tv | Assets/_intake/art/Trellis2/Props/low_tv.fbx -> Assets/Art/Props/fur_tv.fbx |
+| 2026-07-30 00:22 | unswap | fur_bed | Assets/Art/Props/fur_bed.fbx 제거 -> 코드 폴백 |
+| 2026-07-30 00:22 | unswap | fur_plant | Assets/Art/Props/fur_plant.fbx 제거 -> 코드 폴백 |
+| 2026-07-30 00:22 | unswap | fur_rug | Assets/Art/Props/fur_rug.fbx 제거 -> 코드 폴백 |
+| 2026-07-30 00:22 | unswap | fur_tv | Assets/Art/Props/fur_tv.fbx 제거 -> 코드 폴백 |
