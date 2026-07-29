@@ -53,7 +53,9 @@ namespace DontLate
         private void OnSceneArrived(GameScene scene)
         {
             if (_gameState == null || _gameState.endingPlayed) return;
-            bool debtCleared = _gameState.debt <= 0 && _gameState.completedCount > 0; // 신규 세션 오발동 방지
+            // S-105 — 배송 이력 조건(completedCount) 제거: 치트 정산 경로(배송 0건)를 막던 과잉 방어.
+            // 빚은 세션 시작 시 startDebt(양수)로 리셋되므로 신규 세션 오발동은 구조적으로 불가.
+            bool debtCleared = _gameState.debt <= 0;
 
             if (scene == GameScene.Home && debtCleared && !_gameState.endingMonologuePlayed)
                 StartCoroutine(PlayMonologue());
