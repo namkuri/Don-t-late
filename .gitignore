@@ -174,3 +174,6 @@ ProfilerCaptures/
 # S-100 — PC별 생성물 (BuildVersionStamp가 굽는다)
 Assets/Resources/build_version.txt
 Assets/Resources/build_version.txt.meta
+
+# S-106 — 로컬 전용 설정 (감사 v3 처방)
+.claude/settings.local.json
