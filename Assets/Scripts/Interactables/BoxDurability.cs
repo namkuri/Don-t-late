@@ -55,6 +55,7 @@ namespace DontLate
             _hp -= (speed - _tuning.boxSafeImpactSpeed) * _tuning.boxDamagePerSpeed;
             Debug.Log("[취급주의] 충격 " + speed.ToString("0.0") + "m/s → HP " + Mathf.Max(0f, _hp).ToString("0"));
             RefreshBar();
+            WorldEvents.RaisePackageDamaged(); // S-096 — 사장님 잔소리 구독 지점
 
             if (_hp <= 0f) Explode();
             else WorldAudioManager.Instance?.PlayBoxDamageSfx(); // AU-018 ③ — 미파손 데미지음(파손은 box_break)

@@ -135,6 +135,15 @@ namespace DontLate
             PackageDestroyed?.Invoke();
         }
 
+        /// <summary>취급주의 상자가 충격으로 HP가 닳았을 때 — 파손 전 단계 포함 (S-096). BoxDurability가 발행, 사장님 잔소리가 구독.</summary>
+        public static event Action PackageDamaged;
+
+        public static void RaisePackageDamaged()
+        {
+            Log("PackageDamaged — 상자 손상");
+            PackageDamaged?.Invoke();
+        }
+
         // ── 상차 (바코드) ─────────────────────────────────────
         /// <summary>폰으로 박스 송장을 스캔했을 때. PhoneView가 목록 갱신에 구독 (S-011).</summary>
         public static event Action<DeliveryData> BarcodeScanned;

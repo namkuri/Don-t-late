@@ -77,7 +77,10 @@ def main():
 
     os.makedirs(ROUTING, exist_ok=True)
     today = datetime.date.today().strftime("%Y%m%d")
-    seq = 1 + len([f for f in os.listdir(ROUTING) if f.startswith("RT-" + today)])
+    # 결번이 있어도 충돌하지 않도록 최대 번호+1 (개수+1 방식은 2026-07-29 실제 덮어쓰기 사고)
+    used = [int(m.group(1)) for f in os.listdir(ROUTING)
+            for m in [re.match(r"RT-" + today + r"-(\d+)\.md$", f)] if m]
+    seq = max(used) + 1 if used else 1
     sheet_id = "RT-%s-%02d" % (today, seq)
     path = os.path.join(ROUTING, sheet_id + ".md")
 

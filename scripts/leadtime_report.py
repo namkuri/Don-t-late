@@ -20,8 +20,11 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")  # Windows cp949 콘솔 대응
 
 ORDER_RE = re.compile(r"^## (\S+) · 발주 (\d{4}-\d{2}-\d{2} \d{2}:\d{2}) → (.+)$")
+# 변형 헤더 (2026-07-29 실측 — S-088~095가 이 형식): `## ID · 제목 (발주 YYYY-MM-DD HH:MM)`
+ORDER_ALT_RE = re.compile(r"^## (\S+) · (.+?)\s*\(발주 (\d{4}-\d{2}-\d{2} \d{2}:\d{2})\)")
 # 관대한 매칭 (2026-07-22): 시각 뒤 어떤 괄호·주석이 와도 허용, 표기 리드는 있으면 추출
-RESULT_RE = re.compile(r"^### 결과 · (\d{4}-\d{2}-\d{2} \d{2}:\d{2})(?:.*?리드\s*[~약]?\s*(\d+)\s*분)?")
+# (2026-07-29) `### 결과 (S-0XX) ·` 변형 허용 — 최근 결과 전량이 이 형식이라 무성 미집계였다
+RESULT_RE = re.compile(r"^### 결과(?:\s*\([^)]*\))? · (\d{4}-\d{2}-\d{2} \d{2}:\d{2})(?:.*?리드\s*[~약]?\s*(\d+)\s*분)?")
 FMT = "%Y-%m-%d %H:%M"
 OUT = os.path.join("planning", "calibration.md")
 
@@ -38,6 +41,14 @@ def main() -> int:
                 if m:
                     cur = {"id": m.group(1), "file": os.path.basename(path),
                            "issued": m.group(2), "recipient": m.group(3).strip(),
+                           "results": []}
+                    orders.append(cur)
+                    found = True
+                    continue
+                m = ORDER_ALT_RE.match(line)
+                if m:
+                    cur = {"id": m.group(1), "file": os.path.basename(path),
+                           "issued": m.group(3), "recipient": m.group(2).strip(),
                            "results": []}
                     orders.append(cur)
                     found = True

@@ -30,6 +30,27 @@ namespace DontLate
         private float _pollTimer;
         private readonly Collider[] _hits = new Collider[16];
 
+        // S-096 — 상자 손상 잔소리 멘트 풀 (랜덤 · 연속 중복 회피)
+        private static readonly string[] SCOLD_LINES =
+        {
+            "이봐! 물건 안 부서지게 조심해!",
+            "어이어이, 그거 다 돈이야 돈!",
+            "살살 다뤄! 파손나면 월급에서 깐다?",
+            "택배가 무슨 죄야, 던지지 마!",
+            "취급주의 스티커 안 보여?!",
+            "그렇게 다루면 별점 나락 간다니까.",
+        };
+        private GameObject _scoldCanvasGo;
+        private int _lastScoldIndex = -1;
+
+        private void OnEnable()  { WorldEvents.PackageDamaged += OnPackageDamaged; }
+        private void OnDisable() { WorldEvents.PackageDamaged -= OnPackageDamaged; }
+
+        private void OnDestroy()
+        {
+            if (_scoldCanvasGo != null) Destroy(_scoldCanvasGo);
+        }
+
         private void Start()
         {
             _homePosition = transform.position;
@@ -131,6 +152,52 @@ namespace DontLate
         {
             if (_highlightRenderer == null) return;
             _highlightRenderer.sharedMaterial = on && _highlightMaterial != null ? _highlightMaterial : _normalMaterial;
+        }
+
+        // ── S-096 잔소리 말풍선 — PedestrianNpc Greet 캔버스와 동일 스타일 (풀해상 오버레이 추종) ──
+
+        private void OnPackageDamaged()
+        {
+            int index = Random.Range(0, SCOLD_LINES.Length);
+            if (index == _lastScoldIndex) index = (index + 1) % SCOLD_LINES.Length; // 연속 중복 회피
+            _lastScoldIndex = index;
+            ShowScold(SCOLD_LINES[index]);
+        }
+
+        private void ShowScold(string message)
+        {
+            if (_scoldCanvasGo != null) Destroy(_scoldCanvasGo); // 연타 시 최신 멘트로 교체
+            _scoldCanvasGo = new GameObject("ScoldCanvas");
+            Canvas canvas = _scoldCanvasGo.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 6;
+            var label = new GameObject("Scold", typeof(RectTransform)).AddComponent<TMPro.TextMeshProUGUI>();
+            label.transform.SetParent(_scoldCanvasGo.transform, false);
+            if (UiOverlayFont.Korean != null) label.font = UiOverlayFont.Korean;
+            label.fontSize = 22f;
+            label.fontStyle = TMPro.FontStyles.Bold;
+            label.color = new Color(1f, 0.76f, 0.42f, 1f); // 잔소리 = 앰버 (인사 흰색과 톤만 구분)
+            label.alignment = TMPro.TextAlignmentOptions.Center;
+            label.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
+            label.raycastTarget = false;
+            label.rectTransform.sizeDelta = new Vector2(420f, 30f);
+            label.text = message;
+            StartCoroutine(ScoldFollow(label));
+        }
+
+        private System.Collections.IEnumerator ScoldFollow(TMPro.TMP_Text label)
+        {
+            float t = 0f;
+            Camera camera = Camera.main;
+            while (t < 2.2f && camera != null && label != null)
+            {
+                t += Time.deltaTime;
+                Vector3 screen = camera.WorldToScreenPoint(transform.position + Vector3.up * 2.2f);
+                if (screen.z > 0f) label.rectTransform.position = new Vector3(screen.x, screen.y, 0f);
+                label.color = new Color(1f, 0.76f, 0.42f, t < 1.7f ? 1f : 1f - (t - 1.7f) / 0.5f);
+                yield return null;
+            }
+            if (_scoldCanvasGo != null) { Destroy(_scoldCanvasGo); _scoldCanvasGo = null; }
         }
     }
 }
