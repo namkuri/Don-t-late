@@ -48,6 +48,13 @@ namespace DontLate.EditorTools
                 DontLate.DistrictEdgeGate.Direction.Next, gameState);             // S-054b 도보 개척 출구
             EdgeGateBuildKit.BuildGate("EdgeGate_Home", new Vector3(-14f, 0f, 0f),
                 DontLate.DistrictEdgeGate.Direction.Prev, gameState);             // S-062 ② 집 방향
+            // S-115 — 실물 데코: 물류 배경 건물 + 야드 소품 (없으면 생략 — 소켓).
+            GreyboxStageBuilder.PlaceCatalog("logi_center", new Vector3(0f, 0f, 16f)); // 원경 1채
+            GreyboxStageBuilder.PlaceCatalog("belt", new Vector3(-6.5f, 0f, 2.2f), 90f);
+            GreyboxStageBuilder.PlaceCatalog("Food_cart_unity", new Vector3(6.5f, 0f, 2.6f), 180f);
+            GreyboxStageBuilder.PlaceCatalog("white_van", new Vector3(12.2f, 0f, 3.0f), 20f);
+            GreyboxStageBuilder.PlaceCatalog("Trash_Bin_unity", new Vector3(-2.2f, 0f, 2.4f));
+
             NpcBuildKit.BuildPedestrian("Walker_A", new Vector3(-9f, 0f, 2.4f), new Color(0.45f, 0.52f, 0.62f), 5f,
                 null, 0f, "camp_walker_a", gameState);
             NpcBuildKit.BuildPedestrian("Walker_B", new Vector3(4f, 0f, 2.8f), new Color(0.60f, 0.48f, 0.40f), 6f,

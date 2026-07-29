@@ -38,6 +38,12 @@ namespace DontLate.EditorTools
 
             // ── 지면·층 슬래브 ───────────────────────────────
             BuildBox("YardGround", new Vector3(-10.5f, -0.05f, 0f), new Vector3(19f, 0.1f, 6f), ground);
+
+            // S-115 — 실물 데코: 마당 뒤 배경 아파트동 + 마당 소품 (없으면 생략 — 소켓).
+            GreyboxStageBuilder.PlaceCatalog("modern_apartment", new Vector3(-14f, 0f, 5.4f));
+            GreyboxStageBuilder.PlaceCatalog("Bench_unity", new Vector3(-7f, 0f, 2.5f), 180f);
+            GreyboxStageBuilder.PlaceCatalog("Pot_unity", new Vector3(-4.5f, 0f, 2.4f));
+            GreyboxStageBuilder.PlaceCatalog("Trash_Bin_unity", new Vector3(-17.5f, 0f, 2.4f));
             BuildBox("LobbyGround", new Vector3(10.25f, -0.05f, 0f), new Vector3(23.5f, 0.1f, 6f), lobby);
             for (int floor = 2; floor <= FLOORS; floor++)
             {

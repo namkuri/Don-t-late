@@ -114,6 +114,14 @@ namespace DontLate.EditorTools
             GreyboxStageBuilder.BuildPlayer(gameState, tuning);
             GameObject player = GameObject.Find("__gb_Player");
             if (player != null) player.transform.position = new Vector3(-16f, 0.1f, 0f);
+            // S-115 — 실물 데코: 평지 낡은 주택·언덕 한옥 (그레이 Modern 박스는 유지 — 추가 장식 원칙).
+            GreyboxStageBuilder.PlaceCatalog("old_korea_house", new Vector3(-19.5f, 0f, 3.2f));
+            GreyboxStageBuilder.PlaceCatalog("red_korean_house", new Vector3(22f, 0f, 3.1f));
+            GreyboxStageBuilder.PlaceCatalog("retro_korean_house", new Vector3(30f, 0f, 3.2f));
+            GreyboxStageBuilder.PlaceCatalog("Pot_unity", new Vector3(-11.5f, 0f, 2.4f));
+            GreyboxStageBuilder.PlaceCatalog("black_Trash_unity", new Vector3(4f, 0f, 2.5f));
+            GreyboxStageBuilder.PlaceCatalog("bycle", new Vector3(-4f, 0f, 2.4f), 15f);
+
             GreyboxStageBuilder.BuildGroundMist();
             GreyboxStageBuilder.BuildStarField();
             GreyboxStageBuilder.BuildPostVolume();

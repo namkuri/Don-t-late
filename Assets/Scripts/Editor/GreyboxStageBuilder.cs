@@ -366,6 +366,28 @@ namespace DontLate.EditorTools
 
         // 바닥 안개층 쿼드 2장. 수평(rot X=90°)으로 눕혀 레인(폭 X)을 덮는다. y·스케일 상이.
         // GroundMist 셰이더 + StarField.cs(_GlobalAlpha 밤 페이드 재사용). 낮=소멸.
+        /// <summary>S-115 — 카탈로그 프리팹 배치: Prefabs/Auto/<이름>을 로드해 바닥을 groundPos에
+        /// 스냅(수평 중심 정렬). 스케일은 ScaleTable 캘리브레이션 신뢰. 없으면 조용히 생략(소켓).</summary>
+        internal static GameObject PlaceCatalog(string prefabName, Vector3 groundPos, float rotationY = 0f)
+        {
+            var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Auto/" + prefabName + ".prefab");
+            if (prefab == null) return null;
+            GameObject instance = (GameObject)Object.Instantiate(prefab);
+            instance.name = "__gb_Deco_" + prefabName;
+            instance.transform.rotation = Quaternion.Euler(0f, rotationY, 0f);
+
+            var renderers = instance.GetComponentsInChildren<Renderer>();
+            if (renderers.Length > 0)
+            {
+                Bounds bounds = renderers[0].bounds;
+                foreach (Renderer r in renderers) bounds.Encapsulate(r.bounds);
+                instance.transform.position = new Vector3(
+                    groundPos.x - bounds.center.x, groundPos.y - bounds.min.y, groundPos.z - bounds.center.z);
+            }
+            else instance.transform.position = groundPos;
+            return instance;
+        }
+
         internal static void BuildGroundMist()
         {
             Material mist = GetOrCreateGroundMistMaterial();

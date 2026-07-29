@@ -13,6 +13,8 @@ namespace DontLate.EditorTools
         private static readonly Dictionary<string, float> Exact = new Dictionary<string, float>
         {
             { "door", 2.2f },            // 출입문 그 자체 — 게이지 기준
+            { "logi_center", 6.5f },      // S-115 — 캠프 배경용 (기본 center 10u는 무대 압도)
+            { "logistics_center", 6.5f },
             { "prop_box_parcel", 0.6f },  // S-112 — 택배상자 (사람 무릎~허리)
             { "prop_streetlamp", 4.5f },  // S-112 — 가로등 등주 실높이
             { "old_stair", 3.2f },
