@@ -317,3 +317,15 @@ Director 판정: 기존 걷는 소리가 **쇳소리(metallic)** — 원인 = �
 - prompt SHA1 `b529abed6cc1` · seed(로컬) 1957209730 · 생성 0.5s → 트림 0.22s
 - 후공정: 트림 → 소프트 컴프레션(tanh, 크레스트 감소=존재감) → 피크 -1dB. 임포트 실측 rms **-9.4dB**(가청 확보 — 저역 muffled 후보들이 작은 스피커서 안 들린 문제 해결).
 - 탐색 이력: 저역 thud 계열(boot/concrete/muffled)은 스피커서 약함 · 거친 scuff는 가청이나 거슬림 → "중역 클린 탭"이 가청∧매끈∧비금속 교점.
+
+## AU-020 교통사고 SFX (끼익!!쿵!) — ElevenLabs · 2026-07-29
+
+차에 치일 때(`TrafficCar`) 타이어 스키드 → 충돌 임팩트 연속음 1클립. **비토이톤**(`--no-anchors` — 충격음은
+토이 앵커와 충돌, box_damage 선례). 3 take 생성(seed 상이) → **Director 청취 판정 take1 채택**.
+⚠ SFX는 API가 seed 미수용 → seed 복원 불가(로컬 기록).
+
+- 채택 프롬프트(창작 태그): `sudden tire skid screech, then heavy car collision crash, crunching metal impact and low thud`
+- prompt SHA1 `21e1a3ebf762` · seed(로컬·take1) 411312833 · 생성 1.36s → 트림 1.02s
+- 후공정: stereo→mono → 트림(≤-40dBFS) → 피크 -1.0dB 정규화(트랜지언트라 peak 한계) → 페이드(in 2ms/out 20ms). 임포트 실측 rms -11.9dB.
+- 배선: `WorldAudioManager._sfxCarCrash` 소켓 기시공(S-066 ③) → `TrafficCar` 치임 시 `PlayCarCrashSfx()`. CoreSceneBuilder `LoadSfx("sfx_car_crash")` 자동 배선(클립 로드 실증 1.02s·mono). 클립 도착 전 무음.
+- 미채택: take2(1.36s 최대밀도·여운 김) · take3(0.73s 즉발 펀치).

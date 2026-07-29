@@ -175,6 +175,7 @@
 | amb_weather_rain.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료 · 22s×2 스티칭 40s 루프) — AU-018 ① | 상업 가능·표기 불요 | 2026-07-27 |
 | amb_weather_snow.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료 · 22s×2 스티칭 40s 루프) — AU-018 ① | 상업 가능·표기 불요 | 2026-07-27 |
 | amb_weather_heat.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료 · 22s×2 스티칭 40s 루프) — AU-018 ① | 상업 가능·표기 불요 | 2026-07-27 |
+| sfx_car_crash.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료 · --no-anchors 비토이톤) — AU-020 | 상업 가능·표기 불요 | 2026-07-29 |
 
 ## ChatGPT UI INTAKE (민지) — 2026-07-22
 
