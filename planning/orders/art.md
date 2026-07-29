@@ -179,4 +179,5 @@ chr_courier를 자동 수집해 4u 간격 진열(발높이 정규화·이름표)
 
 - `[발주] A-008 민지 수동 아트 251파일을 생성 도구·계약 분류별 _intake 경로로 정리 시작`
 - 제안 목록과 실제 투입 경로: [`planning/bom_propose.md`](../bom_propose.md)
-- Qwen·ChatGPT·Mixamo·Tripo 물량은 PR 병합 전 사용 플랜/상업 사용 근거 확인 필요.
+- 라이선스 확인: Qwen-Image 로컬(Apache-2.0) · ChatGPT 출력물 사용자 소유 ·
+  Mixamo 상업 프로젝트 로열티 프리 · Tripo OpenAPI 유료 사용자 출력 권리.

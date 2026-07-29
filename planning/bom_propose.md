@@ -173,11 +173,11 @@
   라이선스·수익화 등 광범위한 권리를 갖는다고 명시한다. PR 출처 표기는
   `Tripo API / late_man 원본 묶음 / catalog character`로 제안한다.
   - 근거: https://www.tripo3d.ai/terms
-- Qwen: 로컬/셀프호스팅 `Qwen-Image` 사용 시 공식 모델·코드가
-  Apache-2.0으로 공개되어 상업 프로젝트 사용 근거로 제안할 수 있다.
-  Qwen 사용 정책도 상업적 플랫폼/API/오픈소스 모델 사용에 적용된다고
-  명시한다. 다만 **Qwen Chat 웹 서비스에서 생성한 경우인지, 로컬
-  Qwen-Image에서 생성한 경우인지 확인이 필요**하다.
+- Qwen: PNG의 `prompt`/`workflow` 메타데이터에서
+  `ARTAI_QwenImageGenerateDiffusersBF16V4`와 모델 경로
+  `/workspace/models/qwen`이 확인됐다. 따라서 Qwen Chat이 아닌
+  **로컬/셀프호스팅 Qwen-Image** 산출물이다. 공식 모델·코드는
+  Apache-2.0으로 공개되어 상업 프로젝트 사용 근거로 제안한다.
   - 모델 라이선스: https://github.com/QwenLM/Qwen-Image/blob/main/LICENSE
   - 사용 정책: https://qwen.ai/usagepolicy
 - FBX의 Embed Media, 원점=바닥 중심, Y-up, 폴리 예산, 간판 분리 여부는
@@ -187,5 +187,4 @@
 
 ### 병합 전 남은 확인
 
-1. `Qwen` 이미지가 로컬/셀프호스팅 Qwen-Image 산출물인지 확인.
-2. 입력 이미지에 제3자 상표·저작물·무단 레퍼런스가 포함되지 않았는지 확인.
+1. 입력 이미지에 제3자 상표·저작물·무단 레퍼런스가 포함되지 않았는지 확인.
