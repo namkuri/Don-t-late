@@ -1,0 +1,29 @@
+# AAPP C2 — 피처→공정 매핑 규칙 (운영 파일 · S-095 실가동)
+# 정의서 §7.1의 예시를 운영으로 분리. 위에서부터 우선 매칭. 표준시간은 calibration.md 실측 기반.
+# 소비자: scripts/aapp_route.py (라우팅 시트 자동 생성)
+
+rules:
+  - when: {source: fake}                      # 스킵/트릭 — 빌보드·연출 대체
+    template: STD-FAKE
+  - when: {source: reuse}                     # 기존 자산 재사용
+    template: STD-REUSE
+  - when: {fabrication: cast}                 # 통짜 — 늦게, 사람 게이트
+    template: STD-CAST
+  - when: {type: prop_3d, source: generate}
+    template: STD-PROP-3D
+  - when: {type: character, source: generate}
+    template: STD-CHARACTER
+  - when: {type: art_2d, source: swap}        # 민지님 아트 도착 → 소켓 스왑 (실전 최다 대기 레인)
+    template: STD-ART-SWAP
+  - when: {type: audio, source: swap}         # 정수님 클립 도착 → SFX 소켓 스왑
+    template: STD-SFX-SOCKET
+  - when: {type: audio}
+    template: STD-AUDIO
+  - when: {type: code_feature}                # 관제 직접 시공 레인 (실전 최다 — 발주 봉투 축약형)
+    template: STD-CODE-FEATURE
+  - when: {type: ui_skin}
+    template: STD-UI-SKIN
+  - when: {type: scene_data}                  # 소켓 덤프·씬 데이터 (RT-20260729-01 실증)
+    template: STD-SCENE-DUMP
+  - when: {type: audit_data}                  # 대장 대조·검증 작업
+    template: STD-AUDIT

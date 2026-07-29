@@ -1,0 +1,64 @@
+# AAPP C3 — 표준 공정 템플릿 라이브러리 (운영 파일 · S-095 실가동)
+# std_min은 calibration.md 81건 실측(중앙값 17분·p90 78분) 기반 재보정 — 정의서 예시값 갱신.
+
+STD-CODE-FEATURE:      # 관제 코드 시공 — 실전 최다 레인 (발주 봉투와 1:1)
+  steps:
+    - {op: order,   agent: 관제,       note: "[발주] 커밋 선행 (D-060)", std_min: 2}
+    - {op: build,   agent: 관제(CLI),  tool: Edit/python,                std_min: 8}
+    - {op: verify,  agent: 관제,       tool: unity-cli (컴파일·테스트·Play 실측·캡처), std_min: 5}
+    - {op: review,  agent: reviewer,   gate: acceptance+rules,           std_min: 2}
+    - {op: record,  agent: 관제,       note: "결과 append + 납품 커밋",   std_min: 2}
+  est_total_min: 19    # ≈ 실측 중앙값 17분 정합
+
+STD-UI-SKIN:
+  steps:
+    - {op: order,  agent: 관제, std_min: 2}
+    - {op: build,  agent: 관제(CLI), note: "빌더+View 동시 수정", std_min: 10}
+    - {op: verify, agent: 관제, note: "재조립+캡처 육안 판정 필수(폰트·렌더 함정)", std_min: 5}
+    - {op: record, agent: 관제, std_min: 2}
+  est_total_min: 19
+
+STD-ART-SWAP:          # 민지님 아트 도착 시 (A-002~007 대기 레인)
+  steps:
+    - {op: intake,  agent: 사람(남규), note: "_intake/<도구명>/ 수동 반입 (D-009)", std_min: 3}
+    - {op: iqc,     agent: 관제,      note: "라이선스 manifest 대조(차단 게이트)·검역 리포트", std_min: 4}
+    - {op: import,  agent: 관제,      note: "Art/ 계약 경로 이동 → 임포터 자동(밉맵·Point·프리팹)", std_min: 2}
+    - {op: swap,    agent: 관제,      note: "bom_id=파일명 소켓 자동 스왑 or socket-map 조회 배치", std_min: 3}
+    - {op: verify,  agent: 관제,      note: "씬 캡처 + 디스코드 발신 (D-063)", std_min: 3}
+  est_total_min: 15
+
+STD-SFX-SOCKET:        # 정수님 클립 도착 시 (AU-021·022 대기 레인)
+  steps:
+    - {op: intake, agent: 정수, note: "Audio/SFX/ 파일명=bom_id 직행 (BOM §8 스왑 계약)", std_min: 1}
+    - {op: swap,   agent: 자동, note: "빌더 LoadSfx 소켓 — 재조립 시 자동", std_min: 1}
+    - {op: verify, agent: 관제, note: "재생 실측 + 볼륨 채널 대조", std_min: 3}
+  est_total_min: 5
+
+STD-SCENE-DUMP:        # 소켓 좌표 사본 갱신 (RT-20260729-01 실증)
+  steps:
+    - {op: scan,   agent: 관제, note: "빌더 코드(정본)에서 상수 추출", std_min: 4}
+    - {op: record, agent: 관제, note: "socket-map 갱신", std_min: 4}
+    - {op: verify, agent: 관제, note: "소스 grep 대조", std_min: 2}
+  est_total_min: 10
+
+STD-AUDIT:             # 대장 대조·검증
+  steps:
+    - {op: collect, agent: 관제, note: "실물 목록 수집(ls·grep)", std_min: 4}
+    - {op: diff,    agent: 관제, note: "대장 대비 차분", std_min: 4}
+    - {op: record,  agent: 관제, note: "대장 갱신 or 불일치 보고", std_min: 4}
+  est_total_min: 12
+
+STD-PROP-3D:           # 3D 소품 (generate 레인 — Trellis 관통 후 가동, 정의서 원형 유지)
+  steps:
+    - {op: generate,    agent: asset-generator, tool: Meshy,    std_min: 8}
+    - {op: postprocess, agent: asset-generator, tool: Blender,  std_min: 3}
+    - {op: import,      agent: 관제, tool: 임포터 자동,          std_min: 1}
+    - {op: verify,      agent: reviewer, gate: acceptance+interface, std_min: 1}
+    - {op: swap,        agent: 관제, target: placeholder,        std_min: 1}
+  est_total_min: 14
+
+STD-CHARACTER: {est_total_min: 40, note: "정의서 §7.2 원형 — generate 레인 발사 시 상세화"}
+STD-CAST: {gate_before: [scope_locked, core_loop_done, human_approval], note: "정의서 §7.2 원형"}
+STD-AUDIO: {est_total_min: 45, note: "정수님 ElevenLabs 생성 — AU 실측 리드 반영"}
+STD-FAKE: {est_total_min: 3}
+STD-REUSE: {est_total_min: 5}

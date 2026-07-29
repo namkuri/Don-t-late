@@ -290,3 +290,19 @@
 
 - **동결 선언(Q2)**: 본 문서 v0.4를 동결한다. 이후 신규 실물은 부록 append(직교 추가)만 허용,
   기존 행 수정은 사람 게이트. 미해소 잔여: 아트 스왑 대기(A-002~007)·오디오 클립 2종 — 소켓 계약으로 흡수됨.
+
+### §15.1 §8 오디오 정합 감사 (2026-07-29 · RT-20260729-08 — AAPP 시트 실행분)
+
+> 감사 지적 "BOM §8 vs 실물 SFX 부분 불일치 가능성" 실측 해소. 대조: §8 SFX 표 13종 ↔ `Assets/Audio/SFX/` 실물 36종.
+
+- **§8 등재 13종 → 실물 전부 존재 (결손 0)**: delivery_ok·late_buzzer·pickup·footstep·deadline_warn·
+  phone_ring·dialogue_blip·rhythm_hit·rhythm_miss·drink·scene_whoosh·amb_night ✅ (§15 소켓 2종
+  fanfare·thunder는 클립 대기 — 설계대로 미존재).
+- **미등재 실물 23종** — 전부 07-22 이후 시스템 발주의 부속 산출(스왑 계약 경로 준수, 이탈 아님):
+  - 정산·UI 6: sfx_coin·settle_ok·settle_bad·ui_tick·vending·furniture_place
+  - 이동·물리 5: sfx_jump·land·throw·footstep_snow·arrive
+  - 폰·맵 5: sfx_phone·barcode·map_pin·map_route·map_depart
+  - 파손·벌점 3: sfx_box_damage·box_break·penalty
+  - 환경음 4: amb_foodalley·villatown·weather_heat·weather_rain·weather_snow (5파일 — heat/rain/snow는 날씨 v2)
+- 처분: 위 목록이 곧 BOM 등재(부록 append — 동결 원문 무수정). 개별 행 분해는 불요 —
+  트리거 매핑은 각 시스템 발주 결과(planning/orders/system.md)가 정본.

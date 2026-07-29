@@ -2272,3 +2272,22 @@ MDA 판정 (D-070): A3 강화 — 태풍 체감 연출 완성.
   대기 중 실작업(AU-021·022 스왑, A-002 아트 스왑, BOM §8 오디오 전수 대조)을 시트로 발행 —
   queued 계획 + 즉시 실행 가능한 1건은 실행. /order 스킬에 시트 발행 절차 편입(지속 가동).
 - 수용기준: 운영 파일 2종+생성기 실행 실적+발행 시트 3건 이상(1건 done)+스킬 편입.
+
+### 결과 (S-095) · 2026-07-29 15:13 (리드 9분)
+
+- ① **운영 파일 2종 분리**: [[aapp/process-map]](planning/aapp/process-map.yaml — 피처→공정 매핑
+  규칙, 실전 레인 6종: code_feature·ui_skin·scene_data·audit_data·art_2d+swap·audio+swap) ·
+  [[aapp/templates]](planning/aapp/templates.yaml — 표준 공정 템플릿 7종, 표준시간은 calibration
+  실측 기반: CODE-FEATURE 19분·ART-SWAP 15분·AUDIT 12분·SCENE-DUMP 10분·SFX-SOCKET 5분).
+- ② **생성기 가동**: scripts/aapp_route.py — 규칙 매칭→시트 발행. 수리 2건 자기 적발:
+  cp949 출력(유니코드 대시)·템플릿 헤더 콜론 뒤 주석에 파서 미매칭(est=None 발행) →
+  정규식 `:[^\n]*\n`으로 수정, 발행분 4장 est 백필.
+- ③ **발행 실적 5장**: RT-20260729-01(S-093 수동 실증·done) + 자동 발행 4장 —
+  05 sfx_fanfare(AU-021 스왑 대기·queued) · 06 sfx_thunder(AU-022·queued) ·
+  07 ui_phone_icons(A-002 아트 스왑 대기·queued) · 08 bom_audio_reconcile(**즉시 실행·done**).
+- ④ **RT-08 실행 결과**: BOM §8 등재 13종 실물 전부 존재(결손 0) · 미등재 실물 23종 식별
+  (전부 07-22 이후 시스템 발주 부속 — 스왑 계약 경로 준수) → BOM §15.1 부록 append로 등재
+  (동결 원문 무수정·직교 추가). 감사 잔여 "§8 오디오 부분 불일치 가능성" 해소.
+- ⑤ **지속 가동 장치**: /order 스킬 절차 6번에 시트 발행 편입 — 실물 산출 발주는 접수 시
+  aapp_route.py 발행이 의무 절차가 됨.
+- 검증: 파서 4템플릿 파싱 실측 ○ · 시트 4장 est 실값 확인 ○ · RT-08 대조 실측 ○. 코드 무변경(D-072 무관).

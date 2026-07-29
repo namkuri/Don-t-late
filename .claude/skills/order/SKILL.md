@@ -31,7 +31,11 @@ description: 발주 접수 절차 — 대장 append(MDA 3질문 판정 포함) �
    ```
    post-commit 훅의 📦 알림 = 팀 착수 예고. **이 push 전에는 코드 파일을 만들지 않는다.**
 5. 타 레인(정수님·민지님)행 발주면 디스코드로 요청체 안내 발신(`python scripts/discord_notify.py`).
-6. 그 다음에야 시공 시작. 결과·코드는 별도 납품 커밋(→ /deliver 스킬).
+6. **AAPP 라우팅 시트 발행 (S-095 실가동)**: 실물 산출(코드·아트·오디오·씬·감사)이 있는 발주는
+   `python scripts/aapp_route.py <bom_id> <type> [--source X] [--socket "대상"] [--note "비고"]`
+   로 planning/routing/RT-*.md 시트를 발행한다 (type은 planning/aapp/process-map.yaml 규칙 참조).
+   순수 문서·의사결정 건은 발행 생략. 시공 완료 시 시트 status를 done + 실행 기록 기입.
+7. 그 다음에야 시공 시작. 결과·코드는 별도 납품 커밋(→ /deliver 스킬).
 
 ## 금지
 - 발주 기록과 결과를 한 커밋에 뭉치기 (위반 이력: S-050~A-006 15건 — 2026-07-28 적발).
