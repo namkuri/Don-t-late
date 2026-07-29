@@ -168,9 +168,52 @@ namespace DontLate.EditorTools
 
             if (targets.Count == 0) return;
 
+            // S-113 — 임베디드 텍스처 자동 추출 (2026-07-21 대기열 규칙 집행): 계약 경로 모델의
+            // 임베디드 텍스처를 <분류>/Textures/로 추출 — 룩이 fbx 안에 갇히지 않게. 추출이 모델
+            // 재임포트를 1회 유발하지만 그때는 추출물이 이미 있어 재추출 no-op(무한 재귀 없음).
+            foreach (string path in targets)
+                ExtractEmbeddedTextures(path);
+
             // Buildings·Props 모델 → Prefabs/Auto 프리팹 생성/갱신.
             // Auto 프리팹은 계약 경로 밖이라 재임포트를 재귀 트리거하지 않는다.
             CategoryPrefabFactory.BuildPrefabs(targets);
+        }
+
+        /// <summary>S-113 — 임베디드 텍스처를 같은 분류의 Textures/ 폴더로 추출. 이미 추출됐으면 no-op.</summary>
+        internal static void ExtractEmbeddedTextures(string modelPath)
+        {
+            if (!(AssetImporter.GetAtPath(modelPath) is ModelImporter importer)) return;
+
+            string folder = System.IO.Path.GetDirectoryName(modelPath).Replace('\\', '/');
+            string texFolder = folder + "/Textures";
+            string marker = texFolder + "/" + System.IO.Path.GetFileNameWithoutExtension(modelPath);
+            // 추출물 존재 판정: 같은 이름 접두 텍스처가 이미 있으면 스킵 (재임포트 무한루프 방지).
+            if (System.IO.Directory.Exists(texFolder)
+                && System.IO.Directory.GetFiles(texFolder, System.IO.Path.GetFileNameWithoutExtension(modelPath) + "*").Length > 0)
+                return;
+
+            if (!AssetDatabase.IsValidFolder(texFolder))
+                AssetDatabase.CreateFolder(folder, "Textures");
+
+            if (importer.ExtractTextures(texFolder))
+                Debug.Log($"[임포터] {System.IO.Path.GetFileName(modelPath)} 임베디드 텍스처 추출 → {texFolder}/");
+        }
+
+        /// <summary>S-113 — 기존 반입분 일괄 추출 (Buildings·Props 전량).</summary>
+        [MenuItem("DontLate/Art/Extract Embedded Textures (전량)")]
+        public static void ExtractAllEmbeddedTextures()
+        {
+            int count = 0;
+            foreach (string folder in new[] { "Assets/Art/Buildings", "Assets/Art/Props", "Assets/Art/Characters" })
+            {
+                if (!AssetDatabase.IsValidFolder(folder)) continue;
+                foreach (string guid in AssetDatabase.FindAssets("t:Model", new[] { folder }))
+                {
+                    ExtractEmbeddedTextures(AssetDatabase.GUIDToAssetPath(guid));
+                    count++;
+                }
+            }
+            Debug.Log($"[임포터] 임베디드 텍스처 일괄 추출 시도 — 모델 {count}종.");
         }
 
         // ── 헬퍼 ─────────────────────────────────────────────
