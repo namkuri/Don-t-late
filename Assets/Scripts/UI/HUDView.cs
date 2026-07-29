@@ -339,10 +339,11 @@ namespace DontLate
                 _buffFill.raycastTarget = false;
             }
             _buffFill.gameObject.SetActive(true);
-            float left = _staminaFill.fillAmount; // 초록 fill 바로 옆
+            // S-099 — 바 안쪽 수납: 합이 바 폭을 넘으면 파랑이 초록 끝을 대체 (배경 박스 밖 돌출 금지 — S-098 반려).
+            float left = Mathf.Max(0f, Mathf.Min(_staminaFill.fillAmount, 1f - _buffShown));
             RectTransform rect = _buffFill.rectTransform;
             rect.anchorMin = new Vector2(left, 0f);
-            rect.anchorMax = new Vector2(left + _buffShown, 1f);
+            rect.anchorMax = new Vector2(Mathf.Min(left + _buffShown, 1f), 1f);
             rect.offsetMin = rect.offsetMax = Vector2.zero;
         }
 

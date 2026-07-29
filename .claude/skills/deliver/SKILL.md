@@ -19,6 +19,10 @@ description: 납품 마감 절차 — 셀프검증(컴파일·콘솔0·테스트
    `unity-cli exec 'UnityEngine.ScreenCapture.CaptureScreenshot("Screenshots/{id}_{항목}.png"); return "ok";'`
    캡처는 **발주 항목당 1장 이상**(D-069) — 화면 무변화 항목만 로그 갈음 명시.
 5. **캡처를 Read로 직접 확인** — 찍었다고 끝이 아니라 눈으로 판정(이 세션에서 카메라·라벨 결함 3건을 캡처 확인으로 잡음).
+5.5. **캡처 검수 게이트 (S-099 신설 — 시각 납품 의무)**: UI·연출·씬 룩 캡처는 디스코드 발신 전에
+   `capture-reviewer` 서브에이전트에 태운다 — 입력 = 캡처 경로 + **기대 명세 한 줄**(무엇이 보여야
+   하는가). FAIL(경계 침범·겹침·글리프 깨짐 등 차단급)이면 재시공 후 재캡처. 근거: 관제 자체 확인은
+   "기능 존재"만 보고 레이아웃 결함을 반복 통과시켰다(S-098 버프 fill 돌출 반려 — iterations M3).
 6. **결과 기록**: 대장에 `### 결과 · {date 실행값} (리드 N분)` append — 관찰 위주("~확인" ○표기), 실수·교정도 기록.
 7. **납품 커밋**: `git add -A && git reset -- 'Assets/Scenes/*.unity' 'Assets/_Recovery'` (씬 본문 커밋 금지) → `[{ID}] 제목 (via ClaudeCode) [self-tested]` → push.
 8. **재배포는 기본 생략 (D-072)** — 유니티 검증으로 갈음. 배포는 남규님 요청·웹 전용 검증 필요
