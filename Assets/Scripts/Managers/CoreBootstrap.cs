@@ -12,6 +12,16 @@ namespace DontLate
         [SerializeField] private GameStateSO _gameState;
         [SerializeField] private GameScene _firstScene = GameScene.Main;
 
+        // S-107 ② — 타이틀 복귀 = 새 게임: 엔딩·설정("처음 화면으로") 어느 경유든 Main 도착 시
+        // 세션을 리셋한다 (엔딩 후 재시작 시 빚 0 잔존 실사고). 첫 진입 Main도 재리셋 — 멱등이라 무해.
+        private void OnEnable()  { WorldEvents.SceneTransitionCompleted += OnSceneArrivedBootstrap; }
+        private void OnDisable() { WorldEvents.SceneTransitionCompleted -= OnSceneArrivedBootstrap; }
+
+        private void OnSceneArrivedBootstrap(GameScene scene)
+        {
+            if (scene == GameScene.Main) ResetSession();
+        }
+
         private void Start()
         {
             // S-041: 대차는 몸으로 민다 — Player×CartWall 충돌 허용(무시 규칙 폐지).

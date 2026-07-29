@@ -10,7 +10,8 @@ namespace DontLate
         Unsorted,
         Day,
         Night,
-        Title
+        Title,
+        Ending // S-107 엔딩 전용 (bgm_ending 스와프 계약 — AU-023)
     }
 
     /// <summary>

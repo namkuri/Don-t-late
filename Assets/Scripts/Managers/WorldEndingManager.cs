@@ -19,7 +19,6 @@ namespace DontLate
         [SerializeField] private NpcSO[] _npcs;
         [SerializeField] private EndingCreditsView _creditsView;
 
-        private const int FOLLOWER_AFFINITY_MIN = 30; // 만남(20)보다 실제로 쌓은 사이만
         private const int FOLLOWER_MAX = 5;
         private const float WALK_SPEED = 2.4f;
 
@@ -81,22 +80,36 @@ namespace DontLate
         {
             _sequenceRunning = true;
             Debug.Log("[엔딩] 시퀀스 시작 t=" + Time.time.ToString("0.0"));
+            WorldEvents.RaiseEndingStarted(); // S-107 ① — 엔딩 BGM 전환 (클립 도착 전엔 무해)
             Transform player = FindPlayer();
             if (player == null) { _sequenceRunning = false; yield break; }
 
             yield return WaitClamped(1.2f); // 도착 한 박자
 
+            // S-107 ③ 보강 — 씬의 배회 행인도 멈춰서 플레이어를 바라본다: "다같이 모여 격려"의 일부이자,
+            // 어슬렁거리다 대열에 난입하는 것 방지 (캡처 게이트 적발 — 배회 개체가 대열 사이 끼어듦).
+            foreach (PedestrianNpc walker in FindObjectsByType<PedestrianNpc>())
+            {
+                if (walker == null) continue;
+                walker.enabled = false; // 배회 정지 (씬 수명 한정 — 엔딩 후 타이틀 전환으로 함께 소멸)
+                Vector3 look = player.position - walker.transform.position;
+                look.y = 0f;
+                if (look.sqrMagnitude > 0.01f) walker.transform.rotation = Quaternion.LookRotation(look);
+            }
+
             // 2단 — 박말순 선두 + 동행이 오른쪽에서 걸어온다.
             List<NpcSO> party = PickParty();
+            List<Color> colors = DistinctColors(party); // 동색 워커 구분 (캡처 게이트 적발 — 팔레트 재지정)
             var figures = new List<Transform>();
             for (int i = 0; i < party.Count; i++)
             {
-                Vector3 spawn = player.position + new Vector3(10f + i * 1.4f, 0f, 0.6f + (i % 2) * 0.8f);
-                figures.Add(MakeFigure(party[i], spawn));
+                // 대열은 카메라 앞줄(z-)에 선다 — 캠프 소품(게시판·트럭, 깊은 쪽)과의 z-겹침 방지 (캡처 게이트 적발)
+                Vector3 spawn = player.position + new Vector3(10f + i * 1.4f, 0f, -0.4f - (i % 2) * 0.7f);
+                figures.Add(MakeFigure(party[i], colors[i], spawn));
             }
             for (int i = 0; i < figures.Count; i++)
             {
-                Vector3 goal = player.position + new Vector3(2.2f + i * 1.1f, 0f, 0.5f + (i % 2) * 0.9f);
+                Vector3 goal = player.position + new Vector3(2.2f + i * 1.1f, 0f, -0.4f - (i % 2) * 0.7f);
                 StartCoroutine(WalkTo(figures[i], goal));
             }
             yield return WaitClamped(3.2f); // 걸어오는 시간
@@ -183,9 +196,17 @@ namespace DontLate
             foreach (NpcAffinity entry in ranked)
             {
                 if (party.Count >= 1 + FOLLOWER_MAX) break;
-                if (entry.affinity < FOLLOWER_AFFINITY_MIN || entry.npcId == "parkmalsoon") continue;
+                if (entry.npcId == "parkmalsoon") continue;
                 NpcSO npc = FindNpc(entry.npcId);
-                if (npc != null) party.Add(npc);
+                if (npc != null && !party.Contains(npc)) party.Add(npc);
+            }
+            // S-107 ③ — 부족분은 도감에서 충원: 호감도가 없어도 이웃들이 다같이 모여
+            // 격려하는 것이 이 엔딩의 포인트 (호감도 인원은 앞줄 우선일 뿐).
+            foreach (NpcSO npc in _npcs)
+            {
+                if (party.Count >= 1 + FOLLOWER_MAX) break;
+                if (npc == null || npc.npcId == "parkmalsoon" || party.Contains(npc)) continue;
+                party.Add(npc);
             }
             return party;
         }
@@ -201,8 +222,25 @@ namespace DontLate
         private static string ThanksLine(string npcId)
             => THANKS_LINES[Mathf.Abs(npcId.GetHashCode()) % THANKS_LINES.Length];
 
+        /// <summary>도감 색 기반 + 유사색 중복 시 색상환 분산 — 6명이 육안 구분되게 (S-107 게이트 적발).</summary>
+        private static List<Color> DistinctColors(List<NpcSO> party)
+        {
+            var colors = new List<Color>();
+            for (int i = 0; i < party.Count; i++)
+            {
+                Color color = party[i].placeholderColor;
+                bool similar = false;
+                foreach (Color used in colors)
+                    if (Mathf.Abs(color.r - used.r) + Mathf.Abs(color.g - used.g) + Mathf.Abs(color.b - used.b) < 0.35f)
+                        similar = true;
+                if (similar) color = Color.HSVToRGB((i * 0.17f) % 1f, 0.5f, 0.8f);
+                colors.Add(color);
+            }
+            return colors;
+        }
+
         // 런타임 감사 인사 피겨 — 캡슐+머리 (그레이박스 NPC 동형, 세션 한정이라 SO 에셋 불요).
-        private static Transform MakeFigure(NpcSO npc, Vector3 position)
+        private static Transform MakeFigure(NpcSO npc, Color bodyColor, Vector3 position)
         {
             GameObject root = new GameObject("EndingNpc_" + npc.npcId);
             root.transform.position = position;
@@ -212,7 +250,7 @@ namespace DontLate
             body.transform.SetParent(root.transform, false);
             body.transform.localPosition = new Vector3(0f, 0.9f, 0f);
             body.transform.localScale = new Vector3(0.55f, 0.9f, 0.55f);
-            body.GetComponent<Renderer>().material.color = npc.placeholderColor;
+            body.GetComponent<Renderer>().material.color = bodyColor;
 
             GameObject head = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             Object.Destroy(head.GetComponent<Collider>());

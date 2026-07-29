@@ -221,11 +221,13 @@ namespace DontLate
             WorldEvents.SceneTransitionStarted += OnSceneTransitionStarted;
             WorldEvents.SnowCoverChanged += OnSnowCoverChanged; // AU-018 ③
             WorldEvents.WeatherChanged += OnWeatherChanged;     // AU-018 ①
+            WorldEvents.EndingStarted += OnEndingStarted;       // S-107 ①
         }
 
         private void OnDisable()
         {
             WorldEvents.DialogueEnded -= OnDialogueEnded;
+            WorldEvents.EndingStarted -= OnEndingStarted;
             WorldEvents.DayPhaseChanged -= OnDayPhaseChanged;
             WorldEvents.SceneTransitionCompleted -= OnSceneTransitionCompleted;
             WorldEvents.PackagePickedUp -= OnPackagePickedUp;
@@ -315,9 +317,18 @@ namespace DontLate
             UpdateAmbient();
         }
 
+        private void OnEndingStarted()
+        {
+            _endingActive = true; // S-107 ① — 엔딩 전용 슬롯 최우선 (클립 없으면 기존 곡 유지)
+            ApplySlot();
+        }
+
+        private bool _endingActive;
+
         private void OnSceneTransitionCompleted(GameScene scene)
         {
             _titleScene = scene == GameScene.Main;
+            if (_titleScene) _endingActive = false; // 타이틀 복귀 = 엔딩 종료
             _inDistrict = scene == GameScene.District; // AU-011
             ApplySlot();
             UpdateAmbient();
@@ -472,6 +483,12 @@ namespace DontLate
             _weatherBgmActive = false;
 
             BgmSlot next;
+            // S-107 ① — 엔딩 중이면 전용 슬롯 최우선 (클립 부재 시 SelectForSlot이 null → 기존 곡 유지 = 소켓만)
+            if (_endingActive && SelectForSlot(BgmSlot.Ending) != null)
+            {
+                if (_slot != BgmSlot.Ending) { _slot = BgmSlot.Ending; Crossfade(SelectForSlot(BgmSlot.Ending)); }
+                return;
+            }
             if (_titleScene) next = BgmSlot.Title;
             else if (_phase == DayPhase.Evening || _phase == DayPhase.Night) next = BgmSlot.Night;
             else next = BgmSlot.Day;
@@ -628,7 +645,7 @@ namespace DontLate
         // 청취 순회 순서. Unsorted 를 포함해야 분류 미정 곡을 들어보고 슬롯을 정할 수 있다.
         private static readonly BgmSlot[] DebugSlotOrder =
         {
-            BgmSlot.Day, BgmSlot.Night, BgmSlot.Title, BgmSlot.Unsorted
+            BgmSlot.Day, BgmSlot.Night, BgmSlot.Title, BgmSlot.Ending, BgmSlot.Unsorted
         };
 
         /// <summary>다음 슬롯으로 넘긴다. 빈 슬롯(예: 곡이 컷된 Title)은 건너뛴다.</summary>
@@ -652,6 +669,7 @@ namespace DontLate
 
         private void OnGUI()
         {
+            if (!DebugOverlays.Visible) return; // S-107 ④ — F1 토글 (촬영용)
             string clipName = CurrentClip != null ? CurrentClip.name : "(없음)";
             int count = _pools.TryGetValue(_slot, out List<AudioClip> pool) ? pool.Count : 0;
 

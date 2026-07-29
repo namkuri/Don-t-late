@@ -9,6 +9,16 @@ namespace DontLate
     /// </summary>
     public class VersionLabel : MonoBehaviour
     {
+        private TMPro.TMP_Text _label;
+
+        // S-107 ④ — F1 토글 게이트: 폴링 담당(Core 상주라 전 씬 커버) + 자기 라벨 표시 반영.
+        private void Update()
+        {
+            DebugOverlays.Tick();
+            if (_label != null && _label.gameObject.activeSelf != DebugOverlays.Visible)
+                _label.gameObject.SetActive(DebugOverlays.Visible);
+        }
+
         private void Start()
         {
             TextAsset stamp = Resources.Load<TextAsset>("build_version");
@@ -34,6 +44,7 @@ namespace DontLate
             rect.anchoredPosition = new Vector2(-8f, 6f);
             rect.sizeDelta = new Vector2(360f, 20f);
             label.text = text;
+            _label = label;
         }
     }
 }

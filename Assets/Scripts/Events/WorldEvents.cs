@@ -140,6 +140,15 @@ namespace DontLate
             PackageDestroyed?.Invoke();
         }
 
+        /// <summary>엔딩 시퀀스 개시 (S-107 ① — WorldEndingManager 발행). 오디오가 엔딩 BGM 전환에 구독. 게임당 1회 저빈도.</summary>
+        public static event Action EndingStarted;
+
+        public static void RaiseEndingStarted()
+        {
+            Log("EndingStarted — 엔딩 시퀀스 개시");
+            EndingStarted?.Invoke();
+        }
+
         /// <summary>취급주의 상자가 충격으로 HP가 닳았을 때 — 파손 전 단계 포함 (S-096). BoxDurability가 발행, 사장님 잔소리가 구독.</summary>
         public static event Action PackageDamaged;
 
