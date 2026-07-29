@@ -179,6 +179,7 @@ namespace DontLate
             ApplyWindToFall(_rain);   // S-089 ① — 강수 기울기 (무풍이면 0)
             ApplyWindToFall(_snow);
             ToggleWindStreaks(Weather == WeatherType.Storm); // S-089 ④ — 공중 바람 줄기
+            ToggleFogBanks(Weather == WeatherType.Fog);      // S-091 ② — 안개 뭉치 층
 
             int cloudCount = Weather switch
             {
@@ -473,11 +474,36 @@ namespace DontLate
                 var main = _windStreaks.main;
                 main.startLifetime = new ParticleSystem.MinMaxCurve(1.2f, 2.2f);
                 main.startSpeed = 0f;
-                main.startSize = new ParticleSystem.MinMaxCurve(0.09f, 0.16f); // S-090 ④ — 가시성 강화
-                main.startColor = new Color(0.95f, 0.97f, 1f, 0.6f);
-                main.maxParticles = 160;
+                main.startLifetime = new ParticleSystem.MinMaxCurve(1.0f, 2.6f); // S-091 ① — 수명 다양화
+                main.startSize = new ParticleSystem.MinMaxCurve(0.07f, 0.15f);
+                main.startColor = new Color(0.95f, 0.97f, 1f, 0.55f);
+                main.maxParticles = 220;
+                // S-091 ① — 돌풍 군집: 잔잔한 base + 2~3초마다 8~14개 휙—.
                 var emission = _windStreaks.emission;
-                emission.rateOverTime = 42f;
+                emission.rateOverTime = 14f;
+                emission.SetBursts(new[]
+                {
+                    new ParticleSystem.Burst(0.5f, 8, 14, 0, 2.6f) { probability = 0.75f },
+                });
+                // 굽이침 — 수직 위주 저주파 노이즈로 줄기가 물결치며 흐른다.
+                var noise = _windStreaks.noise;
+                noise.enabled = true;
+                noise.strength = new ParticleSystem.MinMaxCurve(0f);
+                noise.strengthX = new ParticleSystem.MinMaxCurve(0.6f);
+                noise.strengthY = new ParticleSystem.MinMaxCurve(2.6f);
+                noise.strengthZ = new ParticleSystem.MinMaxCurve(0.4f);
+                noise.separateAxes = true;
+                noise.frequency = 0.35f;
+                noise.scrollSpeed = 0.7f;
+                // 스르륵 나타났다 사라진다 — 알파 0→1→0.
+                var colorLife = _windStreaks.colorOverLifetime;
+                colorLife.enabled = true;
+                Gradient fade = new Gradient();
+                fade.SetKeys(
+                    new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                    new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(1f, 0.25f),
+                            new GradientAlphaKey(0.9f, 0.7f), new GradientAlphaKey(0f, 1f) });
+                colorLife.color = fade;
                 var shape = _windStreaks.shape;
                 shape.shapeType = ParticleSystemShapeType.Box;
                 shape.scale = new Vector3(46f, 9f, 10f); // 공중 넓게
@@ -502,6 +528,66 @@ namespace DontLate
                 _windStreaks.Play();
             }
             else _windStreaks.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        }
+
+        // ── S-091 ② — 안개 뭉치: 거리 포그만이던 Fog 날씨에 실체 — 대형 저알파 블롭이
+        //    저층을 느리게 배회한다 (구름 블롭 스프라이트 재사용, 2겹 층감) ──
+        private ParticleSystem _fogBanks;
+
+        private void ToggleFogBanks(bool on)
+        {
+            if (on && _fogBanks == null)
+            {
+                GameObject go = new GameObject("FogBanks");
+                go.transform.SetParent(transform, false);
+                go.transform.localPosition = new Vector3(0f, 0.6f, 5f); // 씬 뒤편 — 화이트아웃 방지
+                _fogBanks = go.AddComponent<ParticleSystem>();
+                var main = _fogBanks.main;
+                main.startLifetime = new ParticleSystem.MinMaxCurve(14f, 24f);
+                main.startSpeed = 0f;
+                main.startSize = new ParticleSystem.MinMaxCurve(3.5f, 7f);
+                main.startColor = new Color(0.90f, 0.92f, 0.96f, 0.07f); // 저알파 — 겹쳐도 은은
+                main.startRotation = new ParticleSystem.MinMaxCurve(0f, Mathf.PI * 2f);
+                main.maxParticles = 22;
+                main.prewarm = true;
+                main.loop = true;
+                var emission = _fogBanks.emission;
+                emission.rateOverTime = 1.1f;
+                var shape = _fogBanks.shape;
+                shape.shapeType = ParticleSystemShapeType.Box;
+                shape.scale = new Vector3(52f, 1.8f, 6f); // 저층 넓게
+                var velocity = _fogBanks.velocityOverLifetime;
+                velocity.enabled = true;
+                velocity.space = ParticleSystemSimulationSpace.World;
+                velocity.x = new ParticleSystem.MinMaxCurve(0.25f, 0.6f); // 느린 드리프트
+                velocity.y = new ParticleSystem.MinMaxCurve(0f, 0.04f);
+                velocity.z = new ParticleSystem.MinMaxCurve(0f, 0f);
+                // 스르륵 짙어졌다 옅어지는 뭉치.
+                var colorLife = _fogBanks.colorOverLifetime;
+                colorLife.enabled = true;
+                Gradient fogFade = new Gradient();
+                fogFade.SetKeys(
+                    new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                    new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(1f, 0.2f),
+                            new GradientAlphaKey(1f, 0.75f), new GradientAlphaKey(0f, 1f) });
+                colorLife.color = fogFade;
+                // 미세 요동 — 안개가 살아 있는 느낌.
+                var noise = _fogBanks.noise;
+                noise.enabled = true;
+                noise.strength = new ParticleSystem.MinMaxCurve(0.35f);
+                noise.frequency = 0.08f;
+                noise.scrollSpeed = 0.12f;
+                var renderer = go.GetComponent<ParticleSystemRenderer>();
+                // S-091b — 네모 플레인 수리 2차: URP 파티클 셰이더는 런타임 블렌드 키워드가 안 잡혀
+                // 불투명 판이 됐다 — Sprites/Default(알파 블렌드·_MainTex 기본)로 블롭을 그린다.
+                Material fogMaterial = new Material(Shader.Find("Sprites/Default"));
+                fogMaterial.mainTexture = MakeCloudSprite().texture;
+                renderer.material = fogMaterial;
+                renderer.sortMode = ParticleSystemSortMode.Distance;
+            }
+            if (_fogBanks == null) return;
+            if (on) _fogBanks.Play();
+            else _fogBanks.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         }
 
         // ── S-088 ⑤ — 태풍 간헐 비: 비가 왔다 그쳤다 한다 ──
