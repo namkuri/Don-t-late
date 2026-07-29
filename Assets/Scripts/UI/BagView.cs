@@ -20,12 +20,44 @@ namespace DontLate
         [SerializeField] private Button _dropButton;
 
         private int _selected = -1;
+        private bool _inTitle = true; // 게임은 Main(타이틀)에서 시작 — 타이틀에선 가방 금지 (PhoneView 관례)
+        private bool _inDialogue; // 대화(최상위 모달) 중 단축키 억제 — 팝업이 대화창 밑에 깔리는 겹침 방지 (S-101 캡처 검수 적발)
 
         private void Awake()
         {
             Instance = this;
             if (_useButton != null) _useButton.onClick.AddListener(UseSelected);
             if (_dropButton != null) _dropButton.onClick.AddListener(DropSelected);
+        }
+
+        private void OnEnable()
+        {
+            WorldEvents.SceneTransitionCompleted += OnSceneArrived;
+            WorldEvents.DialogueStarted += OnDialogueStarted;
+            WorldEvents.DialogueEnded += OnDialogueEnded;
+        }
+
+        private void OnDisable()
+        {
+            WorldEvents.SceneTransitionCompleted -= OnSceneArrived;
+            WorldEvents.DialogueStarted -= OnDialogueStarted;
+            WorldEvents.DialogueEnded -= OnDialogueEnded;
+        }
+
+        private void OnDialogueStarted(string _) { _inDialogue = true; Close(); }
+        private void OnDialogueEnded(string _) => _inDialogue = false;
+
+        private void OnSceneArrived(GameScene scene)
+        {
+            _inTitle = scene == GameScene.Main;
+            if (_inTitle) Close(); // 타이틀 복귀 시 강제 수납
+        }
+
+        // S-101 — I키 토글 (버튼 경로와 병행).
+        private void Update()
+        {
+            var keyboard = UnityEngine.InputSystem.Keyboard.current;
+            if (keyboard != null && keyboard.iKey.wasPressedThisFrame && !_inTitle && !_inDialogue) Toggle();
         }
 
         public void Toggle()

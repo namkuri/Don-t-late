@@ -41,6 +41,7 @@ namespace DontLate
             "그렇게 다루면 별점 나락 간다니까.",
         };
         private GameObject _scoldCanvasGo;
+        private Coroutine _scoldRoutine; // S-102 — 구 코루틴 정지용 (연타 시 새 말풍선을 죽이던 결함 수리)
         private int _lastScoldIndex = -1;
 
         private void OnEnable()  { WorldEvents.PackageDamaged += OnPackageDamaged; }
@@ -166,6 +167,9 @@ namespace DontLate
 
         private void ShowScold(string message)
         {
+            // S-102 — 구 코루틴을 먼저 정지: 살려두면 그 종료 정리가 공유 필드를 타고
+            // 새 말풍선까지 파괴한다 (던진 상자 바운스 연타 → 0.1초 소멸 실사고).
+            if (_scoldRoutine != null) { StopCoroutine(_scoldRoutine); _scoldRoutine = null; }
             if (_scoldCanvasGo != null) Destroy(_scoldCanvasGo); // 연타 시 최신 멘트로 교체
             _scoldCanvasGo = new GameObject("ScoldCanvas");
             Canvas canvas = _scoldCanvasGo.AddComponent<Canvas>();
@@ -182,22 +186,25 @@ namespace DontLate
             label.raycastTarget = false;
             label.rectTransform.sizeDelta = new Vector2(420f, 30f);
             label.text = message;
-            StartCoroutine(ScoldFollow(label));
+            _scoldRoutine = StartCoroutine(ScoldFollow(label, _scoldCanvasGo));
         }
 
-        private System.Collections.IEnumerator ScoldFollow(TMPro.TMP_Text label)
+        private System.Collections.IEnumerator ScoldFollow(TMPro.TMP_Text label, GameObject canvasGo)
         {
             float t = 0f;
             Camera camera = Camera.main;
             while (t < 2.2f && camera != null && label != null)
             {
-                t += Time.deltaTime;
+                t += Mathf.Min(Time.deltaTime, 0.05f); // 프레임 스톨(알탭·에디터 왕복) dt 폭증 방어 — 콘페티(S-094)와 동일 처방
                 Vector3 screen = camera.WorldToScreenPoint(transform.position + Vector3.up * 2.2f);
                 if (screen.z > 0f) label.rectTransform.position = new Vector3(screen.x, screen.y, 0f);
                 label.color = new Color(1f, 0.76f, 0.42f, t < 1.7f ? 1f : 1f - (t - 1.7f) / 0.5f);
                 yield return null;
             }
-            if (_scoldCanvasGo != null) { Destroy(_scoldCanvasGo); _scoldCanvasGo = null; }
+            // S-102 — 자기 캔버스만 정리 (공유 필드 경유 파괴 금지).
+            if (canvasGo != null) Destroy(canvasGo);
+            if (_scoldCanvasGo == canvasGo) _scoldCanvasGo = null;
+            _scoldRoutine = null;
         }
     }
 }

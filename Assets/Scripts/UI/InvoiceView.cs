@@ -12,6 +12,9 @@ namespace DontLate
     /// </summary>
     public class InvoiceView : MonoBehaviour
     {
+        /// <summary>ESC로 송장을 닫은 프레임 (S-101) — 같은 프레임에 설정창이 또 반응하지 않게 (실행 순서 무관 방어).</summary>
+        public static int LastEscCloseFrame { get; private set; } = -1;
+
         [SerializeField] private GameStateSO _gameState;
         [SerializeField] private GameObject _root;
         [SerializeField] private TMP_Text _customerLabel;
@@ -111,6 +114,8 @@ namespace DontLate
             }
             else if ((keyboard != null && keyboard.escapeKey.wasPressedThisFrame) || click)
             {
+                if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame)
+                    LastEscCloseFrame = Time.frameCount; // S-101 — 이 프레임 ESC는 송장 닫기가 소비
                 if (_aiming) EndAim();
                 _root.SetActive(false);
             }
