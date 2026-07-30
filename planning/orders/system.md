@@ -2960,3 +2960,14 @@ MDA 판정 (D-070): 강화 — 민지 반입분 실사용 확대(아트 파이�
   미니게임 리스킨 세트)·sun/moon(시간대 아이콘)·check/x/Question_Mark/hand/one/rolling/
   run_button/arrow(범용)·quick_apt/logis_logo(앱·로고)·현수막/road류(월드 데코 텍스처).
 - 검증: capture-reviewer PASS(폰 정합·명찰 탭·HUD 아이콘 — s117_phone_r2·s117_hud_r2).
+
+---
+
+## S-118 · 발주 2026-07-30 16:40 → CLI (아트 씬 배치 반입 절차 — 세트 프리팹 가이드)
+
+- **요구 (남규님 원문)**: 아트에서 씬 세팅(모델 배치 등)해서 반입하려 함 — 가이드를 #클로드
+  채널에 상세히 발신 + 절차 문서에도 추가.
+- 방식(관제 제안 채택): 씬(.unity) 직접 반입 금지(D-061) 유지 — 배치를 Prefabs/Hand/set_*.prefab
+  묶음으로 반입, 빌더가 PlaceCatalog 소켓으로 씬에 꽂는다.
+- 수용기준: art-mode.md에 절차 신설 + 디스코드 발신 확인.
+MDA 판정 (D-070): 강화 — 아트 배치 자유도·병합 안전 동시 확보(파이프라인 M축).
