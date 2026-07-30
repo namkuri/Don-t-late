@@ -47,11 +47,18 @@ namespace DontLate
         // 해제는 "치료 후 집으로" 씬 전이 시 플레이어 재생성으로 자연히 이뤄진다.
         private bool _injured;
 
+        // S-123 ③ — 대화 중 이동 잠금(방해요소): 박말순 전화·행인 대화가 붙으면 발이 묶인다.
+        // InputAction을 만지지 않는 이유: 미니게임(진상 전화)이 끝날 때 _move.Enable()이
+        // 대화 잠금까지 풀어버린다 — _injured와 같은 플래그 패턴이 그 충돌을 구조적으로 막는다.
+        private bool _inDialogue;
+
         private void OnEnable()
         {
             WorldEvents.SceneTransitionCompleted += OnSceneArrivedLoco;
             WorldEvents.WeatherChanged += OnWeatherChangedLoco;
             WorldEvents.PlayerHitByCar += OnHitByCarLoco;
+            WorldEvents.DialogueStarted += OnDialogueStartedLoco;
+            WorldEvents.DialogueEnded += OnDialogueEndedLoco;
         }
 
         private void OnDisable()
@@ -59,9 +66,13 @@ namespace DontLate
             WorldEvents.SceneTransitionCompleted -= OnSceneArrivedLoco;
             WorldEvents.WeatherChanged -= OnWeatherChangedLoco;
             WorldEvents.PlayerHitByCar -= OnHitByCarLoco;
+            WorldEvents.DialogueStarted -= OnDialogueStartedLoco;
+            WorldEvents.DialogueEnded -= OnDialogueEndedLoco;
         }
 
         private void OnHitByCarLoco() => _injured = true;
+        private void OnDialogueStartedLoco(string _) => _inDialogue = true;
+        private void OnDialogueEndedLoco(string _) => _inDialogue = false;
 
         private void OnSceneArrivedLoco(GameScene scene) => _inHillside = scene == GameScene.Hillside;
 
@@ -74,6 +85,8 @@ namespace DontLate
                 _raining = WorldWeatherManager.Instance.Weather == WeatherType.Rain;
                 _snowing = WorldWeatherManager.Instance.Weather == WeatherType.Snow; // S-084 ③
             }
+            // S-123 ③ — 대화 도중 태어난 플레이어 보정 (씬 전환 직후 대화가 이어지는 경우).
+            if (WorldDialogueManager.Instance != null) _inDialogue = WorldDialogueManager.Instance.IsPlaying;
         }
         private void OnWeatherChangedLoco(WeatherType weather)
         {
@@ -115,7 +128,7 @@ namespace DontLate
             }
 
             TuningConfigSO tuning = _hub.Tuning;
-            Vector2 input = _injured ? Vector2.zero : _hub.Input.MoveVector; // S-119 ③
+            Vector2 input = _injured || _inDialogue ? Vector2.zero : _hub.Input.MoveVector; // S-119 ③ · S-123 ③
 
             // S-081 ② — 탈진(스태미나 0): 달리기 불가 (점프도 아래에서 차단).
             // S-116 ⑤ — 촬영 데모 중엔 탈진 페널티 면제(왕복 연출이 끊기면 안 된다) + 속도 배수.
@@ -153,7 +166,7 @@ namespace DontLate
             if (_cc.isGrounded)
             {
                 _verticalVelocity = -1f; // 접지 유지용 약한 하향
-                if (_hub.Input.JumpPressed && !exhausted && !_injured) // S-081 ② · S-119 ③
+                if (_hub.Input.JumpPressed && !exhausted && !_injured && !_inDialogue) // S-081 ② · S-119 ③ · S-123 ③
                 {
                     _verticalVelocity = Mathf.Sqrt(-2f * tuning.gravity * tuning.jumpHeight);
                     WorldAudioManager.Instance?.PlayJumpSfx(); // AU-018 ③

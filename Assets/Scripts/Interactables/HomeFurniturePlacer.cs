@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -12,12 +13,15 @@ namespace DontLate
     /// </summary>
     public class HomeFurniturePlacer : MonoBehaviour
     {
-        private const float GRID = 0.5f; // S-031 ② 스냅 간격
+        private const float GRID = 0.25f; // S-031 ② 스냅 간격 · S-122 ③ 1/2로 촘촘하게 (기존 좌표는 전부 0.5의 배수 = 0.25 격자에도 그대로 얹힌다)
 
         [SerializeField] private GameStateSO _gameState;
         [SerializeField] private FurnitureSO[] _catalog;
 
         private static readonly Color GhostColor = new Color(0.208f, 0.878f, 0.784f, 0.45f); // 시안 반투명
+
+        // 이 배치기가 만든 배치물 대장 (S-122 ④ 낙하 판정용) — FindObjectsOfType 금지 규약.
+        private readonly List<PlacedFurnitureVisual> _visuals = new List<PlacedFurnitureVisual>();
 
         private GameObject _ghost;
         private string _ghostId;
@@ -89,6 +93,10 @@ namespace DontLate
                 _ghostYaw = wallYaw;
                 _ghostOnWall = true;
             }
+            else if (TrySupportPoint(ray, so, out Vector3 supportPos)) // S-122 ② — 기존 가구 위에 올리기
+            {
+                pos = supportPos;
+            }
             else
             {
                 Plane floor = new Plane(Vector3.up, Vector3.zero);
@@ -124,30 +132,89 @@ namespace DontLate
             Debug.Log("[하우징] " + id + " 배치 — " + pos + " yaw " + _ghostYaw);
         }
 
-        // ── 재배치 (S-031 ①) — 배치된 가구 클릭 = 집어서 배치 모드 재진입 ──
+        // ── 집기(좌클릭 · S-031 ①) / 철거(우클릭 · S-122 ④) ──
+        // 둘 다 배치물을 인벤토리로 회수한다. 차이는 집기만 배치 모드로 재진입한다는 것뿐.
         private void HandleRepick(Mouse mouse, Camera camera)
         {
-            if (!mouse.leftButton.wasPressedThisFrame || PhoneView.IsOpen) return;
+            bool pick = mouse.leftButton.wasPressedThisFrame;
+            bool demolish = mouse.rightButton.wasPressedThisFrame;
+            // 철거는 파괴적 조작이라 UI 위 클릭이 뒤 가구를 치우지 않게 막는다 (PlayerStatusManager 선례).
+            bool overUI = UnityEngine.EventSystems.EventSystem.current != null
+                && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject();
+            if ((!pick && !demolish) || PhoneView.IsOpen || overUI) return;
 
             Ray ray = camera.ScreenPointToRay(mouse.position.ReadValue());
             if (!Physics.Raycast(ray, out RaycastHit hit, 100f)) return;
             PlacedFurnitureVisual visual = hit.collider.GetComponentInParent<PlacedFurnitureVisual>();
             if (visual == null) return;
 
+            int index = FindPlacedIndex(visual);
+            if (index < 0) return;
+
+            PlacedFurniture placed = _gameState.placedFurniture[index];
+            bool hasFootprint = TryWorldBounds(visual.transform, out Bounds footprint); // 파괴 전 실측
+
+            _gameState.placedFurniture.RemoveAt(index);
+            _gameState.ownedFurnitureIds.Add(placed.furnitureId); // 집기·철거 모두 인벤토리로 회수
+            _visuals.Remove(visual);
+            Destroy(visual.gameObject);
+
+            // 지지대가 사라졌으니 그 상단면에 얹혀 있던 가구는 지지대가 서 있던 높이로 내려앉는다.
+            if (hasFootprint) DropStacked(footprint, placed.position.y);
+
+            if (pick)
+            {
+                PhoneView.PendingPlacementId = placed.furnitureId;
+                _ghostYaw = placed.rotationY; // 집을 때 각도 유지
+            }
+            WorldAudioManager.Instance?.PlayUiTickSfx(); // AU-010
+            Debug.Log("[하우징] " + placed.furnitureId + (pick ? " 집음 — 재배치 모드" : " 철거 — 인벤토리 회수"));
+        }
+
+        private int FindPlacedIndex(PlacedFurnitureVisual visual)
+        {
             for (int i = 0; i < _gameState.placedFurniture.Count; i++)
             {
                 PlacedFurniture placed = _gameState.placedFurniture[i];
                 if (placed.furnitureId != visual.FurnitureId) continue;
-                if ((placed.position - visual.PlacedPosition).sqrMagnitude > 0.01f) continue;
+                if ((placed.position - visual.PlacedPosition).sqrMagnitude > 0.0001f) continue; // S-122 ② 스택 겹침 구분
+                return i;
+            }
+            return -1;
+        }
 
-                _gameState.placedFurniture.RemoveAt(i);
-                _gameState.ownedFurnitureIds.Add(placed.furnitureId); // ESC로 취소해도 인벤에 남게
-                PhoneView.PendingPlacementId = placed.furnitureId;
-                _ghostYaw = placed.rotationY; // 집을 때 각도 유지
+        // ── 낙하 (S-122 ④) ─────────────────────────────────
+        // 배치물은 Rigidbody가 없는 정적 오브젝트라(프리팹·SpawnVisual 모두 미부착) 물리 낙하가 아니라
+        // 좌표 재계산으로 내려앉힌다. 착지면 = 치운 지지대가 서 있던 높이.
+        private void DropStacked(Bounds supportFootprint, float landingY)
+        {
+            float supportTopY = supportFootprint.max.y;
+            for (int i = _visuals.Count - 1; i >= 0; i--)
+            {
+                PlacedFurnitureVisual visual = _visuals[i];
+                if (visual == null) { _visuals.RemoveAt(i); continue; }
+                // 치운 물건의 상단면에 실제로 얹혀 있던 것만 내려앉는다 — "y가 더 높다"로 잡으면
+                // 벽걸이 TV·시계(y 1.0~1.6)까지 바닥으로 떨어진다.
+                if (Mathf.Abs(visual.PlacedPosition.y - supportTopY) > 0.02f) continue;
+                if (!TryWorldBounds(visual.transform, out Bounds bounds)) continue;
+                if (bounds.max.x <= supportFootprint.min.x || bounds.min.x >= supportFootprint.max.x) continue;
+                if (bounds.max.z <= supportFootprint.min.z || bounds.min.z >= supportFootprint.max.z) continue;
+
+                int index = FindPlacedIndex(visual);
+                if (index < 0) continue;
+                PlacedFurniture entry = _gameState.placedFurniture[index];
+                Vector3 landed = new Vector3(entry.position.x, landingY, entry.position.z);
+                _gameState.placedFurniture[index] = new PlacedFurniture
+                {
+                    furnitureId = entry.furnitureId,
+                    position = landed,
+                    rotationY = entry.rotationY,
+                };
+                _visuals.RemoveAt(i);
                 Destroy(visual.gameObject);
-                WorldAudioManager.Instance?.PlayUiTickSfx(); // AU-010
-                Debug.Log("[하우징] " + placed.furnitureId + " 집음 — 재배치 모드");
-                return;
+                SpawnVisual(entry.furnitureId, landed, entry.rotationY); // 새 높이로 재생성 (대장 자동 재등록)
+                Debug.Log("[하우징] " + entry.furnitureId + " 낙하 — y "
+                    + entry.position.y.ToString("0.00") + " → " + landingY.ToString("0.00"));
             }
         }
 
@@ -167,6 +234,48 @@ namespace DontLate
             position.x = Mathf.Round(position.x / GRID) * GRID;
             yaw = Quaternion.LookRotation(hit.normal).eulerAngles.y;
             return true;
+        }
+
+        // ── 가구 상단 얹기 (S-122 ②) — 배치물 콜라이더를 맞으면 그 결합 바운즈 상단면이 새 바닥이 된다.
+        // 카메라가 거의 수평(하향 8°)이라 상판만 허용하면 사실상 못 올린다 → 법선을 가리지 않고
+        // "가구를 맞추면 위에 올린다"로 판정해 조준 난이도를 낮춘다.
+        private bool TrySupportPoint(Ray ray, FurnitureSO so, out Vector3 position)
+        {
+            position = default;
+            if (!Physics.Raycast(ray, out RaycastHit hit, 100f)) return false;
+            PlacedFurnitureVisual support = hit.collider.GetComponentInParent<PlacedFurnitureVisual>();
+            if (support == null) return false;
+            if (!TryWorldBounds(support.transform, out Bounds top)) return false;
+
+            Vector3 half = (so != null ? so.size : Vector3.one * 0.8f) * 0.5f;
+            position = new Vector3(
+                Mathf.Round(hit.point.x / GRID) * GRID,
+                top.max.y,                                  // 지지대 상단면 = 새 가구의 바닥
+                Mathf.Round(hit.point.z / GRID) * GRID);
+            // 상판을 벗어나 공중에 뜨지 않게 지지면 안으로 당긴다 (지지면보다 큰 가구는 중앙 정렬).
+            position.x = half.x * 2f >= top.size.x ? top.center.x
+                : Mathf.Clamp(position.x, top.min.x + half.x, top.max.x - half.x);
+            position.z = half.z * 2f >= top.size.z ? top.center.z
+                : Mathf.Clamp(position.z, top.min.z + half.z, top.max.z - half.z);
+            return true;
+        }
+
+        /// <summary>배치물의 월드 결합 바운즈 — 콜라이더 우선(회전 반영 AABB), 없으면 렌더러.</summary>
+        private static bool TryWorldBounds(Transform root, out Bounds bounds)
+        {
+            bounds = default;
+            bool has = false;
+            foreach (Collider collider in root.GetComponentsInChildren<Collider>())
+            {
+                if (!collider.enabled) continue;
+                if (has) bounds.Encapsulate(collider.bounds); else { bounds = collider.bounds; has = true; }
+            }
+            if (has) return true;
+            foreach (Renderer renderer in root.GetComponentsInChildren<Renderer>())
+            {
+                if (has) bounds.Encapsulate(renderer.bounds); else { bounds = renderer.bounds; has = true; }
+            }
+            return has;
         }
 
         private FurnitureSO Find(string furnitureId)
@@ -199,7 +308,9 @@ namespace DontLate
             visual.name = "Furniture_" + furnitureId;
             if (visual.GetComponentInChildren<Collider>() == null)
                 visual.AddComponent<BoxCollider>(); // 프리팹에 콜라이더가 없으면 클릭 판정용 부여
-            visual.AddComponent<PlacedFurnitureVisual>().Bind(furnitureId, position, rotationY);
+            PlacedFurnitureVisual marker = visual.AddComponent<PlacedFurnitureVisual>();
+            marker.Bind(furnitureId, position, rotationY);
+            _visuals.Add(marker); // S-122 ④ — 낙하 판정 대장
         }
 
         // ── 블루프린트 (반투명 시안 고스트) ──────────────────

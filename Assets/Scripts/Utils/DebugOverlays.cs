@@ -10,6 +10,9 @@ namespace DontLate
     {
         public static bool Visible { get; private set; } = true;
 
+        /// <summary>S-122 ⑯ — 촬영 모드 강제 소거·복구 (DistrictCaptureDemo). F1 토글과 같은 상태를 쓴다.</summary>
+        public static void SetVisible(bool on) => Visible = on;
+
         /// <summary>프레임당 1회 호출(VersionLabel이 담당 — Core 상주라 전 씬 커버). 중복 호출 무해.</summary>
         public static void Tick()
         {

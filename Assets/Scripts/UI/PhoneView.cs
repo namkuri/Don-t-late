@@ -349,13 +349,17 @@ namespace DontLate
 
         private static readonly ShopItem[] ShopItems =
         {
-            new ShopItem { id = "cart", label = "구루마 (대차)", price = 8000 },
+            // S-122 ⑥ — 라벨 축약(줄바꿈 해소). id는 그대로 = 게임 로직 무영향(판정은 id 기준).
+            new ShopItem { id = "cart", label = "구루마", price = 8000 },
             new ShopItem { id = "drink", label = "에너지드링크", price = 1500, stackable = true, holdable = true },
-            new ShopItem { id = "water", label = "생수 (더위 해소)", price = 800, stackable = true },       // S-088 ④
-            new ShopItem { id = "hot_drink", label = "따뜻한 코코아 (추위 해소)", price = 1200, stackable = true }, // S-088 ④
+            new ShopItem { id = "water", label = "생수 (더위↓)", price = 800, stackable = true },       // S-088 ④
+            new ShopItem { id = "hot_drink", label = "코코아 (추위↓)", price = 1200, stackable = true }, // S-088 ④
             new ShopItem { id = "cat_food", label = "고양이 사료", price = 2000, stackable = true },
             new ShopItem { id = "cat_toy", label = "고양이 장난감", price = 3000, stackable = true },
             new ShopItem { id = "cat_tower", label = "캣타워", price = 10000 },
+            // S-123 ⑤ — 선물용 꽃. holdable을 켜지 않는 이유: 손에 든 물건은 id를 저장하지 않아
+            // 우클릭이 "꽃을 마신다"가 된다. 가방에 두고 E로 건네는 경로만 쓴다.
+            new ShopItem { id = "flower", label = "꽃 한 다발", price = 5000, stackable = true },
         };
 
         private void BuildShopScreen()
@@ -381,21 +385,25 @@ namespace DontLate
                 RectTransform rowRect = (RectTransform)row.transform;
                 rowRect.anchorMin = new Vector2(0f, 1f); rowRect.anchorMax = new Vector2(1f, 1f);
                 rowRect.pivot = new Vector2(0.5f, 1f);
-                rowRect.sizeDelta = new Vector2(-16f, 74f);
-                rowRect.anchoredPosition = new Vector2(0f, -6f - i * 82f);
+                // S-122 ⑥ — 개구 298(화면루트 266) 정합. 구 74/82는 총 580px로 하위 2행이 개구 밖에
+                // 떨어져 구매 불가였다. S-123 ⑤로 꽃이 추가돼 8행이 되므로 피치 52:
+                // 마지막 행 하단 = -6 - 7*52 - 48 = -418 ≥ -430(화면 높이) ✓.
+                rowRect.sizeDelta = new Vector2(-16f, 48f);
+                rowRect.anchoredPosition = new Vector2(0f, -6f - i * 52f);
 
                 TMP_Text label = MakeText(row.transform, "Label",
                     item.label + "\n<size=70%>₩" + item.price.ToString("N0") + "</size>",
-                    24f, Color.white, TextAlignmentOptions.Left);
+                    20f, Color.white, TextAlignmentOptions.Left);
                 RectTransform labelRect = label.rectTransform;
                 labelRect.anchorMin = Vector2.zero; labelRect.anchorMax = Vector2.one;
-                labelRect.offsetMin = new Vector2(14f, 4f); labelRect.offsetMax = new Vector2(-110f, -4f);
+                // 가용폭 250-14-84 = 152px — 최장 라벨 "코코아 (추위↓)"가 한 줄에 들어간다.
+                labelRect.offsetMin = new Vector2(14f, 2f); labelRect.offsetMax = new Vector2(-84f, -2f);
 
                 Button buy = MakeButton(row.transform, "Buy", cartOwned ? "보유" : "구매", () => BuyShopItem(item));
                 RectTransform buyRect = (RectTransform)buy.transform;
                 buyRect.anchorMin = buyRect.anchorMax = buyRect.pivot = new Vector2(1f, 0.5f);
-                buyRect.sizeDelta = new Vector2(92f, 52f);
-                buyRect.anchoredPosition = new Vector2(-10f, 0f);
+                buyRect.sizeDelta = new Vector2(72f, 40f); // 우여백 8 → 버튼 x 170~242, 라벨 끝 166
+                buyRect.anchoredPosition = new Vector2(-8f, 0f);
                 buy.interactable = !cartOwned;
             }
         }
@@ -767,8 +775,10 @@ namespace DontLate
 
                 RectTransform rect = (RectTransform)tile.transform;
                 rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0f, 1f);
-                rect.sizeDelta = new Vector2(96f, 96f);
-                rect.anchoredPosition = new Vector2(14f + (i % 3) * 112f, -22f - (i / 3) * 138f); // 프레임 화면폭 354 정합 (mint_phone)
+                rect.sizeDelta = new Vector2(80f, 80f); // 남규 수정
+                // S-122 ⑦ — S-117 개구(298) 정합: 화면루트 266 = 좌여백 5 + 피치 88×2 + 타일 80 + 우여백 5.
+                // 구 값(14/112)은 개구 354 시절 상수로, 우측을 52px 관통하고 있었다.
+                rect.anchoredPosition = new Vector2(5f + (i % 3) * 88f, -22f - (i / 3) * 138f);
 
                 TMP_Text emoji = MakeText(tile.transform, "Emoji", apps[i].emoji, 44f, Color.white, TextAlignmentOptions.Center);
                 RectTransform emojiRect = emoji.rectTransform;
@@ -1236,8 +1246,10 @@ namespace DontLate
                     item.displayName + "\n₩" + item.price.ToString("N0"), () => BuyFurniture(item));
                 RectTransform rect = (RectTransform)buy.transform;
                 rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0f, 0f);
-                rect.sizeDelta = new Vector2(184f, 66f);
-                rect.anchoredPosition = new Vector2(6f + (i % 2) * 196f, 160f - (i / 2) * 76f);
+                // S-122 ⑧ — 화면루트 266 정합: 좌여백 6 + 폭 122 + 간격 8 + 폭 122 + 우여백 8
+                // (구 184/196은 우측을 120px 관통 — 개구 축소 전에도 이탈이었다).
+                rect.sizeDelta = new Vector2(122f, 66f);
+                rect.anchoredPosition = new Vector2(6f + (i % 2) * 130f, 160f - (i / 2) * 76f);
             }
 
             // S-031 ④: 벽지·바닥 팔레트 순환 (무료 — 팔레트는 HomeDecorator와 공유).
@@ -1249,7 +1261,7 @@ namespace DontLate
             });
             RectTransform wallRect = (RectTransform)_wallpaperButton.transform;
             wallRect.anchorMin = wallRect.anchorMax = wallRect.pivot = new Vector2(0f, 0f);
-            wallRect.sizeDelta = new Vector2(184f, 66f);
+            wallRect.sizeDelta = new Vector2(122f, 66f); // S-122 ⑧
             wallRect.anchoredPosition = new Vector2(6f, 8f);
 
             _floorButton = MakeButton(screen.transform, "Floor", "", () =>
@@ -1260,8 +1272,8 @@ namespace DontLate
             });
             RectTransform floorRect = (RectTransform)_floorButton.transform;
             floorRect.anchorMin = floorRect.anchorMax = floorRect.pivot = new Vector2(0f, 0f);
-            floorRect.sizeDelta = new Vector2(184f, 66f);
-            floorRect.anchoredPosition = new Vector2(202f, 8f);
+            floorRect.sizeDelta = new Vector2(122f, 66f); // S-122 ⑧
+            floorRect.anchoredPosition = new Vector2(138f, 8f); // 6 + 122 + 간격 10
 
             RefreshDecorButtons();
         }
@@ -1356,7 +1368,8 @@ namespace DontLate
                 // S-084 ④ — 지각이어도 배달(배치)했으면 "배치됨"(빨간색 유지 — 벌점은 이미 받았다).
                 else if (status == 2 && placedIds.Contains(d.OrderId))
                     sb.Append("<color=#ff7359>").Append(row).Append("  배치됨</color>\n");
-                else if (status == 2) sb.Append("<color=#ff7359><s>").Append(row).Append("</s> 지각</color>\n");
+                // S-122 ⑩ — 취소선 제거: 빨강(#ff7359)만으로 지각 표시 (배치됨 행과 표기 통일).
+                else if (status == 2) sb.Append("<color=#ff7359>").Append(row).Append("  지각</color>\n");
                 else if (!loadedIds.Contains(d.OrderId))
                 {
                     sb.Append(row).Append("  <color=#ff9f45>미상차</color>\n"); // 캠프에서 실어야 스폰된다
@@ -1603,7 +1616,10 @@ namespace DontLate
                     IsPinLocked(pin) ? pin.label + "\n<size=70%>잠김 — 개척 필요</size>" : pin.label,
                     () => OnPinTapped(index));
                 RectTransform rect = (RectTransform)b.transform;
-                PlaceOnMap(rect, pin.pos, new Vector2(158f, IsPinLocked(pin) ? 78f : 58f));
+                // S-122 ⑨ — S-117 개구(298) 정합: 지도폭 266에 정규화 좌표 중앙배치라 반폭 58까지만 안 뚫린다
+                // (구 158은 최좌 0.24 핀이 좌측 15px, 최우 0.74 핀이 우측 10px 이탈).
+                PlaceOnMap(rect, pin.pos, new Vector2(116f, IsPinLocked(pin) ? 62f : 46f));
+                b.GetComponentInChildren<TMP_Text>().fontSize = 18f; // 116px에 "아파트단지" 한 줄
                 if (IsPinLocked(pin))
                 {
                     b.image.color = new Color(0.25f, 0.27f, 0.32f, 0.9f);
@@ -1611,7 +1627,7 @@ namespace DontLate
                 }
             }
 
-            _mapInfoLabel = MakeText(screen.transform, "Info", "목적지 핀을 탭해라", 26f, Color.white, TextAlignmentOptions.BottomLeft);
+            _mapInfoLabel = MakeText(screen.transform, "Info", "목적지 핀을 탭해라", 22f, Color.white, TextAlignmentOptions.BottomLeft); // S-122 ⑨ 26→22 (2줄이 62px 상자에 들어가게)
             RectTransform infoRect = _mapInfoLabel.rectTransform;
             infoRect.anchorMin = new Vector2(0f, 0f);
             infoRect.anchorMax = new Vector2(1f, 0f);
@@ -1623,8 +1639,9 @@ namespace DontLate
                 IsWalkingEra ? "트럭 없음 — 걸어서 개척" : "목적지로 출발", DepartSelected); // S-054b
             RectTransform departRect = (RectTransform)_departButton.transform;
             departRect.anchorMin = departRect.anchorMax = departRect.pivot = new Vector2(0.5f, 0f);
-            departRect.sizeDelta = new Vector2(320f, 72f);
+            departRect.sizeDelta = new Vector2(240f, 64f); // S-122 ⑨ — 화면루트 266 → 좌우 13px 여백 (구 320은 좌우 27px 이탈)
             departRect.anchoredPosition = new Vector2(0f, 6f);
+            _departButton.GetComponentInChildren<TMP_Text>().fontSize = 20f; // "트럭 없음 — 걸어서 개척" 한 줄
             _departButton.interactable = false;
         }
 

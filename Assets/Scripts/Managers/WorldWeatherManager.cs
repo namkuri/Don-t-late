@@ -22,8 +22,10 @@ namespace DontLate
         [SerializeField] private float _gradeLerpSpeed = 0.5f;
 
         public WeatherType Weather { get; private set; } = WeatherType.Clear;
-        /// <summary>태풍 바람 방향 (S-088 ⑤) — -1(좌) / +1(우) / 0(무풍). Locomotion이 읽는다.</summary>
-        public float WindX { get; private set; }
+        /// <summary>태풍 바람 방향 (S-088 ⑤) — -1(좌) / +1(우) / 0(무풍). Locomotion이 읽는다.
+        /// S-122 ⑤ — 실내(Home·Apartment)에선 0: 방 안에서 보행 감속·상자 흔들림이 나지 않는다.</summary>
+        public float WindX => _indoorScene ? 0f : _windX;
+        private float _windX;
         /// <summary>내일 예보 (S-058 날씨앱) — 오늘 추첨 때 함께 뽑고, 다음 날 그대로 승계된다.</summary>
         public WeatherType TomorrowWeather { get; private set; } = WeatherType.Clear;
         private bool _hasForecast;
@@ -158,28 +160,32 @@ namespace DontLate
         // ── 파티클·구름 ──────────────────────────────────────
         private void ApplyWeatherVisuals()
         {
-            Toggle(_rain, Weather == WeatherType.Rain); // Storm의 간헐 비는 StormRainCycle 코루틴이 굴린다
-            Toggle(_snow, Weather == WeatherType.Snow);
+            // S-122 ⑤ — 실내(Home·Apartment)엔 강수·아지랑이·바람 리본·안개뭉치가 없다.
+            // 발생 박스가 90u(±45)라 z 오프셋으로는 방 안 발생을 못 막는다 — 소스를 끈다.
+            bool outdoor = !_indoorScene;
+            Toggle(_rain, outdoor && Weather == WeatherType.Rain); // Storm의 간헐 비는 StormRainCycle 코루틴이 굴린다
+            Toggle(_snow, outdoor && Weather == WeatherType.Snow);
             // S-090 ① — 태풍 진입: 이전 날씨의 눈 입자를 즉시 걷는다 (Stop만으론 수명만큼 잔류).
             if (Weather == WeatherType.Storm && _snow != null)
                 _snow.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-            if (_hazeRoot != null) _hazeRoot.SetActive(Weather == WeatherType.Heat);
+            ClearAirborneIfIndoor();
+            if (_hazeRoot != null) _hazeRoot.SetActive(outdoor && Weather == WeatherType.Heat);
 
             // S-088 ⑤ — 태풍: 바람 방향 추첨(좌/우) + 간헐 비 사이클.
             if (Weather == WeatherType.Storm)
             {
-                WindX = Random.value < 0.5f ? -1f : 1f;
+                _windX = Random.value < 0.5f ? -1f : 1f;
                 if (_stormRoutine == null) _stormRoutine = StartCoroutine(StormRainCycle());
             }
             else
             {
-                WindX = 0f;
+                _windX = 0f;
                 if (_stormRoutine != null) { StopCoroutine(_stormRoutine); _stormRoutine = null; }
             }
             ApplyWindToFall(_rain);   // S-089 ① — 강수 기울기 (무풍이면 0)
             ApplyWindToFall(_snow);
-            ToggleWindStreaks(Weather == WeatherType.Storm); // S-089 ④ — 공중 바람 줄기
-            ToggleFogBanks(Weather == WeatherType.Fog);      // S-091 ② — 안개 뭉치 층
+            ToggleWindStreaks(outdoor && Weather == WeatherType.Storm); // S-089 ④ — 공중 바람 줄기
+            ToggleFogBanks(outdoor && Weather == WeatherType.Fog);      // S-091 ② — 안개 뭉치 층
 
             int cloudCount = Weather switch
             {
@@ -234,9 +240,35 @@ namespace DontLate
         {
             _sceneZOffset = scene == GameScene.Home ? 10f : 0f; // S-044 ① — 방 뒷벽(z3) 너머 창밖
             _indoorScene = scene == GameScene.Apartment || scene == GameScene.Home; // S-050 ④·S-053 ② — 실내엔 눈 안 쌓임
+            // S-122 ⑤ — 실내/실외 전환을 즉시 반영. ApplyWeatherVisuals 전체를 부르면 태풍 바람 방향이
+            // 씬 전환마다 재추첨되고 StormRainCycle 소유권이 흔들리므로, 게이트만 다시 적용한다.
+            // _clouds 가드 = 씬 단독 Play: CoreBootstrap의 도착 통지가 이 매니저의 Start보다 먼저 돌 수 있다.
+            if (_clouds != null) ApplyIndoorGate();
             RefreshGradeTarget();
         }
 
+        // S-122 ⑤ — 실내 게이트만 재적용 (구름 개수·WindX 추첨·StormRainCycle 소유권 불가침).
+        private void ApplyIndoorGate()
+        {
+            bool outdoor = !_indoorScene;
+            if (_hazeRoot != null) _hazeRoot.SetActive(outdoor && Weather == WeatherType.Heat);
+            ToggleWindStreaks(outdoor && Weather == WeatherType.Storm);
+            ToggleFogBanks(outdoor && Weather == WeatherType.Fog);
+            if (_indoorScene) { ClearAirborneIfIndoor(); return; }
+            Toggle(_rain, Weather == WeatherType.Rain); // Storm의 비는 StormRainCycle 몫 — 여기서 켜지 않는다
+            Toggle(_snow, Weather == WeatherType.Snow);
+        }
+
+        // 실내 진입: 체공 중인 빗줄기(2.2s)·눈송이(12s)·퇴적(50s·World 공간)까지 그 자리에서 지운다.
+        private void ClearAirborneIfIndoor()
+        {
+            if (!_indoorScene) return;
+            if (_rain != null) _rain.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            if (_snow != null) _snow.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            if (_snowPile != null) _snowPile.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        }
+
+        private ParticleSystem _snowPile; // S-122 ⑤ — 실내 진입 시 퇴적 입자까지 걷기 위한 참조
         private bool _indoorScene; // S-050 ④ — 아파트 실내: SnowCover·발자국(HasSnowCover) 억제
         private bool _snowCovered; // AU-018 ③ — 기존 HasSnowCover 전환 감지용(SnowCoverChanged 발행)
 
@@ -422,6 +454,7 @@ namespace DontLate
             pileRenderer.material = MakeParticleMaterial(new Color(0.96f, 0.97f, 1f, 0.85f));
             pileRenderer.renderMode = ParticleSystemRenderMode.HorizontalBillboard; // S-047 ① — 하늘 보기(바닥에 눕는다)
             pile.Stop();
+            _snowPile = pile; // S-122 ⑤ — 실내 진입 시 소거 대상
 
             var subEmitters = snow.subEmitters;
             subEmitters.enabled = true;
@@ -636,13 +669,13 @@ namespace DontLate
         {
             while (Weather == WeatherType.Storm)
             {
-                Toggle(_rain, true);
+                Toggle(_rain, !_indoorScene); // S-122 ⑤ — 실내면 켜지 않는다
                 yield return new WaitForSeconds(Random.Range(8f, 18f));
                 if (Weather != WeatherType.Storm) break;
                 Toggle(_rain, false);
                 yield return new WaitForSeconds(Random.Range(6f, 14f));
             }
-            Toggle(_rain, Weather == WeatherType.Rain);
+            Toggle(_rain, !_indoorScene && Weather == WeatherType.Rain);
             _stormRoutine = null;
         }
 

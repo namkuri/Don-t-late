@@ -43,6 +43,7 @@ namespace DontLate
             PedestrianNpc pedestrian = other.GetComponentInParent<PedestrianNpc>();
             if (pedestrian != null)
             {
+                if (DistrictCaptureDemo.SuppressTrafficAccidents) return; // S-122 ⑯ — 촬영 중 행인 소멸·크래시 SFX 금지
                 Debug.Log("[교통사고] 행인이 차에 치였다 — 소멸 (씬 재입장 시 복귀).");
                 WorldAudioManager.Instance?.PlayCarCrashSfx();
                 Destroy(pedestrian.gameObject);

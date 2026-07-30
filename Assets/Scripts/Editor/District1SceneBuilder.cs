@@ -29,6 +29,7 @@ namespace DontLate.EditorTools
 
             // 본편 District와 동일한 무대(슬롯·교통·신호등·NPC·엣지)를 깐다.
             DistrictSceneBuilder.BuildStage(SCENE_PATH);
+            StripInteractions(); // S-122 ⑯ — 촬영 씬은 구경거리만 남긴다 (상호작용·잡기능 제거)
             Scene scene = SceneManager.GetActiveScene();
 
             // 단독 Play 시 Core(매니저) Additive 로드 — 날씨·시간 변주가 여기 걸려 있다.
@@ -152,6 +153,30 @@ namespace DontLate.EditorTools
             if (cars.Count == 0) return;
             typeof(TrafficRoad).GetField("_carVisualPrefabs", BindingFlags.NonPublic | BindingFlags.Instance)
                 ?.SetValue(road, cars.ToArray());
+        }
+
+        /// <summary>
+        /// S-122 ⑯ 촬영 전용 — 본편 조립에서 따라온 상호작용·잡기능을 걷어낸다.
+        /// 남기는 것: 카메라 연출·플레이어 왕복·차량·신호등·횡단보도·날씨·벚꽃·건물/소품 배치·행인.
+        /// Core 소유 오버레이(버전 라벨·BGM 라인)는 씬에 없으므로 DistrictCaptureDemo가 런타임에 끈다.
+        /// </summary>
+        private static void StripInteractions()
+        {
+            string[] removals =
+            {
+                "__gb_EdgeGate_Prev", // 엣지 워크 게이트 — 밟으면 씬 전이(촬영 중단 위험)
+                "__gb_EdgeGate_Next",
+                "__gb_ErrandGranny",  // 심부름 NPC — 부재 추첨이라 컷마다 존재가 달라진다
+                "__gb_CargoSpawner",  // 짐·패드 런타임 스폰 + GameState 오염
+                "__gb_Sensor",        // InteractionSensor — 하이라이트·NPC 이름표·송장 클릭의 발원지
+            };
+            foreach (string name in removals)
+            {
+                GameObject go = GameObject.Find(name);
+                if (go == null) continue;
+                Object.DestroyImmediate(go);
+                Debug.Log("[District1] 촬영 제외 — " + name);
+            }
         }
 
         // ── 헬퍼 ─────────────────────────────────────────────

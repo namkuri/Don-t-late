@@ -31,6 +31,10 @@ namespace DontLate
         // 깊이는 +Z(길 안쪽)로만 확장한다 — 보도(Z −3~+3)·뒷줄 가로등(Z=+2.4) 침범 0.
         private const float BUILDING_FRONT_Z = 3.0f;
 
+        // S-122 ⑰ — 카탈로그 건물 프리팹은 전면(현관·간판·창)이 +Z를 보게 제작돼 길 쪽(−Z)에 등을 돌린다.
+        // 프리팹 인스턴스만 Y로 돌려 전면을 카메라(−Z)로 세운다. 교정은 이 상수 하나로(0·90·180·270).
+        private const float BUILDING_YAW = 180f;
+
         // 소품 종류(현재 1종 폴백) — 배치 확률은 구역 프로필 몫.
         private const int PROP_KINDS = 1;
 
@@ -178,11 +182,11 @@ namespace DontLate
             for (float x = -20f; x <= 20f; x += 13f)
             {
                 int pick = rng.Next(0, trees.Count); // 슬롯별 결정론 (x 순서 고정 = 스트림 안정)
-                if (Mathf.Abs(x) < 5f) continue;     // 교차 도로(x=0) 회피 — 추첨은 소비해 스트림 유지
+                if (Mathf.Abs(x) < ROAD_CLEAR_X) continue; // 교차 도로 회피 — 추첨은 소비해 스트림 유지
                 GameObject tree = new GameObject($"TreeLine_{++treeNo:00}");
                 tree.transform.SetParent(root, false);
                 tree.transform.position = new Vector3(x, 0f, TREE_Z);
-                Instantiate(trees[pick], tree.transform);
+                DisableColliders(Instantiate(trees[pick], tree.transform)); // S-122 ①
             }
         }
 
@@ -204,6 +208,12 @@ namespace DontLate
                 if (prefab != null)
                 {
                     GameObject instance = Instantiate(prefab, building.transform);
+                    DisableColliders(instance); // S-122 ① — 배경 시각물: 풋프린트 콜라이더가 통행을 막는다
+                    // S-122 ⑰ — 전면을 길 쪽(−Z)으로. 회전은 반드시 NormalizeBuilding 앞에 —
+                    // Normalize가 Renderer.bounds(월드 AABB)를 읽어 전면 Z=3.0·발 y=0을 스냅한다.
+                    // building 루트가 아니라 instance에만 거는 이유: 루트를 돌리면 centerZLocal 기반
+                    // 그레이박스 층과 먹자골목 간판이 건물 뒷면으로 넘어간다.
+                    instance.transform.localRotation = Quaternion.Euler(0f, BUILDING_YAW, 0f);
                     NormalizeBuilding(instance, floors, slot.position.z);
                     builtFromPrefab = true;
                 }
@@ -294,27 +304,46 @@ namespace DontLate
         // S-116 ④ — 나무는 보행통로(보도변 Z=-2.6)가 아니라 건물 라인 앞(Z=+2.0)에 심는다.
         private const float TREE_Z = 2.0f;
 
+        // S-122 ⑭ — 교차 도로 회피 폭: 차도 반폭 2.1u + 최대 수관 반폭 2.75u(blossom_tree) + 여유 0.15u.
+        // 이 값 이상에서만 심으면 수관 근단이 x ≥ 2.25로 차도(2.1)·횡단보도(1.81) 밖에 남는다.
+        private const float ROAD_CLEAR_X = 5f;
+
+        // S-122 ① — Prefabs/Auto 카탈로그 프리팹에는 CategoryPrefabFactory가 붙인 풋프린트 콜라이더가
+        // 살아 있다(blossom_tree 5.50×5.00×5.83). 거리 배치물은 배경 시각물이므로 끈다 —
+        // PlaceCatalog(S-119 ①)·MakeCube와 같은 규약. 켜두면 보행대(z −3~+3)를 3.9u 막는다.
+        private static void DisableColliders(GameObject instance)
+        {
+            foreach (Collider collider in instance.GetComponentsInChildren<Collider>(true))
+                collider.enabled = false;
+        }
+
         private void BuildProp(Transform root, int slotNo, Transform slot, int kind)
         {
+            GameObject prefabPick = _propPrefabPool != null && _propPrefabPool.Length > 0
+                ? _propPrefabPool[kind % _propPrefabPool.Length]
+                : null;
+            bool isTree = prefabPick != null && prefabPick.name.ToLowerInvariant().Contains("tree");
+
+            // S-122 ⑭ — 가로수는 차도 위에 심지 않는다. 프랍 슬롯 x=±4가 실측 위반 지점 —
+            // blossom_tree 수관 반폭 2.75u가 차도(x ±2.1)·횡단보도(x ±1.81)를 덮었다.
+            // 슬롯은 건너뛴다(건널목 시야 확보 — 폴백 상자더미도 놓지 않는다).
+            if (isTree && Mathf.Abs(slot.position.x) < ROAD_CLEAR_X) return;
+
             GameObject prop = new GameObject($"Prop_{slotNo:00}_k{kind}");
             prop.transform.SetParent(root, false);
             prop.transform.SetPositionAndRotation(slot.position, slot.rotation);
 
-            if (_propPrefabPool != null && _propPrefabPool.Length > 0)
+            if (prefabPick != null)
             {
-                GameObject prefab = _propPrefabPool[kind % _propPrefabPool.Length];
-                if (prefab != null)
+                // S-116 ④ — 나무류(blossom_tree·basic_tree)만 건물 쪽 라인으로 이설.
+                if (isTree)
                 {
-                    // S-116 ④ — 나무류(blossom_tree·basic_tree)만 건물 쪽 라인으로 이설.
-                    if (prefab.name.ToLowerInvariant().Contains("tree"))
-                    {
-                        Vector3 position = prop.transform.position;
-                        position.z = TREE_Z;
-                        prop.transform.position = position;
-                    }
-                    Instantiate(prefab, prop.transform);
-                    return;
+                    Vector3 position = prop.transform.position;
+                    position.z = TREE_Z;
+                    prop.transform.position = position;
                 }
+                DisableColliders(Instantiate(prefabPick, prop.transform)); // S-122 ①
+                return;
             }
 
             // 상자더미 폴백: 큐브 3개를 쌓아 더미 실루엣.

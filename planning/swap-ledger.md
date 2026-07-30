@@ -21,3 +21,7 @@
 | 2026-07-30 15:44 | swap | ui_clock | Assets/_intake/art/ChatGPT/UI/ui_clock.png -> Assets/Art/UI/ui_clock.png |
 | 2026-07-30 15:44 | swap | ui_coin | Assets/_intake/art/ChatGPT/UI/ui_coin.png -> Assets/Art/UI/ui_coin.png |
 | 2026-07-30 20:15 | intake-replace | Trellis2 82종 | PR#26 e8b7e8a9 재출력본 oid 교체 (3.49GiB→2.10GiB) — Art/ 승격본은 아직 구 oid, 재스왑 대기 |
+| 2026-07-30 20:12 | swap | fur_bed | Assets/_intake/art/Trellis2/Props/Bed_dafault_unity.fbx -> Assets/Art/Props/fur_bed.fbx |
+| 2026-07-30 20:12 | swap | fur_plant | Assets/_intake/art/Trellis2/Props/Pot_unity.fbx -> Assets/Art/Props/fur_plant.fbx |
+| 2026-07-30 20:12 | swap | fur_rug | Assets/_intake/art/Trellis2/Props/Rug_unity.fbx -> Assets/Art/Props/fur_rug.fbx |
+| 2026-07-30 20:12 | swap | fur_tv | Assets/_intake/art/Trellis2/Props/low_tv.fbx -> Assets/Art/Props/fur_tv.fbx |

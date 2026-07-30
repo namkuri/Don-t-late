@@ -15,11 +15,11 @@ namespace DontLate
         [Tooltip("이 도로의 신호등 (S-074 ⑨) — 비면 무신호 도로(기존 동작).")]
         [SerializeField] private TrafficLight _signal;
         [Tooltip("정지선 |z| — 횡단보도 앞.")]
-        [SerializeField] private float _stopLineZ = 4.5f;
+        [SerializeField] private float _stopLineZ = 4.8f; // S-122 ⑬ — 1.3배 차 반길이 1.885u > 정지창 1.2u
         [Tooltip("S-116 ⑤ — 실모델 차량 프리팹(white_van·yellow_taxi 등). 비면 기존 큐브 차.")]
         [SerializeField] private GameObject[] _carVisualPrefabs;
-        [Tooltip("실모델 길이(z) 정규화 기준(u).")]
-        [SerializeField] private float _carLength = 2.9f;
+        [Tooltip("실모델 길이(z) 정규화 기준(u). S-122 ⑬ — 2.9 → 3.77 (1.3배).")]
+        [SerializeField] private float _carLength = 3.77f;
 
         private float _timer;
         private int _direction = 1;
@@ -63,14 +63,20 @@ namespace DontLate
                 {
                     // S-116 ⑤ — 실모델 차: 원본 비율 유지·길이(z) 기준 정규화·발 y=0 스냅.
                     car = new GameObject("TrafficCar");
-                    BoxCollider trigger = car.AddComponent<BoxCollider>();
-                    trigger.isTrigger = true;
-                    trigger.size = new Vector3(1.5f, 1.1f, _carLength);
-                    trigger.center = new Vector3(0f, 0.55f, 0f);
                     GameObject visual = Instantiate(
                         _carVisualPrefabs[i % _carVisualPrefabs.Length], car.transform);
                     visual.name = "Visual";
-                    NormalizeCarVisual(visual);
+                    Bounds body = NormalizeCarVisual(visual);
+                    // S-122 ⑬ — 시각물의 팩토리 풋프린트 콜라이더(비-트리거)는 끈다: 차의 판정은 루트
+                    // 트리거 하나뿐이어야 한다(실콜라이더가 남으면 플레이어를 밀고 상자를 튕겨
+                    // OnTriggerEnter의 넉백·짐 흩뿌림을 물리 충돌이 선점한다 — PlaceCatalog 규약).
+                    foreach (Collider visualCollider in visual.GetComponentsInChildren<Collider>(true))
+                        visualCollider.enabled = false;
+                    // 트리거는 정규화된 실측 크기에서 산출 — 1.3배 확대가 판정에 자동 반영된다.
+                    BoxCollider trigger = car.AddComponent<BoxCollider>();
+                    trigger.isTrigger = true;
+                    trigger.size = body.size;
+                    trigger.center = new Vector3(0f, body.size.y * 0.5f, 0f);
                 }
                 else
                 {
@@ -85,10 +91,12 @@ namespace DontLate
         }
 
         // 길이(가장 긴 수평축)를 _carLength로 맞추고 진행축(z)에 정렬·발 y=0.
-        private void NormalizeCarVisual(GameObject visual)
+        // 반환: 정규화 후 결합 바운즈 (호출부는 size만 쓴다 — 이후 평행이동은 크기 불변).
+        private Bounds NormalizeCarVisual(GameObject visual)
         {
             Renderer[] renderers = visual.GetComponentsInChildren<Renderer>(true);
-            if (renderers.Length == 0) return;
+            if (renderers.Length == 0)
+                return new Bounds(Vector3.zero, new Vector3(1.95f, 1.43f, _carLength));
             Bounds bounds = renderers[0].bounds;
             for (int i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
 
@@ -106,6 +114,7 @@ namespace DontLate
             for (int i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
             visual.transform.position += visual.transform.parent.position
                 - new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);
+            return bounds;
         }
 
         private void Update()

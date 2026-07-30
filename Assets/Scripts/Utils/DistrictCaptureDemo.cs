@@ -35,6 +35,7 @@ namespace DontLate
         private bool _initialWeatherApplied;
         private bool _runStarted;
         private GameObject _demoBox;
+        private bool _overlayWasVisible = true; // S-122 ⑯ — 촬영 진입 전 디버그 오버레이 상태
         private readonly List<Variation> _variationDeck = new List<Variation>();
         private int _variationIndex;
         private Variation _lastVariation;
@@ -65,6 +66,10 @@ namespace DontLate
         private void Start()
         {
             SuppressTrafficAccidents = true;
+            // S-122 ⑯ — 촬영: 버전 라벨(우하)·BGM 디버그 라인(좌상) 소거. 사람이 F1로 끈 상태를
+            // 촬영 종료 시 되켜지 않도록 진입 시점 값을 기억한다.
+            _overlayWasVisible = DebugOverlays.Visible;
+            DebugOverlays.SetVisible(false);
             if (_player == null) _player = FindAnyObjectByType<PlayerManager>();
             if (_camera == null) _camera = Camera.main;
 
@@ -168,6 +173,7 @@ namespace DontLate
         private void OnDisable()
         {
             SuppressTrafficAccidents = false;
+            DebugOverlays.SetVisible(_overlayWasVisible); // S-122 ⑯
             _input?.ClearDemoInput();
             if (_player != null && _player.Animation != null)
                 _player.Animation.DemoCarrying = false;

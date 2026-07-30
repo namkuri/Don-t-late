@@ -52,6 +52,8 @@ namespace DontLate
             WorldEvents.BagHoldRequested += OnBagHoldRequested;   // S-064
             WorldEvents.BagItemConsumed += OnBagItemConsumed;     // S-064
             WorldEvents.SceneTransitionStarted += OnSceneLeaving; // S-066 ② — 든 짐 보존
+            WorldEvents.DialogueStarted += OnDialogueStartedStatus; // S-123 ③
+            WorldEvents.DialogueEnded += OnDialogueEndedStatus;
         }
         private void OnDisable()
         {
@@ -61,9 +63,16 @@ namespace DontLate
             WorldEvents.BagHoldRequested -= OnBagHoldRequested;
             WorldEvents.BagItemConsumed -= OnBagItemConsumed;
             WorldEvents.SceneTransitionStarted -= OnSceneLeaving;
+            WorldEvents.DialogueStarted -= OnDialogueStartedStatus;
+            WorldEvents.DialogueEnded -= OnDialogueEndedStatus;
         }
 
         private void OnWeatherChangedStatus(WeatherType weather) => _weather = weather;
+
+        // S-123 ③ — 대사 진행 좌클릭이 상자 던지기로 새지 않게 (대화 중 손 조작 정지).
+        private bool _inDialogue;
+        private void OnDialogueStartedStatus(string _) => _inDialogue = true;
+        private void OnDialogueEndedStatus(string _) => _inDialogue = false;
 
         // ── 가방 연동 (S-064) — 손 들기·즉시 사용 ──
         private void OnBagHoldRequested(BagItem item)
@@ -205,8 +214,9 @@ namespace DontLate
             // S-074 ⑥ — 폰이 열려 있어도 클릭 지점이 폰 UI 밖(월드)이면 던지기·마시기 허용.
             bool overUI = UnityEngine.EventSystems.EventSystem.current != null
                 && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject();
-            bool leftClick = mouse != null && mouse.leftButton.wasPressedThisFrame && !overUI;
-            bool rightClick = mouse != null && mouse.rightButton.wasPressedThisFrame && !overUI;
+            // S-123 ③ — 대화 중엔 손 조작 정지: 대사 진행용 좌클릭이 상자 던지기로 새면 안 된다.
+            bool leftClick = mouse != null && mouse.leftButton.wasPressedThisFrame && !overUI && !_inDialogue;
+            bool rightClick = mouse != null && mouse.rightButton.wasPressedThisFrame && !overUI && !_inDialogue;
 
             // S-032 ④: 우클릭 = 드링크 마시기 · 좌클릭 = 던지기(상자 우선, 없으면 드링크 — 택배와 동일 감각).
             if (rightClick && _heldDrink != null)

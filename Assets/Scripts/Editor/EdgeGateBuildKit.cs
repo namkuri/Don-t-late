@@ -26,7 +26,12 @@ namespace DontLate.EditorTools
             pillar.transform.SetParent(root.transform, false);
             pillar.transform.localPosition = new Vector3(0f, 1.4f, 0f);
             pillar.transform.localScale = new Vector3(0.5f, 2.8f, zoneDepth);
-            pillar.GetComponent<Renderer>().sharedMaterial = gateMat;
+            // S-122 ⑪ — 렌더 OFF: 거리 한복판의 발광 반투명 "상자"로 읽혀 플레이스홀더처럼 보인다
+            // (남규님 실관찰). 표식은 둥둥 뜨는 화살표가 전담한다. GO·머티리얼·치수는 남겨
+            // 되켜기만 하면 원복되고, 통과 판정 트리거는 루트 소유라 무관하다.
+            Renderer pillarRenderer = pillar.GetComponent<Renderer>();
+            pillarRenderer.sharedMaterial = gateMat;
+            pillarRenderer.enabled = false;
 
             // S-062 ③ — 둥둥 뜨는 방향 화살표 (셰브런 2장 + 축) — 씬 바깥쪽을 가리킨다.
             float outward = position.x >= 0f ? 1f : -1f;

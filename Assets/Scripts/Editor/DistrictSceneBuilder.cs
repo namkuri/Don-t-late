@@ -109,7 +109,9 @@ namespace DontLate.EditorTools
             TrafficRoad trafficRoad = trafficGo.AddComponent<TrafficRoad>();
             SerializedObject trafficSo = new SerializedObject(trafficRoad);
             trafficSo.FindProperty("_signal").objectReferenceValue = signal;
-            trafficSo.FindProperty("_stopLineZ").floatValue = 4.2f; // 횡단보도(±3.1) 앞
+            // S-122 ⑬ — 차량 1.3배(길이 3.77u·반길이 1.885u > 정지창 1.2u): 정지선을 4.2 → 4.8로
+            // 물려야 정지한 차 앞코(최대 z −2.915)가 횡단보도(z ±2.8) 밖에 남는다.
+            trafficSo.FindProperty("_stopLineZ").floatValue = 4.8f;
             trafficSo.ApplyModifiedPropertiesWithoutUndo();
             // S-116 게이트 후속 — 본편도 실모델 차량(white_van·yellow_taxi): 회색 큐브 차가
             // "무텍스처 플레이스홀더"로 읽힌다(캡처 게이트 적발). 프리팹 없으면 큐브 폴백(소켓).

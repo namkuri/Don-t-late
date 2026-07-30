@@ -122,6 +122,16 @@ namespace DontLate
             {
                 PlayerManager player = _senseHits[i].GetComponentInParent<PlayerManager>();
                 if (player == null || player.Locomotion == null) continue;
+                // S-123 ⑦ — 호감도가 쌓인 사람은 지나가기만 해도 응원한다 (뛰지 않아도 발화).
+                if (_gameState != null && !string.IsNullOrEmpty(_npcId) && Time.time >= _cheerReadyAt
+                    && NpcAffinityLedger.Get(_gameState, _npcId) >= CHEER_AFFINITY)
+                {
+                    _cheerReadyAt = Time.time + CHEER_COOLDOWN;
+                    _watched = player.transform;
+                    _watchTimer = 1.6f;
+                    ShowGreeting(Cheers[Random.Range(0, Cheers.Length)]);
+                    return;
+                }
                 bool running = player.Input != null && player.Input.RunHeld
                     && player.Locomotion.PlanarVelocity.sqrMagnitude > 4f;
                 if (!running) continue;
@@ -129,6 +139,44 @@ namespace DontLate
                 _watchTimer = 1.2f;
                 return;
             }
+        }
+
+        // ── S-123 ④⑦ — 상자 명중(호감도−·욕) / 호감도 응원 ──
+
+        private static readonly string[] Cheers =
+        {
+            "늦지마맨! 오늘도 파이팅!", "우리 동네 스타 왔네!", "무리하지 말고 쉬어가요!",
+        };
+        private static readonly string[] Curses =
+        {
+            "아! 뭐야 이거!", "사람한테 던지면 어떡해!", "눈 뜨고 던져요!",
+        };
+
+        private const int CHEER_AFFINITY = 40;   // 만남 20 + 꽃 25 = 45 → 첫 플레이 안에 도달
+        private const float CHEER_COOLDOWN = 20f;
+        private const float HIT_COOLDOWN = 1.5f;
+        private const float HIT_SPEED_MIN = 2.5f; // 굴러가는 상자·자기 이동으로 오발동하지 않게
+        private const int HIT_AFFINITY_PENALTY = -15;
+
+        private float _cheerReadyAt;
+        private float _lastHitAt = -10f;
+
+        private void OnTriggerEnter(Collider other)
+        {
+            if (Time.time - _lastHitAt < HIT_COOLDOWN) return;
+            if (other.GetComponent<PickupBox>() == null) return;
+            Rigidbody body = other.attachedRigidbody;
+            if (body == null || body.isKinematic || body.linearVelocity.magnitude < HIT_SPEED_MIN) return;
+
+            _lastHitAt = Time.time;
+            _watched = null;
+            _watchTimer = 1.2f;
+            // 처음 보는 행인은 감점하지 않는다 — Ledger.Add가 Meet을 먼저 부르므로 미등재 상태에서
+            // 맞히면 "호감도 20으로 등재된 뒤 5"라는 역설(때려서 친구 추가)이 생긴다.
+            if (_gameState != null && !string.IsNullOrEmpty(_npcId)
+                && _gameState.npcAffinities.Exists(n => n.npcId == _npcId))
+                NpcAffinityLedger.Add(_gameState, _npcId, HIT_AFFINITY_PENALTY);
+            ShowGreeting(Curses[Random.Range(0, Curses.Length)]);
         }
 
         private void Face() => transform.rotation = Quaternion.Euler(0f, _direction > 0 ? 90f : -90f, 0f);
@@ -142,12 +190,30 @@ namespace DontLate
 
         public void Interact(PlayerContext ctx)
         {
+            // S-123 ⑤ — 가방에 꽃이 있으면 선물이 인사를 대신한다(호감도 큰 폭 상승).
+            // 가방에서 직접 소모하는 이유: BagItemConsumed 이벤트는 음료 마시기가 같이 듣고 있어
+            // "주기"와 "마시기"가 충돌한다(정적 이벤트는 취소 불가).
+            int gift = _gameState != null ? _gameState.bagItems.FindIndex(b => b.id == GIFT_ITEM_ID) : -1;
+            if (gift >= 0 && !string.IsNullOrEmpty(_npcId))
+            {
+                BagStorage.RemoveOne(_gameState, gift);
+                BagView.Instance?.Refresh();
+                NpcAffinityLedger.Add(_gameState, _npcId, GIFT_AFFINITY);
+                _watched = ctx.Transform;
+                _watchTimer = 2f;
+                ShowGreeting("어머, 꽃을... 고마워요!");
+                return;
+            }
+
             _watched = ctx.Transform;
             _watchTimer = 2f; // 잠시 멈춰 바라본다
             if (_gameState != null && !string.IsNullOrEmpty(_npcId))
                 NpcAffinityLedger.Meet(_gameState, _npcId);
             ShowGreeting(Greetings[Random.Range(0, Greetings.Length)]);
         }
+
+        private const string GIFT_ITEM_ID = "flower"; // S-123 ⑤ — 선물은 꽃만 (드링크까지 포함하면 오소비)
+        private const int GIFT_AFFINITY = 25;
 
         public void SetHighlight(bool on)
         {

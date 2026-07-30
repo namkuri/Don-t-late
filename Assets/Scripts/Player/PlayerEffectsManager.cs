@@ -43,15 +43,51 @@ namespace DontLate
         // ── 눈 발자국 (S-045 ⑤) — 눈이 쌓인 동안 이동 궤적에 밟은 자국 ──
         private const float FOOTPRINT_STRIDE = 0.55f;
         private const float FOOTPRINT_LIFETIME = 30f;
+        private const float FOOTPRINT_ALPHA = 0.55f;       // 눌린 눈 그늘 기준 알파
+        private const float FOOTPRINT_MELT_SECONDS = 1.2f; // S-122 ⑮ — 날씨 전환 시 급속 소멸
 
         private bool _snowing;
         private Vector3 _lastFootprintPos;
         private bool _leftFoot;
         private Material _footprintMaterial;
+        private readonly System.Collections.Generic.List<GameObject> _footprints
+            = new System.Collections.Generic.List<GameObject>();
+        private Coroutine _footprintMelt;
 
         private void OnEnable() => WorldEvents.WeatherChanged += OnWeatherChanged;
         private void OnDisable() => WorldEvents.WeatherChanged -= OnWeatherChanged;
-        private void OnWeatherChanged(WeatherType weather) => _snowing = weather == WeatherType.Snow;
+
+        private void OnWeatherChanged(WeatherType weather)
+        {
+            bool wasSnowing = _snowing;
+            _snowing = weather == WeatherType.Snow;
+            // S-122 ⑮ — 눈 → 다른 날씨: 남은 자국을 1.2초에 걷는다
+            // (눈은 다 녹았는데 자국만 최대 30초 남던 창을 막는다).
+            if (wasSnowing && !_snowing && _footprintMelt == null && _footprints.Count > 0)
+                _footprintMelt = StartCoroutine(MeltFootprints());
+        }
+
+        // 전 자국이 머티리얼 1개를 공유한다 — 알파를 한 번만 낮추면 전부 같이 옅어진다(비용 1).
+        private System.Collections.IEnumerator MeltFootprints()
+        {
+            float elapsed = 0f;
+            while (elapsed < FOOTPRINT_MELT_SECONDS)
+            {
+                elapsed += Time.deltaTime;
+                SetFootprintAlpha(Mathf.Lerp(FOOTPRINT_ALPHA, 0f, elapsed / FOOTPRINT_MELT_SECONDS));
+                yield return null;
+            }
+            foreach (GameObject print in _footprints) if (print != null) Destroy(print);
+            _footprints.Clear();
+            SetFootprintAlpha(FOOTPRINT_ALPHA); // 다음 눈에 재사용 — 기준 알파 복구
+            _footprintMelt = null;
+        }
+
+        private void SetFootprintAlpha(float alpha)
+        {
+            if (_footprintMaterial == null) return;
+            _footprintMaterial.SetColor("_BaseColor", new Color(0.52f, 0.58f, 0.72f, alpha));
+        }
 
         private void LateUpdate()
         {
@@ -88,9 +124,11 @@ namespace DontLate
                 _footprintMaterial.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
                 _footprintMaterial.SetInt("_ZWrite", 0);
                 _footprintMaterial.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
-                _footprintMaterial.SetColor("_BaseColor", new Color(0.52f, 0.58f, 0.72f, 0.55f)); // 눌린 눈 그늘
+                SetFootprintAlpha(FOOTPRINT_ALPHA); // 눌린 눈 그늘
             }
             quad.GetComponent<Renderer>().sharedMaterial = _footprintMaterial;
+            _footprints.RemoveAll(print => print == null); // 30초 만료분 정리
+            _footprints.Add(quad);
             Destroy(quad, FOOTPRINT_LIFETIME);
         }
 
