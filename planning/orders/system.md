@@ -3088,3 +3088,32 @@ MDA 판정 (D-070): 강화 — 조작 신뢰(M)·화면 완성도(A)·제출 영
   7. 호감도 높은 인물은 거리에서 마주치면 응원
 - 수용기준: 7건 각각 MDA·비용·리스크 판정표 + 채택분 시공·실측. 미채택은 근거와 백로그 이관.
 MDA 판정 (D-070): 판정 보류 — 건별 심사(제출 D-11 · 8/10 기준 비용 대비 임팩트).
+
+### 결과 (2026-07-30 19:58) · S-121 — 열린 PR 6건 감사 (13에이전트 워크플로 · 적대검증 4 + 아트검역 2 + 완결성비판 1)
+
+- **닫기 5건 (머지 불필요 — 유실 0 실증)**:
+  - #17·#18·#24: head가 main **직계 조상**(`--is-ancestor` exit 0) + `log`·`3-dot diff` 모두 0줄.
+    실물도 main 실재(sfx_arrive·sfx_box_damage·sfx_thunder wav+배선+원장). 사유 = "이미 반영".
+  - #20·#21: 미포함(exit 1)이나 목적은 main이 다른 수단으로 달성 — #20/#21이 **같은 S-085 커밋
+    (c78db6e6)을 공유**하고, main은 QualitySettings WebGL=1 + Mobile_RPAsset→PC_Renderer 이중
+    방어로 웹 실측 통과(707f927a). #21 고유는 S-086뿐이며 main SettlementView가 팡파레·콘페티
+    전 경로 가동(호출 실증). 적대 반증 4건 전부 refuted=false = 닫아도 유실 없음.
+    ⚠ 라벨 정정(비판 지적): inMain은 "fully"가 아니라 **superseded** — 닫기 사유를 "diff 공백"으로
+    쓰면 오해. 유일 미보유 코드 = ForcePixelQualityLevel() 19행(main 구성에서 no-op·YAGNI 반대).
+- **#26 민지님 신규 = CONDITIONAL (검역 2축 합치)**:
+  - 고유 가치 확실: Trellis2 **82종 재출력** LFS 3.49GiB→2.10GiB(**−1.39GiB**, 커진 파일 0·no-op 0)
+    + A-002 오리진 반려분 4종(fur_bed/plant/rug/tv) 소스 전부 포함 + **박말순·지혜 신규 3D**·애니.
+  - 차단 3: ① **건별 원장 기록 0건**(PR이 planning/ 문서 무접촉 — 신규 12종 assets_manifest 행 부재,
+    Trellis2 oid 교체 기록 부재) ② **_intake 경로 계약 위반**(Mixamo 분류층 누락·`Tripo_API` 신설로
+    기존 `Tripo/`와 정본 분기) ③ **중복 13건**(main과 byte-identical 12 + PR 내부 gs_girl.jpg 1).
+  - 최우선 후속: **머지만으로는 게임에 안 반영** — Art/ 승격본 82종이 구 oid(door/hospital/truck/chair
+    4/4 실측) → art_swap batch 재스왑 필수. 부작용: S-113 추출 텍스처 81장 stale 위험.
+  - 미해소 확인(INBOX 대조): H12 store_2·가로등 데시메이트 · H8 캐릭터 텍스처 · H9·H14 요청 애니 ·
+    H15 정면 +Z 재정렬 — **#26에 없음**(A_Late_Man 7종·Late_man 3종은 main과 동일 블롭).
+- **비판 단계 수확(감사 자체 오류 5건 적발)**: .gitattributes "2행" 오독(main 4행) · pre-commit 훅
+  경로 오독(`core.hooksPath=hooks`라 실재) · 원장 결번 11→**12**파일 · malsoon.png 출처 "증명" 과잉 ·
+  #20/#21 inMain 라벨 오류. 누락 PR 0건(비조상 3건 전부 감사 대상) · 회색지대 #19 웹 확인 권고.
+- **잔여물 실측**: 고아 원격 브랜치 **21개 삭제 안전**(main 조상) / 비조상 3개는 삭제 전 결정 필요 ·
+  gh-pages는 **07-28판**(S-086~S-120 미배포) · calibration.md S-115까지(S-116~123 누락) ·
+  #26은 대장 행 자체가 없어 그대로 머지하면 무발주 반입(D-060).
+- 조치: PR 상태 변경·LFS 쿼터·정본 결정은 전량 남규님 클릭(gh 미설치) — 디스코드 목록 발신.
