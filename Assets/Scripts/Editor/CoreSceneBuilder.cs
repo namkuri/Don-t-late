@@ -987,6 +987,10 @@ namespace DontLate.EditorTools
             // S-027 ① → S-117: 실아트 원본 비율(새 아트 캔버스 891×295 ≈ 3.02:1) 그대로 — 찌그러짐 금지.
             AnchorMiddleBottom(borderRect, new Vector2(0f, 50f),
                 boxArt != null ? new Vector2(1350f, 447f) : new Vector2(1720f, 260f));
+<<<<<<< Updated upstream
+=======
+            borderRect.localScale = Vector3.one * 0.85f;
+>>>>>>> Stashed changes
             SetField(view, "_box", border);
 
             // 네이비 반투명 내부 (테두리보다 3px 안쪽) — 클릭 진행용 Button 타겟.
