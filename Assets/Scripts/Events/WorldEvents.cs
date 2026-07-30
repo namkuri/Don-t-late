@@ -115,6 +115,15 @@ namespace DontLate
         }
 
         /// <summary>상자 좌클릭 → 송장 표시 요청 (S-071 ② — 센서 발행, InvoiceView 구독). 저빈도.</summary>
+        /// <summary>노점·자판기 구매창 열기 (S-125 ② — 남규님 요청: 별도 구매 UI).</summary>
+        public static event Action<KioskOffer> KioskRequested;
+
+        public static void RaiseKioskRequested(KioskOffer offer)
+        {
+            Log("KioskRequested → " + offer.Title);
+            KioskRequested?.Invoke(offer);
+        }
+
         public static event Action<DeliveryOrderSO> InvoiceRequested;
 
         public static void RaiseInvoiceRequested(DeliveryOrderSO order)

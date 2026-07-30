@@ -12,6 +12,10 @@ namespace DontLate
     {
         public static bool SuppressTrafficAccidents { get; private set; }
 
+        /// <summary>S-125 ③ — 촬영 모드: 잡 기능(독백 등) 전면 정지. 런타임 생성물은 빌더가 못 지우므로
+        /// 이 플래그로 스스로 침묵한다(남규님 반려: 촬영 씬에서 자판기 독백이 떴다).</summary>
+        public static bool CaptureMode { get; private set; }
+
         [SerializeField] private PlayerManager _player;
         [SerializeField] private Camera _camera;
         [SerializeField] private float _leftX = -15.44f;
@@ -66,6 +70,7 @@ namespace DontLate
         private void Start()
         {
             SuppressTrafficAccidents = true;
+            CaptureMode = true;
             // S-122 ⑯ — 촬영: 버전 라벨(우하)·BGM 디버그 라인(좌상) 소거. 사람이 F1로 끈 상태를
             // 촬영 종료 시 되켜지 않도록 진입 시점 값을 기억한다.
             _overlayWasVisible = DebugOverlays.Visible;
@@ -173,6 +178,7 @@ namespace DontLate
         private void OnDisable()
         {
             SuppressTrafficAccidents = false;
+            CaptureMode = false;
             DebugOverlays.SetVisible(_overlayWasVisible); // S-122 ⑯
             _input?.ClearDemoInput();
             if (_player != null && _player.Animation != null)

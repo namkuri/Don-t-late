@@ -55,10 +55,13 @@ namespace DontLate.EditorTools
             // (풀 길이가 바뀌면 전 구역 배치가 달라진다) 캠프의 손배치 데코에 붙인다.
             GameObject foodCart = GreyboxStageBuilder.PlaceCatalog("Food_cart_unity", new Vector3(6.5f, 0f, 2.6f), 180f);
             if (foodCart != null)
+            {
                 DistrictSceneBuilder.AttachRemarkSpot(foodCart, 3f, new[]
                 {
                     "맛있어 보인다...", "저거 한 그릇 하고 싶다.", "일 끝나고 오자. 지금은 참고.",
                 });
+                KioskBuildKit.MakeKiosk(foodCart, "포장마차", KioskBuildKit.StreetFoodItems); // S-125 ②
+            }
             // S-116 ② — white_van 데코 철거: 실모델 트럭과 함께 서면 "트럭 2대"로 읽힌다 (남규님 실관찰).
             GreyboxStageBuilder.PlaceCatalog("Trash_Bin_unity", new Vector3(-2.2f, 0f, 2.4f));
 

@@ -70,6 +70,7 @@ namespace DontLate.EditorTools
             SettingsView settingsView = BuildSettingsCanvas();  // S-065
             BuildAccidentCanvas();                              // S-066 ③
             BuildInvoiceCanvas(gameState);                      // S-071 ②
+            BuildKioskCanvas(gameState);                        // S-125 ② 노점 구매창
             BuildHUDCanvas(gameState, bagView, settingsView);
             BuildDialogueCanvas();
             BuildMinigameCanvas();
@@ -797,6 +798,67 @@ namespace DontLate.EditorTools
             EditorUtility.SetDirty(view);
             panel.gameObject.SetActive(false);
             flash.gameObject.SetActive(false);
+        }
+
+        // ── 노점 구매창 (S-125 ② — 자판기·편의점·포장마차 공용) ──
+        private static void BuildKioskCanvas(GameStateSO gameState)
+        {
+            TMP_FontAsset font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FONT_PATH);
+
+            GameObject canvasGo = new GameObject("KioskCanvas");
+            Canvas canvas = canvasGo.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 80; // 폰(85)보다 아래, HUD보다 위
+            CanvasScaler scaler = canvasGo.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            canvasGo.AddComponent<GraphicRaycaster>();
+
+            KioskView view = canvasGo.AddComponent<KioskView>();
+
+            Image panel = CreateImage(canvasGo.transform, "Panel", new Color(0.10f, 0.12f, 0.17f, 0.97f));
+            RectTransform panelRect = panel.rectTransform;
+            panelRect.anchorMin = panelRect.anchorMax = panelRect.pivot = new Vector2(0.5f, 0.5f);
+            panelRect.sizeDelta = new Vector2(620f, 520f);
+
+            TMP_Text title = CreateText(panel.transform, "Title", "자판기", font, 40f, CYAN, TextAlignmentOptions.Top);
+            AnchorCorner(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -18f), new Vector2(560f, 54f));
+
+            TMP_Text money = CreateText(panel.transform, "Money", "소지금 ₩0", font, 26f,
+                new Color(0.75f, 0.80f, 0.90f), TextAlignmentOptions.Top);
+            AnchorCorner(money.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -74f), new Vector2(560f, 36f));
+
+            GameObject list = new GameObject("List", typeof(RectTransform));
+            list.transform.SetParent(panel.transform, false);
+            RectTransform listRect = (RectTransform)list.transform;
+            listRect.anchorMin = new Vector2(0f, 0f);
+            listRect.anchorMax = new Vector2(1f, 1f);
+            listRect.offsetMin = new Vector2(0f, 90f);
+            listRect.offsetMax = new Vector2(0f, -116f);
+
+            GameObject closeGo = new GameObject("CloseButton", typeof(RectTransform));
+            closeGo.transform.SetParent(panel.transform, false);
+            Image closeImg = closeGo.AddComponent<Image>();
+            closeImg.color = new Color(0.25f, 0.28f, 0.34f, 1f);
+            RectTransform closeRect = (RectTransform)closeGo.transform;
+            closeRect.anchorMin = closeRect.anchorMax = closeRect.pivot = new Vector2(0.5f, 0f);
+            closeRect.sizeDelta = new Vector2(300f, 60f);
+            closeRect.anchoredPosition = new Vector2(0f, 18f);
+            Button closeButton = closeGo.AddComponent<Button>();
+            closeButton.targetGraphic = closeImg;
+            TMP_Text closeLabel = CreateText(closeGo.transform, "Label", "닫기 (ESC)", font, 26f,
+                Color.white, TextAlignmentOptions.Center);
+            StretchFull(closeLabel.rectTransform);
+
+            SetField(view, "_gameState", gameState);
+            SetField(view, "_panel", panel.gameObject);
+            SetField(view, "_titleLabel", title);
+            SetField(view, "_moneyLabel", money);
+            SetField(view, "_listRoot", listRect);
+            SetField(view, "_closeButton", closeButton);
+            SetField(view, "_font", font);
+            EditorUtility.SetDirty(view);
+            panel.gameObject.SetActive(false);
         }
 
         // ── 송장 캔버스 (S-071 ② — 상자 좌클릭 → 주문 정보) ──

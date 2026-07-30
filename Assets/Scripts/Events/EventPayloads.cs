@@ -24,6 +24,21 @@ namespace DontLate
         Storm    // 태풍 (S-088 ⑤) — 어둡고 간헐 비, 좌/우 강풍
     }
 
+    /// <summary>노점 판매 품목 1줄 (S-125 ② — 자판기·편의점·포장마차 공용 구매창).</summary>
+    public struct KioskItem
+    {
+        public string id;      // 가방 아이템 id (drink·water·hot_drink·flower …)
+        public string label;
+        public int price;
+    }
+
+    /// <summary>구매창 요청 페이로드 — 어떤 가게가 무엇을 파는가.</summary>
+    public struct KioskOffer
+    {
+        public string Title;
+        public KioskItem[] Items;
+    }
+
     /// <summary>스태미나 패널티 구간 (S-088 ④) — 각 값은 상한에서 차감되는 크기(0=비활성).</summary>
     public struct StaminaPenalties
     {

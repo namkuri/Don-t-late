@@ -204,10 +204,10 @@ namespace DontLate
         /// <summary>배치물을 인벤토리로 회수한다. pick=true면 배치 모드로 재진입(집기), false면 철거.</summary>
         private void Recover(Mouse mouse, Camera camera, bool pick)
         {
-            // 철거는 파괴적 조작이라 UI 위 클릭이 뒤 가구를 치우지 않게 막는다 (PlayerStatusManager 선례).
-            bool overUI = UnityEngine.EventSystems.EventSystem.current != null
-                && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject();
-            if (PhoneView.IsOpen || overUI) return;
+            // 좌클릭(집기)은 버튼 위에서 양보한다. 우클릭(철거)은 이 게임의 UI가 쓰지 않는 버튼이라
+            // 폰이 열렸을 때만 막는다 — 집 화면은 대화 박스·진행 버튼이 가구 위를 넓게 덮어서,
+            // UI 위라고 무조건 막으면 철거가 영영 안 먹는다(남규님 2회 반려의 실원인).
+            if (PhoneView.IsOpen || (pick && PointerOverInteractiveUI())) return;
 
             Ray ray = camera.ScreenPointToRay(mouse.position.ReadValue());
             if (!Physics.Raycast(ray, out RaycastHit hit, 100f)) return;
@@ -235,6 +235,31 @@ namespace DontLate
             }
             WorldAudioManager.Instance?.PlayUiTickSfx(); // AU-010
             Debug.Log("[하우징] " + placed.furnitureId + (pick ? " 집음 — 재배치 모드" : " 철거 — 인벤토리 회수"));
+        }
+
+        // S-125 ① — 우클릭 철거가 계속 무반응이던 진짜 이유.
+        // 집(Home)은 화면 하단을 대화 박스·진행 버튼이 넓게 덮는다. 그 위에 가구가 겹쳐 보이는데,
+        // 기존 가드가 `IsPointerOverGameObject()`(= 아무 그래픽이나 걸리면 true)여서 가구를 겨눈
+        // 클릭이 통째로 삼켜졌다. **실제로 누를 수 있는 UI(Selectable)** 위일 때만 양보한다.
+        private static readonly System.Collections.Generic.List<UnityEngine.EventSystems.RaycastResult> UiHits
+            = new System.Collections.Generic.List<UnityEngine.EventSystems.RaycastResult>();
+
+        private static bool PointerOverInteractiveUI()
+        {
+            UnityEngine.EventSystems.EventSystem events = UnityEngine.EventSystems.EventSystem.current;
+            if (events == null) return false;
+            var pointer = new UnityEngine.EventSystems.PointerEventData(events)
+            {
+                position = Mouse.current != null ? Mouse.current.position.ReadValue() : Vector2.zero,
+            };
+            UiHits.Clear();
+            events.RaycastAll(pointer, UiHits);
+            foreach (UnityEngine.EventSystems.RaycastResult hit in UiHits)
+            {
+                var selectable = hit.gameObject.GetComponentInParent<UnityEngine.UI.Selectable>();
+                if (selectable != null && selectable.interactable) return true;
+            }
+            return false;
         }
 
         private int FindPlacedIndex(PlacedFurnitureVisual visual)

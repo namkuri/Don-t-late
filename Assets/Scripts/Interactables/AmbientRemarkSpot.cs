@@ -35,6 +35,9 @@ namespace DontLate
             _tick = TICK;
 
             if (_lines == null || _lines.Length == 0) return;
+            // S-125 ③ — 촬영 씬은 잡 기능 전면 정지 (남규님 반려: District 1에서 독백이 떴다).
+            // 이 컴포넌트는 런타임 생성물이라 빌더의 StripInteractions로는 못 지운다.
+            if (DistrictCaptureDemo.CaptureMode) return;
             if (Time.time < _spotReadyAt || Time.time < _globalReadyAt) return;
 
             int count = Physics.OverlapSphereNonAlloc(transform.position, _radius, _hits,

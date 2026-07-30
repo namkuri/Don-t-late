@@ -30,17 +30,21 @@ namespace DontLate
             if (_renderer != null) _normalMaterial = _renderer.sharedMaterial;
         }
 
+        // S-125 ② — E는 즉시 결제가 아니라 **구매창**을 연다(남규님 요청). 상자 투척 배출(아래)은
+        // 그대로 — 자판기의 재미 요소라 유지한다.
         public void Interact(PlayerContext ctx)
         {
-            if (WorldDebtManager.Instance == null) return;
             int price = _tuning != null ? _tuning.vendingPrice : 1000;
-            if (!WorldDebtManager.Instance.TrySpend(price))
+            WorldEvents.RaiseKioskRequested(new KioskOffer
             {
-                Debug.Log("[자판기] 잔액 부족 — " + price.ToString("N0") + "원 필요.");
-                return;
-            }
-            Debug.Log("[자판기] " + price.ToString("N0") + "원 결제 — 드링크 배출.");
-            DispenseDrink();
+                Title = "자판기",
+                Items = new[]
+                {
+                    new KioskItem { id = "drink", label = "에너지드링크", price = price },
+                    new KioskItem { id = "water", label = "생수 (더위↓)", price = 800 },
+                    new KioskItem { id = "hot_drink", label = "코코아 (추위↓)", price = 1200 },
+                },
+            });
         }
 
         public void SetHighlight(bool on)

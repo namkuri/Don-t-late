@@ -333,7 +333,7 @@ namespace DontLate.EditorTools
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        // S-124 — 거리 자판기 손배치 + 에디터 타임 배선. 배경 콜라이더는 PlaceCatalog가 이미 끄므로
+        // S-124 — 거리 자판기 손배치 + S-125 ② 구매창 배선. 배경 콜라이더는 PlaceCatalog가 이미 끄므로
         // (S-119 ① 규약) 보행·상자 물리 간섭 0이고, 상호작용 전용 트리거만 새로 얹는다.
         private static void BuildStreetVending(Vector3 groundPos, TuningConfigSO tuning)
         {
@@ -347,16 +347,20 @@ namespace DontLate.EditorTools
 
             BoxCollider trigger = vend.AddComponent<BoxCollider>();
             trigger.isTrigger = true;
-            trigger.size = bounds.size;
+            trigger.size = bounds.size + new Vector3(0.8f, 0f, 0.8f); // 앞에 서면 잡히게 여유
             trigger.center = vend.transform.InverseTransformPoint(bounds.center);
 
-            VendingMachine vending = vend.AddComponent<VendingMachine>();
+            VendingMachine vending = vend.AddComponent<VendingMachine>(); // E → 구매창 (S-125 ②)
             GreyboxStageBuilder.SetReference(vending, "_tuning", tuning);
             GreyboxStageBuilder.SetReference(vending, "_drinkMaterial",
                 GreyboxStageBuilder.GetOrCreateMaterial("Drink", GreyboxStageBuilder.ParseColor("#e04a35"), false));
             GreyboxStageBuilder.SetReference(vending, "_highlightMaterial",
                 GreyboxStageBuilder.GetOrCreateMaterial("Highlight", GreyboxStageBuilder.ParseColor("#35e0c8"), true));
             GreyboxStageBuilder.SetReference(vending, "_renderer", renderers[0]);
+
+            // 편의점 — 거리 상점 데코에 구매창을 붙인다 (남규님: 편의점도 구매 UI).
+            GameObject store = GreyboxStageBuilder.PlaceCatalog("store_2", new Vector3(6.5f, 0f, 2.4f), 180f);
+            if (store != null) KioskBuildKit.MakeKiosk(store, "편의점", KioskBuildKit.ConvenienceItems);
         }
 
         // S-123 ① — 독백 스팟 부착 (문자열 배열이라 SerializedObject로 주입).
