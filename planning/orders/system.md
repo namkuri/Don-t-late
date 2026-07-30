@@ -2898,3 +2898,20 @@ MDA 판정 (D-070): 강화 — A축 전역 회수.
 - **팀원 공지**: pull 후 Camp·Hillside·Apartment 재조립 추가(어제분 Core·District·Home 포함 6씬).
 - 검증: 컴파일 ○ · 콘솔 0 · 4씬 캡처. exec 행잉 3회 재시도 우회(트랜지언트 — 새벽 세션 누적).
 - 시트: [[routing/RT-20260730-06]] done.
+
+---
+
+## S-116 · 발주 2026-07-30 14:25 → CLI (R53 5건 — 캠프 정비·District 밀도·촬영용 District 1 씬)
+
+- **요구 (남규님 원문 + 첨부 3파일)**:
+  ① 캠프 스폰 상자 4개 중 위 2개 물리 미적용 ② 캠프 트럭 실모델 대체(지금 2대로 보임 —
+  그레이박스+데코 밴) ③ District 보행 구간 건물 공백 — 더 배치·오밀조밀 ④ 벚꽃나무가
+  보행통로에 — 건물 쪽으로 ⑤ 첨부(DistrictCaptureDemo.cs+meta+가이드)대로 District 1 촬영
+  씬 구성(Main 화면 재생용).
+- **⑤ 반입 소견**: 남규님 직접 첨부 = Director 경유 반입(파일 복사 금지 규칙의 예외 — guid
+  보존 필수). 의존 API 실측: SetTime만 존재 — SetDemoInput/ClearDemoInput(입력)·DemoCarrying
+  (애니)·SuppressTrafficAccidents 훅(교통) 3종 신규 시공 필요. 가이드의 하늘 레이어·벚꽃
+  페탈·포그는 컴포넌트 부재 — 빌더로 재현(에셋은 민지 반입분 실재: sky_bg·cloud1/2·logo).
+- 수용기준: ①물리 4/4 ②실모델 트럭 1대(기능 유지) ③④재조립 밀도·나무 위치 캡처 ⑤District 1
+  씬 Play 시 자동 연출(카메라 하강→왕복→변주) 실측.
+MDA 판정 (D-070): 강화 — 본편 정비(M축)+홍보 촬영 지원(제출 영상).
