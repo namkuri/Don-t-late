@@ -382,11 +382,20 @@ namespace DontLate.EditorTools
             StretchFull((RectTransform)content.transform);
             SetField(hud, "_content", content);
 
-            // 시계 (우상).
+            // 시계 (우상). S-117 — 실아트 시계 아이콘(ui_coin과 동일 계약) 있으면 텍스트 오른쪽에 붙인다.
+            Sprite clockArt = LoadUISprite("ui_clock");
             TMP_Text clock = CreateText(content.transform, "Clock", "Day 1 · 08:00", font,
                 40f, Color.white, TextAlignmentOptions.TopRight);
-            AnchorCorner(clock.rectTransform, new Vector2(1f, 1f), new Vector2(-40f, -30f), new Vector2(460f, 60f));
+            AnchorCorner(clock.rectTransform, new Vector2(1f, 1f),
+                clockArt != null ? new Vector2(-96f, -30f) : new Vector2(-40f, -30f), new Vector2(460f, 60f));
             SetField(hud, "_clockLabel", clock);
+            if (clockArt != null)
+            {
+                Image clockIcon = CreateImage(content.transform, "ClockIcon", Color.white);
+                clockIcon.sprite = clockArt;
+                clockIcon.raycastTarget = false;
+                AnchorCorner(clockIcon.rectTransform, new Vector2(1f, 1f), new Vector2(-40f, -26f), new Vector2(48f, 48f));
+            }
 
             // ── S-063 상단 바 ─────────────────────────────
             Color chipColor = new Color(0.10f, 0.12f, 0.16f, 0.85f);
@@ -431,9 +440,17 @@ namespace DontLate.EditorTools
                 SetField(hud, segment.fieldName, seg);
             }
 
-            // 현금 칩.
+            // 현금 칩. S-117 — 실아트 코인 아이콘 있으면 칩 왼쪽에 붙인다 (스왑 계약 — 없으면 텍스트만).
             Image moneyChip = CreateImage(content.transform, "MoneyChip", chipColor);
             AnchorCorner(moneyChip.rectTransform, new Vector2(0f, 1f), new Vector2(460f, -20f), new Vector2(250f, 64f));
+            Sprite coinArt = LoadUISprite("ui_coin");
+            if (coinArt != null)
+            {
+                Image coinIcon = CreateImage(moneyChip.transform, "CoinIcon", Color.white);
+                coinIcon.sprite = coinArt;
+                coinIcon.raycastTarget = false;
+                AnchorCorner(coinIcon.rectTransform, new Vector2(0f, 1f), new Vector2(10f, -10f), new Vector2(44f, 44f));
+            }
             TMP_Text money = CreateText(moneyChip.transform, "Money", "₩0", font,
                 32f, Color.white, TextAlignmentOptions.Center);
             StretchFull(money.rectTransform);
@@ -896,9 +913,9 @@ namespace DontLate.EditorTools
             if (boxArt != null) borderImage.sprite = boxArt;
             GameObject border = borderImage.gameObject;
             RectTransform borderRect = border.GetComponent<RectTransform>();
-            // S-027 ①: 실아트 원본 비율(크롭 후 1612×477 ≈ 3.38:1) 그대로 — 찌그러짐 금지.
+            // S-027 ① → S-117: 실아트 원본 비율(새 아트 캔버스 891×295 ≈ 3.02:1) 그대로 — 찌그러짐 금지.
             AnchorMiddleBottom(borderRect, new Vector2(0f, 50f),
-                boxArt != null ? new Vector2(1350f, 400f) : new Vector2(1720f, 260f));
+                boxArt != null ? new Vector2(1350f, 447f) : new Vector2(1720f, 260f));
             SetField(view, "_box", border);
 
             // 네이비 반투명 내부 (테두리보다 3px 안쪽) — 클릭 진행용 Button 타겟.
@@ -987,8 +1004,8 @@ namespace DontLate.EditorTools
             RectTransform panelRect = panel.GetComponent<RectTransform>();
             panelRect.anchorMin = panelRect.anchorMax = new Vector2(1f, 0f);
             panelRect.pivot = new Vector2(1f, 0f);
-            panelRect.anchoredPosition = hasFrame ? new Vector2(-67f, 0f) : new Vector2(-28f, 24f); // S-050 ①: 폰 하강(-106)에 맞춰 개구 정합 130→0
-            panelRect.sizeDelta = hasFrame ? new Vector2(354f, 622f) : new Vector2(430f, 610f);
+            panelRect.anchoredPosition = hasFrame ? new Vector2(-98f, 0f) : new Vector2(-28f, 24f); // S-117: 새 프레임 개구 정합 (폰 하강 -146)
+            panelRect.sizeDelta = hasFrame ? new Vector2(298f, 532f) : new Vector2(430f, 610f);
             SetField(view, "_panel", panel);
 
             Image inner = CreateImage(panel.transform, "Inner", NAVY);
@@ -1044,28 +1061,28 @@ namespace DontLate.EditorTools
             SetField(view, "_npcCatalog", GetOrCreateNpcCatalog());            // S-079 ④ — 소셜앱
 
             // 폰 본체 — 우하단 앵커(사람 요청 S-011 후속).
-            // 실아트(ui_phone_frame — 민지 민트 폰, 723×1353 크롭·화면 개구 실측) 있으면 프레임 사용,
-            // 없으면 시안 테두리 폴백 (스왑 계약). 화면(navy)이 아트의 흰 스크린 영역을 정확히 덮는다.
+            // 실아트(ui_phone_frame — S-117 크림+네이비 폰, 387×715 캔버스·개구 x56~323·y105~583 실측)
+            // 있으면 프레임 사용, 없으면 시안 테두리 폴백 (스왑 계약). 화면(navy)이 흰 스크린 영역을 덮는다.
             Sprite frameArt = LoadUISprite("ui_phone_frame");
             GameObject panel = CreateImage(canvasGo.transform, "Panel", frameArt != null ? Color.white : CYAN).gameObject;
             if (frameArt != null) panel.GetComponent<Image>().sprite = frameArt;
             RectTransform panelRect = panel.GetComponent<RectTransform>();
             panelRect.anchorMin = panelRect.anchorMax = new Vector2(1f, 0f);
             panelRect.pivot = new Vector2(1f, 0f);
-            panelRect.sizeDelta = frameArt != null ? new Vector2(430f, 805f) : new Vector2(430f, 610f); // 아트 비율 0.534
-            panelRect.anchoredPosition = new Vector2(-28f, frameArt != null ? -840f : -640f); // 닫힘 = 화면 밖
+            panelRect.sizeDelta = frameArt != null ? new Vector2(430f, 795f) : new Vector2(430f, 610f); // 아트 비율 0.541
+            panelRect.anchoredPosition = new Vector2(-28f, frameArt != null ? -830f : -640f); // 닫힘 = 화면 밖
             SetField(view, "_panel", panelRect);
-            SetField(view, "_hiddenY", frameArt != null ? -840f : -640f);
-            // S-050 ①: 열림 = 화면 개구 바닥(패널바닥+106px)이 뷰포트 바닥에 딱 — 하단 베젤은 화면 밖.
-            SetField(view, "_shownY", frameArt != null ? -106f : 24f);
+            SetField(view, "_hiddenY", frameArt != null ? -830f : -640f);
+            // S-050 ①: 열림 = 화면 개구 바닥(패널바닥+146px)이 뷰포트 바닥에 딱 — 하단 베젤은 화면 밖.
+            SetField(view, "_shownY", frameArt != null ? -146f : 24f);
 
             Image screen = CreateImage(panel.transform, "Screen", NAVY);
             RectTransform screenRect = screen.rectTransform;
             screenRect.anchorMin = Vector2.zero;
             screenRect.anchorMax = Vector2.one;
-            // 아트 화면 개구 실측값 (정규화 좌 0.086 · 우 0.910 · 상 0.095 · 하 0.868 → 430×805 환산).
-            screenRect.offsetMin = frameArt != null ? new Vector2(37f, 106f) : new Vector2(4f, 4f);
-            screenRect.offsetMax = frameArt != null ? new Vector2(-39f, -77f) : new Vector2(-4f, -4f);
+            // 아트 화면 개구 실측값 (387×715 캔버스 → 430×795 환산: 좌 56 · 우 63 · 상 105 · 하 131px).
+            screenRect.offsetMin = frameArt != null ? new Vector2(62f, 146f) : new Vector2(4f, 4f);
+            screenRect.offsetMax = frameArt != null ? new Vector2(-70f, -117f) : new Vector2(-4f, -4f);
             screen.raycastTarget = true; // 폰 위 클릭이 월드 스캔으로 새지 않게
             // 화면 내부 위젯은 PhoneView v2가 런타임 생성 (S-019 ⑥ — 홈+앱 6종).
 

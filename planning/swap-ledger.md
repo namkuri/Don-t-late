@@ -16,3 +16,7 @@
 | 2026-07-30 00:22 | unswap | fur_tv | Assets/Art/Props/fur_tv.fbx 제거 -> 코드 폴백 |
 | 2026-07-30 00:41 | batch | (catalog x46) | Assets/_intake/art/Trellis2/Buildings -> Assets/Art/Buildings |
 | 2026-07-30 00:41 | batch | (catalog x36) | Assets/_intake/art/Trellis2/Props -> Assets/Art/Props |
+| 2026-07-30 15:41 | reswap | ui_phone_frame | Assets/_intake/art/ChatGPT/UI/ui_phone_frame.png -> Assets/Art/UI/ui_phone_frame.png |
+| 2026-07-30 15:41 | reswap | ui_dialogue_box | Assets/_intake/art/ChatGPT/UI/ui_dialogue_box.png -> Assets/Art/UI/ui_dialogue_box.png |
+| 2026-07-30 15:44 | swap | ui_clock | Assets/_intake/art/ChatGPT/UI/ui_clock.png -> Assets/Art/UI/ui_clock.png |
+| 2026-07-30 15:44 | swap | ui_coin | Assets/_intake/art/ChatGPT/UI/ui_coin.png -> Assets/Art/UI/ui_coin.png |

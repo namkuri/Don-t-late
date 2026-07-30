@@ -186,10 +186,12 @@
 | ui_title.png | (원명 logo.png) `Assets/Art/UI/` | ChatGPT 생성(민지·구두 계약 2026-07-22) | 산출물 권리 사용자 귀속·상업 가능(OpenAI 약관) | 2026-07-22 |
 | ui_title_sub.png | (원명 sub_logo.png) `Assets/Art/UI/` | ChatGPT 생성(민지·구두 계약 2026-07-22) | 산출물 권리 사용자 귀속·상업 가능(OpenAI 약관) | 2026-07-22 |
 | ui_title_man.png | (원명 man.png) `Assets/Art/UI/` | ChatGPT 생성(민지·구두 계약 2026-07-22) | 산출물 권리 사용자 귀속·상업 가능(OpenAI 약관) | 2026-07-22 |
-| ui_dialogue_box.png | (원명 chat_box.png) `Assets/Art/UI/` | ChatGPT 생성(민지·구두 계약 2026-07-22) | 산출물 권리 사용자 귀속·상업 가능(OpenAI 약관) | 2026-07-22 |
+| ui_dialogue_box.png | 대화 박스 (명찰 탭 신판 — S-117 교체) `Assets/Art/UI/` | ChatGPT 생성(민지·구두 계약 2026-07-22) | 산출물 권리 사용자 귀속·상업 가능(OpenAI 약관) | 2026-07-30 |
 | ui_dialogue_arrow.png | (원명 chat_box_box.png) `Assets/Art/UI/` | ChatGPT 생성(민지·구두 계약 2026-07-22) | 산출물 권리 사용자 귀속·상업 가능(OpenAI 약관) | 2026-07-22 |
 | ui_start_button.png | (원명 run_button.png) `Assets/Art/UI/` | ChatGPT 생성(민지·구두 계약 2026-07-22) | 산출물 권리 사용자 귀속·상업 가능(OpenAI 약관) | 2026-07-22 |
-| ui_phone_frame.png | 폰 겉면 프레임 (민트) | ChatGPT 생성 (민지 · 원명 mint_phone.png — UI 구두 계약 라인) | 상업 사용 가능 | 2026-07-23 |
+| ui_phone_frame.png | 폰 겉면 프레임 (크림+네이비 — S-117 교체, 구 민트판 대체) | ChatGPT 생성 (민지 · _intake ChatGPT/UI 라인) | 상업 사용 가능 | 2026-07-30 |
+| ui_clock.png | HUD 시계 아이콘 (S-117 신규 소켓) | ChatGPT 생성 (민지 · _intake ChatGPT/UI 라인) | 상업 사용 가능 | 2026-07-30 |
+| ui_coin.png | HUD 현금 칩 코인 아이콘 (S-117 신규 소켓) | ChatGPT 생성 (민지 · _intake ChatGPT/UI 라인) | 상업 사용 가능 | 2026-07-30 |
 | ui_gauge_fill.png | 게이지 fill용 4×4 순백 사각 `Assets/Art/UI/` | CoreSceneBuilder 코드 자동 생성 (S-070 ② — 외부 소스 없음) | 자체 생성물 — 제약 없음 | 2026-07-28 |
 | Assets/Art/Props/fur_bed.fbx | 민지 A-008 (_intake/art/Trellis2/Props/Bed_dafault_unity.fbx 스왑) | RunPod 셀프호스팅 TRELLIS (MIT) | S-109 |
 | Assets/Art/Props/fur_plant.fbx | 민지 A-008 (Pot_unity.fbx 스왑) | RunPod 셀프호스팅 TRELLIS (MIT) | S-109 |

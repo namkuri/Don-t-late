@@ -689,8 +689,9 @@ namespace DontLate
             Button home = MakeButton(screenBg, "HomeBtn", "홈", () => ShowScreen(Screen.Home));
             RectTransform homeRect = (RectTransform)home.transform;
             homeRect.anchorMin = homeRect.anchorMax = homeRect.pivot = new Vector2(1f, 1f);
-            homeRect.sizeDelta = new Vector2(54f, 44f);
-            homeRect.anchoredPosition = new Vector2(-10f, -38f);
+            homeRect.sizeDelta = new Vector2(54f, 40f);
+            // S-117 — 새 프레임 개구(폭 298)에선 -38이 상태바 "100%"를 가린다(캡처 게이트 적발) — 한 줄 아래로.
+            homeRect.anchoredPosition = new Vector2(-10f, -46f);
 
             _screenRoot = new GameObject("Screens", typeof(RectTransform)).transform;
             _screenRoot.SetParent(screenBg, false);
