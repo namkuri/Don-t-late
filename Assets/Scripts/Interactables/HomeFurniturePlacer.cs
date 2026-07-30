@@ -159,7 +159,25 @@ namespace DontLate
         private TMP_Text _hintLabel;
         private string _hintText;
 
+        // S-126 — 우클릭 결과를 화면에 알린다. 3연속 반려에서 배운 것: 조작이 실패했을 때
+        // "아무 일도 안 일어남"이면 사람은 원인을 알 수 없고 관제는 시뮬레이션으로 재현할 수 없다
+        // (합성 입력이 wasPressedThisFrame을 못 건드림 — S-100). 실패도 말을 하게 만든다.
+        private float _flashUntil;
+
+        private void Flash(string text)
+        {
+            _flashUntil = Time.time + 2f;
+            _hintText = null; // 다음 ShowHint가 복원하도록 캐시 무효화
+            ShowHintRaw(text);
+        }
+
         private void ShowHint(string text)
+        {
+            if (Time.time < _flashUntil) return; // 결과 메시지 표시 중엔 덮지 않는다
+            ShowHintRaw(text);
+        }
+
+        private void ShowHintRaw(string text)
         {
             if (text == _hintText) return;
             _hintText = text;
@@ -183,11 +201,12 @@ namespace DontLate
                 _hintLabel.alignment = TextAlignmentOptions.Center;
                 _hintLabel.raycastTarget = false;
                 RectTransform rect = _hintLabel.rectTransform;
-                rect.anchorMin = new Vector2(0.5f, 0f);
-                rect.anchorMax = new Vector2(0.5f, 0f);
-                rect.pivot = new Vector2(0.5f, 0f);
+                // S-126 — 하단은 대화 박스가 덮어 메시지가 반쯤 가려졌다(캡처 확인). 상단 HUD 아래로.
+                rect.anchorMin = new Vector2(0.5f, 1f);
+                rect.anchorMax = new Vector2(0.5f, 1f);
+                rect.pivot = new Vector2(0.5f, 1f);
                 rect.sizeDelta = new Vector2(900f, 40f);
-                rect.anchoredPosition = new Vector2(0f, 40f); // 하단 중앙 — 폰(우하단)과 겹치지 않는다
+                rect.anchoredPosition = new Vector2(0f, -120f);
             }
             _hintLabel.text = text;
         }
@@ -207,15 +226,34 @@ namespace DontLate
             // 좌클릭(집기)은 버튼 위에서 양보한다. 우클릭(철거)은 이 게임의 UI가 쓰지 않는 버튼이라
             // 폰이 열렸을 때만 막는다 — 집 화면은 대화 박스·진행 버튼이 가구 위를 넓게 덮어서,
             // UI 위라고 무조건 막으면 철거가 영영 안 먹는다(남규님 2회 반려의 실원인).
-            if (PhoneView.IsOpen || (pick && PointerOverInteractiveUI())) return;
+            if (PhoneView.IsOpen)
+            {
+                if (!pick) Flash("우클릭 감지 — 폰을 닫고 다시 시도");
+                return;
+            }
+            if (pick && PointerOverInteractiveUI()) return;
 
+            // S-126 — 조준 관용: 선 레이가 빗나가도 반경 0.35u 구체로 한 번 더 훑는다
+            // (가구가 작거나 커서가 살짝 빗나가도 잡히게).
             Ray ray = camera.ScreenPointToRay(mouse.position.ReadValue());
-            if (!Physics.Raycast(ray, out RaycastHit hit, 100f)) return;
-            PlacedFurnitureVisual visual = hit.collider.GetComponentInParent<PlacedFurnitureVisual>();
-            if (visual == null) return;
+            PlacedFurnitureVisual visual = null;
+            if (Physics.Raycast(ray, out RaycastHit hit, 100f))
+                visual = hit.collider.GetComponentInParent<PlacedFurnitureVisual>();
+            if (visual == null && Physics.SphereCast(ray, 0.35f, out RaycastHit soft, 100f))
+                visual = soft.collider.GetComponentInParent<PlacedFurnitureVisual>();
+
+            if (visual == null)
+            {
+                if (!pick) Flash("우클릭 감지 — 커서를 치울 가구 위에 올리고 우클릭");
+                return;
+            }
 
             int index = FindPlacedIndex(visual);
-            if (index < 0) return;
+            if (index < 0)
+            {
+                if (!pick) Flash("우클릭 감지 — 이 물건은 치울 수 없다(배치물 아님)");
+                return;
+            }
 
             PlacedFurniture placed = _gameState.placedFurniture[index];
             bool hasFootprint = TryWorldBounds(visual.transform, out Bounds footprint); // 파괴 전 실측
@@ -234,6 +272,7 @@ namespace DontLate
                 _ghostYaw = placed.rotationY; // 집을 때 각도 유지
             }
             WorldAudioManager.Instance?.PlayUiTickSfx(); // AU-010
+            if (!pick) Flash("철거 — " + KoreanName(placed.furnitureId) + " 인벤토리로 회수");
             Debug.Log("[하우징] " + placed.furnitureId + (pick ? " 집음 — 재배치 모드" : " 철거 — 인벤토리 회수"));
         }
 
@@ -367,6 +406,12 @@ namespace DontLate
                 if (has) bounds.Encapsulate(renderer.bounds); else { bounds = renderer.bounds; has = true; }
             }
             return has;
+        }
+
+        private string KoreanName(string furnitureId)
+        {
+            FurnitureSO so = Find(furnitureId);
+            return so != null && !string.IsNullOrEmpty(so.displayName) ? so.displayName : furnitureId;
         }
 
         private FurnitureSO Find(string furnitureId)
