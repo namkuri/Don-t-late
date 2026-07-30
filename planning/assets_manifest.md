@@ -363,3 +363,25 @@
 | Assets/Art/Props/Textures/white_van_Image_0.png | S-113 임베디드 추출 (원본 fbx 파생 — 민지 A-008) | RunPod 셀프호스팅 TRELLIS (MIT) | S-113 |
 | Assets/Art/Props/Textures/yellow_taxi_Image_0.png | S-113 임베디드 추출 (원본 fbx 파생 — 민지 A-008) | RunPod 셀프호스팅 TRELLIS (MIT) | S-113 |
 | Assets/Art/Props/Textures/스크린샷 2026-07-22 040147.png | S-113 임베디드 추출 (원본 fbx 파생 — 민지 A-008) | RunPod 셀프호스팅 TRELLIS (MIT) | S-113 |
+
+## PR#26 반입 (A-008 후속 · 계약 경로 교정 반입 — S-121 검역 CONDITIONAL 치유) — 2026-07-30
+
+> 민지님 PR #26의 신규 캐릭터 11파일. 원 PR 경로(`Mixamo/A_*`·`Tripo_API/*`)가 반입 계약
+> (`_intake/art/<도구>/<분류>/`)을 벗어나 있어 **main 관례 경로로 교정 반입**했고, main과
+> byte-identical 중복 12건 + PR 내부 자기중복 1건(gs_girl.jpg)은 제외했다. Trellis2 82종은
+> 동일 경로 oid 교체(교체본 — 아래 별도 행).
+
+| 파일 | 내용 | 출처·라이선스 | 반입일 |
+|---|---|---|---|
+| Assets/_intake/art/Tripo/Characters/malsoon.fbx | 박말순 3D 모델 (D-073 채택 — 엔딩씬) | Tripo OpenAPI (민지 유료 플랜 · 사용자 출력 권리 — orders/art.md:183) | 2026-07-30 |
+| Assets/_intake/art/Tripo/Characters/Texture/malsoon.png | 박말순 텍스처 — ⚠ PNG 내장 그래프상 **OpenAI GPT Image** 산출물(하이브리드 플로우: 이미지=GPT Image / 3D=Tripo) | OpenAI GPT Image (ChatGPT 출력물 사용자 소유 — orders/art.md:182) | 2026-07-30 |
+| Assets/_intake/art/Tripo/Characters/Texture/malsoon.fbm.jpg | 박말순 fbx 임베드 텍스처 파생 | Tripo OpenAPI (상동) | 2026-07-30 |
+| Assets/_intake/art/Tripo/Characters/juhye_lowpoly.glb | 지혜 저폴리 메시 (용도 미정 — 채택 보류) | Tripo OpenAPI (상동) | 2026-07-30 |
+| Assets/_intake/art/Tripo/Characters/juhye_lowpoly_rigged.glb | 지혜 저폴리 리깅본 | Tripo OpenAPI (상동) | 2026-07-30 |
+| Assets/_intake/art/Tripo/Characters/juhye_source.glb | 지혜 소스 메시 42MB (정본 결정 대기) | Tripo OpenAPI (상동) | 2026-07-30 |
+| Assets/_intake/art/Tripo/Characters/Texture/gs_girl.jpg | gs_girl 텍스처 (PR 내 2중 복제 중 1건만 반입) | Tripo OpenAPI (상동) | 2026-07-30 |
+| Assets/_intake/art/Mixamo/Animations/gs_girl_mixamo_rig_final.fbx | gs_girl 리그 최종본 (기존 gs_girl_mixamo_rig.fbx와 별개 — 정본 결정 대기) | Mixamo (Adobe · 상업 로열티 프리 — orders/art.md:183) | 2026-07-30 |
+| Assets/_intake/art/Mixamo/Animations/A_jihye/jihye_Standing Greeting.fbx | 지혜 인사 모션 | Mixamo (상동) | 2026-07-30 |
+| Assets/_intake/art/Mixamo/Animations/A_malsoon/malsoon_Angry.fbx | 박말순 화난 모션 1 | Mixamo (상동) | 2026-07-30 |
+| Assets/_intake/art/Mixamo/Animations/A_malsoon/malsoon_Angry_2.fbx | 박말순 화난 모션 2 | Mixamo (상동) | 2026-07-30 |
+| Assets/_intake/art/Trellis2/{Buildings,Props}/*.fbx (82종) | **oid 교체(재출력본)** — 합계 3.49GiB→2.10GiB(−1.39GiB, 커진 파일 0·no-op 0). A-002 오리진 반려 4종(fur_bed/plant/rug/tv) 소스 포함 | RunPod 셀프호스팅 TRELLIS (Microsoft · MIT) · 민지 생성 (assets_manifest §Trellis2 INTAKE) | 2026-07-30 |

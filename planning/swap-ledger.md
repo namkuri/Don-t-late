@@ -20,3 +20,4 @@
 | 2026-07-30 15:41 | reswap | ui_dialogue_box | Assets/_intake/art/ChatGPT/UI/ui_dialogue_box.png -> Assets/Art/UI/ui_dialogue_box.png |
 | 2026-07-30 15:44 | swap | ui_clock | Assets/_intake/art/ChatGPT/UI/ui_clock.png -> Assets/Art/UI/ui_clock.png |
 | 2026-07-30 15:44 | swap | ui_coin | Assets/_intake/art/ChatGPT/UI/ui_coin.png -> Assets/Art/UI/ui_coin.png |
+| 2026-07-30 20:15 | intake-replace | Trellis2 82종 | PR#26 e8b7e8a9 재출력본 oid 교체 (3.49GiB→2.10GiB) — Art/ 승격본은 아직 구 oid, 재스왑 대기 |

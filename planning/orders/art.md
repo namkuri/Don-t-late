@@ -181,3 +181,19 @@ chr_courier를 자동 수집해 4u 간격 진열(발높이 정규화·이름표)
 - 제안 목록과 실제 투입 경로: [`planning/bom_propose.md`](../bom_propose.md)
 - 라이선스 확인: Qwen-Image 로컬(Apache-2.0) · ChatGPT 출력물 사용자 소유 ·
   Mixamo 상업 프로젝트 로열티 프리 · Tripo OpenAPI 유료 사용자 출력 권리.
+
+## A-009 · 반입 기록 2026-07-30 20:15 (민지님 PR #26 — 관제 교정 반입)
+
+- **반입 내용**: ① Trellis2 82종 재출력본(oid 교체 · LFS 3.49GiB→2.10GiB) ② 신규 캐릭터 11파일
+  (박말순 3D+화난모션 2 · 지혜 3본+인사모션 · gs_girl 리그최종+텍스처).
+- **관제 교정 3건 (S-121 검역 CONDITIONAL 치유)**: ⓐ 계약 경로 교정 — `Mixamo/A_*` →
+  `Mixamo/Animations/A_*`, `Tripo_API/*` → `Tripo/Characters/*`(도구 폴더 분기 해소) ⓑ 중복 13건
+  제외(main과 byte-identical 12 + PR 내부 gs_girl.jpg 1) ⓒ 원장 기록 append(assets_manifest
+  12행 · swap-ledger 1행 · 본 대장).
+- **원격 LFS 실물 검증**: `git lfs fetch origin pr/26` 샘플 수신 성공(malsoon.fbx 931,036B) —
+  포인터만 있고 실물이 없는 상태가 아님을 확인(쿼터 미확인 상태의 최소 안전 검증).
+- **민지님께 요청 사항 (다음 반입부터)**: 반입 경로는 `_intake/art/<도구명>/<분류>/`까지 지켜주시고
+  (예: `Mixamo/Animations/A_말순/`), 이미 올라간 파일은 다시 담지 않으셔도 됩니다. 파일별 출처
+  한 줄만 PR 본문이나 원장에 적어주시면 검역이 한 번에 통과합니다.
+- **미해소 (INBOX 대조)**: H12 store_2·가로등 데시메이트 · H8 캐릭터 텍스처 재전송 ·
+  H9·H14 요청 애니(idle·carry walk·기상) · H15 정면 +Z 재정렬 — 이번 반입에 없음.
