@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -46,7 +47,11 @@ namespace DontLate
                 SpawnVisual(placed.furnitureId, placed.position, placed.rotationY);
         }
 
-        private void OnDisable() => ClearGhost(); // 씬 이탈 시 블루프린트 잔재 방지
+        private void OnDisable() // 씬 이탈 시 블루프린트·힌트 잔재 방지
+        {
+            ClearGhost();
+            ShowHint(null);
+        }
 
         private void Update()
         {
@@ -57,9 +62,19 @@ namespace DontLate
             if (string.IsNullOrEmpty(PhoneView.PendingPlacementId))
             {
                 ClearGhost();
-                HandleRepick(mouse, camera); // S-031 ① — 배치된 가구 클릭 = 집기
+                ShowHint(_gameState != null && _gameState.placedFurniture.Count > 0
+                    ? "좌클릭 = 집어 옮기기 · 우클릭 = 철거(인벤토리로)"
+                    : null); // 놓인 가구가 없으면 안내할 것도 없다
+                HandleRepick(mouse, camera); // S-031 ① — 배치된 가구 클릭 = 집기 / S-122 ④ 우클릭 = 철거
                 return;
             }
+
+            ShowHint("좌클릭 = 배치 · 우클릭 = 철거 · R = 회전 · ESC = 취소");
+
+            // S-124 — 남규님 원문은 "배치 모드에서 우클릭 시 철거"다. 고스트를 든 상태에서도
+            // 우클릭이 먹어야 한다 (S-122 ④는 배치 대기 없는 상태에만 넣어 무반응으로 보였다).
+            // 고스트는 유지 — 치운 자리에 곧바로 놓는 흐름이 자연스럽다.
+            if (mouse.rightButton.wasPressedThisFrame) HandleDemolish(mouse, camera);
 
             Keyboard keyboard = Keyboard.current;
 
@@ -134,14 +149,65 @@ namespace DontLate
 
         // ── 집기(좌클릭 · S-031 ①) / 철거(우클릭 · S-122 ④) ──
         // 둘 다 배치물을 인벤토리로 회수한다. 차이는 집기만 배치 모드로 재진입한다는 것뿐.
+        /// <summary>S-124 — 배치 모드에서의 우클릭 철거 (고스트 유지).</summary>
+        private void HandleDemolish(Mouse mouse, Camera camera) => Recover(mouse, camera, pick: false);
+
+        // ── S-124 조작 힌트 ──────────────────────────────────
+        // 기존 안내는 폰 가구앱 라벨에 있었는데 배치를 누르면 폰이 닫혀 보이지 않았다
+        // (남규님 "우클릭해도 아무 반응 없음"의 절반은 이 가시성 문제였다).
+        private GameObject _hintCanvasGo;
+        private TMP_Text _hintLabel;
+        private string _hintText;
+
+        private void ShowHint(string text)
+        {
+            if (text == _hintText) return;
+            _hintText = text;
+            if (string.IsNullOrEmpty(text))
+            {
+                if (_hintCanvasGo != null) { Destroy(_hintCanvasGo); _hintCanvasGo = null; _hintLabel = null; }
+                return;
+            }
+            if (_hintCanvasGo == null)
+            {
+                _hintCanvasGo = new GameObject("HousingHintCanvas");
+                Canvas canvas = _hintCanvasGo.AddComponent<Canvas>();
+                canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                canvas.sortingOrder = 6;
+                _hintLabel = new GameObject("Hint", typeof(RectTransform)).AddComponent<TextMeshProUGUI>();
+                _hintLabel.transform.SetParent(_hintCanvasGo.transform, false);
+                if (UiOverlayFont.Korean != null) _hintLabel.font = UiOverlayFont.Korean;
+                _hintLabel.fontSize = 26f;
+                _hintLabel.fontStyle = FontStyles.Bold;
+                _hintLabel.color = new Color(0.78f, 1f, 0.96f, 1f);
+                _hintLabel.alignment = TextAlignmentOptions.Center;
+                _hintLabel.raycastTarget = false;
+                RectTransform rect = _hintLabel.rectTransform;
+                rect.anchorMin = new Vector2(0.5f, 0f);
+                rect.anchorMax = new Vector2(0.5f, 0f);
+                rect.pivot = new Vector2(0.5f, 0f);
+                rect.sizeDelta = new Vector2(900f, 40f);
+                rect.anchoredPosition = new Vector2(0f, 40f); // 하단 중앙 — 폰(우하단)과 겹치지 않는다
+            }
+            _hintLabel.text = text;
+        }
+
+
         private void HandleRepick(Mouse mouse, Camera camera)
         {
             bool pick = mouse.leftButton.wasPressedThisFrame;
             bool demolish = mouse.rightButton.wasPressedThisFrame;
+            if (!pick && !demolish) return;
+            Recover(mouse, camera, pick);
+        }
+
+        /// <summary>배치물을 인벤토리로 회수한다. pick=true면 배치 모드로 재진입(집기), false면 철거.</summary>
+        private void Recover(Mouse mouse, Camera camera, bool pick)
+        {
             // 철거는 파괴적 조작이라 UI 위 클릭이 뒤 가구를 치우지 않게 막는다 (PlayerStatusManager 선례).
             bool overUI = UnityEngine.EventSystems.EventSystem.current != null
                 && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject();
-            if ((!pick && !demolish) || PhoneView.IsOpen || overUI) return;
+            if (PhoneView.IsOpen || overUI) return;
 
             Ray ray = camera.ScreenPointToRay(mouse.position.ReadValue());
             if (!Physics.Raycast(ray, out RaycastHit hit, 100f)) return;

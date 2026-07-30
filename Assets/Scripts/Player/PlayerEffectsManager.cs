@@ -54,6 +54,15 @@ namespace DontLate
             = new System.Collections.Generic.List<GameObject>();
         private Coroutine _footprintMelt;
 
+        // S-124 — 씬 진입 동기화: 플레이어는 씬마다 새로 태어나므로 WeatherChanged를 놓친다.
+        // 눈 오는 중에 입장하면 _snowing이 영원히 false여서 발자국이 하나도 안 생겼다
+        // (S-082 ⑤에서 PlayerLocomotionManager만 고쳤던 버그와 같은 계열 — 남규님 실관찰).
+        private void Start()
+        {
+            if (WorldWeatherManager.Instance != null)
+                _snowing = WorldWeatherManager.Instance.Weather == WeatherType.Snow;
+        }
+
         private void OnEnable() => WorldEvents.WeatherChanged += OnWeatherChanged;
         private void OnDisable() => WorldEvents.WeatherChanged -= OnWeatherChanged;
 
@@ -111,7 +120,9 @@ namespace DontLate
             quad.transform.SetPositionAndRotation(
                 transform.position + side + Vector3.up * 0.045f, // 눈막(0.03) 위
                 Quaternion.Euler(90f, yaw + 90f, 0f));
-            quad.transform.localScale = new Vector3(0.16f, 0.30f, 1f);
+            // S-124 — 크기 0.16×0.30은 480×270 저해상 렌더에서 4×1 아트픽셀이라 사실상 안 읽힌다
+            // (남규님 "발자국 아예 안 생김"의 절반은 이 가독성 문제). 1.6배로 키운다.
+            quad.transform.localScale = new Vector3(0.26f, 0.46f, 1f);
 
             if (_footprintMaterial == null)
             {

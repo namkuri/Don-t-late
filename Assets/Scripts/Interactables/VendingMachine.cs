@@ -20,6 +20,16 @@ namespace DontLate
             if (_renderer != null) _normalMaterial = _renderer.sharedMaterial;
         }
 
+        /// <summary>S-124 — 런타임 생성물(거리 자판기)용 배선. 빌더 주입이 불가한 경로에서 쓴다.</summary>
+        public void Configure(TuningConfigSO tuning, Material drinkMaterial, Material highlightMaterial, Renderer renderer)
+        {
+            _tuning = tuning;
+            _drinkMaterial = drinkMaterial;
+            _highlightMaterial = highlightMaterial;
+            _renderer = renderer;
+            if (_renderer != null) _normalMaterial = _renderer.sharedMaterial;
+        }
+
         public void Interact(PlayerContext ctx)
         {
             if (WorldDebtManager.Instance == null) return;

@@ -365,7 +365,34 @@ namespace DontLate
         private void BuildShopScreen()
         {
             GameObject screen = NewScreen(Screen.Shop);
-            _shopList = screen.transform;
+
+            // S-124 ⑥ — 스크롤 영역 (가구앱 InvViewport와 같은 패턴). 품목이 늘어도 개구 밖으로
+            // 떨어지지 않는다 — 행을 직접 화면에 깔던 구조가 하위 품목 구매 불가의 원인이었다.
+            GameObject viewport = new GameObject("ShopViewport", typeof(RectTransform));
+            viewport.transform.SetParent(screen.transform, false);
+            RectTransform vpRect = (RectTransform)viewport.transform;
+            vpRect.anchorMin = Vector2.zero;
+            vpRect.anchorMax = Vector2.one;
+            vpRect.offsetMin = new Vector2(0f, 4f);
+            vpRect.offsetMax = new Vector2(0f, -4f);
+            Image vpBg = viewport.AddComponent<Image>(); // 드래그 타겟 (거의 투명)
+            vpBg.color = new Color(1f, 1f, 1f, 0.03f);
+            viewport.AddComponent<RectMask2D>();
+
+            GameObject content = new GameObject("ShopContent", typeof(RectTransform));
+            content.transform.SetParent(viewport.transform, false);
+            RectTransform contentRect = (RectTransform)content.transform;
+            contentRect.anchorMin = new Vector2(0f, 1f);
+            contentRect.anchorMax = new Vector2(1f, 1f);
+            contentRect.pivot = new Vector2(0.5f, 1f);
+            contentRect.sizeDelta = new Vector2(0f, 10f);
+            _shopList = contentRect;
+
+            ScrollRect scroll = viewport.AddComponent<ScrollRect>();
+            scroll.viewport = vpRect;
+            scroll.content = contentRect;
+            scroll.horizontal = false;
+            scroll.scrollSensitivity = 24f;
         }
 
         private void RefreshShop()
@@ -385,11 +412,10 @@ namespace DontLate
                 RectTransform rowRect = (RectTransform)row.transform;
                 rowRect.anchorMin = new Vector2(0f, 1f); rowRect.anchorMax = new Vector2(1f, 1f);
                 rowRect.pivot = new Vector2(0.5f, 1f);
-                // S-122 ⑥ — 개구 298(화면루트 266) 정합. 구 74/82는 총 580px로 하위 2행이 개구 밖에
-                // 떨어져 구매 불가였다. S-123 ⑤로 꽃이 추가돼 8행이 되므로 피치 52:
-                // 마지막 행 하단 = -6 - 7*52 - 48 = -418 ≥ -430(화면 높이) ✓.
-                rowRect.sizeDelta = new Vector2(-16f, 48f);
-                rowRect.anchoredPosition = new Vector2(0f, -6f - i * 52f);
+                // S-122 ⑥ 개구 정합 + S-124 ⑥ 스크롤: 이제 개구를 넘어가도 스크롤로 닿으므로
+                // 행을 다시 편하게(높이 56·피치 60) 되돌린다.
+                rowRect.sizeDelta = new Vector2(-16f, 56f);
+                rowRect.anchoredPosition = new Vector2(0f, -6f - i * 60f);
 
                 TMP_Text label = MakeText(row.transform, "Label",
                     item.label + "\n<size=70%>₩" + item.price.ToString("N0") + "</size>",
@@ -406,6 +432,10 @@ namespace DontLate
                 buyRect.anchoredPosition = new Vector2(-8f, 0f);
                 buy.interactable = !cartOwned;
             }
+
+            // S-124 ⑥ — 스크롤 내용 높이 = 행 총합 (없으면 ScrollRect가 못 움직인다).
+            if (_shopList is RectTransform contentRect)
+                contentRect.sizeDelta = new Vector2(0f, 6f + ShopItems.Length * 60f + 6f);
         }
 
         private void BuyShopItem(ShopItem item)
@@ -532,6 +562,15 @@ namespace DontLate
 
             const float ROW_H = 84f;
             float y = 0f;
+
+            // S-124 — "호감도를 어떻게 올리는지 모르겠다"(남규님). 올리는 법과 응원 임계를 맨 위에 적는다.
+            TMP_Text guide = MakeText(_socialContent, "Guide",
+                "<color=#8fe3d5>인사 +20 · 꽃 +25 · 심부름 +10\n상자로 맞히면 −15</color>\n"
+                + "<color=#ffd45e>" + PedestrianNpc.CheerAffinity + " 이상이면 길에서 응원</color>",
+                17f, Color.white, TextAlignmentOptions.TopLeft);
+            Anchor(guide.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(10f, -4f), 74f);
+            y -= 80f; // 3줄(17f × 3 ≈ 60) + 여백
+
             foreach (NpcAffinity entry in _gameState.npcAffinities)
             {
                 NpcSO npc = FindNpc(entry.npcId);
@@ -600,7 +639,10 @@ namespace DontLate
             RectTransform nRect = name.rectTransform;
             nRect.anchorMin = new Vector2(0f, 1f); nRect.anchorMax = new Vector2(1f, 1f);
             nRect.pivot = new Vector2(0.5f, 1f);
-            nRect.offsetMin = new Vector2(80f, -40f); nRect.offsetMax = new Vector2(-64f, -8f);
+            // S-124 — 이름 상자 폭 122 → 178: "회색 코트"(≈130px)가 두 줄로 접혀 아래 게이지를
+            // 침범했다(남규님 호감도 가시성 건과 같은 화면). 값 라벨은 하단 우측이라 겹치지 않는다.
+            nRect.offsetMin = new Vector2(80f, -40f); nRect.offsetMax = new Vector2(-8f, -8f);
+            name.textWrappingMode = TextWrappingModes.NoWrap;
 
             // 호감도 게이지 — 배경 위 fill을 width로 (sprite 없는 fillAmount 함정 회피 — S-068 교훈).
             Image gaugeBg = new GameObject("GaugeBg", typeof(RectTransform)).AddComponent<Image>();
@@ -1214,9 +1256,14 @@ namespace DontLate
             GameObject viewport = new GameObject("InvViewport", typeof(RectTransform));
             viewport.transform.SetParent(screen.transform, false);
             RectTransform vpRect = (RectTransform)viewport.transform;
-            vpRect.anchorMin = new Vector2(0f, 0.46f);
+            // S-124 — 구매 그리드 1행(y 160~226)이 뷰포트 하단(0.46 → y 197.8)을 28px 침범했다
+            // (남규님 관찰: "소파·책상 버튼이 보유 가구 박스 쪽을 침범"). 0.55 → y 236.5로 올려
+            // 그리드 위에 10px 여백을 남긴다. 화면 430 배분: 헤더 70 / 인벤 236~360 / 구매 84~226 / 벽지·바닥 8~74.
+            // 비율(0.46) 대신 절대 px — 구매 버튼이 절대 좌표라 좌표계가 섞이면 개구 높이가 바뀔 때마다
+            // 다시 침범한다(남규님 재관찰). 하단 236px = 구매 그리드 상단(226) + 여백 10.
+            vpRect.anchorMin = new Vector2(0f, 0f);
             vpRect.anchorMax = new Vector2(1f, 1f);
-            vpRect.offsetMin = new Vector2(4f, 0f);
+            vpRect.offsetMin = new Vector2(4f, 236f);
             vpRect.offsetMax = new Vector2(-4f, -70f);
             Image vpBg = viewport.AddComponent<Image>(); // 스크롤 드래그 타겟
             vpBg.color = new Color(1f, 1f, 1f, 0.03f);

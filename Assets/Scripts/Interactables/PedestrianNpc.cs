@@ -153,6 +153,8 @@ namespace DontLate
         };
 
         private const int CHEER_AFFINITY = 40;   // 만남 20 + 꽃 25 = 45 → 첫 플레이 안에 도달
+        /// <summary>S-124 — 소셜앱이 임계를 안내할 수 있게 노출(수치 단일 소유는 여기).</summary>
+        public static int CheerAffinity => CHEER_AFFINITY;
         private const float CHEER_COOLDOWN = 20f;
         private const float HIT_COOLDOWN = 1.5f;
         private const float HIT_SPEED_MIN = 2.5f; // 굴러가는 상자·자기 이동으로 오발동하지 않게
@@ -171,12 +173,16 @@ namespace DontLate
             _lastHitAt = Time.time;
             _watched = null;
             _watchTimer = 1.2f;
-            // 처음 보는 행인은 감점하지 않는다 — Ledger.Add가 Meet을 먼저 부르므로 미등재 상태에서
-            // 맞히면 "호감도 20으로 등재된 뒤 5"라는 역설(때려서 친구 추가)이 생긴다.
-            if (_gameState != null && !string.IsNullOrEmpty(_npcId)
-                && _gameState.npcAffinities.Exists(n => n.npcId == _npcId))
-                NpcAffinityLedger.Add(_gameState, _npcId, HIT_AFFINITY_PENALTY);
-            ShowGreeting(Curses[Random.Range(0, Curses.Length)]);
+            // S-124 — 첫 명중도 감점한다(남규님 관찰: "욕은 하는데 호감도가 안 깎임").
+            // Penalize는 만남 보너스 20을 얹지 않고 0에서 깎아 "때려서 친구 추가"도 막는다.
+            string curse = Curses[Random.Range(0, Curses.Length)];
+            if (_gameState != null && !string.IsNullOrEmpty(_npcId))
+            {
+                NpcAffinityLedger.Penalize(_gameState, _npcId, -HIT_AFFINITY_PENALTY);
+                // 감점이 눈에 보여야 한다 — 수치를 말풍선에 붙인다.
+                curse += "  <color=#ff7359>호감도 " + HIT_AFFINITY_PENALTY + "</color>";
+            }
+            ShowGreeting(curse);
         }
 
         private void Face() => transform.rotation = Quaternion.Euler(0f, _direction > 0 ? 90f : -90f, 0f);

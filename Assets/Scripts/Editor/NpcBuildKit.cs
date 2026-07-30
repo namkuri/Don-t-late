@@ -173,7 +173,11 @@ namespace DontLate.EditorTools
             if (label == null) label = go.AddComponent<NpcNameLabel>();
             var serialized = new SerializedObject(label);
             serialized.FindProperty("_displayName").stringValue = displayName;
+            serialized.FindProperty("_npcId").stringValue = npcId ?? string.Empty; // S-124 — 호감도 표시
             serialized.ApplyModifiedPropertiesWithoutUndo();
+            // 에셋 참조는 리플렉션 직접 주입 — SerializedObject 경유는 SaveScene 시 유실된다(2026-07-20 실측).
+            GreyboxStageBuilder.SetReference(label, "_gameState",
+                UnityEditor.AssetDatabase.LoadAssetAtPath<GameStateSO>("Assets/Data/GameState.asset"));
         }
     }
 }

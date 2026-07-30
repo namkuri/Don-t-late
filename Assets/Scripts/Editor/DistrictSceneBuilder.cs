@@ -86,6 +86,11 @@ namespace DontLate.EditorTools
                 line.GetComponent<Renderer>().sharedMaterial = zebra;
             }
 
+            // S-124 — 거리 자판기: 캠프에만 있던 자판기를 District에도 손배치한다(남규님 관찰
+            // "자판기 인터랙션 안 됨" — 프랍 풀의 자판기는 배경 데코라 상호작용이 없었다).
+            // 프랍 추첨에 맡기지 않는 이유: 뽑히는 슬롯·방향이 시드마다 달라 "항상 쓸 수 있다"를 보장 못한다.
+            BuildStreetVending(new Vector3(-8.5f, 0f, -2.2f), tuning);
+
             // S-123 ① — 횡단보도 앞 독백: 차도를 건너기 직전 스스로 조심하라고 되뇐다.
             AttachRemarkSpot(zebraRoot, 3.2f, new[]
             {
@@ -326,6 +331,32 @@ namespace DontLate.EditorTools
             for (int i = 0; i < values.Count; i++)
                 property.GetArrayElementAtIndex(i).objectReferenceValue = values[i];
             serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        // S-124 — 거리 자판기 손배치 + 에디터 타임 배선. 배경 콜라이더는 PlaceCatalog가 이미 끄므로
+        // (S-119 ① 규약) 보행·상자 물리 간섭 0이고, 상호작용 전용 트리거만 새로 얹는다.
+        private static void BuildStreetVending(Vector3 groundPos, TuningConfigSO tuning)
+        {
+            GameObject vend = GreyboxStageBuilder.PlaceCatalog("Bending_Mechine", groundPos, 180f);
+            if (vend == null) return; // 카탈로그 미도착 — 소켓 생략
+
+            Renderer[] renderers = vend.GetComponentsInChildren<Renderer>();
+            if (renderers.Length == 0) return;
+            Bounds bounds = renderers[0].bounds;
+            foreach (Renderer r in renderers) bounds.Encapsulate(r.bounds);
+
+            BoxCollider trigger = vend.AddComponent<BoxCollider>();
+            trigger.isTrigger = true;
+            trigger.size = bounds.size;
+            trigger.center = vend.transform.InverseTransformPoint(bounds.center);
+
+            VendingMachine vending = vend.AddComponent<VendingMachine>();
+            GreyboxStageBuilder.SetReference(vending, "_tuning", tuning);
+            GreyboxStageBuilder.SetReference(vending, "_drinkMaterial",
+                GreyboxStageBuilder.GetOrCreateMaterial("Drink", GreyboxStageBuilder.ParseColor("#e04a35"), false));
+            GreyboxStageBuilder.SetReference(vending, "_highlightMaterial",
+                GreyboxStageBuilder.GetOrCreateMaterial("Highlight", GreyboxStageBuilder.ParseColor("#35e0c8"), true));
+            GreyboxStageBuilder.SetReference(vending, "_renderer", renderers[0]);
         }
 
         // S-123 ① — 독백 스팟 부착 (문자열 배열이라 SerializedObject로 주입).
