@@ -312,18 +312,37 @@ namespace DontLate.EditorTools
         // 자판기 (S-019 ②) — E=결제 배출, 상자 투척 명중도 배출.
         private static void BuildVendingMachine(TuningConfigSO tuning, Material drinkMaterial, Material highlight)
         {
-            Material body = GreyboxStageBuilder.GetOrCreateMaterial("Vending", new Color(0.85f, 0.3f, 0.3f), false);
-
-            GameObject go = GreyboxStageBuilder.CreatePrimitive(
-                PrimitiveType.Cube, "Vending", new Vector3(4.5f, 1.0f, 2.2f));
-            go.transform.localScale = new Vector3(1.0f, 2.0f, 0.7f);
-            // 실물 콜라이더(비트리거) — 상자 투척 충돌 감지 겸 벽 역할.
+            // S-128 ② — 실모델 자판기(Bending_Mechine). 없으면 그레이박스 큐브 폴백(소켓 계약).
+            Vector3 spot = new Vector3(4.5f, 0f, 2.2f);
+            GameObject go = GreyboxStageBuilder.PlaceCatalog("Bending_Mechine", spot, 180f);
+            Renderer bodyRenderer;
+            if (go != null)
+            {
+                go.name = "__gb_Vending";
+                Renderer[] renderers = go.GetComponentsInChildren<Renderer>();
+                Bounds bounds = renderers[0].bounds;
+                foreach (Renderer r in renderers) bounds.Encapsulate(r.bounds);
+                // PlaceCatalog가 데코 콜라이더를 끄므로 상호작용·투척 판정용 트리거를 새로 얹는다.
+                BoxCollider trigger = go.AddComponent<BoxCollider>();
+                trigger.isTrigger = true;
+                trigger.size = bounds.size + new Vector3(0.8f, 0f, 0.8f); // 앞에 서면 잡히게 여유
+                trigger.center = go.transform.InverseTransformPoint(bounds.center);
+                bodyRenderer = renderers[0];
+            }
+            else
+            {
+                Material body = GreyboxStageBuilder.GetOrCreateMaterial("Vending", new Color(0.85f, 0.3f, 0.3f), false);
+                go = GreyboxStageBuilder.CreatePrimitive(PrimitiveType.Cube, "Vending", spot + Vector3.up);
+                go.transform.localScale = new Vector3(1.0f, 2.0f, 0.7f);
+                bodyRenderer = go.GetComponent<Renderer>();
+                bodyRenderer.sharedMaterial = body;
+            }
 
             VendingMachine vending = go.AddComponent<VendingMachine>();
             GreyboxStageBuilder.SetReference(vending, "_tuning", tuning);
             GreyboxStageBuilder.SetReference(vending, "_drinkMaterial", drinkMaterial);
             GreyboxStageBuilder.SetReference(vending, "_highlightMaterial", highlight);
-            GreyboxStageBuilder.SetReference(vending, "_renderer", go.GetComponent<Renderer>());
+            GreyboxStageBuilder.SetReference(vending, "_renderer", bodyRenderer);
         }
 
         // 에너지드링크 — E로 회복(EnergyDrinkPickup — S-005).

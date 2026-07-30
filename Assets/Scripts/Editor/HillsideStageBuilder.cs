@@ -57,7 +57,8 @@ namespace DontLate.EditorTools
             BuildBox("Modern_C", new Vector3(-1f, 3f, 2.9f), new Vector3(5f, 6f, 2f), modern);
 
             // 언덕 기슭 바닥 (비포장) — 등반로·계단 하단이 딛는 지면.
-            BuildBox("HillBaseGround", new Vector3(28f, -0.1f, 0f), new Vector3(36f, 0.2f, 6f), _dirtMat);
+            GameObject hillBase = BuildBox("HillBaseGround", new Vector3(28f, -0.1f, 0f), new Vector3(36f, 0.2f, 6f), _dirtMat);
+            hillBase.layer = GreyboxStageBuilder.LAYER_GROUND; // S-128 ③ — 눈 퇴적면
 
             // ── 스위치백 등반로 3굽이 (스플라인 조각 근사 + 옹벽 채움) ──
             // Z 레인 계단식 후퇴(S-051 판정): Leg1=-1.6(카메라 앞) → Leg2=0 → Leg3=+1.4 —

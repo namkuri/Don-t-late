@@ -109,6 +109,7 @@ namespace DontLate.EditorTools
             GameObject ground = CreatePrimitive(PrimitiveType.Plane, "Ground", Vector3.zero);
             ground.transform.localScale = new Vector3(12f, 1f, 8f);
             ground.GetComponent<Renderer>().sharedMaterial = groundMaterial;
+            ground.layer = LAYER_GROUND; // S-128 ③ — 눈이 쌓이는 유일한 면
 
             GameObject lane = CreatePrimitive(PrimitiveType.Cube, "Lane", new Vector3(0f, 0.02f, 0f));
             Object.DestroyImmediate(lane.GetComponent<BoxCollider>());
@@ -449,6 +450,7 @@ namespace DontLate.EditorTools
 
         internal const int LAYER_PLAYER = 8;    // TagManager 등록 (S-040)
         internal const int LAYER_CART_WALL = 9; // 플레이어와 충돌 무시 — CoreBootstrap이 매트릭스 해제
+        internal const int LAYER_GROUND = 10;   // S-128 ③ — 눈·비 파티클이 여기에만 충돌(공중 퇴적 차단)
 
         // 배달 대차 (S-038 → S-040 물리 재설계 — 1.5배 바구니). 루트 콜라이더 = 트리거(센서 포커스).
         // 바닥·사방 벽 = CartWall 레이어 실콜라이더 — 상자는 가두고 플레이어는 통과(낙사 회귀 방지).

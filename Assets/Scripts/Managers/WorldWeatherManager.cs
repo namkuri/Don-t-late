@@ -171,13 +171,13 @@ namespace DontLate
             // S-124 — 실내라고 강수를 아예 끄면 "비 오는 날인데 창밖도 맑다"가 된다(남규님 반려).
             // Home은 끄지 않고 발생 박스를 창 너머 크기로 줄여 **창문으로만 보이게** 한다.
             ApplyFallVolume();
+            ClearAirborneIfIndoor(); // S-128 ① — 반드시 Toggle 앞에서: 실외에서 데려온 잔류 입자를 먼저 비운다
             bool fallOk = outdoor || _windowScene;
             Toggle(_rain, fallOk && Weather == WeatherType.Rain); // Storm의 간헐 비는 StormRainCycle 코루틴이 굴린다
             Toggle(_snow, fallOk && Weather == WeatherType.Snow);
             // S-090 ① — 태풍 진입: 이전 날씨의 눈 입자를 즉시 걷는다 (Stop만으론 수명만큼 잔류).
             if (Weather == WeatherType.Storm && _snow != null)
                 _snow.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-            ClearAirborneIfIndoor();
             if (_hazeRoot != null) _hazeRoot.SetActive(outdoor && Weather == WeatherType.Heat);
 
             // S-088 ⑤ — 태풍: 바람 방향 추첨(좌/우) + 간헐 비 사이클.
@@ -267,22 +267,30 @@ namespace DontLate
             ToggleWindStreaks(outdoor && Weather == WeatherType.Storm);
             ToggleFogBanks(outdoor && Weather == WeatherType.Fog);
             ApplyFallVolume();
-            if (_indoorScene && !_windowScene) { ClearAirborneIfIndoor(); return; }
-            Toggle(_rain, Weather == WeatherType.Rain); // Storm의 비는 StormRainCycle 몫 — 여기서 켜지 않는다
+            ClearAirborneIfIndoor(); // S-128 ① — 창밖 모드도 한 번 비운다(잔류 입자가 방 좌표에 남는다)
+            if (_indoorScene && !_windowScene) return;
+            // Storm의 비는 StormRainCycle 몫이라 평소엔 여기서 켜지 않는다. 단 창밖 모드는 위에서 방금
+            // 비웠으므로 한 번 켜준다 — 안 그러면 사이클이 다음 '내림' 구간까지 최대 30초 창밖이 마른다.
+            Toggle(_rain, Weather == WeatherType.Rain || (_windowScene && Weather == WeatherType.Storm));
             Toggle(_snow, Weather == WeatherType.Snow);
         }
 
         // S-124 — 강수 발생 부피: 실외는 씬 전체(90u), Home은 창밖 원경만.
-        // 창 개구부는 x 0.9~2.3 · y 1.15~2.25 · 뒷벽 z=3(HomeStageBuilder 실측)이고 리그는 z=+10에
-        // 서 있다 — 폭 16u면 창 너머 시야를 채우고, 방(z −3~3)에는 입자가 생기지 않는다.
+        // ⚠ S-128 ① — shape.scale은 **이미터 로컬 축** 기준이고, 이미터는 낙하 방향으로 회전해 있다
+        // (BuildFallSystem의 LookRotation). 그래서 기저가 비·눈에서 다르다:
+        //   비(tilt 15°)  로컬X→월드−Z ⇒ (16,24,6)이 월드 z 3.5~19.5 (뒷벽 z=3 바깥) — 정상
+        //   눈(tilt 0°)   forward가 up과 반평행이라 LookRotation이 축퇴 → Euler(90,0,0) 폴백,
+        //                 로컬Y→월드+Z · 로컬Z→월드−Y ⇒ 같은 (16,24,6)이 월드 z −0.5~23.5가 되어
+        //                 방(z −3~3)을 3.5u 침범했다. "비는 안 들어오는데 눈은 들어온다"의 절반.
+        // 그래서 창밖 박스는 **시스템별로 로컬 축에 맞춰** 적는다 (월드 결과는 둘 다 창 너머).
         private static readonly Vector3 OutdoorFallBox = new Vector3(90f, 30f, 90f);
-        private static readonly Vector3 WindowFallBox = new Vector3(16f, 24f, 6f);
+        private static readonly Vector3 WindowFallBoxRain = new Vector3(16f, 24f, 6f); // S-124 캡처 검증분 — 무수정
+        private static readonly Vector3 WindowFallBoxSnow = new Vector3(16f, 6f, 24f); // 로컬Y=깊이6·로컬Z=높이24 ⇒ 월드 z 8.5~14.5
 
         private void ApplyFallVolume()
         {
-            Vector3 box = _windowScene ? WindowFallBox : OutdoorFallBox;
-            SetFallBox(_rain, box);
-            SetFallBox(_snow, box);
+            SetFallBox(_rain, _windowScene ? WindowFallBoxRain : OutdoorFallBox);
+            SetFallBox(_snow, _windowScene ? WindowFallBoxSnow : OutdoorFallBox);
         }
 
         private static void SetFallBox(ParticleSystem system, Vector3 box)
@@ -293,9 +301,12 @@ namespace DontLate
         }
 
         // 실내 진입: 체공 중인 빗줄기(2.2s)·눈송이(12s)·퇴적(50s·World 공간)까지 그 자리에서 지운다.
+        // S-128 ① — 창밖 모드(Home)도 포함한다. 입자가 World 공간이라 씬 전환으로 사라지지 않아,
+        // 실외에서 데려온 눈·퇴적이 방 좌표에 그대로 떠 있던 것이 눈에 보이던 직접 원인이었다.
+        // 소거 뒤 호출자가 창밖 박스로 다시 Play한다 — **소거가 Toggle보다 앞**인 것이 계약이다.
         private void ClearAirborneIfIndoor()
         {
-            if (!_indoorScene || _windowScene) return;
+            if (!_indoorScene) return;
             if (_rain != null) _rain.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             if (_snow != null) _snow.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             if (_snowPile != null) _snowPile.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
@@ -425,7 +436,9 @@ namespace DontLate
             var shape = system.shape;
             shape.enabled = true;
             shape.shapeType = ParticleSystemShapeType.Box;
-            shape.scale = new Vector3(90f, 30f, 90f); // S-048 ① — Y 확대 (75° 기운 이미터의 높이 커버)
+            // ⚠ 이미터 로컬 축은 월드와 다르다 (로컬 Y=월드 Z · 로컬 Z=월드 Y — S-128 ① 실측).
+            // 실외 기본값 = 월드 90 가로 × 90 높이 × 30 깊이. 씬별 갱신은 ApplyFallVolume가 한다.
+            shape.scale = new Vector3(90f, 30f, 90f);
 
             var emission = system.emission;
             emission.rateOverTime = rate;
@@ -449,6 +462,15 @@ namespace DontLate
             return system;
         }
 
+        // S-128 ③ — 파티클 충돌은 Ground 레이어(10)만 본다. 기본값(Everything)이면 WalkableVolume 같은
+        // 트리거 부피와 소품 콜라이더 윗면에도 부딪혀 눈이 허공에 쌓인다(남규님 지적). 레이어가 없는
+        // 프로젝트(구 씬·테스트)에서는 종전대로 전부 충돌시킨다.
+        private static int GroundMask()
+        {
+            int layer = LayerMask.NameToLayer("Ground");
+            return layer >= 0 ? 1 << layer : ~0;
+        }
+
         // 눈 실누적 (S-046 ③) — 눈송이가 닿은 지점에 퇴적 입자가 남는다 (균일 커버는 보조 톤으로 강등).
         private void ConfigureSnowPile(ParticleSystem snow)
         {
@@ -459,6 +481,7 @@ namespace DontLate
             collision.bounce = 0f;
             collision.lifetimeLoss = 1f;
             collision.quality = ParticleSystemCollisionQuality.High; // S-047 ① — Medium 근사 평면이 부유 퇴적의 원흉
+            collision.collidesWith = GroundMask(); // S-128 ③
 
             GameObject pileGo = new GameObject("SnowPile");
             pileGo.transform.SetParent(snow.transform, false);
@@ -772,6 +795,7 @@ namespace DontLate
             collision.bounce = 0f;
             collision.lifetimeLoss = 1f; // 닿는 순간 소멸 → 스플래시로 교대
             collision.quality = ParticleSystemCollisionQuality.Medium;
+            collision.collidesWith = GroundMask(); // S-128 ③ — 지면에서만 튄다
 
             // 스플래시 서브 시스템 — 위로 톡 튀는 물방울 3~4개.
             GameObject splashGo = new GameObject("RainSplash");
