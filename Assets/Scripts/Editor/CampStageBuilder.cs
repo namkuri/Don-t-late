@@ -174,9 +174,11 @@ namespace DontLate.EditorTools
             for (int i = 0; i < LOAD_ZONE_COUNT; i++)
             {
                 // 피라미드 스택 — 콜라이더(0.7u)가 겹치면 스폰 순간 물리 밀어내기로 자폭한다 (S-019 실측).
+                // S-119 ① — 층 간격 0.72→0.705: 갭 0.02는 "공중부양"으로 보이고, 정지 스폰된
+                // 강체는 sleep 임계 아래라 낙하도 안 한다 (남규님 실관찰 — 건드려야 떨어짐).
                 var (boxGo, _, _) = GreyboxStageBuilder.CreateParcelBox(
                     "CampBox_" + (i + 1).ToString("00"),
-                    new Vector3(-7f + (i % 2) * 0.9f, (i / 2) * 0.72f, 1.5f), material,
+                    new Vector3(-7f + (i % 2) * 0.9f, (i / 2) * 0.705f, 1.5f), material,
                     physical: true); // 실물 스택 (S-016 ⑥) — 아래 상자를 빼면 위가 떨어진다
 
                 BoxDurability durability = boxGo.AddComponent<BoxDurability>(); // 취급주의 (S-019 ①)

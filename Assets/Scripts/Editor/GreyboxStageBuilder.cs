@@ -376,6 +376,11 @@ namespace DontLate.EditorTools
             instance.name = "__gb_Deco_" + prefabName;
             instance.transform.rotation = Quaternion.Euler(0f, rotationY, 0f);
 
+            // S-119 ① — 데코는 배경 시각물: 풋프린트 콜라이더를 끈다. 켜두면 게임 물리에 간섭 —
+            // 캠프 벨트 콜라이더(top 0.9)가 상자 스폰존을 침범해 "상자 공중부양"의 진범이었다(실측).
+            foreach (Collider decoCollider in instance.GetComponentsInChildren<Collider>(true))
+                decoCollider.enabled = false;
+
             var renderers = instance.GetComponentsInChildren<Renderer>();
             if (renderers.Length > 0)
             {
@@ -555,6 +560,11 @@ namespace DontLate.EditorTools
             GameObject visual = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
             visual.name = "Visual";
             visual.transform.SetParent(root.transform, false);
+
+            // S-119 ① — 비주얼 자식 콜라이더(팩토리 풋프린트) 제거: 루트 0.7 콜라이더와 이중이면
+            // 위 상자가 0.9u에 안착해 세로 갭 0.2u "공중부양"이 남는다 (캡처 게이트 픽셀 실측).
+            foreach (Collider visualCollider in visual.GetComponentsInChildren<Collider>(true))
+                Object.DestroyImmediate(visualCollider);
 
             Bounds bounds = ComputeRenderBounds(visual);
             if (bounds.size.y > 0.001f)

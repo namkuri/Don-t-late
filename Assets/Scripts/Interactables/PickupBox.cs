@@ -21,6 +21,13 @@ namespace DontLate
 
         private void Awake() => CacheRenderers();
 
+        // S-119 ① — 정지 스폰 강체는 첫 프레임부터 잠들 수 있다(스택 위 상자 공중부양 실관찰).
+        // 기상시켜 스폰 갭만큼 낙하·안착시킨다.
+        private void Start()
+        {
+            if (TryGetComponent(out Rigidbody body) && !body.isKinematic) body.WakeUp();
+        }
+
         private void CacheRenderers()
         {
             _renderers = GetComponentsInChildren<Renderer>(true);

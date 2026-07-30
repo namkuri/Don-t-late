@@ -746,41 +746,50 @@ namespace DontLate.EditorTools
             StretchFull(flash.rectTransform);
             flash.raycastTarget = false;
 
-            // 팝업 패널 — 붉은 테두리 + 네이비 내부.
-            Image panel = CreateImage(canvasGo.transform, "Panel", new Color(0.85f, 0.30f, 0.25f, 1f));
+            // S-119 ② — 병원 영수증 종이 (S-087 정산 영수증 룩: 종이색 + 상하 톱니 절취선).
+            Color paper = new Color(0.97f, 0.97f, 0.95f, 1f);
+            Image panel = CreateImage(canvasGo.transform, "Panel", paper);
+            panel.raycastTarget = true;
             RectTransform panelRect = panel.rectTransform;
             panelRect.anchorMin = panelRect.anchorMax = panelRect.pivot = new Vector2(0.5f, 0.5f);
-            panelRect.sizeDelta = new Vector2(560f, 420f);
-            Image inner = CreateImage(panel.transform, "Inner", NAVY);
-            inner.raycastTarget = true;
-            RectTransform innerRect = inner.rectTransform;
-            innerRect.anchorMin = Vector2.zero; innerRect.anchorMax = Vector2.one;
-            innerRect.offsetMin = new Vector2(4f, 4f); innerRect.offsetMax = new Vector2(-4f, -4f);
+            panelRect.sizeDelta = new Vector2(560f, 640f);
+            for (int tooth = 0; tooth < 14; tooth++) // 톱니 절취선 — 위·아래
+            {
+                foreach (float side in new[] { 1f, -1f })
+                {
+                    Image diamond = CreateImage(panel.transform, "Tooth", paper);
+                    diamond.raycastTarget = false;
+                    RectTransform toothRect = diamond.rectTransform;
+                    toothRect.anchorMin = toothRect.anchorMax = new Vector2(0f, side > 0 ? 1f : 0f);
+                    toothRect.pivot = new Vector2(0.5f, 0.5f);
+                    toothRect.sizeDelta = new Vector2(28f, 28f);
+                    toothRect.anchoredPosition = new Vector2(20f + tooth * 40f, 0f);
+                    toothRect.localRotation = Quaternion.Euler(0f, 0f, 45f);
+                }
+            }
 
-            TMP_Text title = CreateText(inner.transform, "Title", "교통사고!", font, 44f,
-                new Color(1f, 0.44f, 0.38f), TextAlignmentOptions.Top);
-            AnchorCorner(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -22f), new Vector2(400f, 60f));
-
-            TMP_Text body = CreateText(inner.transform, "Body", string.Empty, font, 30f, Color.white,
-                TextAlignmentOptions.Top);
+            TMP_Text body = CreateText(panel.transform, "Body", string.Empty, font, 26f,
+                new Color(0.13f, 0.15f, 0.19f), TextAlignmentOptions.Top);
             RectTransform bodyRect = body.rectTransform;
             bodyRect.anchorMin = Vector2.zero; bodyRect.anchorMax = Vector2.one;
-            bodyRect.offsetMin = new Vector2(36f, 110f); bodyRect.offsetMax = new Vector2(-36f, -96f);
+            bodyRect.offsetMin = new Vector2(44f, 120f); bodyRect.offsetMax = new Vector2(-44f, -40f);
 
             GameObject homeGo = new GameObject("HomeButton", typeof(RectTransform));
-            homeGo.transform.SetParent(inner.transform, false);
+            homeGo.transform.SetParent(panel.transform, false);
             Image homeImg = homeGo.AddComponent<Image>();
             homeImg.color = new Color(0.208f, 0.878f, 0.784f, 1f);
             RectTransform homeRect = (RectTransform)homeGo.transform;
             homeRect.anchorMin = homeRect.anchorMax = homeRect.pivot = new Vector2(0.5f, 0f);
-            homeRect.sizeDelta = new Vector2(360f, 76f);
-            homeRect.anchoredPosition = new Vector2(0f, 26f);
+            homeRect.sizeDelta = new Vector2(360f, 72f);
+            homeRect.anchoredPosition = new Vector2(0f, 32f);
             Button homeButton = homeGo.AddComponent<Button>();
             homeButton.targetGraphic = homeImg;
             TMP_Text homeLabel = CreateText(homeGo.transform, "Label", "치료 후 집으로", font, 30f, NAVY,
                 TextAlignmentOptions.Center);
             StretchFull(homeLabel.rectTransform);
 
+            SetField(view, "_gameState",
+                AssetDatabase.LoadAssetAtPath<GameStateSO>(DATA_ROOT + "/GameState.asset")); // S-119 ② — 잔액·빚
             SetField(view, "_panel", panel.gameObject);
             SetField(view, "_bodyLabel", body);
             SetField(view, "_homeButton", homeButton);

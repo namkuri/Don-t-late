@@ -43,17 +43,25 @@ namespace DontLate
         private const float SLIPPERY_ACCEL_RAIN = 7.5f;      // 일반 노면 (낮을수록 미끄럽다)
         private const float SLIPPERY_ACCEL_HILL = 4.5f;      // 언덕 비포장 × 비
 
+        // S-119 ③ — 차 사고 부상: 이동·점프 입력 무시 (넉백 궤적·중력은 유지 — 날아가는 연출).
+        // 해제는 "치료 후 집으로" 씬 전이 시 플레이어 재생성으로 자연히 이뤄진다.
+        private bool _injured;
+
         private void OnEnable()
         {
             WorldEvents.SceneTransitionCompleted += OnSceneArrivedLoco;
             WorldEvents.WeatherChanged += OnWeatherChangedLoco;
+            WorldEvents.PlayerHitByCar += OnHitByCarLoco;
         }
 
         private void OnDisable()
         {
             WorldEvents.SceneTransitionCompleted -= OnSceneArrivedLoco;
             WorldEvents.WeatherChanged -= OnWeatherChangedLoco;
+            WorldEvents.PlayerHitByCar -= OnHitByCarLoco;
         }
+
+        private void OnHitByCarLoco() => _injured = true;
 
         private void OnSceneArrivedLoco(GameScene scene) => _inHillside = scene == GameScene.Hillside;
 
@@ -107,7 +115,7 @@ namespace DontLate
             }
 
             TuningConfigSO tuning = _hub.Tuning;
-            Vector2 input = _hub.Input.MoveVector;
+            Vector2 input = _injured ? Vector2.zero : _hub.Input.MoveVector; // S-119 ③
 
             // S-081 ② — 탈진(스태미나 0): 달리기 불가 (점프도 아래에서 차단).
             // S-116 ⑤ — 촬영 데모 중엔 탈진 페널티 면제(왕복 연출이 끊기면 안 된다) + 속도 배수.
@@ -145,7 +153,7 @@ namespace DontLate
             if (_cc.isGrounded)
             {
                 _verticalVelocity = -1f; // 접지 유지용 약한 하향
-                if (_hub.Input.JumpPressed && !exhausted) // S-081 ②
+                if (_hub.Input.JumpPressed && !exhausted && !_injured) // S-081 ② · S-119 ③
                 {
                     _verticalVelocity = Mathf.Sqrt(-2f * tuning.gravity * tuning.jumpHeight);
                     WorldAudioManager.Instance?.PlayJumpSfx(); // AU-018 ③
