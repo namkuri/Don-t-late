@@ -3025,3 +3025,13 @@ MDA 판정 (D-070): 강화 — NPC 소셜/상호작용 가독성 (M축).
   9.2u 이동 확인).
 - 검증: 컴파일 0·콘솔 0·capture-reviewer PASS(영수증 1회전·상자 2회전). 사고 재현은 데모
   입력 API(S-116)로 도로 배치 → 강제 스폰 충돌.
+
+### 결과 (2026-07-30 18:04) · S-120
+
+- NpcNameLabel(UI 신규 — 매니페스트 직교 추가): 상호작용 포커스(SetHighlight) 연동으로
+  머리 위(+2.0u) 이름 표시·이탈 시 소멸. 렌더는 PedestrianNpc 인사말 오버레이 패턴 재사용.
+- 배선: NPC 3종(사장님·행인·심부름 노인) SetHighlight 1줄 연결 + NpcBuildKit.AttachNameLabel
+  — 이름은 NpcSO(Data/Npcs) displayName 조회(폴백 지정명). Camp·District·District1·Hillside·
+  Apartment 재조립.
+- 실측: 행인 접근 시 "새벽 출근러"(소셜 프로필명 연동 증명) 머리 위 앵커(오차 2px)·걸어서
+  이탈 시 소멸. capture-reviewer 2회전(앵커 모호 차단 → PASS).

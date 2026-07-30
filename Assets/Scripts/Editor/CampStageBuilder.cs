@@ -204,6 +204,7 @@ namespace DontLate.EditorTools
             var (go, body) = NpcBuildKit.BuildFigure("BossNpc", new Vector3(-7.5f, 0f, 1.6f),
                 "NpcBoss", new Color(0.32f, 0.45f, 0.38f), 1.8f);
             NpcBuildKit.AddInteractTrigger(go, 1.8f);
+            NpcBuildKit.AttachNameLabel(go, "boss", "사장님"); // S-120 — 근접 이름표
 
             DialogueScenarioSO tutorial = NpcBuildKit.GetOrCreateScenario("Scenario_Boss_Tutorial",
                 ("사장님", "어이 신입! 왔구먼. 여기가 물류캠프야."),

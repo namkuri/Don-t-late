@@ -151,6 +151,7 @@ namespace DontLate
 
         public void SetHighlight(bool on)
         {
+            if (TryGetComponent(out NpcNameLabel nameLabel)) nameLabel.Show(on); // S-120 — 근접 이름표
             if (_highlightRenderer == null) return;
             _highlightRenderer.sharedMaterial = on && _highlightMaterial != null ? _highlightMaterial : _normalMaterial;
         }

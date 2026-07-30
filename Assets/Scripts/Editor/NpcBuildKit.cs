@@ -94,6 +94,7 @@ namespace DontLate.EditorTools
                 granny ? "NpcGranny" : "NpcGrandpa",
                 granny ? new Color(0.58f, 0.42f, 0.52f) : new Color(0.40f, 0.46f, 0.55f), 1.45f);
             AddInteractTrigger(go, 1.45f);
+            AttachNameLabel(go, granny ? "granny" : null, speaker); // S-120 — 근접 이름표
 
             string key = granny ? "Granny" : "Grandpa";
             DialogueScenarioSO ask = GetOrCreateScenario("Scenario_" + key + "_Ask",
@@ -153,6 +154,25 @@ namespace DontLate.EditorTools
             serialized.FindProperty("_bodyRenderer").objectReferenceValue = bodyRenderer;
             serialized.FindProperty("_highlightMaterial").objectReferenceValue =
                 GreyboxStageBuilder.GetOrCreateMaterial("Highlight", GreyboxStageBuilder.ParseColor("#35e0c8"), true);
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+
+            AttachNameLabel(go, npcId, name); // S-120 — 근접 이름표
+        }
+
+        /// <summary>S-120 — 근접 이름표 부착: 이름은 NpcSO(Data/Npcs/npc_&lt;id&gt;)의 displayName,
+        /// 프로필이 없으면 fallback. 표시·추종은 NpcNameLabel(SetHighlight 연동)이 담당.</summary>
+        internal static void AttachNameLabel(GameObject go, string npcId, string fallback)
+        {
+            string displayName = fallback;
+            if (!string.IsNullOrEmpty(npcId))
+            {
+                NpcSO profile = UnityEditor.AssetDatabase.LoadAssetAtPath<NpcSO>("Assets/Data/Npcs/npc_" + npcId + ".asset");
+                if (profile != null && !string.IsNullOrEmpty(profile.displayName)) displayName = profile.displayName;
+            }
+            NpcNameLabel label = go.GetComponent<NpcNameLabel>();
+            if (label == null) label = go.AddComponent<NpcNameLabel>();
+            var serialized = new SerializedObject(label);
+            serialized.FindProperty("_displayName").stringValue = displayName;
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
     }
