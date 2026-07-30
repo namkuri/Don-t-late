@@ -317,6 +317,27 @@ namespace DontLate
                 collider.enabled = false;
         }
 
+        // S-123 ① — 쓰레기통·자판기 곁을 지나면 주인공이 혼잣말한다. 프랍 이름으로 대사를 고른다.
+        private static readonly string[] TrashRemarks =
+        {
+            "냄새 지독하네...", "여기 수거일이 언제더라.", "쓰레기 옆에 두고 가면 안 되는데.",
+        };
+        private static readonly string[] VendingRemarks =
+        {
+            "한 캔 뽑고 갈까...", "목마른데. 참자, 배송 먼저.", "저거 마시면 좀 버틸 텐데.",
+        };
+
+        private static void AttachRemarkSpot(GameObject prop, string prefabName)
+        {
+            string name = prefabName.ToLowerInvariant();
+            string[] lines = name.Contains("trash") ? TrashRemarks
+                : name.Contains("bending") || name.Contains("vending") ? VendingRemarks
+                : null;
+            if (lines == null) return;
+            AmbientRemarkSpot spot = prop.AddComponent<AmbientRemarkSpot>();
+            spot.SetLines(lines);
+        }
+
         private void BuildProp(Transform root, int slotNo, Transform slot, int kind)
         {
             GameObject prefabPick = _propPrefabPool != null && _propPrefabPool.Length > 0
@@ -343,6 +364,7 @@ namespace DontLate
                     prop.transform.position = position;
                 }
                 DisableColliders(Instantiate(prefabPick, prop.transform)); // S-122 ①
+                AttachRemarkSpot(prop, prefabPick.name);                  // S-123 ①
                 return;
             }
 

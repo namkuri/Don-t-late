@@ -86,6 +86,12 @@ namespace DontLate.EditorTools
                 line.GetComponent<Renderer>().sharedMaterial = zebra;
             }
 
+            // S-123 ① — 횡단보도 앞 독백: 차도를 건너기 직전 스스로 조심하라고 되뇐다.
+            AttachRemarkSpot(zebraRoot, 3.2f, new[]
+            {
+                "차 조심해야겠다.", "신호 보고 건너자.", "여기서 치이면 하루가 끝난다.",
+            });
+
             // S-076 ③ — 중앙선(황색): 방향별 1차선 시각 표지. 횡단보도 구간은 비운다.
             Material centerLine = GreyboxStageBuilder.GetOrCreateMaterial("RoadCenterLine", new Color(0.94f, 0.78f, 0.22f), false);
             foreach (float zHalf in new[] { -6.75f, 6.75f })
@@ -319,6 +325,19 @@ namespace DontLate.EditorTools
             property.arraySize = values.Count;
             for (int i = 0; i < values.Count; i++)
                 property.GetArrayElementAtIndex(i).objectReferenceValue = values[i];
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        // S-123 ① — 독백 스팟 부착 (문자열 배열이라 SerializedObject로 주입).
+        internal static void AttachRemarkSpot(GameObject host, float radius, string[] lines)
+        {
+            AmbientRemarkSpot spot = host.AddComponent<AmbientRemarkSpot>();
+            SerializedObject serialized = new SerializedObject(spot);
+            serialized.FindProperty("_radius").floatValue = radius;
+            SerializedProperty array = serialized.FindProperty("_lines");
+            array.arraySize = lines.Length;
+            for (int i = 0; i < lines.Length; i++)
+                array.GetArrayElementAtIndex(i).stringValue = lines[i];
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 

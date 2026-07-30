@@ -223,48 +223,9 @@ namespace DontLate
             _bodyRenderer.sharedMaterial = on && _highlightMaterial != null ? _highlightMaterial : _normalMaterial;
         }
 
-        // 머리 위 인사말 — 풀해상 오버레이 1.6초 (BoxDurability HP바 패턴의 초경량판).
-        private GameObject _greetCanvasGo;
+        // 머리 위 한마디 — S-123 ①에서 SpeechBubble(Utils)로 추출했다. 사용처가 셋이 되어
+        // (행인 인사·상자 명중 욕/응원·주인공 독백) 렌더를 한 곳으로 모았다.
+        private void ShowGreeting(string message) => SpeechBubble.ShowOn(gameObject, message);
 
-        private void OnDestroy()
-        {
-            if (_greetCanvasGo != null) Destroy(_greetCanvasGo);
-        }
-
-        private void ShowGreeting(string message)
-        {
-            if (_greetCanvasGo != null) Destroy(_greetCanvasGo);
-            _greetCanvasGo = new GameObject("GreetCanvas");
-            Canvas canvas = _greetCanvasGo.AddComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 6;
-            var label = new GameObject("Greet", typeof(RectTransform)).AddComponent<TMPro.TextMeshProUGUI>();
-            label.transform.SetParent(_greetCanvasGo.transform, false);
-            if (UiOverlayFont.Korean != null) label.font = UiOverlayFont.Korean;
-            label.fontSize = 22f;
-            label.fontStyle = TMPro.FontStyles.Bold;
-            label.color = new Color(1f, 1f, 1f, 1f);
-            label.alignment = TMPro.TextAlignmentOptions.Center;
-            label.textWrappingMode = TMPro.TextWrappingModes.NoWrap;
-            label.raycastTarget = false;
-            label.rectTransform.sizeDelta = new Vector2(300f, 30f);
-            label.text = message;
-            StartCoroutine(GreetFollow(label));
-        }
-
-        private System.Collections.IEnumerator GreetFollow(TMPro.TMP_Text label)
-        {
-            float t = 0f;
-            Camera camera = Camera.main;
-            while (t < 1.6f && camera != null && label != null)
-            {
-                t += Time.deltaTime;
-                Vector3 screen = camera.WorldToScreenPoint(transform.position + Vector3.up * 2.1f);
-                if (screen.z > 0f) label.rectTransform.position = new Vector3(screen.x, screen.y, 0f);
-                label.color = new Color(1f, 1f, 1f, t < 1.2f ? 1f : 1f - (t - 1.2f) / 0.4f);
-                yield return null;
-            }
-            if (_greetCanvasGo != null) { Destroy(_greetCanvasGo); _greetCanvasGo = null; }
-        }
     }
 }
