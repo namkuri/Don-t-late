@@ -43,6 +43,13 @@ unity-cli screenshot --view game      # 결과 눈으로 확인 (⚠ 오버레�
 unity-cli exec 'UnityEngine.ScreenCapture.CaptureScreenshot("Screenshots/x.png"); return "ok";'
 ```
 
+**exec 함정 2종 (S-128 실측 · 반복 낭비 방지)**
+- `ParticleSystem.GetParticles`처럼 **큰 struct 배열을 exec 안에서 잡으면 응답이 안 온다**(루프 금지와 같은 부류).
+  파티클 상태는 `particleCount`와 `GetComponent<ParticleSystemRenderer>().bounds`(월드 AABB)로 본다 — 둘 다 즉답.
+- **`ProjectSettings/*.asset`을 디스크에서 고쳐도 실행 중 에디터엔 반영되지 않고, 에디터 종료 시 덮어써진다.**
+  레이어·태그 등록은 에디터 API로: `new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/TagManager.asset")[0])`
+  → `layers` 배열 대입 → `ApplyModifiedPropertiesWithoutUndo()` + `SaveAssets()`. (ProjectSettings 수정 자체는 D-032 남규님 게이트.)
+
 **셀프 검증 3종**(CODE_RULES §8)의 실제 명령 = `editor refresh --compile` → `console` 0건 → `editor play --wait` + `screenshot`. 이 3종 통과 전에는 push 금지.
 
 **시각 산출물 납품 규칙 (D-063)**: 아트 반입·UI·연출·씬 룩 등 눈으로 판정하는 납품은 검증 캡처를
