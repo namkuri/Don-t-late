@@ -2925,3 +2925,38 @@ MDA 판정 (D-070): 강화 — 본편 정비(M축)+홍보 촬영 지원(제출 �
 - 수용기준: 폰 프레임이 _intake 실아트로 표시(캡처) + _intake/UI 전수 대조표(대체·신규·보류)와
   실반입 결과 보고.
 MDA 판정 (D-070): 강화 — 민지 반입분 실사용 확대(아트 파이프라인 완결, M축).
+
+### 결과 (2026-07-30 16:07) · S-116
+
+- ① 상자 물리: 씬 실측 — 4개 전부 Rigidbody 실재(kin=0). 실증상 원인 = PhysX sleep(받침
+  콜라이더 disable은 잠든 강체를 안 깨움). PickupBox.Interact에 픽업 직전 OverlapBox WakeUp
+  시공. L4(아래 상자 빼서 위가 무너지는 손맛)는 남규님 실플레이 판정 몫.
+- ② 트럭: truck.prefab 통짜 비주얼(4.8×2.8u)로 교체 — 적재 트리거·DepartPoint·StackRoot
+  루트 오프셋 보존, 그레이박스 폴백(소켓). white_van 데코 철거 → 1대 확정 (캡처 PASS).
+- ③ 슬롯 16칸·6u — Play 실측 14채(도로 2칸 스킵). 부수 수리: 건물 풀에서 door 단품·전고
+  2.5u 미만(스케일 미캘리브레이션 store_2 0.7u 실측) 배제 + ScaleTable "home" 키워드 추가
+  → store_2 4.5u·Cream_home_unity 5.5u 재임포트 정상화.
+- ④ 나무 건물 라인(z=+2.0) 이설 + 가로수 라인 4주 결정론 보장(BuildTreeLine — 슬롯 수
+  변경으로 나무 0그루 시드 실측, 추첨에 안 맡김). 스트림 말미 추가 = 기존 추첨 순서 불변.
+- ⑤ District 1 조립(District1SceneBuilder — 본편 BuildStage 재사용 + DistrictCaptureDemo
+  guid 5a7c9713 보존 반입 + 의존 API 신설: SetDemoInput/ClearDemoInput·DemoCarrying·
+  탈진 면제·SuppressTrafficAccidents·TrafficRoad 실모델 옵션 + DaySkyLayers·HorizonFogBand·
+  BlossomPetalEffect). Play 실측: 상공 2s→하강 10s→로고 페이드인→왕복(2배속·상자 캐리)→
+  완전 왕복마다 시간·날씨 변주. 게이트 후속: 본편 District에도 실모델 차량 주입(회색 큐브
+  차 오인 차단 해소).
+- 검증: 컴파일 0·콘솔 0(검역 리포트 경고 제외)·capture-reviewer 2회전(차단 3→PASS 6/6).
+  잔여: 첫 런 벚꽃 2주 모델 소멸 1회(재현 4종+5분 소크 실패 — iterations 박제, 촬영 전
+  리허설 1회 권장). reviewer REJECT(에디터 빌더 Find 금지 주장)는 선례 근거 기각.
+
+### 결과 (2026-07-30 16:07) · S-117
+
+- ① ui_phone_frame 교체(민트→크림+네이비 387×715) — 개구 실측(x56~323·y105~583) 기반
+  패널 430×795·화면 offset(62,146)/(−70,−117)·shownY −146 재정합. 미니게임 패널도 새 개구
+  (−98,0 · 298×532) 정합. 부수: 홈 배지가 상태바 "100%" 가림(게이트 적발) → 한 줄 하강.
+- ② _intake UI 전수 대조: 교체 2(ui_phone_frame·ui_dialogue_box — 비율 3.02 반영 1350×447)
+  + 신규 소켓 2(ui_clock·ui_coin — HUD 시계/현금 칩 아이콘, 빌더 소켓 시공) + 이미 반영
+  4(logo_gpt=ui_title·sub_logo_gpt=ui_title_sub·man+gpt=ui_title_man·District1 하늘 4종)
+  + 보류(소켓 신설 필요 — 남규님 판정 대기): late_death_gpt(지각 컷인 후보)·bar/ 5종(리듬
+  미니게임 리스킨 세트)·sun/moon(시간대 아이콘)·check/x/Question_Mark/hand/one/rolling/
+  run_button/arrow(범용)·quick_apt/logis_logo(앱·로고)·현수막/road류(월드 데코 텍스처).
+- 검증: capture-reviewer PASS(폰 정합·명찰 탭·HUD 아이콘 — s117_phone_r2·s117_hud_r2).

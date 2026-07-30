@@ -15,10 +15,36 @@ namespace DontLate
         private InputAction _jump;
         private InputAction _interact;
 
+        // S-116 ⑤ — 촬영 데모 오버라이드(DistrictCaptureDemo): 실입력 대신 주입값을 흘린다.
+        private bool _demoActive;
+        private Vector2 _demoMove;
+        private bool _demoRun;
+
+        /// <summary>데모 주행 속도 배수 — 로코모션이 곱한다 (평시 1).</summary>
+        public float DemoSpeedMultiplier { get; private set; } = 1f;
+        /// <summary>촬영 데모 입력이 실입력을 대체 중인가 (스태미나 페널티 면제 판정용).</summary>
+        public bool DemoActive => _demoActive;
+
         /// <summary>x = 좌우(진행 방향), y = 깊이(Z).</summary>
-        public Vector2 MoveVector => _move.ReadValue<Vector2>();
+        public Vector2 MoveVector => _demoActive ? _demoMove : _move.ReadValue<Vector2>();
         /// <summary>누르고 있는 동안 달린다.</summary>
-        public bool RunHeld => _run.IsPressed();
+        public bool RunHeld => _demoActive ? _demoRun : _run.IsPressed();
+
+        public void SetDemoInput(Vector2 move, bool run, float speedMultiplier)
+        {
+            _demoActive = true;
+            _demoMove = move;
+            _demoRun = run;
+            DemoSpeedMultiplier = Mathf.Max(0.1f, speedMultiplier);
+        }
+
+        public void ClearDemoInput()
+        {
+            _demoActive = false;
+            _demoMove = Vector2.zero;
+            _demoRun = false;
+            DemoSpeedMultiplier = 1f;
+        }
         public bool JumpPressed => _jump.WasPressedThisFrame();
         public bool InteractPressed => _interact.WasPressedThisFrame();
 

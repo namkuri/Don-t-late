@@ -110,8 +110,10 @@ namespace DontLate
             Vector2 input = _hub.Input.MoveVector;
 
             // S-081 ② — 탈진(스태미나 0): 달리기 불가 (점프도 아래에서 차단).
-            bool exhausted = _hub.Status != null && _hub.Status.Stamina <= 0f;
+            // S-116 ⑤ — 촬영 데모 중엔 탈진 페널티 면제(왕복 연출이 끊기면 안 된다) + 속도 배수.
+            bool exhausted = _hub.Status != null && _hub.Status.Stamina <= 0f && !_hub.Input.DemoActive;
             float speed = _hub.Input.RunHeld && !exhausted ? tuning.runSpeed : tuning.moveSpeed;
+            speed *= _hub.Input.DemoSpeedMultiplier;
             if (_hub.Status.IsCarrying) speed *= tuning.carrySpeedPenalty;
             speed *= _hub.Status.SpeedMultiplier; // S-074 ⑧ — 드링크 버프 (+30%)
 

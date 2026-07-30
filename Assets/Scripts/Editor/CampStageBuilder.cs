@@ -52,7 +52,7 @@ namespace DontLate.EditorTools
             GreyboxStageBuilder.PlaceCatalog("logi_center", new Vector3(0f, 0f, 16f)); // 원경 1채
             GreyboxStageBuilder.PlaceCatalog("belt", new Vector3(-6.5f, 0f, 2.2f), 90f);
             GreyboxStageBuilder.PlaceCatalog("Food_cart_unity", new Vector3(6.5f, 0f, 2.6f), 180f);
-            GreyboxStageBuilder.PlaceCatalog("white_van", new Vector3(12.2f, 0f, 3.0f), 20f);
+            // S-116 ② — white_van 데코 철거: 실모델 트럭과 함께 서면 "트럭 2대"로 읽힌다 (남규님 실관찰).
             GreyboxStageBuilder.PlaceCatalog("Trash_Bin_unity", new Vector3(-2.2f, 0f, 2.4f));
 
             NpcBuildKit.BuildPedestrian("Walker_A", new Vector3(-9f, 0f, 2.4f), new Color(0.45f, 0.52f, 0.62f), 5f,
@@ -74,10 +74,31 @@ namespace DontLate.EditorTools
         {
             GameObject root = GreyboxStageBuilder.CreateEmpty("Truck", new Vector3(9f, 0f, 1.8f));
 
-            GameObject cargo = AddPart(root, "Cargo", new Vector3(-0.8f, 1.5f, 0f), new Vector3(4.0f, 2.2f, 2.0f), material);
-            AddPart(root, "Cab", new Vector3(2.2f, 0.95f, 0f), new Vector3(1.6f, 1.5f, 1.9f), material);
-            AddPart(root, "WheelF", new Vector3(2.2f, 0.35f, 0f), new Vector3(0.7f, 0.7f, 2.1f), material);
-            AddPart(root, "WheelB", new Vector3(-1.6f, 0.35f, 0f), new Vector3(0.7f, 0.7f, 2.1f), material);
+            // S-116 ② — 실모델 트럭(truck.prefab)이 있으면 통짜 비주얼, 없으면 그레이박스 폴백(소켓).
+            // 기능(적재 트리거·DepartPoint·StackRoot)은 루트 오프셋 기준이라 양쪽 동일.
+            Renderer bodyRenderer = null;
+            Material bodyNormal = material;
+            GameObject truckPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Auto/truck.prefab");
+            if (truckPrefab != null)
+            {
+                GameObject visual = (GameObject)PrefabUtility.InstantiatePrefab(truckPrefab);
+                visual.name = "Visual";
+                visual.transform.SetParent(root.transform, false);
+                NormalizeTruckVisual(visual, root.transform.position);
+                // 기존 그레이박스 파츠도 콜라이더가 없었다 — 등가 유지(적재 트리거 접근 방해 금지).
+                foreach (Collider partCollider in visual.GetComponentsInChildren<Collider>(true))
+                    partCollider.enabled = false;
+                bodyRenderer = visual.GetComponentInChildren<Renderer>();
+                if (bodyRenderer != null) bodyNormal = bodyRenderer.sharedMaterial;
+            }
+            else
+            {
+                GameObject cargo = AddPart(root, "Cargo", new Vector3(-0.8f, 1.5f, 0f), new Vector3(4.0f, 2.2f, 2.0f), material);
+                AddPart(root, "Cab", new Vector3(2.2f, 0.95f, 0f), new Vector3(1.6f, 1.5f, 1.9f), material);
+                AddPart(root, "WheelF", new Vector3(2.2f, 0.35f, 0f), new Vector3(0.7f, 0.7f, 2.1f), material);
+                AddPart(root, "WheelB", new Vector3(-1.6f, 0.35f, 0f), new Vector3(0.7f, 0.7f, 2.1f), material);
+                bodyRenderer = cargo.GetComponent<Renderer>();
+            }
 
             // 적재 감지 트리거 — 짐칸 뒤편(보도 쪽) 앞 공간.
             BoxCollider trigger = root.AddComponent<BoxCollider>();
@@ -102,8 +123,8 @@ namespace DontLate.EditorTools
             departCollider.isTrigger = true;
             TruckDepartPoint departPoint = depart.AddComponent<TruckDepartPoint>();
             GreyboxStageBuilder.SetReference(departPoint, "_gameState", gameState);
-            GreyboxStageBuilder.SetReference(departPoint, "_renderer", root.transform.Find("Cab").GetComponent<Renderer>());
-            GreyboxStageBuilder.SetReference(departPoint, "_normalMaterial", material);
+            GreyboxStageBuilder.SetReference(departPoint, "_renderer", bodyRenderer);
+            GreyboxStageBuilder.SetReference(departPoint, "_normalMaterial", bodyNormal);
             GreyboxStageBuilder.SetReference(departPoint, "_highlightMaterial", highlight);
 
             LoadingZone zone = root.AddComponent<LoadingZone>();
@@ -111,9 +132,27 @@ namespace DontLate.EditorTools
             GreyboxStageBuilder.SetReference(zone, "_boxVisualPrefab",
                 AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Auto/prop_box_parcel.prefab"));
             GreyboxStageBuilder.SetReference(zone, "_boxMaterial", boxMaterial);
-            GreyboxStageBuilder.SetReference(zone, "_renderer", cargo.GetComponent<Renderer>());
-            GreyboxStageBuilder.SetReference(zone, "_normalMaterial", material);
+            GreyboxStageBuilder.SetReference(zone, "_renderer", bodyRenderer);
+            GreyboxStageBuilder.SetReference(zone, "_normalMaterial", bodyNormal);
             GreyboxStageBuilder.SetReference(zone, "_highlightMaterial", highlight);
+        }
+
+        // S-116 ② — 실모델 트럭 정규화: 긴 축을 X(캠프 진행축)로 돌리고 발 y=0·루트 중심 정렬.
+        private static void NormalizeTruckVisual(GameObject visual, Vector3 rootPosition)
+        {
+            Renderer[] renderers = visual.GetComponentsInChildren<Renderer>(true);
+            if (renderers.Length == 0) return;
+            Bounds bounds = renderers[0].bounds;
+            for (int i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
+
+            if (bounds.size.z > bounds.size.x * 1.15f)
+            {
+                visual.transform.Rotate(0f, 90f, 0f, Space.Self);
+                bounds = renderers[0].bounds;
+                for (int i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
+            }
+
+            visual.transform.position += rootPosition - new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);
         }
 
         private static GameObject AddPart(GameObject root, string name, Vector3 localPos, Vector3 size, Material material)

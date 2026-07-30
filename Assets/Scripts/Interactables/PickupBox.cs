@@ -107,7 +107,18 @@ namespace DontLate
             SetHighlight(false);
 
             // 손에 든 동안은 센서에 다시 잡히면 안 된다. 물리 상자면 손 안에서 잠근다 (S-016 ⑥).
-            GetComponent<Collider>().enabled = false;
+            // S-116 ① — 콜라이더를 끄기 전에 위에 얹힌 상자를 깨운다: 잠든(sleep) Rigidbody는
+            // 받침 콜라이더가 꺼져도 안 깨어나 공중에 떠 있다 (캠프 스택 위 2개 실증상).
+            Collider myCollider = GetComponent<Collider>();
+            Vector3 top = myCollider.bounds.center + Vector3.up * myCollider.bounds.extents.y;
+            foreach (Collider above in Physics.OverlapBox(
+                top + Vector3.up * 0.2f,
+                new Vector3(myCollider.bounds.extents.x, 0.3f, myCollider.bounds.extents.z)))
+            {
+                if (above.attachedRigidbody != null && above.attachedRigidbody.gameObject != gameObject)
+                    above.attachedRigidbody.WakeUp();
+            }
+            myCollider.enabled = false;
             if (TryGetComponent(out Rigidbody body)) body.isKinematic = true;
             ctx.Player.Status.AttachCarried(transform);
         }

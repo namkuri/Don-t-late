@@ -32,7 +32,7 @@ namespace DontLate.EditorTools
             ("apartment", 14f), ("tower", 15f), ("hospital", 12f), ("building", 11f),
             ("center", 10f), ("amusement", 10f), ("church", 9f), ("residence", 8f),
             ("hall", 7f), ("construction", 8f), ("fire_house", 6f), ("police", 5.5f),
-            ("house", 5.5f), ("cafe", 4.5f), ("store", 4.5f), ("pub", 4.5f),
+            ("house", 5.5f), ("home", 5.5f), ("cafe", 4.5f), ("store", 4.5f), ("pub", 4.5f),
             ("laundry", 4.5f), ("photo", 4.5f), ("hardware", 4.5f), ("stair", 5f),
             // 차량·대형 소품
             ("truck", 2.8f), ("van", 2.2f), ("taxi", 1.5f), ("food_cart", 1.8f),

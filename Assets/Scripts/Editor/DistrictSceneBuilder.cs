@@ -17,17 +17,22 @@ namespace DontLate.EditorTools
         private const string DISTRICT_PATH = "Assets/Scenes/District.unity";
         private const string SLOTS_ROOT = "Slots";
 
-        // 슬롯 규약(발주): 건물 12칸 X간격 8u·길 안쪽 Z=2.6 / 소품 10칸 보도변 Z=-2.6.
-        private const int BUILDING_SLOTS = 12;
+        // 슬롯 규약(발주): 건물 16칸 X간격 6u·길 안쪽 Z=2.6 / 소품 10칸 보도변 Z=-2.6.
+        // S-116 ③ — 12칸·8u → 16칸·6u: 보행 구간 건물 공백을 오밀조밀하게 (남규님 실관찰).
+        private const int BUILDING_SLOTS = 16;
         private const int PROP_SLOTS = 10;
-        private const float SLOT_SPACING = 8f;
+        private const float SLOT_SPACING = 6f;
+        private const float PROP_SLOT_SPACING = 8f; // 소품 밀도는 유지 (S-114 규약)
         private const float BUILDING_Z = 2.6f;
         private const float PROP_Z = -2.6f;
 
         [MenuItem("DontLate/Build/District Stage", priority = 14)]
-        public static void BuildDistrictStage()
+        public static void BuildDistrictStage() => BuildStage(DISTRICT_PATH);
+
+        // S-116 ⑤ — 촬영용 District 1도 같은 조립을 재사용한다 (District1SceneBuilder가 호출).
+        internal static void BuildStage(string scenePath)
         {
-            Scene scene = EditorSceneManager.OpenScene(DISTRICT_PATH, OpenSceneMode.Single);
+            Scene scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
 
             // 멱등: 이전 조립물 정리.
             GreyboxStageBuilder.Clear();
@@ -106,13 +111,26 @@ namespace DontLate.EditorTools
             trafficSo.FindProperty("_signal").objectReferenceValue = signal;
             trafficSo.FindProperty("_stopLineZ").floatValue = 4.2f; // 횡단보도(±3.1) 앞
             trafficSo.ApplyModifiedPropertiesWithoutUndo();
+            // S-116 게이트 후속 — 본편도 실모델 차량(white_van·yellow_taxi): 회색 큐브 차가
+            // "무텍스처 플레이스홀더"로 읽힌다(캡처 게이트 적발). 프리팹 없으면 큐브 폴백(소켓).
+            // 에셋 참조는 리플렉션 직접 주입 — SerializedObject 경유는 SaveScene 시 {fileID:0} 유실 (2026-07-20 실측).
+            var carPrefabs = new List<GameObject>();
+            foreach (string carName in new[] { "white_van", "yellow_taxi" })
+            {
+                GameObject carPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Auto/" + carName + ".prefab");
+                if (carPrefab != null) carPrefabs.Add(carPrefab);
+            }
+            typeof(TrafficRoad).GetField("_carVisualPrefabs",
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                ?.SetValue(trafficRoad, carPrefabs.ToArray());
+            EditorUtility.SetDirty(trafficRoad);
 
             // S-054b 엣지 워크 — 좌=이전 동네/캠프, 우=다음 동네(미해금이면 안내 후 차단).
             EdgeGateBuildKit.BuildGate("EdgeGate_Prev", new Vector3(-19f, 0f, 0f), DontLate.DistrictEdgeGate.Direction.Prev, gameState);
             EdgeGateBuildKit.BuildGate("EdgeGate_Next", new Vector3(19f, 0f, 0f), DontLate.DistrictEdgeGate.Direction.Next, gameState);
 
-            EditorSceneManager.SaveScene(scene, DISTRICT_PATH);
-            Debug.Log("[DistrictSceneBuilder] District.unity 조립 완료 — 매니저 제외 무대 + 슬롯 마커 "
+            EditorSceneManager.SaveScene(scene, scenePath);
+            Debug.Log("[DistrictSceneBuilder] " + scenePath + " 조립 완료 — 매니저 제외 무대 + 슬롯 마커 "
                     + (BUILDING_SLOTS + PROP_SLOTS) + "개.");
         }
 
@@ -215,10 +233,10 @@ namespace DontLate.EditorTools
                 buildings.Add(CreateSlot(root.transform, $"slot_building_{i + 1:00}", new Vector3(x, 0f, BUILDING_Z)));
             }
 
-            float propStart = -(PROP_SLOTS - 1) * SLOT_SPACING * 0.5f;
+            float propStart = -(PROP_SLOTS - 1) * PROP_SLOT_SPACING * 0.5f;
             for (int i = 0; i < PROP_SLOTS; i++)
             {
-                float x = propStart + i * SLOT_SPACING;
+                float x = propStart + i * PROP_SLOT_SPACING;
                 props.Add(CreateSlot(root.transform, $"slot_prop_{i + 1:00}", new Vector3(x, 0f, PROP_Z)));
             }
 
@@ -245,13 +263,27 @@ namespace DontLate.EditorTools
             GreyboxStageBuilder.SetReference(generator, "_gameState", gameState);
 
             // 건물 풀 = Prefabs/Auto 중 소스가 Art/Buildings 인 프리팹 (pull 조립 — S-011).
+            // S-116 ③ — 비건물 단품(door·old_stair)과 전고 2.5u 미만(스케일 미캘리브레이션)은 슬롯을
+            // 잡아먹고 거리를 비워 보이게 한다(실측: store_2 0.7u가 슬롯 점유) — 풀에서 배제.
             var pool = new List<GameObject>();
             foreach (string guid in AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/Prefabs/Auto" }))
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
                 string name = System.IO.Path.GetFileNameWithoutExtension(path);
-                if (AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/Buildings/" + name + ".fbx") != null)
-                    pool.Add(AssetDatabase.LoadAssetAtPath<GameObject>(path));
+                if (name == "door" || name == "old_stair") continue;
+                if (AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/Buildings/" + name + ".fbx") == null) continue;
+                GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                Renderer[] renderers = prefab.GetComponentsInChildren<Renderer>(true);
+                if (renderers.Length == 0) continue;
+                Bounds bounds = renderers[0].bounds;
+                foreach (Renderer r in renderers) bounds.Encapsulate(r.bounds);
+                if (bounds.size.y < 2.5f)
+                {
+                    Debug.LogWarning("[DistrictSceneBuilder] 건물 풀 제외(전고 " + bounds.size.y.ToString("0.0")
+                        + "u < 2.5u — 스케일 미캘리브레이션 의심): " + name);
+                    continue;
+                }
+                pool.Add(prefab);
             }
             SerializedObject serialized = new SerializedObject(generator);
             SerializedProperty poolProp = serialized.FindProperty("_buildingPrefabPool");

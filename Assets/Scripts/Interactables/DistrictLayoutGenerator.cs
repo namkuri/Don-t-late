@@ -160,6 +160,30 @@ namespace DontLate
                     BuildProp(root, i + 1, slot, kind);
                 }
             }
+
+            BuildTreeLine(root, rng); // S-116 ④ — 스트림 말미 (앞 추첨 순서 불변)
+        }
+
+        // S-116 ④ — 가로수 라인: 프랍 추첨과 별개로 건물 라인(z=+2.0)에 나무를 결정론 보장.
+        // 슬롯 수 변경(S-116 ③)으로 스트림이 바뀌며 나무가 0그루가 되는 시드가 실측됨 — 추첨에 안 맡긴다.
+        private void BuildTreeLine(Transform root, System.Random rng)
+        {
+            if (_propPrefabPool == null || _propPrefabPool.Length == 0) return;
+            var trees = new System.Collections.Generic.List<GameObject>();
+            foreach (GameObject prefab in _propPrefabPool)
+                if (prefab != null && prefab.name.ToLowerInvariant().Contains("tree")) trees.Add(prefab);
+            if (trees.Count == 0) return;
+
+            int treeNo = 0;
+            for (float x = -20f; x <= 20f; x += 13f)
+            {
+                int pick = rng.Next(0, trees.Count); // 슬롯별 결정론 (x 순서 고정 = 스트림 안정)
+                if (Mathf.Abs(x) < 5f) continue;     // 교차 도로(x=0) 회피 — 추첨은 소비해 스트림 유지
+                GameObject tree = new GameObject($"TreeLine_{++treeNo:00}");
+                tree.transform.SetParent(root, false);
+                tree.transform.position = new Vector3(x, 0f, TREE_Z);
+                Instantiate(trees[pick], tree.transform);
+            }
         }
 
         // ── 그레이박스 조립 ──────────────────────────────────
@@ -267,6 +291,9 @@ namespace DontLate
             return candidates.Count > 0 ? candidates[pick % candidates.Count] : null;
         }
 
+        // S-116 ④ — 나무는 보행통로(보도변 Z=-2.6)가 아니라 건물 라인 앞(Z=+2.0)에 심는다.
+        private const float TREE_Z = 2.0f;
+
         private void BuildProp(Transform root, int slotNo, Transform slot, int kind)
         {
             GameObject prop = new GameObject($"Prop_{slotNo:00}_k{kind}");
@@ -278,6 +305,13 @@ namespace DontLate
                 GameObject prefab = _propPrefabPool[kind % _propPrefabPool.Length];
                 if (prefab != null)
                 {
+                    // S-116 ④ — 나무류(blossom_tree·basic_tree)만 건물 쪽 라인으로 이설.
+                    if (prefab.name.ToLowerInvariant().Contains("tree"))
+                    {
+                        Vector3 position = prop.transform.position;
+                        position.z = TREE_Z;
+                        prop.transform.position = position;
+                    }
                     Instantiate(prefab, prop.transform);
                     return;
                 }

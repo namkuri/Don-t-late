@@ -61,6 +61,7 @@ namespace DontLate
 
             PlayerManager player = other.GetComponentInParent<PlayerManager>();
             if (player == null) return;
+            if (DistrictCaptureDemo.SuppressTrafficAccidents) return; // S-116 ⑤ — 촬영 중 사고 무시
             if (Time.time - _lastHitTime < 3f) return; // 연속 충돌 무시
             _lastHitTime = Time.time;
 

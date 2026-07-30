@@ -16,6 +16,9 @@ namespace DontLate
 
         private PlayerManager _hub;
 
+        /// <summary>S-116 ⑤ — 촬영 데모: 실주문 없이 운반 자세를 강제한다 (DistrictCaptureDemo).</summary>
+        public bool DemoCarrying { get; set; }
+
         private void Awake() => _hub = GetComponent<PlayerManager>();
 
         private void Update()
@@ -25,7 +28,7 @@ namespace DontLate
 
             if (_animator == null) return;
             _animator.SetFloat(SpeedHash, velocity.magnitude);
-            _animator.SetBool(CarryingHash, _hub.Status.IsCarrying);
+            _animator.SetBool(CarryingHash, DemoCarrying || _hub.Status.IsCarrying);
             _animator.SetBool(GroundedHash, _hub.Locomotion.IsGrounded);
         }
 
