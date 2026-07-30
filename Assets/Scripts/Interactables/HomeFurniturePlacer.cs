@@ -65,16 +65,22 @@ namespace DontLate
                 ShowHint(_gameState != null && _gameState.placedFurniture.Count > 0
                     ? "좌클릭 = 집어 옮기기 · 우클릭 = 철거(인벤토리로)"
                     : null); // 놓인 가구가 없으면 안내할 것도 없다
-                HandleRepick(mouse, camera); // S-031 ① — 배치된 가구 클릭 = 집기 / S-122 ④ 우클릭 = 철거
+                // 하우징 상태: 좌클릭 = 집어 옮기기 · 우클릭 = 철거 (S-031 ① / S-122 ④).
+                HandleRepick(mouse, camera);
                 return;
             }
 
-            ShowHint("좌클릭 = 배치 · 우클릭 = 철거 · R = 회전 · ESC = 취소");
+            ShowHint("좌클릭 = 배치 · 우클릭 = 배치 취소 · R = 회전");
 
-            // S-124 — 남규님 원문은 "배치 모드에서 우클릭 시 철거"다. 고스트를 든 상태에서도
-            // 우클릭이 먹어야 한다 (S-122 ④는 배치 대기 없는 상태에만 넣어 무반응으로 보였다).
-            // 고스트는 유지 — 치운 자리에 곧바로 놓는 흐름이 자연스럽다.
-            if (mouse.rightButton.wasPressedThisFrame) HandleDemolish(mouse, camera);
+            // S-127 — 배치 모드의 우클릭은 **배치 취소**다(남규님 지적).
+            // 이 상태에선 고스트가 커서에 붙어 다녀 "커서 밑의 기존 가구"를 겨눌 수가 없다 —
+            // 그 불가능한 조작(철거)을 여기에 걸어둔 것이 S-124~126 3연속 반려의 뿌리였다.
+            // 들고 있는 물건을 우클릭으로 내려놓는 것은 건축 게임의 일반 관례이기도 하다.
+            if (mouse.rightButton.wasPressedThisFrame && !PhoneView.IsOpen)
+            {
+                CancelPlacement("우클릭");
+                return;
+            }
 
             Keyboard keyboard = Keyboard.current;
 
@@ -82,10 +88,7 @@ namespace DontLate
             // 폰이 열려 있으면 ESC는 폰 닫기 몫 (S-032 ③ 충돌 회피).
             if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame && !PhoneView.IsOpen)
             {
-                PhoneView.PendingPlacementId = null;
-                ClearGhost();
-                WorldAudioManager.Instance?.PlayUiTickSfx(); // AU-010
-                Debug.Log("[하우징] 배치 취소 (ESC)");
+                CancelPlacement("ESC");
                 return;
             }
 
@@ -147,10 +150,16 @@ namespace DontLate
             Debug.Log("[하우징] " + id + " 배치 — " + pos + " yaw " + _ghostYaw);
         }
 
-        // ── 집기(좌클릭 · S-031 ①) / 철거(우클릭 · S-122 ④) ──
-        // 둘 다 배치물을 인벤토리로 회수한다. 차이는 집기만 배치 모드로 재진입한다는 것뿐.
-        /// <summary>S-124 — 배치 모드에서의 우클릭 철거 (고스트 유지).</summary>
-        private void HandleDemolish(Mouse mouse, Camera camera) => Recover(mouse, camera, pick: false);
+        /// <summary>S-127 — 배치 취소 (우클릭·ESC 공용). 들고 있던 가구는 인벤토리에 그대로 남는다.</summary>
+        private void CancelPlacement(string source)
+        {
+            string held = PhoneView.PendingPlacementId;
+            PhoneView.PendingPlacementId = null;
+            ClearGhost();
+            WorldAudioManager.Instance?.PlayUiTickSfx(); // AU-010
+            Flash("배치 취소 — " + KoreanName(held) + " 인벤토리에 있다");
+            Debug.Log("[하우징] 배치 취소 (" + source + ")");
+        }
 
         // ── S-124 조작 힌트 ──────────────────────────────────
         // 기존 안내는 폰 가구앱 라벨에 있었는데 배치를 누르면 폰이 닫혀 보이지 않았다
