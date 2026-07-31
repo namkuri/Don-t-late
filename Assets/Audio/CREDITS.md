@@ -352,3 +352,16 @@ S-086 소켓(WorldAudioManager `_sfxFanfare`) 충전 — 정산 개척 해금/�
 - seed(로컬) 1699124614 · 생성 2.0s → 트림 0.94s. ⚠ SFX는 API가 seed 미수용 → 복원 불가(로컬 wav 보존).
 - 후공정: 트림(≤-40dBFS) → peak -1dB 정규화(트랜지언트라 peak 한계 · RMS -19.4 < -14는 규칙상 정상) → 8ms 페이드아웃. 모노 pcm44100.
 - 배선: #21(S-086) 머지 후 CoreSceneBuilder `LoadSfx("sfx_fanfare")`가 자동 주입. 도착 전엔 settle_ok 폴백.
+
+## AU-023 엔딩 BGM (bgm_ending) — Suno · 2026-07-31
+
+엔딩 전용 BGM. 출처 = **Suno**(Director 유료 Pro/Premier) — 상업 사용 가능·소유권 귀속·무기한·표기 불요.
+프롬프트 = **방향5(그윈 오마주·Rhodes 피아노 리드)**. 레퍼런스: Dark Souls 1 "Gwyn, Lord of Cinder"(솔로 피아노·다이어토닉·루바토·밀도 아크·비극미) — **형식만 계승, 감정은 온기로 전환**(비극→따뜻한 이별+감사). Director 청취 채택: 피아노 메인 생존 + 애잔 톤.
+
+- 파일: `Fading Into Dawn.wav` (원제 유지) · 149.8s · 48kHz 스테레오 · MD5(앞12) `f0859b4bb526`.
+- 프롬프트:
+  `bittersweet warm ending ballad, piano-led with a soulful retro touch, warm Rhodes electric piano as the main lead, gentle acoustic piano accents, soft warm analog pads, mellow round bass, brushed drums with a laid-back groove, subtle warm strings swelling only at the peak, jazzy major 7th and add9 chords, tender rubato intro settling into a slow gentle groove, farewell and gratitude turning to hope, minor lament resolving to a warm major, soft hall reverb with space, nostalgic retro city game ending, slow ~72 BPM, instrumental`
+  Exclude: `vocals, epic bombast, brass fanfare, aggressive drums, edm drop, harsh, cold, dark minor, sudden ending`
+- **원샷(A) 곡**: 인트로 성김(-20dB)→정점 75~85s(-14dB)→아웃트로 페이드아웃 145~150s(-31dB). 날씨곡과 달리 페이드 트림 안 함(페이드=아크의 일부). 실측 peak -3.2dB · rms -17.1dB — 다이내믹=감정 핵심이라 평탄화·정규화 안 함.
+- 임포트: Vorbis q30 · Compressed In Memory · 스테레오(BGM 규격 자동, 실측 검증 loadType=CompressedInMemory).
+- 배선: **엔딩 원샷 재생 소켓(S-107)은 관제 몫**(남규). BgmLibrary Ending 슬롯 등재 + WorldAudioManager 엔딩 훅 배선 필요. 배선 전엔 무음.
