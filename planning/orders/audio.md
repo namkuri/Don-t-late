@@ -801,3 +801,15 @@ L129 직접 ++ 후 L130 Raise가 자기 구독 핸들러(L144 OnDeliveryFailed)�
 - **자발 4조건**: 스코프 내(음원 문서 보강) · 이 대장 기록 · [발주] 커밋 선행 · 감각판정(곡 채택)은 Director 몫 명시.
 
 수용기준: Storm 항목·프롬프트가 기존 4곡과 동형(BPM·네거티브·GAME-BGM-RULES 준수) · 브랜치→PR.
+
+### 결과 (AU-024) · 2026-07-31 (정수 공장 · feature/jjs-storm-bgm-doc, base=main)
+
+- `planning/audio-weather-bgm-songlist.md` Storm 보강 4곳: P2 표에 `bgm_storm` 행(체감 최대·P2 최우선) +
+  Suno 프롬프트 초안 1종(기존 4곡 **동형** — 78 BPM·네거티브 명시·GAME-BGM-RULES 준수) + 통합설계 날씨집합에
+  Storm 포함 + Director 액션에 storm 추가. 프롬프트는 §룰 "no dramatic build-ups" 존중해 "dramatic" 긍정어
+  대신 ominous/tense/foreboding로 긴장 표현, 긍정 금칙어(energetic·bright uplifting·catchy hook) 0.
+- **발주 오기 정정(투명)**: 위 AU-024 발주 헤더의 "AU-020 ②"는 오기 — 원발주는 **AU-018 ②**(2026-07-25 날씨별 BGM).
+  AU-020의 "②"는 car_crash 결과노트가 status로 재언급한 것일 뿐. 따라서 발주 항목 "문서 표기 AU-018→AU-020 정정"은
+  **취소**(문서의 AU-018 ② 표기가 이미 정본). 실작업 = Storm 추가만.
+- 셀프검증: 문서 산출물(코드·에셋 0) — 컴파일/콘솔/Play 3종 비대상. 렌더·규격 확인으로 갈음.
+- 잔여: Director Suno 생성(필수 rain·snow → 권장 storm·heat·fog). 곡 확보 후 임포트·BgmLibrary 등재·WeatherChanged 배선은 별건(통합설계 §대로).
