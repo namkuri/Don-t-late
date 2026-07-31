@@ -23,6 +23,8 @@ namespace DontLate
         [SerializeField] private Transform _boxOrigin;
         [Tooltip("층별 비콘 앵커 — 인덱스 0=2층, 1=3층… 설정 시 order.floor로 층을 찾는다.")]
         [SerializeField] private Transform[] _floorBeaconAnchors;
+        [Tooltip("S-129 — 비콘을 Ground 레이어 지면에 스냅한다. 경사 지형(Hillside) 전용 — 평지 씬은 끈 채로 둔다.")]
+        [SerializeField] private bool _snapBeaconsToGround;
 
         // S-075 ① — 패드 기본 슬롯: 교차 도로(x -2.1~2.1)와 그 여백을 피해 건물 앞에만 (x=0 스폰 금지).
         private static readonly float[] BEACON_SLOTS_X = { -8f, 8f, 16f, -16f, 24f, -24f, 32f, -32f };
@@ -81,6 +83,7 @@ namespace DontLate
                     perFloorCount.TryGetValue(floorIndex, out int slot);
                     perFloorCount[floorIndex] = slot + 1;
                     beaconPos = _floorBeaconAnchors[floorIndex].position + new Vector3(slot * 5f, 0f, 0f);
+                    if (_snapBeaconsToGround) beaconPos = SnapToGround(beaconPos);
                 }
                 else beaconPos = new Vector3(BEACON_SLOTS_X[i % BEACON_SLOTS_X.Length], 0f, 0f);
 
@@ -163,6 +166,19 @@ namespace DontLate
         }
 
         // 집(건물 슬롯 라인) 앞 인증 패드.
+        // S-129 — 같은 층에 물량이 둘 이상이면 앵커에서 +5u씩 옆으로 나열한다(위 슬롯 로직).
+        // 평지에서는 맞지만 27° 비탈에서는 5u 옆이 곧 2.5u 높이 차라 패드가 파묻히거나 뜬다.
+        // Ground 레이어(S-128 ③)가 곧 지면이므로 거기에만 스냅한다.
+        private static Vector3 SnapToGround(Vector3 position)
+        {
+            int groundLayer = LayerMask.NameToLayer("Ground");
+            if (groundLayer < 0) return position;
+            if (Physics.Raycast(new Vector3(position.x, position.y + 30f, position.z), Vector3.down,
+                    out RaycastHit hit, 60f, 1 << groundLayer, QueryTriggerInteraction.Ignore))
+                return new Vector3(position.x, hit.point.y, position.z);
+            return position;
+        }
+
         private void SpawnBeacon(DeliveryOrderSO order, Vector3 position)
         {
             if (_beaconPrefab == null) return;

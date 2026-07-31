@@ -385,3 +385,4 @@
 | Assets/_intake/art/Mixamo/Animations/A_malsoon/malsoon_Angry.fbx | 박말순 화난 모션 1 | Mixamo (상동) | 2026-07-30 |
 | Assets/_intake/art/Mixamo/Animations/A_malsoon/malsoon_Angry_2.fbx | 박말순 화난 모션 2 | Mixamo (상동) | 2026-07-30 |
 | Assets/_intake/art/Trellis2/{Buildings,Props}/*.fbx (82종) | **oid 교체(재출력본)** — 합계 3.49GiB→2.10GiB(−1.39GiB, 커진 파일 0·no-op 0). A-002 오리진 반려 4종(fur_bed/plant/rug/tv) 소스 포함 | RunPod 셀프호스팅 TRELLIS (Microsoft · MIT) · 민지 생성 (assets_manifest §Trellis2 INTAKE) | 2026-07-30 |
+| Assets/Art/Terrains/hill.fbx | Hillside 유선형 산 지형 (S-129 — 좌우 대칭 봉우리, 26.4×4.0×2.0u 원본) | **남규(직접 제작)** · Blender (GNU GPL — 산출물은 제작자 소유) | 2026-07-31 |
