@@ -787,3 +787,17 @@ L129 직접 ++ 후 L130 Raise가 자기 구독 핸들러(L144 OnDeliveryFailed)�
 - 라이선스: CREDITS.md + assets_manifest.md LICENSE 표 등재(2026-07-29).
 - ⚠ 인게임 재생(PlayFanfareSfx)은 소켓이 S-086(PR #21)에 있어 이 브랜치(off main)에선 미검증 — #21 + AU-021 머지 후 CoreSceneBuilder `LoadSfx("sfx_fanfare")` 자동 배선 시 확인.
 - 잔여(관제): BOM §8 SFX 행 `sfx_fanfare` 추가(정수는 CREDITS+manifest만 — AU-011 선례).
+
+---
+
+## AU-024 · 발주 2026-07-31 → 정수 공장 (자발 · 날씨 BGM 문서 Storm 보강 — AU-020 ② 갭)
+
+- **배경**: `planning/audio-weather-bgm-songlist.md`(AU-020 ② 산출물, 2026-07-27)가 WeatherType 7종 중
+  **Storm(태풍)만 누락.** 태풍은 어둡고 간헐비+강풍+천둥(AU-022) = 체감 최대 날씨라 문서 철학
+  "체감 큰 날씨만"상 오히려 우선 대상인데 빠져 있었다.
+- **작업**: 문서에 `bgm_storm` 항목(P2 상단 — Heat/Fog보다 우선 권장) + Suno 프롬프트 초안 1종 추가.
+  통합설계의 날씨 집합에 Storm 포함. 문서 표기 AU-018 → AU-020 정정.
+- **경계**: 문서만(planning/). BGM 생성 없음(D-055 — Director Suno 수동). 코드·배선 없음.
+- **자발 4조건**: 스코프 내(음원 문서 보강) · 이 대장 기록 · [발주] 커밋 선행 · 감각판정(곡 채택)은 Director 몫 명시.
+
+수용기준: Storm 항목·프롬프트가 기존 4곡과 동형(BPM·네거티브·GAME-BGM-RULES 준수) · 브랜치→PR.
