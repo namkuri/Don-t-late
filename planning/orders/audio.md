@@ -814,7 +814,24 @@ L129 직접 ++ 후 L130 Raise가 자기 구독 핸들러(L144 OnDeliveryFailed)�
 - 셀프검증: 문서 산출물(코드·에셋 0) — 컴파일/콘솔/Play 3종 비대상. 렌더·규격 확인으로 갈음.
 - 잔여: Director Suno 생성(필수 rain·snow → 권장 storm·heat·fog). 곡 확보 후 임포트·BgmLibrary 등재·WeatherChanged 배선은 별건(통합설계 §대로).
 
-## AU-025 · 발주 2026-08-05 12:49 → 정수 공장 (튜토리얼 미션 성공 SFX)
+---
+
+## AU-025 · 발주 2026-08-01 19:10 → 정수 공장 (비 날씨 BGM 낮/밤 분리)
+
+요구 (남규 원문 요약): 곡 2개 확보 — 낮=`Rain on the Window.wav`(신규, `_audio_intake` 반입), 밤=`Neon Rain.wav`(기존). 비 오는 날 낮엔 Rain on the Window, 밤엔 Neon Rain이 나오게. Neon Rain은 비-밤 전용으로 분리.
+
+- **배경**: 현재 날씨 BGM은 날씨당 1곡·phase-blind(`WorldAudioManager` 날씨 오버라이드가 시간대 슬롯을 통째로 덮어씀) → 비 오면 낮/밤 무관 Neon Rain 하나. `audio-weather-bgm-songlist.md` §확장 "날씨×시간대 분리"(뒤로 미룬 확장)를 **비(Rain)만** 켠다.
+- **작업**: (1) `WorldAudioManager` `_bgmRain`→`_bgmRainDay`/`_bgmRainNight` 분리 + 날씨 BGM 선택을 `_phase` 참조(Evening/Night→Night, else→Day) + `OnDayPhaseChanged`에서도 날씨 BGM 재평가(비 오는 중 낮↔밤 전환 반영). (2) `CoreSceneBuilder` 배선 RainNight=`Neon Rain`/RainDay=`Rain on the Window`. (3) `Rain on the Window.wav` `_audio_intake`→`Assets/Audio/BGM/` 반입(.gitignore allowlist·CREDITS·assets_manifest 등재·루프 이음새 트림 확인).
+- **경계**: 눈/폭염/안개는 낮밤 공용 1곡 유지(YAGNI). 씬 본문 미커밋(빌더 정본). 공장→PR까지, main 머지 관제 게이트.
+
+수용기준: Rain 진입 시 Evening/Night면 Neon Rain, Morning/Day면 Rain on the Window 재생 · 비 오는 중 낮↔밤 넘어가면 크로스페이드로 교체 · Snow/Heat/Fog 동작 불변 · 컴파일·콘솔0·Play 실측.
+MDA 판정 (D-070): 강화 — 기존 날씨 BGM 몰입을 시간대 축으로 심화(코어 "늦지마" 시간압박 무드 각인 보강). 곡 확보됨 = 저비용. 코어루프 불변.
+## AU-028 · 발주 2026-08-05 12:49 → 정수 공장 (튜토리얼 미션 성공 SFX)
+
+> ⚠ **번호 정정 (2026-08-05 20:55)**: 최초 AU-025로 채번했으나 정수님이 PR#30에서
+> AU-025(비 날씨 BGM 낮/밤 분리)를 2026-08-01에 **선점**하고 있었다. AU-026→AU-027 정정과
+> 원인이 같다 — 그 건이 대장에 append되지 않아 다음 번호를 25로 읽은 것이다.
+> **선발 유지·후발 재번호** 규칙대로 AU-028로 옮긴다. 코드 주석 참조 4곳도 함께 갱신했다.
 
 요구 (남규님 원문): "sfx에는 튜토리얼 미션 성공 sfx 발주 넣어" (S-162 튜토리얼 미션 카드 UI 연계)
 
