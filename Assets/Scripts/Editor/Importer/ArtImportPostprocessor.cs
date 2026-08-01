@@ -30,6 +30,25 @@ namespace DontLate.EditorTools
             { "Characters", 5000 },
         };
 
+        // ⚠ S-132 — **현재 꺼져 있다.** 격자 정점 클러스터링은 이 프로젝트의 생성형 아트(포토그래메트리
+        // 계열 · 얇고 촘촘한 표면)에 맞지 않는다. 실측 2회 전부 육안 반려:
+        //   ① 목표 3000(=감사 상한): 건물이 알아볼 수 없는 덩어리 (Screenshots/s132_district_after.png)
+        //   ② 목표 20000 + 고운 격자부터: 실루엣은 살지만 표면에 구멍이 숭숭 (s132_camp_v2.png)
+        // 클러스터링은 얇은 면을 붙여버리고 남은 삼각형을 퇴화로 버려 "좀먹은" 표면을 만든다.
+        // 제대로 하려면 **쿼드릭 오차 기반 감축**(Blender Decimate 등)이 필요하다 — 아트 레인 몫.
+        // 코드는 남겨 둔다(재시도·참고용). 켜려면 DECIMATE_ENABLED = true.
+        private const bool DECIMATE_ENABLED = false;
+
+        // S-132 — **감축 목표는 감사 상한(PolyLimits)과 별개다.** 상한은 아트 스타일 목표치고,
+        // 여기는 "WebGL에 실을 수 있으면서 형상이 살아남는" 크기다. 상한(건물 3000)을 그대로
+        // 감축 목표로 쓰면 격자가 해상도 8까지 내려가 건물이 덩어리가 된다(1차 시공 실측·반려).
+        private static readonly Dictionary<string, int> DecimateBudgets = new Dictionary<string, int>
+        {
+            { "Buildings", 20000 },
+            { "Props", 8000 },
+            { "Backgrounds", 20000 },
+        };
+
         private const float CHARACTER_HEIGHT_ANCHOR = 1.8f; // u
         private const float CHARACTER_HEIGHT_TOLERANCE = 0.30f; // ±30%
 
@@ -85,7 +104,11 @@ namespace DontLate.EditorTools
             if (category == null) return;
 
             var importer = (ModelImporter)assetImporter;
-            importer.isReadable = true; // 폴리·바운즈 검사를 위해
+            // ⚠ S-132 실측: `isReadable = false`로 두면 OnPostprocessModel에서 `mesh.vertices`가
+            // **빈 배열**을 돌려준다(예외가 아니라 조용히 0개) → 감축이 메시를 통째로 비운다.
+            // 감축 자체가 폴리를 수백 배 줄이므로 읽기 사본 2배는 무시할 수준이다. 켠 채로 둔다.
+            importer.isReadable = true; // 폴리·바운즈 검사 + 폴리 감축(DecimateAll)이 정점을 읽는다
+            importer.meshCompression = ModelImporterMeshCompression.High; // 정점 양자화 — 픽셀 렌더라 손실 무해
 
             // 소품·건물·배경: 애니 임포트 자체를 끈다 (Tripo 빈 클립 경고 원천 차단).
             if (System.Array.IndexOf(NoAnimationCategories, category) >= 0)
@@ -129,13 +152,22 @@ namespace DontLate.EditorTools
 
             string file = System.IO.Path.GetFileName(assetPath);
 
-            // 폴리 수 집계
+            // 폴리 수 집계 → 예산 초과면 그 자리에서 감축 (S-132).
             int tris = CountTriangles(root);
             if (PolyLimits.TryGetValue(category, out int limit) && tris > limit)
             {
-                Debug.LogWarning(
-                    $"[ArtImport] 폴리 초과: {file} ({category}) 실측 {tris} 삼각형 > 상한 {limit}. " +
-                    "데시메이트 필요 (Blender 레인).");
+                // Characters는 건드리지 않는다 — 스킨드 메시라 본 웨이트가 클러스터링에 못 따라온다.
+                if (category == "Characters")
+                {
+                    Debug.LogWarning(
+                        $"[ArtImport] 폴리 초과: {file} ({category}) 실측 {tris} > 상한 {limit}. " +
+                        "캐릭터는 자동 감축 제외 — 수동 데시메이트 필요.");
+                }
+                else if (DECIMATE_ENABLED && DecimateBudgets.TryGetValue(category, out int budget))
+                {
+                    int after = DecimateAll(root, budget);
+                    Debug.Log($"[ArtImport] 폴리 감축: {file} ({category}) {tris} → {after} 삼각형 (감축목표 {budget}).");
+                }
             }
 
             // Characters 높이 앵커 검사
@@ -216,20 +248,154 @@ namespace DontLate.EditorTools
             Debug.Log($"[임포터] 임베디드 텍스처 일괄 추출 시도 — 모델 {count}종.");
         }
 
+        // ── 폴리 감축 (S-132) ────────────────────────────────
+        // 왜 필요한가: 생성형 아트(Trellis/Tripo) 산출물이 모델당 **50만 삼각형** 수준이라
+        // WebGL 빌드가 1.19GB가 됐다(BuildReport 실측 = Mesh 77개 1,618MB). GitHub Pages는
+        // 단일 파일 100MB·사이트 1GB 상한이라 배포 자체가 불가능했다.
+        //
+        // 방식 = **격자 정점 클러스터링**. 바운즈를 N³ 격자로 나눠 같은 칸의 정점을 하나로 합치고
+        // 삼각형을 다시 엮는다(퇴화 삼각형은 버린다). 이 게임은 480×270으로 렌더한 뒤 정수 배율로
+        // 확대하므로, 칸 크기를 1아트픽셀 아래로 잡으면 손실이 화면에 잡히지 않는다.
+        // UV는 칸별 평균을 쓰되 **양자화한 UV를 클러스터 키에 포함**한다 — 안 그러면 UV 심(seam)을
+        // 가로지르는 칸이 엉뚱한 텍셀을 물어 텍스처가 번진다.
+        private static int DecimateAll(GameObject root, int budget)
+        {
+            var meshes = new HashSet<Mesh>();
+            foreach (MeshFilter mf in root.GetComponentsInChildren<MeshFilter>())
+                if (mf.sharedMesh != null) meshes.Add(mf.sharedMesh);
+
+            int total = 0;
+            foreach (Mesh mesh in meshes)
+            {
+                // 메시가 여럿이면 예산을 나눠 갖는다(합계가 상한을 넘지 않게).
+                total += DecimateMesh(mesh, Mathf.Max(64, budget / meshes.Count));
+            }
+            return total;
+        }
+
+        /// <summary>
+        /// 격자를 점점 거칠게 하며 **매번 적용**한다(누진 감축). 예산 이하가 되면 멈춘다.
+        /// 매번 적용하는 게 핵심 — 예산에 못 미쳐도 마지막(가장 거친) 결과는 반드시 남는다.
+        /// </summary>
+        private static int DecimateMesh(Mesh mesh, int budget)
+        {
+            // 고운 격자부터 시작한다 — 거친 쪽에서 시작하면 형상이 먼저 죽는다.
+            int[] resolutions = { 192, 144, 108, 80, 60, 44, 32 };
+            int tris = CountTriangles(mesh);
+            foreach (int res in resolutions)
+            {
+                tris = ClusterOnce(mesh, res);
+                if (tris <= budget) break;
+            }
+            return tris;
+        }
+
+        /// <summary>한 번 클러스터링해 메시에 적용한다. 반환 = 결과 삼각형 수.</summary>
+        private static int ClusterOnce(Mesh mesh, int resolution)
+        {
+            int triangleCount;
+            Vector3[] srcVerts = mesh.vertices;
+            Vector2[] srcUv = mesh.uv;
+            bool hasUv = srcUv != null && srcUv.Length == srcVerts.Length;
+
+            Bounds bounds = mesh.bounds;
+            Vector3 size = bounds.size;
+            float cell = Mathf.Max(size.x, Mathf.Max(size.y, size.z)) / resolution;
+            if (cell <= 0f) return CountTriangles(mesh);
+
+            // UV 심 보존용 버킷 수는 격자와 함께 거칠어진다. 고정 16버킷으로 두면 정점마다
+            // 사실상 고유 키가 생겨 **아무것도 합쳐지지 않는다**(S-132 1차 시공 실패 원인).
+            // 거친 격자에서는 1버킷 = UV를 키에서 제외 → 확실히 줄어든다.
+            int uvBuckets = Mathf.Max(1, resolution / 16);
+
+            // 정점 → 클러스터 대표 인덱스
+            var map = new Dictionary<long, int>(srcVerts.Length);
+            var remap = new int[srcVerts.Length];
+            var newVerts = new List<Vector3>();
+            var newUv = new List<Vector2>();
+            var accumCount = new List<int>();
+
+            for (int i = 0; i < srcVerts.Length; i++)
+            {
+                Vector3 p = srcVerts[i] - bounds.min;
+                long kx = (long)(p.x / cell), ky = (long)(p.y / cell), kz = (long)(p.z / cell);
+                long ku = hasUv && uvBuckets > 1
+                    ? (long)(srcUv[i].x * uvBuckets) * 31 + (long)(srcUv[i].y * uvBuckets)
+                    : 0;
+                long key = ((kx * 73856093) ^ (ky * 19349663) ^ (kz * 83492791) ^ (ku * 2654435761L));
+
+                if (map.TryGetValue(key, out int slot))
+                {
+                    newVerts[slot] += srcVerts[i];
+                    if (hasUv) newUv[slot] += srcUv[i];
+                    accumCount[slot]++;
+                }
+                else
+                {
+                    slot = newVerts.Count;
+                    map[key] = slot;
+                    newVerts.Add(srcVerts[i]);
+                    if (hasUv) newUv.Add(srcUv[i]);
+                    accumCount.Add(1);
+                }
+                remap[i] = slot;
+            }
+
+            for (int i = 0; i < newVerts.Count; i++)
+            {
+                newVerts[i] /= accumCount[i];
+                if (hasUv) newUv[i] /= accumCount[i];
+            }
+
+            // 서브메시 구조는 보존한다 — 머티리얼 슬롯이 여기 걸려 있다.
+            int subCount = mesh.subMeshCount;
+            var subTriangles = new List<int>[subCount];
+            triangleCount = 0;
+            for (int s = 0; s < subCount; s++)
+            {
+                int[] src = mesh.GetTriangles(s);
+                var dst = new List<int>(src.Length);
+                for (int t = 0; t + 2 < src.Length; t += 3)
+                {
+                    int a = remap[src[t]], b = remap[src[t + 1]], c = remap[src[t + 2]];
+                    if (a == b || b == c || a == c) continue; // 퇴화 — 버린다
+                    dst.Add(a); dst.Add(b); dst.Add(c);
+                }
+                subTriangles[s] = dst;
+                triangleCount += dst.Count / 3;
+            }
+
+            mesh.Clear();
+            mesh.indexFormat = newVerts.Count > 65535
+                ? UnityEngine.Rendering.IndexFormat.UInt32
+                : UnityEngine.Rendering.IndexFormat.UInt16;
+            mesh.SetVertices(newVerts);
+            if (hasUv) mesh.SetUVs(0, newUv);
+            mesh.subMeshCount = subCount;
+            for (int s = 0; s < subCount; s++) mesh.SetTriangles(subTriangles[s], s);
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            return triangleCount;
+        }
+
         // ── 헬퍼 ─────────────────────────────────────────────
+        /// <summary>읽기 불가 메시에서도 동작 — 인덱스 개수는 메타데이터라 항상 조회된다.</summary>
+        private static int CountTriangles(Mesh mesh)
+        {
+            if (mesh == null) return 0;
+            if (mesh.isReadable) return mesh.triangles.Length / 3;
+            long indices = 0;
+            for (int s = 0; s < mesh.subMeshCount; s++) indices += (long)mesh.GetIndexCount(s);
+            return (int)(indices / 3);
+        }
+
         private static int CountTriangles(GameObject root)
         {
             int tris = 0;
             foreach (MeshFilter mf in root.GetComponentsInChildren<MeshFilter>())
-            {
-                if (mf.sharedMesh != null)
-                    tris += mf.sharedMesh.triangles.Length / 3;
-            }
+                tris += CountTriangles(mf.sharedMesh);
             foreach (SkinnedMeshRenderer smr in root.GetComponentsInChildren<SkinnedMeshRenderer>())
-            {
-                if (smr.sharedMesh != null)
-                    tris += smr.sharedMesh.triangles.Length / 3;
-            }
+                tris += CountTriangles(smr.sharedMesh);
             return tris;
         }
 
