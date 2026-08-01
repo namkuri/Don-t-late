@@ -25,6 +25,7 @@
 
 | bom_id 후보 | 날씨 | 무드 한줄 | 슬롯 규칙 |
 |---|---|---|---|
+| `bgm_storm` | Storm | 태풍 — 어둡고 긴장된 압박, 강풍·천둥(AU-022) 아래 무겁게 조인다 (**체감 최대 — P2 최우선**) | Storm 진입 시 덮어씀 |
 | `bgm_heat` | Heat | 나른한 폭염, 아지랑이로 늘어진 여름 오후 | Heat 진입 시 덮어씀 |
 | `bgm_fog` | Fog | 안개 속 정적, 옅고 몽롱·불안 (드럼 최소/무드럼) | Fog 진입 시 덮어씀 |
 
@@ -46,6 +47,11 @@ downtempo synthwave city pop, lo-fi, warm analog synth pads, round mellow synth 
 downtempo city pop, lo-fi, warm analog synth pads, round mellow synth bass, soft twinkling bell tones, gentle nostalgic lead synth, brushed soft drum machine, cozy warm, wintry stillness, tender comforting, major-leaning with jazzy 7th chords, instrumental, 80 BPM, no vocals, no EDM drops, no aggressive drums
 ```
 
+**`bgm_storm` (Storm · 권장 최우선 — 체감 최대)**
+```
+dark downtempo synthwave city pop, lo-fi, brooding low analog synth pads, deep heavy synth bass, sparse tense lead synth, distant rolling low rumble, restrained pulsing drum machine, ominous foreboding, oppressive stormy tension, cold muted, minor key with dissonant jazzy 7th chords, instrumental, 78 BPM, no vocals, no EDM drops, no bright uplifting, no catchy hook
+```
+
 **`bgm_heat` (Heat · 권장)**
 ```
 very downtempo synthwave city pop, lo-fi, warm analog synth pads, slow round synth bass, shimmering hazy lead synth, sparse laid-back drum machine, drowsy sultry, heat-warped summer afternoon, languid dreamy, minor key with jazzy 7th chords, instrumental, 76 BPM, no vocals, no EDM drops, no bright uplifting
@@ -65,7 +71,7 @@ ambient downtempo synthwave, lo-fi, sparse warm synth pads, deep soft synth bass
 1. **BgmLibrarySO 확장**: `Entry`에 선택 필드 `WeatherType weather`(기본 = 미지정) 추가.
    미지정 = 기존 Day/Night/Title 슬롯 로직 그대로. 지정 = 그 날씨의 무드 곡.
 2. **WorldAudioManager**: `WeatherChanged` 구독(이미 amb용으로 구독 중 — 확장) →
-   날씨 ∈ {Rain·Snow·Heat·Fog} 이고 해당 곡이 있으면 **그 곡으로 크로스페이드(시간대 슬롯 덮어씀)**,
+   날씨 ∈ {Rain·Snow·Storm·Heat·Fog} 이고 해당 곡이 있으면 **그 곡으로 크로스페이드(시간대 슬롯 덮어씀)**,
    Clear·Cloudy 복귀 시 Day/Night 슬롯으로 되돌림. amb의 `UpdateAmbient` 우선순위와 동형.
 3. 곡이 없으면 = 기존 Day/Night 유지(무음 아님). 폴백 안전.
 
@@ -78,7 +84,7 @@ ambient downtempo synthwave, lo-fi, sparse warm synth pads, deep soft synth bass
 
 ## Director 액션
 
-1. 위 프롬프트로 **`bgm_rain`·`bgm_snow` 우선 뽑기**(필수) → 마음에 들면 Heat·Fog.
+1. 위 프롬프트로 **`bgm_rain`·`bgm_snow` 우선 뽑기**(필수) → 마음에 들면 `bgm_storm`(체감 최대)·Heat·Fog.
 2. 확보한 WAV를 `Assets/_intake/ElevenLabs/BGM/`(또는 지정 위치)에 두고 공장에 통보 →
    임포트·BgmLibrary 등재·WeatherChanged 배선은 공장이 처리(위 설계대로).
 3. 곡명·권리(Suno 플랜·상업권) 기록은 반입 시 CREDITS.md에.
