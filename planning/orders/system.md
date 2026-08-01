@@ -3537,3 +3537,30 @@ MDA 판정 (D-070): 강화 — A축(룩) 반복 조정 비용을 코드 수정+�
 남규님 클릭이 필요하거나, 브라우저 세션으로 대신 눌러드릴 수 있다(요청 시).
 
 - 셀프 검증 3종: 컴파일 통과 · 콘솔 에러/워닝 0 · Play 실측(위 회귀 대조).
+
+### 결과 (2026-08-01 18:58) · S-131 추가 — PR 8건 정리 완료 (열린 PR 0)
+
+Chrome 확장 연결 후 남규님 세션으로 집행. **머지 2 · 닫기 6.**
+
+| PR | 조치 | 근거(실측) |
+|---|---|---|
+| #27 bgm_ending | **승인+머지** `63c990a` | main 기준 4파일(wav 27.4MB+meta·CREDITS·manifest), 아트 0. Suno 라이선스 기록 동반 |
+| #28 Storm BGM 문서 | **승인+머지** `fd5eedb` | 문서 2파일만, 코드·에셋 0 |
+| #17 sfx_arrive | 닫기 | head `3f67369a`가 main 조상 — 실델타 0 |
+| #18 AU-018 액션 SFX | 닫기 | head `0f42641e`가 main 조상 — 실델타 0 |
+| #20 WebGL 픽셀레이트 | 닫기 | 아래 정정 참조 |
+| #21 해금 팡파레 | 닫기 | main에 `PlayFanfareSfx()` 동일 존재 + 콘페티는 `SettlementView.BurstConfetti()`로 인라인 재구현 → 머지 시 중복 정의로 컴파일 파손 |
+| #24 sfx_thunder | 닫기 | head `2db3acf` = #27과 **동일 커밋**(오배치). 천둥은 `5ae42cf0`로 이미 main |
+| #26 A-008 아트 | 닫기 | 실델타 106파일 전부 `_intake/` 격리본. 대응 모델은 `Art/Buildings/`에 계약 경로로 반입 완료(표본 6/6 일치) |
+
+**관제 오판 2건 — 기록해 둔다(같은 실수 반복 방지).**
+1. **#24를 "아트 197개 유입"으로 오독**. GitHub PR 화면은 **3-dot diff**(merge-base…head)라, base가
+   `feature/jjs-sfx-car-crash`(main보다 79 뒤처짐)면 그 사이 main에 들어온 파일까지 전부 "추가"로 뜬다.
+   → **PR 판정은 화면이 아니라 `git diff origin/main...refs/pr/N`으로 한다.** 정수님 지적으로 교정.
+2. **#20을 "main에 없으니 머지 대상"으로 오판**. `Assets/Scripts` 전역에서 `QualitySettings`를 못 찾아
+   결론 냈으나, 같은 보장이 **`ProjectSettings/QualitySettings.asset`의 `m_PerPlatformDefaultQuality: WebGL: 1`**
+   (0=Mobile·1=PC)로 이미 있었다. 남규님이 "배포본은 픽셀화돼 있는데?"로 반증.
+   → **기능 유무는 코드 grep만으로 판정하지 않는다. 설정 에셋(ProjectSettings)도 같이 본다.**
+
+부수: #28 리뷰 중 클릭이 텍스트영역을 빗나가 타이핑이 GitHub 단축키로 먹혀 `.`이 vscode.dev를 열었다
+(코드스페이스 미생성·PR 무손상 확인 후 재시도). → 브라우저 자동화는 좌표 대신 **요소 참조(ref)** 사용.
