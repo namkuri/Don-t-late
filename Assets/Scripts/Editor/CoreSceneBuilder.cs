@@ -144,6 +144,7 @@ namespace DontLate.EditorTools
 
             WorldWeatherManager weather = managers.AddComponent<WorldWeatherManager>(); // S-042
             SetField(weather, "_gameState", gameState);
+            SetField(weather, "_grade", GetOrCreateColorGrade()); // S-131 — 색보정 수치표(인스펙터 조절)
             // S-047: 구름 실아트 소켓 — Art/Backgrounds/fx_cloud_*.png 있으면 배선 (없으면 코드 블롭 폴백).
             var cloudSprites = new System.Collections.Generic.List<Sprite>();
             foreach (string suffix in new[] { "a", "b", "c" })
@@ -283,6 +284,55 @@ namespace DontLate.EditorTools
         /// BGM 목록 SO를 확보한다(없으면 계약 폴더의 클립으로 생성). 슬롯 분류는 사람 청취로 확정하므로
         /// 자동 생성분은 전부 Unsorted — 제목으로 낮/밤을 추정하지 않는다(D-039 실수→규칙).
         /// </summary>
+        /// <summary>
+        /// 색보정 수치표 (S-131). **생성 시에만** 기본값을 굽는다 — 남규님이 인스펙터에서 만진 값을
+        /// 빌더 재실행이 덮어쓰면 안 되기 때문(D-064 GetOrCreate 규약).
+        /// 기본값 = S-042~S-088에서 하드코딩돼 있던 수치 원본 — 현행 룩이 그대로 재현된다.
+        /// </summary>
+        internal static ColorGradeSO GetOrCreateColorGrade()
+        {
+            const string path = "Assets/Data/ColorGrade.asset";
+            ColorGradeSO grade = AssetDatabase.LoadAssetAtPath<ColorGradeSO>(path);
+            if (grade != null) return grade;
+
+            grade = ScriptableObject.CreateInstance<ColorGradeSO>();
+
+            // 시간대 — bloom은 S-043(밤 간판 HDR 번짐 / 낮 절제).
+            grade.morning = Grade(0f, 0f, 4f, Color.white, 0.30f);
+            grade.day = Grade(0.05f, 0f, 0f, Color.white, 0.20f);
+            grade.evening = Grade(0f, 6f, 14f, Color.white, 0.60f);
+            grade.night = Grade(-0.05f, -6f, -10f, Color.white, 0.85f);
+
+            // 날씨.
+            grade.clear = Grade(0f, 0f, 0f, Color.white, 0f);
+            grade.cloudy = Grade(-0.12f, -8f, 0f, Color.white, 0f);
+            grade.rain = Grade(-0.28f, -18f, -10f, new Color(0.88f, 0.92f, 1f), 0.10f); // 젖은 밤거리 번짐
+            grade.snow = Grade(0.08f, -12f, -18f, Color.white, 0f);
+            grade.fog = Grade(-0.18f, -14f, 0f, Color.white, 0f);
+            grade.heat = Grade(0.06f, 6f, 22f, new Color(1f, 0.97f, 0.90f), 0f);
+            grade.storm = Grade(-0.42f, -24f, -8f, new Color(0.82f, 0.88f, 0.98f), 0f); // S-088 ⑤ — 어둡다
+
+            // 구역.
+            grade.villaTown = Grade(0f, 0f, 6f, Color.white, 0f);                        // 웜그레이 골목
+            grade.foodAlley = Grade(0f, 8f, 0f, new Color(1f, 0.96f, 0.99f), 0f);        // 네온끼
+            grade.apartment = Grade(0f, -4f, 0f, Color.white, 0f);                       // 무채 단지
+
+            AssetDatabase.CreateAsset(grade, path);
+            AssetDatabase.SaveAssets();
+            return grade;
+        }
+
+        private static ColorGradeSO.Layer Grade(float exposure, float saturation, float temperature,
+            Color filter, float bloom)
+            => new ColorGradeSO.Layer
+            {
+                exposure = exposure,
+                saturation = saturation,
+                temperature = temperature,
+                filter = filter,
+                bloom = bloom,
+            };
+
         internal static BgmLibrarySO GetOrCreateBgmLibrary()
         {
             BgmLibrarySO library = AssetDatabase.LoadAssetAtPath<BgmLibrarySO>(BGM_LIBRARY_PATH);

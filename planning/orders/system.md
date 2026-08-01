@@ -3503,3 +3503,37 @@ MDA 판정 (D-070): 무관 — 재미 축을 늘리지 않는 배송 행위. 다
 - PR 승인 건은 **불가**: 이 PC에 `gh` 미설치라 승인·머지 클릭을 할 수 없다. 상태 조사만 하고 보고한다.
 MDA 판정 (D-070): 강화 — A축(룩) 반복 조정 비용을 코드 수정+재컴파일에서 인스펙터 슬라이더로 낮춘다.
   색감은 재작업이 잦은 영역이라 조정 사이클 단축이 곧 완성도.
+
+### 결과 (2026-08-01 15:50) · S-131 — 색보정 SO (PR 승인은 불가)
+
+**색보정 SO** — `ColorGradeSO`(Scripts/SO) + `Assets/Data/ColorGrade.asset`.
+- 구조: `Layer`(노출·채도·색온도·컬러필터·블룸) × **시간대 4 + 날씨 7 + 구역 3 = 14겹**.
+  합성 규칙만 `WorldWeatherManager.RefreshGradeTarget()`에 남겼다 —
+  **가산**(노출·채도·색온도·블룸) / **곱산**(컬러필터, 흰색이 무변화).
+- 수치는 전부 인스펙터로 나갔다. `[Range]`·`[Tooltip]`을 달아 조절 범위와 의미가 보인다
+  (채도 −100=흑백 / 색온도 음수=차갑게 / 필터 흰색=무변화).
+- **에셋 생성은 `CoreSceneBuilder.GetOrCreateColorGrade()`가 하되 생성 시에만 기본값을 굽는다**
+  (D-064 규약) — 남규님이 만진 값을 빌더 재실행이 덮어쓰지 않는다.
+- 회귀 0 실측(Play): 비 = exp −0.28 · sat −18 · temp −6 · bloom 0.40 · filter(0.88,0.92,1) /
+  태풍 = exp −0.42 · sat −24 · temp −4 · bloom 0.30 · filter(0.82,0.88,0.98).
+  **5개 값 전부 구 하드코딩 공식과 일치**(아침 국면 기준 손계산 대조).
+- 방어 1건: `Layer.SafeFilter` — 필터가 검정(신규 필드 기본값 = 투명 검정)이면 흰색으로 되돌린다.
+  안 막으면 인스펙터에서 필터를 비워두는 순간 화면이 통째로 까매진다(곱산이라).
+- 매니페스트 직교 추가: `SO/ColorGradeSO.cs` — 매니페스트 34종에 없던 파일이나 남규님 발주로 신설.
+
+**PR 승인 — 불가 (환경 제약)**: 이 PC에 `gh` 미설치(`command not found`)라 승인·머지 클릭을 할 수 없다.
+공개 API로 상태만 조사했다 — 열린 PR **8건**:
+| PR | 브랜치 | main 포함 여부 |
+|---|---|---|
+| #28 AU-024 Storm BGM 문서 | feature/jjs-storm-bgm-doc | 미포함 |
+| #27 AU-023 bgm_ending 반입 | feature/jjs-au023-ending-bgm | 미포함 |
+| #26 A-008 Trellis2 교체본 | feat/a-008-art-intake | 미포함 (⚠ 내용은 S-121에서 수동 반입 완료) |
+| #24 AU-022 sfx_thunder | feature/jjs-sfx-thunder | 미포함 |
+| #21 S-086 해금 팡파레 | feature/jjs-unlock-fanfare | 미포함 (S-121 감사: superseded) |
+| #20 S-085 WebGL 픽셀레이트 | feature/jjs-webgl-pixelate | 미포함 (S-121 감사: superseded) |
+| #18 AU-018 점프 SFX | feature/jjs-sfx-action | **이미 main에 포함** → 닫기만 |
+| #17 sfx_arrive | feature/jjs-sfx-arrive | **이미 main에 포함** → 닫기만 |
+⚠ 일괄 머지는 위험하다: #26은 내용이 이미 들어와 중복·충돌, #20/#21은 superseded라 되돌림 위험.
+남규님 클릭이 필요하거나, 브라우저 세션으로 대신 눌러드릴 수 있다(요청 시).
+
+- 셀프 검증 3종: 컴파일 통과 · 콘솔 에러/워닝 0 · Play 실측(위 회귀 대조).

@@ -20,6 +20,8 @@ namespace DontLate
         [SerializeField] private Sprite[] _cloudSprites;
         [Tooltip("그레이드 전이 속도 (1/초) — 낮을수록 느긋한 트랜지션.")]
         [SerializeField] private float _gradeLerpSpeed = 0.5f;
+        [Tooltip("색보정 수치표 (S-131) — 시간대·날씨·구역별 노출·채도·색온도·필터·블룸. 비면 무보정.")]
+        [SerializeField] private ColorGradeSO _grade;
 
         public WeatherType Weather { get; private set; } = WeatherType.Clear;
         /// <summary>태풍 바람 방향 (S-088 ⑤) — -1(좌) / +1(우) / 0(무풍). Locomotion이 읽는다.
@@ -317,51 +319,22 @@ namespace DontLate
         private bool _indoorScene; // S-050 ④ — 아파트 실내: SnowCover·발자국(HasSnowCover) 억제
         private bool _snowCovered; // AU-018 ③ — 기존 HasSnowCover 전환 감지용(SnowCoverChanged 발행)
 
+        // S-131 — 수치는 전부 ColorGradeSO(인스펙터)로 나갔다. 여기는 합성 규칙만 소유한다:
+        //   노출·채도·색온도·블룸 = 시간대 + 날씨 + 구역 (가산) / 컬러필터 = 셋의 곱 (흰색이 무변화).
+        // 조명 자체는 DayNight 몫 — 여기는 필름 톤만 얹는다.
         private void RefreshGradeTarget()
         {
-            // 시간대 베이스 (조명은 DayNight 몫 — 여기는 필름 톤만 살짝).
-            float exposure = 0f, saturation = 0f, temperature = 0f;
-            Color filter = Color.white;
-            switch (_phase)
-            {
-                case DayPhase.Morning: temperature = 4f; break;
-                case DayPhase.Day: exposure = 0.05f; break;
-                case DayPhase.Evening: temperature = 14f; saturation = 6f; break;
-                case DayPhase.Night: temperature = -10f; saturation = -6f; exposure = -0.05f; break;
-            }
+            if (_grade == null) return; // SO 미주입 — 현 상태 유지(무보정으로 시작)
 
-            // 날씨 모디파이어.
-            switch (Weather)
-            {
-                case WeatherType.Rain: exposure -= 0.28f; saturation -= 18f; temperature -= 10f; filter = new Color(0.88f, 0.92f, 1f); break;
-                case WeatherType.Snow: exposure += 0.08f; saturation -= 12f; temperature -= 18f; break;
-                case WeatherType.Fog: exposure -= 0.18f; saturation -= 14f; break;
-                case WeatherType.Cloudy: exposure -= 0.12f; saturation -= 8f; break;
-                case WeatherType.Heat: temperature += 22f; saturation += 6f; exposure += 0.06f; filter = new Color(1f, 0.97f, 0.90f); break;
-                case WeatherType.Storm: exposure -= 0.42f; saturation -= 24f; temperature -= 8f; filter = new Color(0.82f, 0.88f, 0.98f); break; // S-088 ⑤ — 어둡다
-            }
+            ColorGradeSO.Layer phase = _grade.ForPhase(_phase);
+            ColorGradeSO.Layer weather = _grade.ForWeather(Weather);
+            ColorGradeSO.Layer district = _grade.ForDistrict(_gameState != null ? _gameState.currentDistrict : null);
 
-            // 구역 분위기.
-            string district = _gameState != null ? _gameState.currentDistrict : null;
-            if (district == DeliveryOrderSO.DISTRICT_VILLATOWN) temperature += 6f;                      // 웜그레이 골목
-            else if (district == DeliveryOrderSO.DISTRICT_FOODALLEY) { saturation += 8f; filter *= new Color(1f, 0.96f, 0.99f); } // 네온끼
-            else if (district == DeliveryOrderSO.DISTRICT_APARTMENT) saturation -= 4f;                  // 무채 단지
-
-            // S-043: Bloom 밤/낮 강도 — 밤에 전광판 HDR이 크게 번지고 낮엔 절제.
-            float bloom = _phase switch
-            {
-                DayPhase.Night => 0.85f,
-                DayPhase.Evening => 0.6f,
-                DayPhase.Morning => 0.3f,
-                _ => 0.2f
-            };
-            if (Weather == WeatherType.Rain) bloom += 0.1f; // 젖은 밤거리 번짐
-
-            _targetExposure = exposure;
-            _targetSaturation = saturation;
-            _targetTemperature = temperature;
-            _targetFilter = filter;
-            _targetBloom = bloom;
+            _targetExposure = phase.exposure + weather.exposure + district.exposure;
+            _targetSaturation = phase.saturation + weather.saturation + district.saturation;
+            _targetTemperature = phase.temperature + weather.temperature + district.temperature;
+            _targetFilter = phase.SafeFilter * weather.SafeFilter * district.SafeFilter;
+            _targetBloom = phase.bloom + weather.bloom + district.bloom;
         }
 
         private void LerpGrade()
