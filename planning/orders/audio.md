@@ -836,6 +836,19 @@ MDA 판정 (D-070): 강화 — 기존 날씨 BGM 몰입을 시간대 축으로 �
 - **셀프검증 3종**: ① 컴파일 완료 ② 콘솔 에러/워닝 0(컴파일·Play 중) ③ Play 실측 exec — `RainDay=Rain on the Window · RainNight=Neon Rain · RainMorning=Rain on the Window · RainEvening=Neon Rain · Clear(evening)=Seoul_Afternoon_Stroll(밤슬롯 폴백)`. 낮/밤 분리·시간대 전환 교체·날씨 해제 폴백 모두 정상.
 - 잔여: main 머지는 관제 게이트([[factory-no-merge]]). 눈/폭염/안개 낮밤 분리는 미착수(YAGNI — 곡 없음).
 
+---
+
+## AU-026 · 발주 2026-08-01 → 정수 공장 (눈 날씨 BGM 낮/밤 분리)
+
+요구 (남규 원문): `Daylight Snowfall.wav`를 눈 내리는 날 **낮 전용** BGM으로 게임에 추가. 밤=`Neon Snowfall.wav`(기존). AU-025(비) 낮/밤 분리와 동형.
+
+- **배경**: AU-025로 비(Rain)만 낮/밤 2곡 분리됨. 눈(Snow)은 아직 `_bgmSnow`(Neon Snowfall) 단곡·phase-blind → 눈 오면 낮/밤 무관 한 곡. `Daylight Snowfall.wav` 확보(`_audio_intake`) → 눈도 시간대 분리.
+- **작업**: (1) `WorldAudioManager` `_bgmSnow`→`_bgmSnowDay`/`_bgmSnowNight` 분리 + `RefreshWeatherBgm()` Snow 케이스를 `_phase` 참조(Evening/Night→Night, else→Day). (2) `CoreSceneBuilder` 배선 SnowNight=`Neon Snowfall`/SnowDay=`Daylight Snowfall`. (3) `Daylight Snowfall.wav` `_audio_intake`→`Assets/Audio/BGM/` 반입(.gitignore allowlist·CREDITS·assets_manifest 등재·루프 꼬리 페이드 트림).
+- **경계**: 비는 AU-025 그대로, 폭염/안개는 낮밤 공용 1곡 유지(YAGNI). 씬 본문 미커밋(빌더 정본). 공장→PR, main 머지 관제 게이트. AU-025 스택(base=`feature/jjs-au025-rain-bgm` — 같은 메서드 수정).
+
+수용기준: Snow 진입 시 Evening/Night면 Neon Snowfall, Morning/Day면 Daylight Snowfall 재생 · 눈 오는 중 낮↔밤 넘어가면 크로스페이드 교체 · Rain/Heat/Fog 동작 불변 · 컴파일·콘솔0·Play 실측.
+MDA 판정 (D-070): 강화 — AU-025와 동형, 날씨 몰입을 시간대 축으로 심화. 곡 확보됨 = 저비용. 코어루프 불변.
+
 ## AU-028 · 발주 2026-08-05 12:49 → 정수 공장 (튜토리얼 미션 성공 SFX)
 
 > ⚠ **번호 정정 (2026-08-05 20:55)**: 최초 AU-025로 채번했으나 정수님이 PR#30에서
