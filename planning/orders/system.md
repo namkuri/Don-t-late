@@ -3459,3 +3459,31 @@ MDA 판정 (D-070): 강화 — A축(거리 실루엣: 산 하나가 배경막이
 - 실패 시: 빌드 에러는 로그와 함께 보고하고 **배포하지 않는다**(깨진 판을 올리지 않는다).
 MDA 판정 (D-070): 무관 — 재미 축을 늘리지 않는 배송 행위. 다만 팀·심사가 실물을 만지는
   유일한 경로라 우선순위는 높다.
+
+### 결과 (2026-08-01 15:32) · S-130 — [BLOCKED] 빌드는 성공, **배포 불가**
+
+- 빌드 자체는 **성공**(result=Succeeded · errors 0 · 8씬 전량). 그런데 산출물이 **1,195MB**다
+  (직전 07-28판 47.7MB → **25배**). `WebGL.data.unityweb` 단일 파일이 **1.24GB**.
+- **배포하지 않았다**(발주 실패조항). 세 겹으로 불가능하다:
+  ① GitHub 단일 파일 상한 100MB — gh-pages는 일반 브랜치라 push 자체가 거부된다
+  ② GitHub Pages 사이트 상한 1GB 초과
+  ③ 설령 올라가도 1.2GB 다운로드는 심사·팀 누구도 못 연다
+- **원인 (BuildReport 실측 — Library/LastBuild.buildreport 파싱)**:
+  | 타입 | 크기 | 개수 |
+  |---|---|---|
+  | **Mesh** | **1,618MB** | 77 |
+  | Texture2D | 33MB | 141 |
+  | AudioClip | 21MB | 100 |
+  텍스처·오디오는 멀쩀다. **메시 77개가 전부**다(평균 21MB/개). 최대: basic_tree 40MB ·
+  blossom_tree 32MB · 3_trash 29MB · retro_korean_house 29MB · fur_rug 28MB …
+- **범인 = 임포트 설정 2개** (`Assets/Art/**/*.fbx.meta` 실측):
+  1. `isReadable: 1` — `ArtImportPostprocessor.cs:88`이 "폴리·바운즈 검사를 위해" 켠다.
+     **읽기 가능 메시는 빌드에 CPU 사본이 하나 더 들어간다 = 용량 2배.**
+  2. `meshCompression: 0` (Off) — 정점 양자화 없음.
+  아트 반입(Trellis2 재출력 07-29~30, 소스 4GB)이 들어오면서 터진 것 — 07-28판까지는 이 규모가 아니었다.
+- 예상 효과: isReadable off = 절반 · meshCompression High = 추가 4~8배 ⇒ 1,618MB → **100~200MB대**.
+  실데시메이트(폴리 감축)까지 하면 더 내려간다. 다만 **전 모델 재임포트 + 룩 재검증**이 필요해
+  별건 발주로 뺀다(→ S-131 후보).
+- 부작용 주의: `isReadable`을 끄면 런타임에서 `mesh.triangles` 등을 읽는 코드가 있으면 깨진다.
+  MeshCollider는 무관(에디터에서 지정·직렬화된 건 정상 — S-129 hill.fbx가 `isReadable: 0`로 실증).
+- 남규님 판단 필요: 메시 예산 정리를 지금 착수할지, 제출 일정상 다른 우선순위가 있는지.
