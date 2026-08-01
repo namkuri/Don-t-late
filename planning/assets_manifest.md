@@ -107,6 +107,19 @@
 
 - 임포트 = Vorbis q30 · Compressed In Memory · 스테레오(BGM 규격 자동). 배선 = `WeatherChanged` 구독 → 날씨 무드 곡이 시간대 슬롯 override(amb 우선순위와 동형).
 
+## Suno BGM INTAKE (엔딩 · AU-023) — 2026-07-31
+
+> 출처·권리·근거 = 위 Suno 절과 동일(Director 유료 플랜 · 상업 가능·소유권 귀속·무기한·표기 불요).
+> 엔딩 전용 BGM(`bgm_ending` 슬롯). **원제 유지**. 프롬프트 = 방향5(그윈 오마주·Rhodes 피아노 리드) — 상세 `CREDITS.md`.
+> **원샷(A) 곡** — 인트로 성김→정점(75~85s)→아웃트로 페이드아웃(145~150s)의 through-composed 아크.
+> 날씨곡과 달리 **페이드 트림 안 함**(페이드가 아크의 일부). 소켓 배선(엔딩 원샷 재생, S-107)은 관제 몫.
+
+| 파일명 | 슬롯 | 길이 | dest | 출처 | 라이선스 | 반입일 |
+|---|---|---|---|---|---|---|
+| Fading Into Dawn.wav | **Ending** | 149.8s | `Assets/Audio/BGM/` | Suno (유료 Pro/Premier) | 상업 사용 가능·소유권 귀속·무기한 | 2026-07-31 |
+
+- 임포트 = Vorbis q30 · Compressed In Memory · 스테레오(BGM 규격 자동, 실측 검증). 파일 MD5(앞12): `f0859b4bb526`. 실측 peak -3.2dB · rms -17.1dB(다이내믹=감정 핵심이라 평탄화 안 함).
+
 ## Trellis2 INTAKE — 2026-07-22
 
 > 출처 = **RunPod 셀프호스팅 TRELLIS** (Microsoft · MIT) · 민지 생성. 생성물 상업 사용 제약 없음.
