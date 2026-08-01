@@ -233,7 +233,8 @@ namespace DontLate.EditorTools
             SetField(audio, "_ambWeatherHeat", LoadSfx("amb_weather_heat"));
             SetField(audio, "_bgmRainNight", LoadBgm("Neon Rain"));               // AU-018 ②/AU-025 비·밤(원제)
             SetField(audio, "_bgmRainDay", LoadBgm("Rain on the Window"));         // AU-025 비·낮
-            SetField(audio, "_bgmSnow", LoadBgm("Neon Snowfall"));
+            SetField(audio, "_bgmSnowNight", LoadBgm("Neon Snowfall"));           // AU-026 눈·밤(원제)
+            SetField(audio, "_bgmSnowDay", LoadBgm("Daylight Snowfall"));          // AU-026 눈·낮
             SetField(audio, "_bgmHeat", LoadBgm("Midnight Heatwave"));
             SetField(audio, "_bgmFog", LoadBgm("Sodium Fog"));
             SetField(audio, "_gameState", AssetDatabase.LoadAssetAtPath<GameStateSO>(DATA_ROOT + "/GameState.asset"));

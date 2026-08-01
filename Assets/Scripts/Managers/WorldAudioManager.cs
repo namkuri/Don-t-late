@@ -85,7 +85,8 @@ namespace DontLate
         [Header("날씨 BGM (AU-018 ② / AU-025) — 시간대 슬롯을 덮어쓰는 무드 곡")]
         [SerializeField] private AudioClip _bgmRainDay;   // AU-025 — 비·낮 (Rain on the Window)
         [SerializeField] private AudioClip _bgmRainNight; // AU-025 — 비·밤 (구 _bgmRain=Neon Rain)
-        [SerializeField] private AudioClip _bgmSnow;
+        [SerializeField] private AudioClip _bgmSnowDay;   // AU-026 — 눈·낮 (Daylight Snowfall)
+        [SerializeField] private AudioClip _bgmSnowNight; // AU-026 — 눈·밤 (구 _bgmSnow=Neon Snowfall)
         [SerializeField] private AudioClip _bgmHeat;
         [SerializeField] private AudioClip _bgmFog;
 
@@ -404,7 +405,7 @@ namespace DontLate
             RefreshWeatherBgm(); // AU-018 ② + AU-025(비는 시간대별 곡)
         }
 
-        /// <summary>날씨 무드 BGM을 현재 날씨·시간대로 다시 정한다. 비만 낮/밤 곡이 갈리고(AU-025),
+        /// <summary>날씨 무드 BGM을 현재 날씨·시간대로 다시 정한다. 비·눈은 낮/밤 곡이 갈리고(AU-025·AU-026),
         /// 나머지는 낮밤 공용 1곡. 없는 날씨는 null → 시간대 슬롯 유지. 바뀌면 ApplySlot로 크로스페이드.</summary>
         private void RefreshWeatherBgm()
         {
@@ -412,7 +413,7 @@ namespace DontLate
             AudioClip wb = _weather switch // AU-018 ② — 날씨 무드 BGM (없는 날씨는 시간대 슬롯 유지)
             {
                 WeatherType.Rain => night ? _bgmRainNight : _bgmRainDay, // AU-025
-                WeatherType.Snow => _bgmSnow,
+                WeatherType.Snow => night ? _bgmSnowNight : _bgmSnowDay, // AU-026
                 WeatherType.Heat => _bgmHeat,
                 WeatherType.Fog => _bgmFog,
                 _ => null
