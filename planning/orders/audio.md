@@ -856,6 +856,8 @@ MDA 판정 (D-070): 강화 — AU-025와 동형, 날씨 몰입을 시간대 축�
 - **반입** `Daylight Snowfall.wav`: `_audio_intake`→`Assets/Audio/BGM/`. **루프 트림** — 아웃트로 페이드아웃 3.5s 검출·제거(52.8→49.3s, RMS 분석: 49.3s 이후 단조 감쇠→무음) + 컷엣지 15ms 마이크로페이드. AudioImportPostprocessor 자동 설정: loadType CompressedInMemory·Vorbis q0.30·stereo. `.gitignore` allowlist·CREDITS·assets_manifest 등재.
 - **셀프검증 3종**: ① 컴파일 완료 ② 콘솔 에러/워닝 0(빌드·Play 중) ③ Play 실측 exec — `SnowMorning=Daylight Snowfall · SnowDay=Daylight Snowfall · SnowEvening=Neon Snowfall · SnowNight=Neon Snowfall · RainDay=Rain on the Window · RainNight=Neon Rain · HeatDay=Midnight Heatwave`. 눈 낮/밤 분리·시간대 교체·비/폭염 회귀 불변 모두 정상.
 - 잔여: main 머지는 관제 게이트([[factory-no-merge]]). PR base=AU-025 브랜치(스택) → #30 선머지 후 리베이스/머지. 폭염·안개 낮밤 분리 미착수(YAGNI — 곡 없음).
+- **ACCEPT (2026-08-01 · Director)**: 인게임 Play 실측 — 낮/밤 눈 BGM 정상 재생 육안·청음 확인 → **통과**. 머지는 규율대로 관제 대기(공장 미머지). 관제 처리 순서: **PR #30(AU-025) 선머지 → #31(AU-026)** rebase/머지. 재검수 불요(사전 승인됨).
+
 
 ## AU-028 · 발주 2026-08-05 12:49 → 정수 공장 (튜토리얼 미션 성공 SFX)
 
