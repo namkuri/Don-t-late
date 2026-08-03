@@ -62,6 +62,7 @@ namespace DontLate
             _gameState.unlockedDistricts.Add(DeliveryOrderSO.DISTRICT_VILLATOWN);
             _gameState.hasTruck = false;
             _gameState.playerLevel = 1;   // S-063
+            _gameState.health = GameStateSO.HEALTH_MAX; // S-134 ④ — 세션 시작은 만체력
             _gameState.mastery = 0f;
             _gameState.bagItems.Clear();  // S-064
             _gameState.ownsCart = false;  // S-056

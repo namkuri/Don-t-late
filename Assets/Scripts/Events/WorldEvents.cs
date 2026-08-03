@@ -284,12 +284,15 @@ namespace DontLate
         }
 
         /// <summary>교통사고 정산 통지 (S-066 ③) — 병원비·실패 건수. AccidentView가 팝업을 연다.</summary>
-        public static event Action<int, int> CarAccident;
+        /// <summary>교통사고 (S-134 ④ 개정) — 병원비와 **후송 여부**(체력 0칸).
+        /// 후송이면 AccidentView가 하루를 정산하고 강제 귀가시킨다. 종전 2번째 인자는
+        /// '실패 건수'였으나, 사고가 적재를 전량 실패시키던 규칙 자체가 폐기됐다.</summary>
+        public static event Action<int, bool> CarAccident;
 
-        public static void RaiseCarAccident(int hospitalFee, int failedCount)
+        public static void RaiseCarAccident(int hospitalFee, bool hospitalized)
         {
-            Log("CarAccident 병원비 " + hospitalFee + " · 실패 " + failedCount + "건");
-            CarAccident?.Invoke(hospitalFee, failedCount);
+            Log("CarAccident 병원비 " + hospitalFee + (hospitalized ? " · 후송" : ""));
+            CarAccident?.Invoke(hospitalFee, hospitalized);
         }
 
         /// <summary>가방에서 좌클릭 — 손에 들기 요청 (S-064). Player 도메인이 받아 시각물 생성.</summary>

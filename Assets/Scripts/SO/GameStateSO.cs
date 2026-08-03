@@ -59,6 +59,11 @@ namespace DontLate
         /// <summary>회사 트럭 수령 여부 (S-054) — 전 구역 개척 보상. 지도앱 즉시 이동 해금.</summary>
         public bool hasTruck;
 
+        /// <summary>체력 칸 (S-134 ④ — 정수님 QA "사고 패널티 완화"). 차에 치이면 2칸.
+        /// 0이 되면 강제 귀가 + 정산(남규님 결정). 사망은 없다.</summary>
+        public int health = HEALTH_MAX;
+        public const int HEALTH_MAX = 5;
+
         // ── S-063 캐릭터 진행 ──
         public string nickname = "늦지마맨";
         public int playerLevel = 1;

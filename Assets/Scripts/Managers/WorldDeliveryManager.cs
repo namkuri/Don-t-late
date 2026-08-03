@@ -50,6 +50,7 @@ namespace DontLate
         }
 
         private const int HOSPITAL_FEE = 3000; // S-057 — 병원비 (밸런스 추후)
+        private const int HIT_DAMAGE = 2;      // S-134 ④ — 차에 치이면 체력 2칸
 
         private void OnEnable()
         {
@@ -230,21 +231,16 @@ namespace DontLate
             if (_gameState.money < 0) { _gameState.debt += -_gameState.money; _gameState.money = 0; }
             WorldEvents.RaiseMoneySpent(HOSPITAL_FEE);
 
-            int failed = 0;
-            foreach (DeliveryOrderSO order in _gameState.cargo.ToArray())
-            {
-                if (order == null) continue;
-                _gameState.cargo.Remove(order);
-                _gameState.lateCount++;
-                MasteryProgress.Add(_gameState, -MasteryProgress.FAIL_LOSS);
-                WorldEvents.RaiseDeliveryFailed(DeliveryData.From(order));
-                failed++;
-            }
-            _gameState.cargo.Clear();
-            _gameState.scannedOrderIds.Clear();
+            // S-134 ④ — 패널티 완화(정수님 QA). 종전엔 **적재 전량 실패**라 한 번 치이면 하루가 끝났다.
+            // 이제 체력 2칸만 깎고 짐은 그대로 — 0칸이 돼야 하루가 끝난다(강제 귀가 + 정산).
+            _gameState.health = Mathf.Max(0, _gameState.health - HIT_DAMAGE);
+            bool hospitalized = _gameState.health <= 0;
 
-            Debug.Log("[교통사고] 병원비 -₩" + HOSPITAL_FEE.ToString("N0") + " · 미배송 " + failed + "건 실패");
-            WorldEvents.RaiseCarAccident(HOSPITAL_FEE, failed); // S-066 ③ — 팝업이 "치료 후 집으로"를 안내
+            Debug.Log("[교통사고] 병원비 -₩" + HOSPITAL_FEE.ToString("N0")
+                + " · 체력 " + _gameState.health + "/" + GameStateSO.HEALTH_MAX
+                + (hospitalized ? " → 후송(강제 귀가)" : ""));
+            // 정산 오케스트레이션은 View 층(AccidentView) 몫 — 매니저끼리 직접 부르지 않는다(§3).
+            WorldEvents.RaiseCarAccident(HOSPITAL_FEE, hospitalized);
         }
 
         private readonly System.Collections.Generic.HashSet<string> _settledDistricts =

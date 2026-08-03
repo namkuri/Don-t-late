@@ -43,6 +43,12 @@ namespace DontLate
         // S-063 상단 바 — 캐릭터 진행·당일 배송수량.
         [SerializeField] private TMP_Text _levelLabel;
         [SerializeField] private Image _masteryFill;
+        [Tooltip("체력 5칸 (S-134 ④) — 차에 치이면 2칸 꺼진다. 0칸이면 강제 귀가+정산.")]
+        [SerializeField] private Image[] _healthPips;
+
+        private const float MASTERY_CELLS = 5f; // S-134 ① — 경험치 5칸
+        private static readonly Color HEALTH_ON = new Color(0.90f, 0.35f, 0.32f, 1f);
+        private static readonly Color HEALTH_OFF = new Color(0.20f, 0.16f, 0.18f, 1f);
         [SerializeField] private TMP_Text _deliveryCountLabel;
 
         [Header("상호작용 안내 (하단 중앙)")]
@@ -447,8 +453,19 @@ namespace DontLate
                 _shownLevel = _gameState.playerLevel;
                 _levelLabel.text = $"Lv.{_gameState.playerLevel}  {_gameState.nickname}";
             }
+            // S-134 ① — 경험치를 **5칸**으로 간략화(정수님 QA). 연속 게이지는 진행이 안 읽혔다.
             if (_masteryFill != null)
-                _masteryFill.fillAmount = Mathf.Clamp01(_gameState.mastery / MasteryProgress.MaxFor(_gameState.playerLevel));
+            {
+                float ratio = Mathf.Clamp01(_gameState.mastery / MasteryProgress.MaxFor(_gameState.playerLevel));
+                _masteryFill.fillAmount = Mathf.Floor(ratio * MASTERY_CELLS) / MASTERY_CELLS;
+            }
+            // S-134 ④ — 체력 5칸.
+            if (_healthPips != null)
+            {
+                for (int i = 0; i < _healthPips.Length; i++)
+                    if (_healthPips[i] != null)
+                        _healthPips[i].color = i < _gameState.health ? HEALTH_ON : HEALTH_OFF;
+            }
             if (_deliveryCountLabel != null)
             {
                 int done = _gameState.placedDeliveries.Count;

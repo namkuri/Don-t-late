@@ -457,8 +457,18 @@ namespace DontLate.EditorTools
 
             TMP_Text level = CreateText(charCard.transform, "Level", "Lv.1  늦지마맨", font,
                 34f, Color.white, TextAlignmentOptions.TopLeft);
-            AnchorCorner(level.rectTransform, new Vector2(0f, 1f), new Vector2(20f, -12f), new Vector2(360f, 44f));
+            AnchorCorner(level.rectTransform, new Vector2(0f, 1f), new Vector2(20f, -12f), new Vector2(220f, 44f));
             SetField(hud, "_levelLabel", level);
+
+            // S-134 ④ — 체력 5칸. 레벨 라벨 오른쪽 빈자리에 붙인다(카드 높이 불변).
+            var healthPips = new Image[GameStateSO.HEALTH_MAX];
+            for (int i = 0; i < healthPips.Length; i++)
+            {
+                healthPips[i] = CreateImage(charCard.transform, "HealthPip" + i, new Color(0.90f, 0.35f, 0.32f, 1f));
+                AnchorCorner(healthPips[i].rectTransform, new Vector2(0f, 1f),
+                    new Vector2(248f + i * 28f, -18f), new Vector2(22f, 22f));
+            }
+            SetField(hud, "_healthPips", healthPips);
 
             Image masteryBg = CreateImage(charCard.transform, "MasteryBg", new Color(0.06f, 0.07f, 0.10f, 1f));
             AnchorCorner(masteryBg.rectTransform, new Vector2(0f, 0f), new Vector2(20f, 44f), new Vector2(360f, 16f));

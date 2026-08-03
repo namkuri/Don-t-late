@@ -33,7 +33,7 @@ namespace DontLate
         private void OnEnable() => WorldEvents.CarAccident += OnCarAccident;
         private void OnDisable() => WorldEvents.CarAccident -= OnCarAccident;
 
-        private void OnCarAccident(int hospitalFee, int failedCount)
+        private void OnCarAccident(int hospitalFee, bool hospitalized)
         {
             if (_bodyLabel != null)
             {
@@ -45,8 +45,8 @@ namespace DontLate
                 sb.AppendLine(Row("사유:", "교통사고 (차도 횡단)"));
                 sb.AppendLine(RULE_DASH);
                 sb.AppendLine(Row("치료비", "<color=#e05a48>−" + hospitalFee.ToString("N0") + "</color>"));
-                if (failedCount > 0)
-                    sb.AppendLine(Row("미배송 실패", "<color=#e05a48>" + failedCount + "건</color>"));
+                if (hospitalized)
+                    sb.AppendLine(Row("소견", "<color=#e05a48>당일 후송 — 업무 중단</color>"));
                 sb.AppendLine(RULE_DASH);
                 sb.AppendLine(Row("<b>잔액</b>", "<b>" + (_gameState != null ? _gameState.money.ToString("N0") : "?") + "</b>"));
                 sb.AppendLine(Row("남은 빚", _gameState != null ? _gameState.debt.ToString("N0") : "?"));
@@ -56,6 +56,7 @@ namespace DontLate
             }
             if (_panel != null) _panel.SetActive(true);
             StartCoroutine(RedFlashRoutine());
+            _hospitalized = hospitalized; // S-134 ④ — 확인 버튼이 정산까지 밟을지 결정
         }
 
         // 붉은 깜빡임 2회 — 알파 0.55 → 0.
@@ -74,10 +75,21 @@ namespace DontLate
             _redFlash.gameObject.SetActive(false);
         }
 
+        // S-134 ④ — 체력 0칸이면 그날은 끝. 하루를 정산하고 집으로(남규님 결정 '강제 귀가 + 정산').
+        // 매니저 두 개를 부르는 오케스트레이션은 View 층 몫 — 매니저끼리 직접 부르지 않는다(§3).
+        private bool _hospitalized;
+
         private void OnHomePressed()
         {
             if (WorldSceneFlowManager.Instance == null || WorldSceneFlowManager.Instance.IsTransitioning) return;
             if (_panel != null) _panel.SetActive(false);
+            if (_hospitalized)
+            {
+                _hospitalized = false;
+                if (_gameState != null) _gameState.health = GameStateSO.HEALTH_MAX; // 치료 완료
+                WorldEvents.RaiseGoHomeRequested(); // 정산 UI가 하루를 마감하고 귀가시킨다
+                return;
+            }
             WorldSceneFlowManager.Instance.Request(GameScene.Home);
         }
     }
