@@ -399,3 +399,4 @@
 | Assets/_intake/art/Mixamo/Animations/A_malsoon/malsoon_Angry_2.fbx | 박말순 화난 모션 2 | Mixamo (상동) | 2026-07-30 |
 | Assets/_intake/art/Trellis2/{Buildings,Props}/*.fbx (82종) | **oid 교체(재출력본)** — 합계 3.49GiB→2.10GiB(−1.39GiB, 커진 파일 0·no-op 0). A-002 오리진 반려 4종(fur_bed/plant/rug/tv) 소스 포함 | RunPod 셀프호스팅 TRELLIS (Microsoft · MIT) · 민지 생성 (assets_manifest §Trellis2 INTAKE) | 2026-07-30 |
 | Assets/Art/Terrains/hill.fbx | Hillside 유선형 산 지형 (S-129 — 좌우 대칭 봉우리, 26.4×4.0×2.0u 원본) | **남규(직접 제작)** · Blender (GNU GPL — 산출물은 제작자 소유) | 2026-07-31 |
+| Assets/Art/Props/Textures/chair_Image_0_4.png | 의자 베이스맵 2048² (S-132 — chair.fbx 정리 중 복구). 원본 `chair.fbx`에 팩돼 있었으나 참조 경로(`_art_originals/Props/export.fbm/`)가 실재하지 않아 내보내기에 실리지 않던 것을 블렌더에서 풀어 저장 | **기존 chair.fbx 임베드 텍스처와 동일 출처** — RunPod 셀프호스팅 TRELLIS (Microsoft · MIT) · 민지 생성 (assets_manifest §Trellis2 INTAKE) | 2026-08-03 |

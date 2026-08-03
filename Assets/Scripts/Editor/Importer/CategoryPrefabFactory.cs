@@ -69,7 +69,11 @@ namespace DontLate.EditorTools
             float scale = target > 0.01f ? target / bounds.size.y : 1f;
             if (target > 0.01f)
                 Debug.Log($"[프리팹팩토리] {name} 스케일 캘리브레이션 — 실측고 {bounds.size.y:0.00}u → 목표 {target:0.0}u (×{scale:0.000})");
-            instance.transform.localScale = Vector3.one * scale;
+            // ⚠ S-132 — **곱한다. 덮어쓰지 않는다.** `bounds`는 이미 루트 스케일이 반영된 월드
+            // 바운즈이므로 scale은 "현재 크기 대비 배율"이다. 종전처럼 localScale에 대입하면
+            // FBX 루트 스케일이 1이 아닌 모델(메시 100배 + 루트 0.01 같은 조합)에서 그 보정이
+            // 통째로 날아간다 — fur_bed가 목표 0.5u 대신 50u로 커진 실제 사고(남규님 발견).
+            instance.transform.localScale = Vector3.Scale(instance.transform.localScale, Vector3.one * scale);
 
             GameObject wrapper = new GameObject(name);
             instance.transform.SetParent(wrapper.transform, true);

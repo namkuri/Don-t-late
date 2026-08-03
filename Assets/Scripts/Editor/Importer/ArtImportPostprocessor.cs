@@ -104,10 +104,12 @@ namespace DontLate.EditorTools
             if (category == null) return;
 
             var importer = (ModelImporter)assetImporter;
-            // ⚠ S-132 실측: `isReadable = false`로 두면 OnPostprocessModel에서 `mesh.vertices`가
-            // **빈 배열**을 돌려준다(예외가 아니라 조용히 0개) → 감축이 메시를 통째로 비운다.
-            // 감축 자체가 폴리를 수백 배 줄이므로 읽기 사본 2배는 무시할 수준이다. 켠 채로 둔다.
-            importer.isReadable = true; // 폴리·바운즈 검사 + 폴리 감축(DecimateAll)이 정점을 읽는다
+            // S-132 — 감축이 **Blender(쿼드릭 Decimate)로 이관**되면서 임포트 시점에 메시를 읽을
+            // 이유가 사라졌다(폴리 집계는 GetIndexCount로 대체 — 읽기 불가 메시에서도 동작).
+            // 읽기 가능 메시는 빌드에 CPU 사본이 하나 더 들어가 **용량이 2배**가 된다. 끈다.
+            // ⚠ 되켤 일이 있다면: false면 OnPostprocessModel의 `mesh.vertices`가 예외 없이
+            //   빈 배열을 돌려주므로, 그 안에서 메시를 수정하는 코드는 동작하지 않는다(실측).
+            importer.isReadable = false;
             importer.meshCompression = ModelImporterMeshCompression.High; // 정점 양자화 — 픽셀 렌더라 손실 무해
 
             // 소품·건물·배경: 애니 임포트 자체를 끈다 (Tripo 빈 클립 경고 원천 차단).

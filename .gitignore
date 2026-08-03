@@ -177,3 +177,8 @@ Assets/Resources/build_version.txt.meta
 
 # S-106 — 로컬 전용 설정 (감사 v3 처방)
 .claude/settings.local.json
+
+# S-132 — 감축 전 원본 FBX 로컬 백업 (3.7GB). 저장소에는 감축본만 들어간다.
+# 되돌리려면 여기서 Assets/Art/<카테고리>/ 로 복사 후 재임포트 (.meta는 건드리지 말 것 — GUID 보존).
+_art_originals/
+_manifest.json

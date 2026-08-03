@@ -38,8 +38,9 @@ namespace DontLate
                 _gameState.placedFurniture.Add(new PlacedFurniture
                 {
                     furnitureId = "fur_bed",
-                    position = new Vector3(-2.5f, 0f, 2f),
-                    rotationY = 0f,
+                    // S-132 — 남규님이 씬에서 직접 맞춘 기본 배치. 벽에 붙여 머리맡이 보이는 각도.
+                    position = new Vector3(-2.5f, 0f, 0.75f),
+                    rotationY = 90f,
                 });
             }
 
