@@ -307,6 +307,25 @@ namespace DontLate
             BagHoldRequested?.Invoke(item);
         }
 
+        /// <summary>무언가를 획득했다 (S-133 ⑤) — 토스트 한 줄로 알린다.
+        /// 페이로드는 **완성된 문장**("에너지드링크를 획득하였습니다") — View는 표시만 한다.</summary>
+        public static event Action<string> ItemAcquired;
+
+        public static void RaiseItemAcquired(string message)
+        {
+            Log("ItemAcquired — " + message);
+            ItemAcquired?.Invoke(message);
+        }
+
+        /// <summary>한국어 조사(을/를) 자동 선택 — 받침 유무로 고른다.</summary>
+        public static string AcquiredMessage(string itemName)
+        {
+            if (string.IsNullOrEmpty(itemName)) return "아이템을 획득하였습니다.";
+            char last = itemName[itemName.Length - 1];
+            bool hasJongseong = last >= 0xAC00 && last <= 0xD7A3 && (last - 0xAC00) % 28 != 0;
+            return itemName + (hasJongseong ? "을" : "를") + " 획득하였습니다.";
+        }
+
         /// <summary>상자를 손에서 놓았다 (S-133 ①) — 배치·투척·낙하 공통.
         /// 목적지 패드가 이걸 받아 하이라이트를 끈다. 종전엔 픽업만 있고 놓기가 없어
         /// 상자를 내려놔도 패드가 계속 빛났다.</summary>

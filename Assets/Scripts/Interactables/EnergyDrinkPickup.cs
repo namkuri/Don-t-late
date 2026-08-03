@@ -19,6 +19,7 @@ namespace DontLate
             if (BagStorage.TryAdd(ctx.Player.GameState, "drink", "에너지드링크", stackable: true, holdable: true))
             {
                 if (BagView.Instance != null) BagView.Instance.Refresh();
+                WorldEvents.RaiseItemAcquired(WorldEvents.AcquiredMessage("에너지드링크")); // S-133 ⑤
                 Destroy(gameObject);
                 return;
             }

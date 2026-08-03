@@ -69,6 +69,7 @@ namespace DontLate.EditorTools
             BagView bagView = BuildBagCanvas(gameState);        // S-064
             SettingsView settingsView = BuildSettingsCanvas();  // S-065
             BuildAccidentCanvas();                              // S-066 ③
+            BuildToastCanvas();                                // S-133 ⑤ — 획득 알림
             BuildInvoiceCanvas(gameState);                      // S-071 ②
             BuildKioskCanvas(gameState);                        // S-125 ② 노점 구매창
             BuildHUDCanvas(gameState, bagView, settingsView);
@@ -141,6 +142,9 @@ namespace DontLate.EditorTools
 
             WorldMinigameManager minigame = managers.AddComponent<WorldMinigameManager>(); // S-007
             SetField(minigame, "_tuning", tuning);
+
+            DebugCheats cheats = managers.AddComponent<DebugCheats>(); // S-134 ⑦ — QA 치트(F9/F10/F11)
+            SetField(cheats, "_gameState", gameState);
 
             WorldWeatherManager weather = managers.AddComponent<WorldWeatherManager>(); // S-042
             SetField(weather, "_gameState", gameState);
@@ -783,6 +787,37 @@ namespace DontLate.EditorTools
             EditorUtility.SetDirty(view);
             panel.gameObject.SetActive(false);
             return view;
+        }
+
+        // ── 획득 알림 토스트 (S-133 ⑤) ──────────────────────
+        // sortingOrder 96 — 미니게임(95) 위·페이드(100) 아래. 정산창 위에서도 보여야 한다.
+        private static void BuildToastCanvas()
+        {
+            TMP_FontAsset font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FONT_PATH);
+
+            GameObject canvasGo = new GameObject("ToastCanvas");
+            Canvas canvas = canvasGo.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 96;
+            CanvasScaler scaler = canvasGo.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            canvasGo.AddComponent<GraphicRaycaster>().enabled = false; // 표시 전용 — 입력을 막지 않는다
+
+            Image plate = CreateImage(canvasGo.transform, "ToastPlate", new Color(0.06f, 0.07f, 0.10f, 0.88f));
+            AnchorCorner(plate.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -150f), new Vector2(720f, 72f));
+            CanvasGroup group = plate.gameObject.AddComponent<CanvasGroup>();
+            group.blocksRaycasts = false;
+            group.interactable = false;
+
+            TMP_Text label = CreateText(plate.transform, "ToastLabel", "", font,
+                36f, Color.white, TextAlignmentOptions.Center);
+            StretchFull(label.rectTransform);
+
+            ToastView view = canvasGo.AddComponent<ToastView>();
+            SetField(view, "_group", group);
+            SetField(view, "_label", label);
+            EditorUtility.SetDirty(view);
         }
 
         // ── 교통사고 캔버스 (S-066 ③) ───────────────────────

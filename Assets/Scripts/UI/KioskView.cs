@@ -121,6 +121,7 @@ namespace DontLate
             // 소모품은 가방으로 — 쇼핑앱과 같은 경로(중복 구현 금지).
             BagStorage.TryAdd(_gameState, item.id, item.label, true, item.id == "drink");
             BagView.Instance?.Refresh();
+            WorldEvents.RaiseItemAcquired(WorldEvents.AcquiredMessage(item.label)); // S-133 ⑤
             WorldAudioManager.Instance?.PlayUiTickSfx();
             RefreshMoney();
         }

@@ -64,6 +64,7 @@ namespace DontLate
                         NpcAffinityLedger.Add(_gameState, "granny", 10); // S-079 ④ — 심부름 완수 호감
                     }
                     if (_thanksScenario != null) WorldDialogueManager.Instance.PlayScenario(_thanksScenario);
+                    WorldEvents.RaiseItemAcquired("심부름 사례금 ₩" + _reward.ToString("N0") + "을 받았습니다."); // S-133 ⑤
                     Debug.Log("[심부름] 보상 지급 +₩" + _reward);
                     break;
 
