@@ -147,9 +147,10 @@ namespace DontLate.EditorTools
                 CreateButton(root, "AdvanceButton", buttonText, target, font, CYAN,
                     new Vector2(0.5f, 0f), new Vector2(0f, 150f), new Vector2(600f, 104f), 40f);
 
-            // S-062 ⑥: 캠프 = 정산 거점 — "하루 끝 — 집으로"(정산 패널) 블록 이식.
-            // 배송지 FlowCanvas가 비활성이므로 정산 진입점은 캠프(또는 왼쪽 엣지로 무정산 귀가).
-            if (sceneName == "Camp")
+            // S-134 ⑥ — '집으로'는 **Home이 아닌 모든 씬**에 둔다(정수님 QA: 캠프에서만 돼서 불편).
+            // 정산 UI가 씬마다 있어야 도보 귀가(S-134 ⑤)도 어디서든 같은 마감을 탈 수 있다.
+            // 구 규칙(S-062 ⑥ 캠프 전용)은 폐기 — 배송지에서 바로 귀가가 막혀 있던 원인.
+            if (sceneName != "Home")
                 BuildDeliveryEndCanvas(root, font, navButtons: false);
 
             EditorSceneManager.SaveScene(scene, SCENES_ROOT + "/" + sceneName + ".unity");
@@ -234,8 +235,9 @@ namespace DontLate.EditorTools
                 Debug.LogWarning("[SceneFlowUIBuilder] District 무대 없음 — 'DontLate/Build District Stage'를 먼저 실행하라. UI만 얹는다.");
 
             Transform root = CreateFlowCanvas().transform;
-            BuildDeliveryEndCanvas(root, font);
-            root.gameObject.SetActive(false); // S-062 ⑥ — 배송지 흐름 UI 미사용
+            // S-134 ⑥ — 캔버스를 켠다(종전 SetActive(false)). '집으로'가 배송지에서도 필요하다.
+            // 구 내비 버튼('다른 구역으로')은 계속 끈다 — 이동은 엣지 워크·지도 체제(S-062 ⑥).
+            BuildDeliveryEndCanvas(root, font, navButtons: false);
             EditorSceneManager.SaveScene(scene, SCENES_ROOT + "/District.unity");
         }
 
@@ -249,8 +251,8 @@ namespace DontLate.EditorTools
                 TextAlignmentOptions.Top, FontStyles.Normal);
             AnchorCorner(label.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -78f), new Vector2(1200f, 72f));
 
-            BuildDeliveryEndCanvas(root, font);
-            root.gameObject.SetActive(false); // S-062 ⑥ — 배송지 흐름 UI 미사용 (엣지 워크·지도 이동 체제)
+            // S-134 ⑥ — 캔버스 활성 + 내비 버튼만 억제 (District와 동일 규칙).
+            BuildDeliveryEndCanvas(root, font, navButtons: false);
             EditorSceneManager.SaveScene(scene, SCENES_ROOT + "/" + sceneName + ".unity");
         }
 

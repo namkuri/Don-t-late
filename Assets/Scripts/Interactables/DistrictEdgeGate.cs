@@ -132,6 +132,14 @@ namespace DontLate
                     _pendingArrival = null;
                     // S-075 3 - 엣지 워크 시간 소모 폐지: 실제 걷는 시간이 곧 페널티 (남규님 R25).
                     Debug.Log("[도보] 집으로 걸어간다.");
+                    // S-134 ⑤ — 도보 귀가도 '집으로' 버튼과 **같은 마감**을 탄다.
+                    // 종전엔 곧장 Request(Home)이라 하루 정산이 통째로 누락됐다(정수님 QA).
+                    if (WorldEvents.HasGoHomeListener && DayHasStarted())
+                    {
+                        WorldEvents.RaiseGoHomeRequested();
+                        return;
+                    }
+                    // 정산 UI가 없는 씬이거나 하루가 시작도 안 했으면 종전대로 그냥 귀가.
                     WorldSceneFlowManager.Instance.Request(GameScene.Home);
                     return;
                 }
@@ -171,6 +179,21 @@ namespace DontLate
             if (_denyCooldown > 0f) return;
             _denyCooldown = 2.5f;
             Debug.Log("[도보] " + message);
+        }
+
+        /// <summary>
+        /// 하루가 실제로 시작됐는가 (S-134 ⑤ 동반수리). 아침 캠프 스폰 지점(x −11.5)이 엣지
+        /// 트리거 경계(x −13.4)에서 **1.9u밖에 안 떨어져** 있어, 도착 직후 왼쪽으로 몇 걸음만
+        /// 걸어도 하루가 통째로 정산돼 버린다(되돌릴 수 없다). 짐도 배치도 파손도 없으면
+        /// 정산할 것이 없다는 뜻이므로 그냥 귀가시킨다.
+        /// </summary>
+        private bool DayHasStarted()
+        {
+            if (_gameState == null) return false;
+            return _gameState.cargo.Count > 0
+                || _gameState.placedDeliveries.Count > 0
+                || _gameState.destroyedOrderIds.Count > 0
+                || _gameState.carriedOrders.Count > 0;
         }
     }
 }

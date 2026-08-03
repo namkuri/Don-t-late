@@ -304,6 +304,31 @@ namespace DontLate
             BagHoldRequested?.Invoke(item);
         }
 
+        /// <summary>상자를 손에서 놓았다 (S-133 ①) — 배치·투척·낙하 공통.
+        /// 목적지 패드가 이걸 받아 하이라이트를 끈다. 종전엔 픽업만 있고 놓기가 없어
+        /// 상자를 내려놔도 패드가 계속 빛났다.</summary>
+        public static event Action<DeliveryData> PackageReleased;
+
+        public static void RaisePackageReleased(DeliveryData data)
+        {
+            Log("PackageReleased #" + data.OrderId);
+            PackageReleased?.Invoke(data);
+        }
+
+        /// <summary>귀가 요청 (S-134 ⑤) — '집으로' 버튼과 **엣지워크 도보 귀가**가 공용으로 쓴다.
+        /// 정산 UI(SettlementView)가 받아 하루를 마감한다. 도보 귀가가 이 이벤트를 안 타서
+        /// 정산이 통째로 누락되던 것이 원래 버그다.</summary>
+        public static event Action GoHomeRequested;
+
+        /// <summary>정산 UI가 이 씬에 있는가 — 없으면 호출자가 직접 씬 전이로 폴백한다.</summary>
+        public static bool HasGoHomeListener => GoHomeRequested != null;
+
+        public static void RaiseGoHomeRequested()
+        {
+            Log("GoHomeRequested");
+            GoHomeRequested?.Invoke();
+        }
+
         /// <summary>가방 컨텍스트 "사용" (S-064) — 효과는 아이템별 (Player 도메인 몫).</summary>
         public static event Action<BagItem> BagItemConsumed;
 

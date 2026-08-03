@@ -51,6 +51,9 @@ namespace DontLate
             var keyboard = UnityEngine.InputSystem.Keyboard.current;
             if (keyboard == null || !keyboard.escapeKey.wasPressedThisFrame || _inDialogue) return;
             if (InvoiceView.IsOpen || InvoiceView.LastEscCloseFrame == Time.frameCount) return;
+            // S-134 ⑤ 동반수리 — 정산창 위로 설정이 열리면 "처음 화면으로"가 timeScale=0인 채
+            // 전이를 걸어 복구 불가 프리즈가 된다(실측). 정산 중엔 ESC를 막는다.
+            if (SettlementView.IsOpen) return;
             Toggle();
         }
 

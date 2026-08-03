@@ -7,12 +7,18 @@ namespace DontLate
     /// 하이라이트는 두 갈래 — 근접 포커스(센서)와 목적지 표시(픽업 이후) 중 하나라도 켜지면 켠다.
     /// </summary>
     [RequireComponent(typeof(Collider))]
-    public class DeliveryPoint : MonoBehaviour, IInteractable, IFocusGate
+    // S-133 ② — IFocusGate 제거(정수님 QA "위치 좀만 어긋나도 실패"). 패드 사각형 안에 정확히
+    // 서야만 포커스되던 게이트를 걷어내, 근처에서 상호작용하면 성공하게 한다.
+    // ⚠ `_padSize` 필드와 `PadSize` 프로퍼티는 **남긴다** — 빌더가 SetVector2로 주입하고(널체크
+    // 없어 지우면 씬 재조립이 NRE로 죽는다) 프로퍼티를 지우면 write-only 필드가 되어 CS0414 경고.
+    public class DeliveryPoint : MonoBehaviour, IInteractable
     {
         [SerializeField] private DeliveryOrderSO _expectedOrder;
         [SerializeField] private Renderer _renderer;
         [SerializeField] private Material _normalMaterial;
         [SerializeField] private Material _highlightMaterial;
+        [Tooltip("목적지 표시색 (S-133 ① — 들고 있는 상자의 목적지). 비면 하이라이트색으로 폴백.")]
+        [SerializeField] private Material _targetMaterial;
         [SerializeField] private Vector2 _padSize = new Vector2(1f, 1f);
         [SerializeField] private GameObject _riseEffect;
         [Tooltip("패드 위 포커스 시 나타나는 주소 라벨(월드 텍스트) — S-016 ②.")]
@@ -42,6 +48,7 @@ namespace DontLate
         private void OnEnable()
         {
             WorldEvents.PackagePickedUp += OnPackagePickedUp;
+            WorldEvents.PackageReleased += OnPackageReleased; // S-133 ①
             WorldEvents.DeliveryCompleted += OnDeliverySettled;
             WorldEvents.DeliveryFailed += OnDeliverySettled;
         }
@@ -49,6 +56,7 @@ namespace DontLate
         private void OnDisable()
         {
             WorldEvents.PackagePickedUp -= OnPackagePickedUp;
+            WorldEvents.PackageReleased -= OnPackageReleased;
             WorldEvents.DeliveryCompleted -= OnDeliverySettled;
             WorldEvents.DeliveryFailed -= OnDeliverySettled;
             if (_nameLabel != null) _nameLabel.gameObject.SetActive(false); // 패드 소멸 시 라벨 잔존 방지
@@ -108,14 +116,8 @@ namespace DontLate
             Debug.Log("[배송] #" + box.Order.orderId + " 패드 이탈 — 배치 철회.");
         }
 
-        /// <summary>플레이어 XZ가 패드 사각형(_padSize) 안에 있을 때만 포커스 후보로 인정한다.</summary>
-        public bool AllowsFocus(Vector3 playerPosition)
-        {
-            Vector3 center = transform.position;
-            float dx = Mathf.Abs(playerPosition.x - center.x);
-            float dz = Mathf.Abs(playerPosition.z - center.z);
-            return dx <= _padSize.x * 0.5f && dz <= _padSize.y * 0.5f;
-        }
+        /// <summary>지금 들고 있는 상자의 목적지인가 (S-133 ①④) — 패드 색과 E키 우선순위가 이걸 본다.</summary>
+        public bool IsCarriedDestination => _isDestination;
 
         public void SetHighlight(bool on)
         {
@@ -129,6 +131,15 @@ namespace DontLate
         {
             if (_expectedOrder == null || data.OrderId != _expectedOrder.orderId) return;
             _isDestination = true;
+            ApplyHighlight();
+        }
+
+        // S-133 ① — 상자를 내려놓으면 목적지 표시를 끈다. 종전엔 켜지기만 하고 꺼지지 않아
+        // 배송을 마치기 전까지 패드가 계속 빛났다(어디로 갈지 헷갈리는 원인).
+        private void OnPackageReleased(DeliveryData data)
+        {
+            if (_expectedOrder == null || data.OrderId != _expectedOrder.orderId) return;
+            _isDestination = false;
             ApplyHighlight();
         }
 
@@ -224,10 +235,16 @@ namespace DontLate
             gameObject.SetActive(false);
         }
 
+        // S-133 ① — 3단 색: 포커스(시안) > 목적지(앰버=상자색) > 평상.
+        // 목적지를 포커스와 같은 색으로 두면 "지금 겨눈 패드"인지 "내 짐의 목적지"인지 구분이 안 된다.
+        // 앰버는 택배상자 색과 같아 "이 상자가 갈 자리"로 읽힌다.
         private void ApplyHighlight()
         {
             if (_renderer == null) return;
-            Material material = (_focused || _isDestination) ? _highlightMaterial : _normalMaterial;
+            Material material = _focused ? _highlightMaterial
+                : _isDestination && _targetMaterial != null ? _targetMaterial
+                : _isDestination ? _highlightMaterial
+                : _normalMaterial;
             if (material != null) _renderer.sharedMaterial = material;
         }
 

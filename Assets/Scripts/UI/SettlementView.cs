@@ -17,11 +17,23 @@ namespace DontLate
         [SerializeField] private TMP_Text _bodyLabel;
         [SerializeField] private Button _confirmButton;
 
+        /// <summary>정산창이 떠 있는가 (S-134 ⑤ 동반수리) — ESC 설정 토글이 이 위로 열려
+        /// 복구 불가 프리즈를 만들던 것을 막는 가드. InvoiceView.IsOpen 선례와 동형.</summary>
+        public static bool IsOpen { get; private set; }
+
         private void Awake()
         {
             if (_openButton != null) _openButton.onClick.AddListener(Open);
             if (_confirmButton != null) _confirmButton.onClick.AddListener(Confirm);
             if (_panel != null) _panel.SetActive(false);
+        }
+
+        // S-134 ⑤ — 도보 귀가(엣지워크)도 버튼과 같은 마감을 타게 한다.
+        private void OnEnable() => WorldEvents.GoHomeRequested += Open;
+        private void OnDisable()
+        {
+            WorldEvents.GoHomeRequested -= Open;
+            IsOpen = false; // 씬 언로드 중 잔류 방지
         }
 
         /// <summary>"집으로" 버튼이 호출한다.</summary>
@@ -36,6 +48,7 @@ namespace DontLate
 
             // 정산은 하루의 마침표 — 패널이 떠 있는 동안 세계를 멈춰 표시·상태 불일치를 차단 (S-010).
             Time.timeScale = 0f;
+            IsOpen = true;
 
             // S-034 ④: 배송 일괄 판정(보상·벌금 반영)이 먼저, 그 잔액으로 빚 상환.
             DeliveryDaySummary d = WorldDeliveryManager.Instance != null
@@ -199,6 +212,7 @@ namespace DontLate
         private void Confirm()
         {
             Time.timeScale = 1f;
+            IsOpen = false;
             _panel.SetActive(false);
             WorldSceneFlowManager.Instance.Request(GameScene.Home);
         }

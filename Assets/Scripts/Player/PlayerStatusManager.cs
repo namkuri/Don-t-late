@@ -306,6 +306,8 @@ namespace DontLate
             }
 
             WorldEvents.RaiseCarryStateChanged(IsCarrying);
+            // S-133 ① — 손에서 놓았음을 알린다. 목적지 패드가 이걸로 하이라이트를 끈다.
+            if (released != null) WorldEvents.RaisePackageReleased(DeliveryData.From(released));
             return released;
         }
 

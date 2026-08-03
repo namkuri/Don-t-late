@@ -3721,3 +3721,34 @@ MDA 판정 (D-070): 강화 — A축(폰 UI 완성도) + D축(대출=빚 압박�
 - **동반 발견 — 아침 캠프 스폰 오발동**: 집→캠프 도착 스폰 x=−11.5, 엣지 트리거 경계 x=−13.4 →
   **1.9u만 왼쪽으로 걸으면 하루가 통째로 정산**된다(되돌릴 수 없음).
   → "cargo·placedDeliveries·destroyedOrderIds가 전부 비면 무정산 귀가" 가드 추가.
+
+### 결과 (2026-08-03 10:19) · S-134 ⑤⑥ + S-133 ①②③④ — 정산 버그 3겹 + 조작 마찰 4건
+
+**S-134 ⑤ 정산 누락 — 실원인 3겹 전부 수리**
+1. `WorldSceneFlowManager` **Travel 전이표에 Home 추가** — 다른 씬은 전부 있는데 Travel만 빠져 있었다.
+2. 정산 UI를 **Camp 전용 → Home 아닌 전 씬**으로(`SceneFlowUIBuilder`). 배송지 FlowCanvas가
+   `SetActive(false)`로 통째 꺼져 있던 것도 켰다(구 내비 버튼만 계속 억제 — 이동은 엣지·지도 체제).
+3. 도보 귀가가 **`WorldEvents.GoHomeRequested`** 를 타게 해 버튼과 같은 마감을 밟는다(신설 이벤트).
+   - 실측: cargo 1건 상태에서 도보 귀가 → **정산 영수증 표시**(행복빌라 301호 미배치 −300 ·
+     실패 1건) · `daySettled=True` · cargo·carriedOrders 청산. 캡처 `s134_settle_edgewalk.png`.
+- **S-134 ⑥ 집가기 상시**: Camp·District·Apartment·Hillside 전부 버튼·정산뷰 존재 확인(Home 제외).
+
+**동반 수리 2건 (정찰 발견 — 발주 외지만 같은 경로가 깨져 있었다)**
+- **복구 불가 프리즈**: 정산창 `timeScale=0` 위로 ESC 설정이 열려 "처음 화면으로"를 누르면
+  페이드가 입력을 막은 채 `WaitForSeconds`가 영영 안 깨어났다.
+  → `WaitForSecondsRealtime` + `SettlementView.IsOpen` 가드(SettingsView가 ESC를 양보).
+- **아침 스폰 오발동**: 캠프 도착 스폰 x −11.5, 엣지 경계 x −13.4 → **1.9u만 걸어도 하루 정산**.
+  → `DayHasStarted()`(cargo·placed·destroyed·carried 전부 0이면 무정산 귀가) 가드.
+- **유령 상자**: `SettleDeliveries()`가 `carriedOrders`를 안 비워 다음 날 그 주문 상자가 안 깔렸다 → 청소 추가.
+
+**S-133 ①②③④ (한 커밋 — 정찰 경고대로 분리 시공 금지)**
+- ① **목적지 패드 색**: 신설 `PackageReleased` 이벤트로 **내려놓으면 꺼지게** 했다(종전엔 켜지기만
+  하고 배송 완료까지 계속 빛났다). 색도 분리 — 포커스=시안 / **목적지=앰버(#ff9f45, 상자색)** 3단.
+- ② **위치 판정 완화**: `DeliveryPoint`에서 `IFocusGate` 제거(패드 사각형 안에 정확히 서야 하던 게이트).
+  ⚠ `_padSize`·`PadSize`는 **존치** — 지우면 빌더 `SetVector2`가 NRE(널체크 없음) + CS0414 경고.
+- ③④ **센서 우선순위 3단**: 발밑 목적지 패드(2) > 택배상자(1) > 나머지(0). 종전 "상자는 마우스
+  호버 전용" 규칙을 폐지해 근접 E 픽업이 가능해졌고, 패드 위에서는 패드가 이겨 놓기/줍기가 안 엉킨다.
+- 실측: 마우스 호버 없이 상자 포커스 확인 / **사장님 0.20u vs 상자 0.81u에서 상자 승리**
+  (거리 역전 상황에서 순위 증명) — QA-01 ③ 해소.
+
+- 셀프 검증 3종: 컴파일 통과 · 콘솔 에러/워닝 0 · **EditMode 42/42** · Play 실측(위 수치) + 캡처.

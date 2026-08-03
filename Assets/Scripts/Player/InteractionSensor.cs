@@ -76,6 +76,7 @@ namespace DontLate
 
             IInteractable nearest = null;
             float nearestDistance = float.MaxValue;
+            int nearestRank = -1;
 
             bool carrying = _hub.Status.CarryFull; // S-055 — 두 개 들기면 꽉 찼을 때만 제외
             for (int i = 0; i < count; i++)
@@ -92,15 +93,21 @@ namespace DontLate
                     break;
                 }
 
-                // S-082 ③ — 상자는 마우스 호버 전용: 더미에서 거리 기반으로 엉뚱한 상자가
-                // 잡히던 것 폐지 (문·패드·게이트는 근접 폴백 유지 — 마우스 없이도 동작).
-                if (candidate is PickupBox) continue;
+                // S-133 ③④ — 우선순위로 고른다. 종전엔 상자를 근접 후보에서 아예 빼서(마우스 호버 전용)
+                // "호버 없이 E로 들기"가 불가능했고, 짐 옆 사장님에게 매번 말이 걸렸다(정수님 QA).
+                //   2 = 들고 있는 상자의 목적지 패드 (발밑 패드 우선 — 남규님 결정)
+                //   1 = 택배상자 (사장님·행인보다 우선)
+                //   0 = 나머지 (문·게이트·NPC…)
+                int rank = candidate is DeliveryPoint pad && pad.IsCarriedDestination ? 2
+                    : candidate is PickupBox ? 1 : 0;
+                if (rank < nearestRank) continue;
 
                 float distance = (_hits[i].transform.position - transform.position).sqrMagnitude;
-                if (distance >= nearestDistance) continue;
+                if (rank == nearestRank && distance >= nearestDistance) continue;
 
                 nearest = candidate;
                 nearestDistance = distance;
+                nearestRank = rank;
             }
 
             if (ReferenceEquals(nearest, _current)) return;

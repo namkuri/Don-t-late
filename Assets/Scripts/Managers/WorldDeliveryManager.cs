@@ -215,6 +215,9 @@ namespace DontLate
             _gameState.daySettled = true;      // S-068 ③ — 캠프 주문판 리롤 신호
             _gameState.stamina = -1f;          // S-081 ① — 하루 마감: 다음날 풀 충전
             _gameState.droppedCargo.Clear();   // 정산 = 하루 마감: 버려둔 짐 기록도 청산
+            // S-134 ⑤ — 손에 든 짐도 청산한다. 안 비우면 DistrictCargoSpawner가 그 주문을
+            // "이미 들고 있음"으로 보고 다음 날 상자를 안 깔아 유령 배송이 남는다(정찰 실측).
+            _gameState.carriedOrders.Clear();
             Debug.Log("[배송] 일괄 정산 — 성공 " + summary.SuccessCount + " · 실패 " + summary.FailCount
                     + " · 보상 " + summary.RewardTotal + " · 벌금 " + summary.PenaltyTotal);
             return summary;

@@ -18,7 +18,9 @@ namespace DontLate
                 { GameScene.Main, new[] { GameScene.Home } },
                 { GameScene.Home, new[] { GameScene.Camp, GameScene.Main } },
                 { GameScene.Camp, new[] { GameScene.Travel, GameScene.Home, GameScene.District, GameScene.Main } }, // S-054b·S-065
-                { GameScene.Travel, new[] { GameScene.District, GameScene.Camp, GameScene.Apartment, GameScene.Hillside, GameScene.Main } },
+                // S-134 ⑤ — Home 추가. 다른 씬은 전부 Home을 갖는데 Travel만 빠져 있어
+                // 이동맵에서 귀가가 막혀 있었다(엣지워크 정산 누락의 한 겹).
+                { GameScene.Travel, new[] { GameScene.District, GameScene.Camp, GameScene.Apartment, GameScene.Hillside, GameScene.Home, GameScene.Main } },
                 { GameScene.District, new[] { GameScene.Travel, GameScene.Home, GameScene.Camp, GameScene.District, GameScene.Apartment, GameScene.Main } }, // S-053 ④·S-054b·S-065
                 { GameScene.Apartment, new[] { GameScene.Travel, GameScene.Home, GameScene.Camp, GameScene.District, GameScene.Hillside, GameScene.Main } }, // S-038·S-054b·S-065
                 { GameScene.Hillside, new[] { GameScene.Travel, GameScene.Home, GameScene.Camp, GameScene.Apartment, GameScene.Main } },  // S-049·S-054b·S-065
@@ -99,7 +101,10 @@ namespace DontLate
         {
             _busy = true;
             WorldEvents.RaiseSceneTransitionStarted(next);
-            yield return new WaitForSeconds(_transitionDelay);
+            // ⚠ S-134 ⑤ 동반수리 — **Realtime이어야 한다.** 정산창이 timeScale=0으로 멈춘 상태에서
+            // 전이가 걸리면 스케일 시간 대기는 영영 안 깨어나고, 페이드가 이미 입력을 막은 뒤라
+            // 복구 불가 프리즈가 된다(실측 재현 경로: 정산창 → ESC 설정 → "처음 화면으로").
+            yield return new WaitForSecondsRealtime(_transitionDelay);
 
             if (_hasCurrent)
             {
