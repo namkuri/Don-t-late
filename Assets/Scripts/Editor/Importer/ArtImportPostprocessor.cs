@@ -112,6 +112,15 @@ namespace DontLate.EditorTools
             importer.isReadable = false;
             importer.meshCompression = ModelImporterMeshCompression.High; // 정점 양자화 — 픽셀 렌더라 손실 무해
 
+            // S-136 — 탄젠트·블렌드셰이프는 **이 프로젝트에서 쓰이지 않는다**: URP Lit을 쓰되
+            // 노멀맵이 없고(설계 §3 "PBR 없음" — 프로젝트 머티리얼 251개 전수 조회 결과 노멀맵
+            // 사용 0건), 건물·소품은 정적 메시라 블렌드셰이프가 없다. 그런데 임포터 기본값이
+            // CalculateMikk이라 정점마다 탄젠트 16B(Vector4)가 계산·저장돼 왔다 — 순수 낭비다.
+            // 끄면 정점 48B(pos12+normal12+tangent16+uv8) → 32B로, 메시 데이터가 약 1/3 줄어든다.
+            // ⚠ 노멀맵을 쓰는 머티리얼이 생기면 그 모델만 탄젠트를 되켜야 한다(안 켜면 조명이 평평해짐).
+            importer.importTangents = ModelImporterTangents.None;
+            importer.importBlendShapes = false;
+
             // 소품·건물·배경: 애니 임포트 자체를 끈다 (Tripo 빈 클립 경고 원천 차단).
             if (System.Array.IndexOf(NoAnimationCategories, category) >= 0)
             {
