@@ -31,11 +31,23 @@ namespace DontLate
         /// <summary>손에 든 음료 여부 (S-071 ② — 송장 좌클릭이 음료 던지기와 충돌하지 않게 센서가 참조).</summary>
         public bool IsHoldingDrink => _heldDrink != null;
 
-        // S-055 — 두 개 들기: 누적 배송 성공 5건이면 습득. 2번 슬롯은 머리 위에 쌓인다.
+        // S-055 — 두 개 들기: 2번 슬롯은 머리 위에 쌓인다.
+        // S-134 ② — 상한 기준을 **레벨**로 교체(종전 누적 성공 5건). 표는 LevelPerks 한 곳.
         public DeliveryOrderSO CarriedOrder2 { get; private set; }
-        public bool CanDoubleCarry => _hub.GameState != null && _hub.GameState.completedCount >= 5;
-        public bool CarryFull => IsCarrying && (CarriedOrder2 != null || !CanDoubleCarry);
+        public DeliveryOrderSO CarriedOrder3 { get; private set; }
+
+        /// <summary>지금 들 수 있는 최대 개수 (Lv1=1 · Lv2=2 · Lv3+=3).</summary>
+        public int CarryCapacity =>
+            _hub.GameState != null ? LevelPerks.CarryCapacity(_hub.GameState.playerLevel) : 1;
+
+        /// <summary>지금 손에 든 개수.</summary>
+        public int CarryCount =>
+            (CarriedOrder != null ? 1 : 0) + (CarriedOrder2 != null ? 1 : 0) + (CarriedOrder3 != null ? 1 : 0);
+
+        public bool CanDoubleCarry => CarryCapacity >= 2;
+        public bool CarryFull => CarryCount >= CarryCapacity;
         private Transform _carriedVisual2;
+        private Transform _carriedVisual3;
         private bool _fillSecondSlot;
 
         private void Awake() => _hub = GetComponent<PlayerManager>();
@@ -137,6 +149,7 @@ namespace DontLate
             _hub.GameState.carriedOrders.Clear();
             if (CarriedOrder != null) _hub.GameState.carriedOrders.Add(CarriedOrder);
             if (CarriedOrder2 != null) _hub.GameState.carriedOrders.Add(CarriedOrder2);
+            if (CarriedOrder3 != null) _hub.GameState.carriedOrders.Add(CarriedOrder3); // S-134 ②
         }
 
         private void RestoreCarriedFromState()
@@ -148,7 +161,7 @@ namespace DontLate
                 AttachCarried(CreateBoxVisual(order).transform);
             }
             // 버퍼는 지우지 않는다 — 스포너가 "손에 든 건 스폰 제외" 판정에 참조 (다음 전이 때 재작성).
-            Debug.Log("[운반] 들고 온 짐 " + (CarriedOrder2 != null ? 2 : 1) + "건 복원");
+            Debug.Log("[운반] 들고 온 짐 " + CarryCount + "건 복원");
         }
 
         // 복원용 택배 상자 — 캠프 박스(CreateParcelBox)와 동일 룩·동일 장비 (S-070 ③:
@@ -208,6 +221,7 @@ namespace DontLate
         private void Update()
         {
             TuningConfigSO tuning = _hub.Tuning;
+            TickCarryShake(); // S-133 ⑥
 
             var mouse = UnityEngine.InputSystem.Mouse.current;
             // S-072 ⑧ — UI 위 클릭(가방 뒤로가기 등)이 던지기로 새던 버그: 포인터가 UI에 있으면 무시.
@@ -273,11 +287,19 @@ namespace DontLate
                 WorldEvents.RaiseCarryStateChanged(true);
                 return true;
             }
-            if (CanDoubleCarry && CarriedOrder2 == null) // S-055 두 개 들기
+            if (CarryCapacity >= 2 && CarriedOrder2 == null) // S-055 두 개 들기
             {
                 CarriedOrder2 = order;
                 _fillSecondSlot = true;
                 Debug.Log("[숙련] 두 개 들기 — 상자를 하나 더 얹었다");
+                return true;
+            }
+            // S-134 ② / S-133 ⑥ — 3번째는 Lv3부터. 맨 위라 흔들리고 떨어진다.
+            if (CarryCapacity >= 3 && CarriedOrder3 == null)
+            {
+                CarriedOrder3 = order;
+                _fillSecondSlot = false;
+                Debug.Log("[숙련] 세 개 들기 — 맨 위가 위태롭다");
                 return true;
             }
             return false;
@@ -303,6 +325,16 @@ namespace DontLate
                 _carriedVisual = _carriedVisual2;
                 _carriedVisual2 = null;
                 if (_carriedVisual != null) _carriedVisual.localPosition = Vector3.zero;
+
+                // S-134 ② — 3번 슬롯도 한 칸 내려온다.
+                if (CarriedOrder3 != null)
+                {
+                    CarriedOrder2 = CarriedOrder3;
+                    CarriedOrder3 = null;
+                    _carriedVisual2 = _carriedVisual3;
+                    _carriedVisual3 = null;
+                    if (_carriedVisual2 != null) _carriedVisual2.localPosition = new Vector3(0f, 0.62f, 0f);
+                }
             }
 
             WorldEvents.RaiseCarryStateChanged(IsCarrying);
@@ -315,6 +347,73 @@ namespace DontLate
         /// 든 물건을 손에서 놓아 물리로 떨어뜨린다. S-017: PickupBox를 살려 두므로 **다시 주울 수 있고**,
         /// 굴러가 비콘 패드에 닿으면 DeliveryPoint 트리거가 배송으로 인증한다(던져 넣기).
         /// </summary>
+        // ── S-133 ⑥ 캐리 흔들림 (남규님: 1~2개는 효과만 · 3번째는 실제로 떨어진다) ──
+        // 설계 의도: Lv3 해금이 **순수 이득이 아니라 거래**가 된다 — 많이 들고 조심히 걷거나,
+        // 적게 들고 뛰거나. 마감 압박이 있는 게임이라 이 선택이 매 배송마다 살아난다.
+        private const float SWAY_BASE = 0.035f;      // 1~2번 슬롯 기본 흔들림(시각 전용)
+        private const float SWAY_SPEED = 8.5f;
+        private const float TOP_DROP_AT = 1f;        // 불안정도가 여기 닿으면 떨어진다
+        private const float TOP_GAIN_RUN = 0.62f;    // 달리면 초당 — 약 1.6초면 떨어진다
+        private const float TOP_GAIN_WALK = 0.10f;   // 걸으면 초당 — 10초는 버틴다
+        private const float TOP_GAIN_LAND = 0.5f;    // 착지 한 방 — 점프 두 번이면 위험
+        private const float TOP_SETTLE = 0.9f;       // 멈춰 서면 초당 가라앉는다
+        private float _topInstability;
+        private bool _wasGrounded = true;
+
+        private void TickCarryShake()
+        {
+            float t = Time.time;
+            // 1·2번 슬롯 — 시각 효과만. 떨어지지 않는다.
+            if (_carriedVisual2 != null)
+                _carriedVisual2.localRotation = Quaternion.Euler(0f, 0f, Mathf.Sin(t * SWAY_SPEED) * 3.5f);
+
+            // 판정 기준은 **슬롯**이지 비주얼이 아니다. 비주얼로 가드하면 비주얼 생성이 실패했을 때
+            // 3번째 상자가 영영 안 떨어지고 불안정도가 계속 0으로 리셋된다(실측에서 드러남).
+            if (CarriedOrder3 == null)
+            {
+                _topInstability = 0f;
+                _wasGrounded = true;
+                return;
+            }
+
+            PlayerLocomotionManager loco = _hub.Locomotion;
+            float speed = loco != null ? loco.PlanarVelocity.magnitude : 0f;
+            bool grounded = loco == null || loco.IsGrounded;
+
+            float gain = speed > _hub.Tuning.moveSpeed * 1.05f ? TOP_GAIN_RUN
+                : speed > 0.1f ? TOP_GAIN_WALK
+                : -TOP_SETTLE;
+            _topInstability = Mathf.Max(0f, _topInstability + gain * Time.deltaTime);
+            if (grounded && !_wasGrounded) _topInstability += TOP_GAIN_LAND; // 착지 충격
+            _wasGrounded = grounded;
+
+            if (_carriedVisual3 != null)
+            {
+                float sway = SWAY_BASE * (0.5f + _topInstability * 1.8f);
+                _carriedVisual3.localPosition = new Vector3(
+                    Mathf.Sin(t * SWAY_SPEED) * sway, 1.24f, Mathf.Cos(t * SWAY_SPEED * 0.7f) * sway * 0.6f);
+                _carriedVisual3.localRotation = Quaternion.Euler(0f, 0f, Mathf.Sin(t * SWAY_SPEED) * sway * 220f);
+            }
+
+            if (_topInstability >= TOP_DROP_AT) DropTopBox();
+        }
+
+        /// <summary>맨 위(3번째) 상자만 떨어뜨린다. 낙하 상자는 기존 파손 판정을 그대로 탄다.</summary>
+        private void DropTopBox()
+        {
+            DeliveryOrderSO dropped = CarriedOrder3;
+            CarriedOrder3 = null;
+            _topInstability = 0f;
+            if (_carriedVisual3 != null)
+            {
+                DropVisualAsPhysics(_carriedVisual3);
+                _carriedVisual3 = null;
+            }
+            Debug.Log("[운반] 맨 위 상자가 떨어졌다 — " + (dropped != null ? dropped.address : "?"));
+            WorldEvents.RaiseCarryStateChanged(IsCarrying);
+            if (dropped != null) WorldEvents.RaisePackageReleased(DeliveryData.From(dropped));
+        }
+
         private void DropVisualAsPhysics(Transform visual)
         {
             // S-073 ④ — 마감 라벨은 '들고 있을 때'만: 손을 떠나면 라벨째 제거.
@@ -392,7 +491,11 @@ namespace DontLate
         private StaminaPenalties _lastPenalties;
 
         public StaminaPenalties CurrentPenalties { get; private set; }
-        public float EffectiveStaminaMax => Mathf.Max(10f, _hub.Tuning.staminaMax - CurrentPenalties.Total);
+        // S-134 ② — Lv6 스태미나 해금 (+20%). 페널티는 그 위에서 깎인다.
+        public float EffectiveStaminaMax => Mathf.Max(10f,
+            _hub.Tuning.staminaMax * (_hub.GameState != null
+                ? LevelPerks.StaminaMaxMultiplier(_hub.GameState.playerLevel) : 1f)
+            - CurrentPenalties.Total);
 
         private void TickPenalties()
         {
@@ -506,6 +609,12 @@ namespace DontLate
                 visual.localPosition = new Vector3(0f, 0.62f, 0f);
                 _fillSecondSlot = false;
                 labelOrder = CarriedOrder2;
+            }
+            else if (CarriedOrder3 != null && _carriedVisual3 == null) // S-134 ② — 3번 슬롯은 그 위
+            {
+                _carriedVisual3 = visual;
+                visual.localPosition = new Vector3(0f, 1.24f, 0f);
+                labelOrder = CarriedOrder3;
             }
             else
             {

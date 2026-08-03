@@ -64,8 +64,21 @@ namespace DontLate.Tests
             _gameState.unlockedDistricts.Clear();
             foreach (string district in DeliveryOrderSO.DISTRICT_PROGRESSION)
                 _gameState.unlockedDistricts.Add(district);
+            _gameState.playerLevel = LevelPerks.TRUCK; // S-134 ② — 트럭은 Lv4부터
             SettleSuccessIn(DeliveryOrderSO.DISTRICT_HILLSIDE, 9003);
             Assert.IsTrue(_gameState.hasTruck);
+        }
+
+        [Test]
+        public void 레벨이_낮으면_개척을_끝내도_트럭이_안_나온다()
+        {
+            // S-134 ② — 종전엔 개척만 끝나면 레벨과 무관하게 나왔다(정수님 QA 레벨 해금 요구).
+            _gameState.unlockedDistricts.Clear();
+            foreach (string district in DeliveryOrderSO.DISTRICT_PROGRESSION)
+                _gameState.unlockedDistricts.Add(district);
+            _gameState.playerLevel = LevelPerks.TRUCK - 1;
+            SettleSuccessIn(DeliveryOrderSO.DISTRICT_HILLSIDE, 9004);
+            Assert.IsFalse(_gameState.hasTruck);
         }
     }
 }

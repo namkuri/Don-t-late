@@ -269,7 +269,8 @@ namespace DontLate
                 summary.UnlockedDistrict = next; // S-084 ① — 정산 화면 표시용
                 WorldEvents.RaiseDistrictUnlocked(next);
             }
-            else if (!_gameState.hasTruck)
+            // S-134 ② — 트럭은 **Lv4부터**. 종전엔 개척이 끝나면 레벨과 무관하게 나왔다.
+            else if (!_gameState.hasTruck && LevelPerks.TruckUnlocked(_gameState.playerLevel))
             {
                 _gameState.hasTruck = true;
                 summary.TruckAwarded = true; // S-084 ①

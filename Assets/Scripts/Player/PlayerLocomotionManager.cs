@@ -42,6 +42,9 @@ namespace DontLate
         private Vector3 _planarInertia;
         private const float SLIPPERY_ACCEL_RAIN = 7.5f;      // 일반 노면 (낮을수록 미끄럽다)
         private const float SLIPPERY_ACCEL_HILL = 4.5f;      // 언덕 비포장 × 비
+        // S-134 ③ — 눈·비 미끄럼 **비활성화**(정수님 QA "부자연스러움" · 남규님 결정).
+        // 로직은 남긴다 — 되살리려면 이 상수만 true로. 지우면 S-053 ①·S-084 ③ 설계가 통째로 사라진다.
+        private const bool SLIPPERY_ENABLED = false;
 
         // S-119 ③ — 차 사고 부상: 이동·점프 입력 무시 (넉백 궤적·중력은 유지 — 날아가는 연출).
         // 해제는 "치료 후 집으로" 씬 전이 시 플레이어 재생성으로 자연히 이뤄진다.
@@ -134,6 +137,8 @@ namespace DontLate
             // S-116 ⑤ — 촬영 데모 중엔 탈진 페널티 면제(왕복 연출이 끊기면 안 된다) + 속도 배수.
             bool exhausted = _hub.Status != null && _hub.Status.Stamina <= 0f && !_hub.Input.DemoActive;
             float speed = _hub.Input.RunHeld && !exhausted ? tuning.runSpeed : tuning.moveSpeed;
+            // S-134 ② — Lv5 이동속도 해금 (+15%).
+            if (_hub.GameState != null) speed *= LevelPerks.MoveSpeedMultiplier(_hub.GameState.playerLevel);
             speed *= _hub.Input.DemoSpeedMultiplier;
             if (_hub.Status.IsCarrying) speed *= tuning.carrySpeedPenalty;
             speed *= _hub.Status.SpeedMultiplier; // S-074 ⑧ — 드링크 버프 (+30%)
@@ -149,7 +154,7 @@ namespace DontLate
             Vector3 targetPlanar = new Vector3(input.x * speed, 0f, input.y * speed * tuning.depthSpeedRatio);
             // S-090 ⑤ — 정지 밀림 폐지(남규님 재판정): WASD 미조작 시 바람 무영향.
             Vector3 windPush = Vector3.zero;
-            if (_raining || _snowing)
+            if (SLIPPERY_ENABLED && (_raining || _snowing))
             {
                 // S-053 ① 미끄럼 — 가감속이 굼떠진다. S-084 ③: 눈은 비의 2배(accel 절반), 전역 적용.
                 float accel = _inHillside ? SLIPPERY_ACCEL_HILL : SLIPPERY_ACCEL_RAIN;
