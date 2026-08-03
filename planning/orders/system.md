@@ -3699,3 +3699,25 @@ MDA 판정 (D-070): 강화 — A축(폰 UI 완성도) + D축(대출=빚 압박�
   → 떨어진 상자는 기존 파손 판정(BoxDurability)을 그대로 탄다 — 새 규칙을 만들지 않는다.
 - 설계 의도: 레벨 3 해금이 **순수 이득이 아니라 거래**가 된다(많이 들되 조심히 걷거나,
   적게 들고 뛰거나). S-134 ② 레벨 테이블과 한 몸.
+
+### 결정 추가 (2026-08-03 09:55) · S-133 ④ E키 우선순위 + 정찰 반증 반영
+
+- **S-133 ④ 결정(남규님)**: **발밑 패드 우선 — 상황으로 구분.** 들고 있는 상자에 맞는 패드 위면
+  E=놓기, 그 외엔 E=줍기. 둘 다 호버 없이 되고 충돌도 없다.
+- **정찰 반증 반영 (시공 전 필수)**:
+  · `DeliveryPoint.PadSize` 프로퍼티는 **지우지 않는다** — 지우면 `_padSize`가 write-only가 되어
+    CS0414 경고(콘솔 0 게이트 실패) + 빌더 `SetVector2`가 널체크 없어 NRE로 씬 재조립 불능.
+    지울 것은 `, IFocusGate`와 `AllowsFocus` 두 곳뿐.
+  · `SettleDeliveries()` 말미에 `carriedOrders`·`_carriedIds` 청소 추가(유령 상자·id 재사용 오염).
+  · S-133 ②③④는 상호 의존 — **한 커밋으로** 시공(②만 먼저 넣으면 픽업 마찰이 악화).
+- **정산 버그 실원인 3겹 (S-134 ⑤ — 정찰 실측)**:
+  ① `WorldSceneFlowManager.cs:21` **Travel 전이표에 Home이 없다**(다른 씬은 전부 있음).
+  ② 정산 UI(DeliveryEndCanvas)가 **Camp 씬에만** 조립된다(`SceneFlowUIBuilder.cs:152-153`).
+  ③ 엣지워크 귀가(`DistrictEdgeGate.cs:130-137`)는 정산을 타지 않고 곧장 `Request(Home)`.
+- **동반 발견 — 복구 불가 프리즈(기존 결함, 지금 재현)**: 정산창이 `timeScale=0`인데 ESC 설정이
+  그대로 먹고(SettingsCanvas 62 > FlowCanvas 20) "처음 화면으로" → 페이드가 입력을 막은 채
+  `WaitForSeconds`가 스케일 시간이라 **영영 안 깨어난다**. → `WaitForSecondsRealtime` +
+  `SettlementView.IsOpen` 가드. 정산 진입점을 넓히면 노출 면적이 배가되므로 **동반 수리 필수**.
+- **동반 발견 — 아침 캠프 스폰 오발동**: 집→캠프 도착 스폰 x=−11.5, 엣지 트리거 경계 x=−13.4 →
+  **1.9u만 왼쪽으로 걸으면 하루가 통째로 정산**된다(되돌릴 수 없음).
+  → "cargo·placedDeliveries·destroyedOrderIds가 전부 비면 무정산 귀가" 가드 추가.
