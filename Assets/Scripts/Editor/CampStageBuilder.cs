@@ -74,6 +74,10 @@ namespace DontLate.EditorTools
             GreyboxStageBuilder.ConfigureCamera();
             GreyboxStageBuilder.AttachCameraFollow();
 
+            // S-138 — 민지님이 `Camp 1.unity`에서 손으로 확정한 물류장 소품·건물(12개).
+            // 표는 ArtBackdropKit 정본 — 씬 본문 대신 좌표만 굳혀 매 조립마다 재현한다.
+            ArtBackdropKit.Build(ArtBackdropKit.Camp);
+
             EditorSceneManager.SaveScene(scene, CAMP_PATH);
             Debug.Log("[Camp] 무대 조립 완료 — 박스 " + LOAD_ZONE_COUNT
                     + "개를 E로 들어 트럭 짐칸 뒤에서 E로 싣는다 (S-009).");
