@@ -2,10 +2,10 @@ using UnityEngine;
 
 namespace DontLate
 {
-    /// <summary>가방 수납 규칙 단일 창구 (S-064). 기본 5칸 — 겹침 허용 아이템은 count로 쌓인다.</summary>
+    /// <summary>가방 수납 규칙 단일 창구 (S-064). 기본 4칸 — 겹침 허용 아이템은 count로 쌓인다.</summary>
     public static class BagStorage
     {
-        public const int CAPACITY = 5;
+        public const int CAPACITY = 4;
 
         /// <summary>수납 시도 — 겹침 가능하면 기존 칸에, 아니면 빈 칸에. 가득이면 false.</summary>
         public static bool TryAdd(GameStateSO gameState, string id, string label, bool stackable, bool holdable)

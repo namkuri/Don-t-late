@@ -101,7 +101,7 @@ namespace DontLate
         public bool catRanAway;  // 하루 넘게 굶겨 떠남
         public int catFedDay;    // 마지막 급여 day
 
-        // ── S-064 가방 (기본 5칸) ──
+        // ── S-064 가방 (기본 4칸) ──
         public List<BagItem> bagItems = new List<BagItem>();
 
         [Header("세션 초기값")]

@@ -17,10 +17,14 @@ namespace DontLate
         [SerializeField] private Image _background;
         [SerializeField] private TMP_Text _label;
         [SerializeField] private TMP_Text _countLabel;
+        [SerializeField] private bool _illustratedStyle;
 
         private static readonly Color EMPTY = new Color(0.14f, 0.17f, 0.24f, 0.9f);
         private static readonly Color FILLED = new Color(0.22f, 0.27f, 0.36f, 0.95f);
         private static readonly Color SELECTED = new Color(0.21f, 0.55f, 0.50f, 0.95f);
+        private static readonly Color ART_EMPTY = new Color(0.50f, 0.78f, 0.75f, 0.04f);
+        private static readonly Color ART_FILLED = new Color(0.35f, 0.67f, 0.64f, 0.16f);
+        private static readonly Color ART_SELECTED = new Color(0.25f, 0.62f, 0.58f, 0.32f);
 
         public int Index => _index;
 
@@ -29,7 +33,10 @@ namespace DontLate
             bool has = item.HasValue;
             if (_label != null) _label.text = has ? item.Value.label : string.Empty;
             if (_countLabel != null) _countLabel.text = has && item.Value.count > 1 ? "×" + item.Value.count : string.Empty;
-            if (_background != null) _background.color = selected ? SELECTED : has ? FILLED : EMPTY;
+            if (_background != null)
+                _background.color = _illustratedStyle
+                    ? selected ? ART_SELECTED : has ? ART_FILLED : ART_EMPTY
+                    : selected ? SELECTED : has ? FILLED : EMPTY;
         }
 
         public void OnPointerClick(PointerEventData eventData)
@@ -41,7 +48,8 @@ namespace DontLate
 
         public void OnBeginDrag(PointerEventData eventData)
         {
-            if (_background != null) _background.color = SELECTED * 0.8f;
+            if (_background != null)
+                _background.color = (_illustratedStyle ? ART_SELECTED : SELECTED) * 0.8f;
         }
 
         public void OnDrag(PointerEventData eventData) { } // 고스트 없이 — 드랍 대상 하이라이트로 충분 (그레이박스)

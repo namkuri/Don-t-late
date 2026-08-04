@@ -76,30 +76,38 @@ namespace DontLate
             RefreshMoney();
             if (_offer.Items == null) return;
 
-            const float ROW_H = 74f;
+            bool illustrated = _panel != null
+                && _panel.TryGetComponent(out Image panelImage)
+                && panelImage.sprite != null;
+            float rowHeight = illustrated ? 105f : 74f;
             for (int i = 0; i < _offer.Items.Length; i++)
             {
                 KioskItem item = _offer.Items[i];
                 GameObject row = new GameObject("Kiosk_" + item.id, typeof(RectTransform));
                 row.transform.SetParent(_listRoot, false);
                 Image bg = row.AddComponent<Image>();
-                bg.color = new Color(0.12f, 0.15f, 0.22f, 0.95f);
+                bg.color = illustrated ? Color.clear : new Color(0.12f, 0.15f, 0.22f, 0.95f);
                 RectTransform rowRect = (RectTransform)row.transform;
                 rowRect.anchorMin = new Vector2(0f, 1f);
                 rowRect.anchorMax = new Vector2(1f, 1f);
                 rowRect.pivot = new Vector2(0.5f, 1f);
-                rowRect.sizeDelta = new Vector2(-24f, ROW_H - 10f);
-                rowRect.anchoredPosition = new Vector2(0f, -8f - i * ROW_H);
+                rowRect.sizeDelta = new Vector2(-24f, rowHeight - 10f);
+                rowRect.anchoredPosition = new Vector2(0f, -8f - i * rowHeight);
 
+                string priceColor = illustrated ? "#437d7c" : "#8fe3d5";
                 TMP_Text label = MakeText(row.transform, "Label",
-                    item.label + "\n<size=70%><color=#8fe3d5>₩" + item.price.ToString("N0") + "</color></size>",
-                    30f, Color.white, TextAlignmentOptions.Left);
+                    item.label + "\n<size=70%><color=" + priceColor + ">₩" +
+                    item.price.ToString("N0") + "</color></size>",
+                    30f, illustrated ? new Color(0.13f, 0.19f, 0.22f) : Color.white,
+                    TextAlignmentOptions.Left);
                 RectTransform labelRect = label.rectTransform;
                 labelRect.anchorMin = Vector2.zero; labelRect.anchorMax = Vector2.one;
-                labelRect.offsetMin = new Vector2(20f, 4f); labelRect.offsetMax = new Vector2(-150f, -4f);
+                // 일러스트의 왼쪽 정사각형은 상품 아이콘 전용 영역으로 비워 둔다.
+                labelRect.offsetMin = new Vector2(illustrated ? 112f : 20f, 4f);
+                labelRect.offsetMax = new Vector2(-150f, -4f);
 
                 KioskItem captured = item;
-                Button buy = MakeButton(row.transform, "Buy", "구매", () => Purchase(captured));
+                Button buy = MakeButton(row.transform, "Buy", "구매", () => Purchase(captured), illustrated);
                 RectTransform buyRect = (RectTransform)buy.transform;
                 buyRect.anchorMin = buyRect.anchorMax = buyRect.pivot = new Vector2(1f, 0.5f);
                 buyRect.sizeDelta = new Vector2(120f, 52f);
@@ -148,16 +156,20 @@ namespace DontLate
             return label;
         }
 
-        private Button MakeButton(Transform parent, string name, string text, UnityEngine.Events.UnityAction action)
+        private Button MakeButton(Transform parent, string name, string text,
+            UnityEngine.Events.UnityAction action, bool illustrated)
         {
             var go = new GameObject(name, typeof(RectTransform));
             go.transform.SetParent(parent, false);
             Image image = go.AddComponent<Image>();
-            image.color = new Color(0.208f, 0.878f, 0.784f, 1f);
+            image.color = illustrated
+                ? new Color(1f, 1f, 1f, 0.001f)
+                : new Color(0.208f, 0.878f, 0.784f, 1f);
             Button button = go.AddComponent<Button>();
             button.targetGraphic = image;
             button.onClick.AddListener(action);
-            TMP_Text label = MakeText(go.transform, "Label", text, 26f, new Color(0.06f, 0.09f, 0.14f),
+            TMP_Text label = MakeText(go.transform, "Label", text, 26f,
+                illustrated ? new Color(0.13f, 0.25f, 0.27f) : new Color(0.06f, 0.09f, 0.14f),
                 TextAlignmentOptions.Center);
             RectTransform labelRect = label.rectTransform;
             labelRect.anchorMin = Vector2.zero; labelRect.anchorMax = Vector2.one;

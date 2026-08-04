@@ -592,6 +592,8 @@ namespace DontLate.EditorTools
         private static BagView BuildBagCanvas(GameStateSO gameState)
         {
             TMP_FontAsset font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FONT_PATH);
+            Sprite inventoryArt = LoadUISprite("ui_inventory_panel");
+            bool hasInventoryArt = inventoryArt != null;
 
             GameObject canvasGo = new GameObject("BagCanvas");
             Canvas canvas = canvasGo.AddComponent<Canvas>();
@@ -605,53 +607,67 @@ namespace DontLate.EditorTools
             BagView view = canvasGo.AddComponent<BagView>();
             SetField(view, "_gameState", gameState);
 
-            Image panel = CreateImage(canvasGo.transform, "Panel", CYAN);
+            Image panel = CreateImage(canvasGo.transform, "Panel", hasInventoryArt ? Color.white : CYAN);
+            if (hasInventoryArt)
+            {
+                panel.sprite = inventoryArt;
+                panel.preserveAspect = true;
+            }
             RectTransform panelRect = panel.rectTransform;
             panelRect.anchorMin = panelRect.anchorMax = panelRect.pivot = new Vector2(0.5f, 0.5f);
-            panelRect.sizeDelta = new Vector2(680f, 300f);
-            Image inner = CreateImage(panel.transform, "Inner", NAVY);
+            panelRect.sizeDelta = hasInventoryArt ? new Vector2(680f, 756f) : new Vector2(680f, 300f);
+            Image inner = CreateImage(panel.transform, "Inner", hasInventoryArt ? Color.clear : NAVY);
             inner.raycastTarget = true;
             RectTransform innerRect = inner.rectTransform;
             innerRect.anchorMin = Vector2.zero; innerRect.anchorMax = Vector2.one;
             innerRect.offsetMin = new Vector2(3f, 3f); innerRect.offsetMax = new Vector2(-3f, -3f);
 
-            TMP_Text title = CreateText(inner.transform, "Title", "가방", font, 36f, Color.white,
+            TMP_Text title = CreateText(inner.transform, "Title", "가방", font, 36f,
+                hasInventoryArt ? new Color(0.13f, 0.19f, 0.22f) : Color.white,
                 TextAlignmentOptions.TopLeft);
-            AnchorCorner(title.rectTransform, new Vector2(0f, 1f), new Vector2(24f, -16f), new Vector2(200f, 48f));
+            AnchorCorner(title.rectTransform, new Vector2(0f, 1f),
+                hasInventoryArt ? new Vector2(40f, -112f) : new Vector2(24f, -16f), new Vector2(200f, 48f));
 
             GameObject closeGo = new GameObject("CloseButton", typeof(RectTransform));
             closeGo.transform.SetParent(inner.transform, false);
             Image closeImg = closeGo.AddComponent<Image>();
-            closeImg.color = new Color(0.55f, 0.25f, 0.25f, 1f);
+            closeImg.color = hasInventoryArt ? new Color(1f, 1f, 1f, 0.001f) : new Color(0.55f, 0.25f, 0.25f, 1f);
             RectTransform closeRect = (RectTransform)closeGo.transform;
             closeRect.anchorMin = closeRect.anchorMax = closeRect.pivot = new Vector2(1f, 1f);
             closeRect.sizeDelta = new Vector2(72f, 48f);
-            closeRect.anchoredPosition = new Vector2(-16f, -12f);
+            closeRect.anchoredPosition = hasInventoryArt ? new Vector2(-42f, -106f) : new Vector2(-16f, -12f);
             Button closeButton = closeGo.AddComponent<Button>();
             closeButton.targetGraphic = closeImg;
             UnityEditor.Events.UnityEventTools.AddPersistentListener(closeButton.onClick,
                 new UnityEngine.Events.UnityAction(view.Close));
-            TMP_Text closeLabel = CreateText(closeGo.transform, "Label", "←", font, 30f, Color.white,
+            TMP_Text closeLabel = CreateText(closeGo.transform, "Label", "←", font, 30f,
+                hasInventoryArt ? new Color(0.13f, 0.25f, 0.27f) : Color.white,
                 TextAlignmentOptions.Center);
             StretchFull(closeLabel.rectTransform);
 
-            var slots = new BagSlot[5];
-            for (int i = 0; i < 5; i++)
+            var slots = new BagSlot[BagStorage.CAPACITY];
+            for (int i = 0; i < slots.Length; i++)
             {
                 GameObject slotGo = new GameObject("Slot_" + i, typeof(RectTransform));
                 slotGo.transform.SetParent(inner.transform, false);
                 Image slotBg = slotGo.AddComponent<Image>();
-                slotBg.color = new Color(0.14f, 0.17f, 0.24f, 0.9f);
+                slotBg.color = hasInventoryArt
+                    ? new Color(0.50f, 0.78f, 0.75f, 0.04f)
+                    : new Color(0.14f, 0.17f, 0.24f, 0.9f);
                 RectTransform slotRect = (RectTransform)slotGo.transform;
                 slotRect.anchorMin = slotRect.anchorMax = slotRect.pivot = new Vector2(0f, 0.5f);
-                slotRect.sizeDelta = new Vector2(112f, 112f);
-                slotRect.anchoredPosition = new Vector2(32f + i * 126f, -20f);
+                slotRect.sizeDelta = hasInventoryArt ? new Vector2(120f, 120f) : new Vector2(112f, 112f);
+                slotRect.anchoredPosition = hasInventoryArt
+                    ? new Vector2(70f + i * 138f, 68f)
+                    : new Vector2(32f + i * 126f, -20f);
 
-                TMP_Text label = CreateText(slotGo.transform, "Label", string.Empty, font, 22f, Color.white,
+                TMP_Text label = CreateText(slotGo.transform, "Label", string.Empty, font, 22f,
+                    hasInventoryArt ? new Color(0.13f, 0.19f, 0.22f) : Color.white,
                     TextAlignmentOptions.Center);
                 StretchFull(label.rectTransform);
 
-                TMP_Text count = CreateText(slotGo.transform, "Count", string.Empty, font, 22f, CYAN,
+                TMP_Text count = CreateText(slotGo.transform, "Count", string.Empty, font, 22f,
+                    hasInventoryArt ? new Color(0.20f, 0.48f, 0.47f) : CYAN,
                     TextAlignmentOptions.BottomRight);
                 StretchFull(count.rectTransform);
 
@@ -661,6 +677,7 @@ namespace DontLate.EditorTools
                 SetField(slot, "_background", slotBg);
                 SetField(slot, "_label", label);
                 SetField(slot, "_countLabel", count);
+                SetField(slot, "_illustratedStyle", hasInventoryArt);
                 slots[i] = slot;
             }
             SerializedObject viewSerialized = new SerializedObject(view);
@@ -899,6 +916,8 @@ namespace DontLate.EditorTools
         private static void BuildKioskCanvas(GameStateSO gameState)
         {
             TMP_FontAsset font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FONT_PATH);
+            Sprite vendingArt = LoadUISprite("ui_vending_panel");
+            bool hasVendingArt = vendingArt != null;
 
             GameObject canvasGo = new GameObject("KioskCanvas");
             Canvas canvas = canvasGo.AddComponent<Canvas>();
@@ -911,39 +930,54 @@ namespace DontLate.EditorTools
 
             KioskView view = canvasGo.AddComponent<KioskView>();
 
-            Image panel = CreateImage(canvasGo.transform, "Panel", new Color(0.10f, 0.12f, 0.17f, 0.97f));
+            Image panel = CreateImage(canvasGo.transform, "Panel",
+                hasVendingArt ? Color.white : new Color(0.10f, 0.12f, 0.17f, 0.97f));
+            if (hasVendingArt)
+            {
+                panel.sprite = vendingArt;
+                panel.preserveAspect = true;
+            }
             RectTransform panelRect = panel.rectTransform;
             panelRect.anchorMin = panelRect.anchorMax = panelRect.pivot = new Vector2(0.5f, 0.5f);
-            panelRect.sizeDelta = new Vector2(620f, 520f);
+            panelRect.sizeDelta = hasVendingArt ? new Vector2(620f, 714f) : new Vector2(620f, 520f);
 
-            TMP_Text title = CreateText(panel.transform, "Title", "자판기", font, 40f, CYAN, TextAlignmentOptions.Top);
-            AnchorCorner(title.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -18f), new Vector2(560f, 54f));
+            TMP_Text title = CreateText(panel.transform, "Title", "자판기", font, 40f,
+                hasVendingArt ? new Color(0.13f, 0.19f, 0.22f) : CYAN, TextAlignmentOptions.Top);
+            AnchorCorner(title.rectTransform, new Vector2(0.5f, 1f),
+                new Vector2(0f, hasVendingArt ? -112f : -18f), new Vector2(560f, 54f));
 
             TMP_Text money = CreateText(panel.transform, "Money", "소지금 ₩0", font, 26f,
-                new Color(0.75f, 0.80f, 0.90f), TextAlignmentOptions.Top);
-            AnchorCorner(money.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -74f), new Vector2(560f, 36f));
+                hasVendingArt ? new Color(0.26f, 0.48f, 0.49f) : new Color(0.75f, 0.80f, 0.90f),
+                TextAlignmentOptions.Top);
+            AnchorCorner(money.rectTransform, new Vector2(0.5f, 1f),
+                new Vector2(0f, hasVendingArt ? -160f : -74f), new Vector2(560f, 36f));
 
             GameObject list = new GameObject("List", typeof(RectTransform));
             list.transform.SetParent(panel.transform, false);
             RectTransform listRect = (RectTransform)list.transform;
             listRect.anchorMin = new Vector2(0f, 0f);
             listRect.anchorMax = new Vector2(1f, 1f);
-            listRect.offsetMin = new Vector2(0f, 90f);
-            listRect.offsetMax = new Vector2(0f, -116f);
+            listRect.offsetMin = hasVendingArt ? new Vector2(42f, 190f) : new Vector2(0f, 90f);
+            listRect.offsetMax = hasVendingArt ? new Vector2(-42f, -190f) : new Vector2(0f, -116f);
 
             GameObject closeGo = new GameObject("CloseButton", typeof(RectTransform));
             closeGo.transform.SetParent(panel.transform, false);
             Image closeImg = closeGo.AddComponent<Image>();
-            closeImg.color = new Color(0.25f, 0.28f, 0.34f, 1f);
+            closeImg.color = hasVendingArt ? new Color(1f, 1f, 1f, 0.001f) : new Color(0.25f, 0.28f, 0.34f, 1f);
             RectTransform closeRect = (RectTransform)closeGo.transform;
-            closeRect.anchorMin = closeRect.anchorMax = closeRect.pivot = new Vector2(0.5f, 0f);
-            closeRect.sizeDelta = new Vector2(300f, 60f);
-            closeRect.anchoredPosition = new Vector2(0f, 18f);
+            closeRect.anchorMin = closeRect.anchorMax = closeRect.pivot =
+                hasVendingArt ? new Vector2(1f, 1f) : new Vector2(0.5f, 0f);
+            closeRect.sizeDelta = hasVendingArt ? new Vector2(58f, 58f) : new Vector2(300f, 60f);
+            closeRect.anchoredPosition = hasVendingArt ? new Vector2(-77f, -72f) : new Vector2(0f, 18f);
             Button closeButton = closeGo.AddComponent<Button>();
             closeButton.targetGraphic = closeImg;
-            TMP_Text closeLabel = CreateText(closeGo.transform, "Label", "닫기 (ESC)", font, 26f,
-                Color.white, TextAlignmentOptions.Center);
+            TMP_Text closeLabel = CreateText(closeGo.transform, "Label", hasVendingArt ? "X" : "닫기 (ESC)", font,
+                hasVendingArt ? 30f : 26f,
+                hasVendingArt ? new Color(0.28f, 0.32f, 0.34f) : Color.white,
+                TextAlignmentOptions.Center);
             StretchFull(closeLabel.rectTransform);
+            if (hasVendingArt)
+                closeLabel.rectTransform.anchoredPosition = new Vector2(9f, -10f);
 
             SetField(view, "_gameState", gameState);
             SetField(view, "_panel", panel.gameObject);
