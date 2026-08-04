@@ -53,9 +53,10 @@ namespace DontLate.EditorTools
             (GameObject slotsRoot, List<Transform> buildingSlots, List<Transform> propSlots) = BuildSlots();
             AttachLayoutGenerator(slotsRoot, buildingSlots, propSlots, gameState);
 
-            // S-138 — 민지님이 `District 2.unity`에서 손으로 확정한 배경 파사드(10동).
+            // S-141 — 민지님 세트 프리팹(`set_district_2`)을 배경 파사드로 깐다.
             // 절차적 슬롯을 대체하지 않는다: 슬롯은 Z=2.6 근경에서 구역별로 채워지고,
-            // 이건 Z=4~36 원경에 고정으로 깔리는 배경층이다(표는 ArtBackdropKit 정본).
+            // 이건 Z=4~36 원경에 고정으로 깔리는 배경층이다. 프리팹 링크를 유지하므로
+            // 민지님이 프리팹을 고치면 코드 수정 없이 반영된다.
             ArtBackdropKit.Build(ArtBackdropKit.District);
 
             // S-015: 정적 짐·비콘 제거 — 도착 시 cargo 실데이터로 스폰(DistrictCargoSpawner)한다.
