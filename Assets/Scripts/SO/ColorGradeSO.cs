@@ -42,6 +42,14 @@ namespace DontLate
                 filter.r + filter.g + filter.b < 0.001f ? Color.white : filter;
         }
 
+        // S-145 — 남규님 요구: "날씨,시간 상관없는 디폴트 컬러 그레이딩(기본 채도값 조절 등)".
+        // 아래 3층(시간대·날씨·구역)은 전부 **상황별 보정**이라, 게임 전체의 룩 기준선을 옮기려면
+        // 14칸을 일일이 고쳐야 했다. 이 층은 그 위가 아니라 **밑**에 깔려 항상 더해진다 —
+        // 여기 채도를 −20 주면 시간대·날씨와 무관하게 화면 전체가 그만큼 차분해진다.
+        [Header("기본 — 항상 적용 (전역 룩 기준선)")]
+        [Tooltip("시간대·날씨·구역과 무관하게 항상 더해지는 층. 게임 전체 톤을 여기서 조인다.")]
+        public Layer baseGrade;
+
         [Header("시간대 — 기준 톤 (블룸의 기준값도 여기)")]
         public Layer morning;
         public Layer day;
