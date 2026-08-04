@@ -54,7 +54,13 @@ namespace DontLate
         [Header("진행")]
         public GameScene currentScene;
         public bool bossIntroPlayed; // S-052 ① — 캠프 사장님 튜토리얼 1회 재생 여부 (세션제)
-        public bool tutorialDone;    // S-146 — 7단계 튜토리얼 완주 여부 (세션제)
+        public bool tutorialDone;    // S-146 — 튜토리얼 완주 여부 (세션제)
+
+        // S-158 — 튜토리얼 중 귀가 엣지워크 잠금(캠프 왼쪽 끝 → 집).
+        // 도중에 나가면 `bossIntroPlayed`가 이미 true라 **다시 와도 재개되지 않아** 조작을
+        // 다 배우지 못한 채 게임이 시작된다(남규님 실관찰). 상자 픽업 단계를 넘기면 풀린다.
+        // 게이트가 진행부를 직접 참조하면 도메인 경계를 넘으므로 상태를 여기 둔다.
+        public bool tutorialExitLocked;
         /// <summary>해금된 배송 구역 (S-054 진행 시스템 — 비어 있으면 전체 해금으로 취급: 테스트·그레이박스 호환).</summary>
         public List<string> unlockedDistricts = new List<string>();
         /// <summary>회사 트럭 수령 여부 (S-054) — 전 구역 개척 보상. 지도앱 즉시 이동 해금.</summary>

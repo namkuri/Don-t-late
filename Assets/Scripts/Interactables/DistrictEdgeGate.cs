@@ -129,6 +129,15 @@ namespace DontLate
                 // 캠프 왼쪽 = 집으로 귀가 (S-062 ②).
                 if (index == -1 && _direction == Direction.Prev)
                 {
+                    // S-158 — 튜토리얼 중엔 귀가를 막는다. 나가면 `bossIntroPlayed`가 이미 true라
+                    // 다시 와도 재개되지 않아, 조작을 다 배우지 못한 채 게임이 시작된다(남규님 실관찰).
+                    // 조용히 막으면 고장으로 읽히므로 이유를 말한다.
+                    if (_gameState != null && _gameState.tutorialExitLocked)
+                    {
+                        Deny("사장님 설명이 아직 안 끝났다. 짐부터 챙기자.");
+                        return;
+                    }
+
                     _pendingArrival = null;
                     // S-075 3 - 엣지 워크 시간 소모 폐지: 실제 걷는 시간이 곧 페널티 (남규님 R25).
                     Debug.Log("[도보] 집으로 걸어간다.");

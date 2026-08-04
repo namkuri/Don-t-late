@@ -98,6 +98,8 @@ namespace DontLate
             if (_steps == null || _steps.Length == 0) return;
             _player = player;
             _index = -1;
+            // S-158 — 상자 픽업 단계를 넘길 때까지 귀가를 막는다(중도 이탈 시 재개 불가라서).
+            if (_gameState != null) _gameState.tutorialExitLocked = true;
             Advance();
         }
 
@@ -106,10 +108,19 @@ namespace DontLate
             _index++;
             if (_index >= _steps.Length)
             {
-                if (_gameState != null) _gameState.tutorialDone = true;
+                if (_gameState != null)
+                {
+                    _gameState.tutorialDone = true;
+                    _gameState.tutorialExitLocked = false; // 안전망 — 픽업에서 이미 풀렸어야 한다
+                }
                 Debug.Log("[튜토리얼] 전 단계 완료.");
                 return;
             }
+
+            // S-158 — 픽업 단계를 지났으면 귀가를 푼다(남규님 지정: "상자 바코드찍고 잡기 전까진").
+            // 방금 끝낸 단계가 픽업이면 이 시점부터 나가도 된다.
+            if (_gameState != null && _index > 0 && _steps[_index - 1].gate == Gate.BoxPickup)
+                _gameState.tutorialExitLocked = false;
 
             _gateCleared = false;
             _waitingDialogue = true;
