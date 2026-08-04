@@ -101,6 +101,11 @@ namespace DontLate
 #endif
 
             DriftClouds();
+            // S-149 — **매 프레임 표를 다시 읽는다.** 종전엔 날씨·시간대가 바뀔 때만 읽어서,
+            // 플레이 중 ColorGrade SO를 만져도 다음 전환이 올 때까지 화면이 그대로였다
+            // (남규님 실관찰 "인게임에서 조절하는데 변화가 없다"). 읽는 비용은 구조체 4개
+            // 합산이라 무시할 수준이고, 대신 인스펙터 값이 곧바로 화면에 반영된다.
+            RefreshGradeTarget();
             LerpGrade();
             UpdateSnowCover();
             TickThunder(); // S-088 ⑥ — 비·태풍 중 가끔 천둥번개
