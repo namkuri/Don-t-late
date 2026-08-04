@@ -14,6 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DontLate.DialogueScenarioSO
   lines:
   - speaker: "\uC0AC\uC7A5\uB2D8"
-    text: "\uCC30\uCE75! \uBC14\uB85C \uADF8\uAC70\uC57C. \uCC98\uC74C\uC5D0 \uD5F7\uAC08\uB9AC\uB294\uB370
-      \uAE08\uBC29 \uC190\uC5D0 \uC775\uC5B4."
+    text: "\uCC30\uCE75! \uBC14\uB85C \uADF8\uAC70\uC57C. \uCC98\uC74C\uC5D4 \uC190\uC774
+      \uB5A8\uB9AC\uB294\uB370 \uAE08\uBC29 \uC775\uC219\uD574\uC838."
     portrait: {fileID: 0}
