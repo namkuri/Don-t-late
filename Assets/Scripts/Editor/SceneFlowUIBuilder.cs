@@ -402,7 +402,7 @@ namespace DontLate.EditorTools
             AnchorCentered(background.rectTransform, Vector2.zero, new Vector2(780f, 520f));
 
             CreatePanelIcon(go.transform, "SunIcon", "sun",
-                new Vector2(-190f, 0f), new Vector2(270f, 180f));
+                new Vector2(-160f, 0f), new Vector2(270f, 180f));
 
             TMP_Text label = CreateText(go.transform, "Label", "하루 시작 → 물류캠프", font, 30f, NAVY,
                 TextAlignmentOptions.Center, FontStyles.Bold);

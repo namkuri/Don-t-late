@@ -22,6 +22,7 @@ namespace DontLate
         [SerializeField] private Renderer _highlightRenderer;
         [SerializeField] private Material _normalMaterial;
         [SerializeField] private Material _highlightMaterial;
+        [SerializeField] private Animator _animator;
 
         private enum Phase { Waiting, Approaching, Talking, Returning, Idle }
         private Phase _phase = Phase.Idle;
@@ -43,6 +44,7 @@ namespace DontLate
         private GameObject _scoldCanvasGo;
         private Coroutine _scoldRoutine; // S-102 — 구 코루틴 정지용 (연타 시 새 말풍선을 죽이던 결함 수리)
         private int _lastScoldIndex = -1;
+        private string _animationState;
 
         private void OnEnable()  { WorldEvents.PackageDamaged += OnPackageDamaged; }
         private void OnDisable() { WorldEvents.PackageDamaged -= OnPackageDamaged; }
@@ -69,6 +71,7 @@ namespace DontLate
             {
                 _phase = Phase.Waiting; // 첫 방문 — 플레이어를 기다렸다 다가간다
             }
+            SetAnimation("Idle");
         }
 
         private void Update()
@@ -95,13 +98,14 @@ namespace DontLate
                 if (player == null) continue;
                 _player = player.transform;
                 _phase = Phase.Approaching;
+                SetAnimation("Walk");
                 return;
             }
         }
 
         private void Approach()
         {
-            if (_player == null) { _phase = Phase.Idle; return; }
+            if (_player == null) { _phase = Phase.Idle; SetAnimation("Idle"); return; }
             Vector3 target = _player.position;
             target.y = transform.position.y;
             FaceTowards(target);
@@ -111,6 +115,7 @@ namespace DontLate
                     WorldDialogueManager.Instance.PlayScenario(_tutorialScenario);
                 if (_gameState != null) _gameState.bossIntroPlayed = true;
                 _phase = Phase.Talking;
+                SetAnimation("Talk");
                 Debug.Log("[사장님] 첫 방문 튜토리얼 시작.");
                 return;
             }
@@ -121,13 +126,18 @@ namespace DontLate
         {
             if (WorldDialogueManager.Instance != null && WorldDialogueManager.Instance.IsPlaying) return;
             _phase = Phase.Returning;
+            SetAnimation("Walk");
         }
 
         private void ReturnHome()
         {
             FaceTowards(_homePosition);
             transform.position = Vector3.MoveTowards(transform.position, _homePosition, APPROACH_SPEED * Time.deltaTime);
-            if (Vector3.Distance(transform.position, _homePosition) < 0.05f) _phase = Phase.Idle;
+            if (Vector3.Distance(transform.position, _homePosition) < 0.05f)
+            {
+                _phase = Phase.Idle;
+                SetAnimation("Idle");
+            }
         }
 
         private void FaceTowards(Vector3 target)
@@ -147,6 +157,15 @@ namespace DontLate
             FaceTowards(ctx.Transform.position);
             NpcAffinityLedger.Meet(_gameState, "boss"); // S-079 ④ — 소셜앱 등재
             WorldDialogueManager.Instance.PlayScenario(_cheerScenarios[Random.Range(0, _cheerScenarios.Length)]);
+            _phase = Phase.Talking;
+            SetAnimation("Talk");
+        }
+
+        private void SetAnimation(string stateName)
+        {
+            if (_animator == null || _animationState == stateName) return;
+            _animationState = stateName;
+            _animator.CrossFade(stateName, 0.12f);
         }
 
         public void SetHighlight(bool on)
