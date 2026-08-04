@@ -400,3 +400,17 @@
 | Assets/_intake/art/Trellis2/{Buildings,Props}/*.fbx (82종) | **oid 교체(재출력본)** — 합계 3.49GiB→2.10GiB(−1.39GiB, 커진 파일 0·no-op 0). A-002 오리진 반려 4종(fur_bed/plant/rug/tv) 소스 포함 | RunPod 셀프호스팅 TRELLIS (Microsoft · MIT) · 민지 생성 (assets_manifest §Trellis2 INTAKE) | 2026-07-30 |
 | Assets/Art/Terrains/hill.fbx | Hillside 유선형 산 지형 (S-129 — 좌우 대칭 봉우리, 26.4×4.0×2.0u 원본) | **남규(직접 제작)** · Blender (GNU GPL — 산출물은 제작자 소유) | 2026-07-31 |
 | Assets/Art/Props/Textures/chair_Image_0_4.png | 의자 베이스맵 2048² (S-132 — chair.fbx 정리 중 복구). 원본 `chair.fbx`에 팩돼 있었으나 참조 경로(`_art_originals/Props/export.fbm/`)가 실재하지 않아 내보내기에 실리지 않던 것을 블렌더에서 풀어 저장 | **기존 chair.fbx 임베드 텍스처와 동일 출처** — RunPod 셀프호스팅 TRELLIS (Microsoft · MIT) · 민지 생성 (assets_manifest §Trellis2 INTAKE) | 2026-08-03 |
+
+## PR#32 반입 (민지 · 계약 경로 교정 반입) — 2026-08-04
+
+> 원 PR 경로 `Assets/Art/intake/`가 반입 계약(`_intake/art/<도구>/`)을 벗어나 있어 교정 반입.
+> `Art/` 아래는 Buildings|Props|Characters|Backgrounds|Portraits|UI만 임포트 규칙이 걸리므로
+> `Art/intake/`는 자동 임포트가 안 걸리는 사각지대였다(PR#26과 동일 유형).
+
+| 파일 | 내용 | 출처·라이선스 | 반입일 |
+|---|---|---|---|
+| Assets/_intake/art/ChatGPT/One-Way Street_헷.png | 일방통행 표지판 텍스처 263KB (bom_propose.md:109 제안분) | ChatGPT 생성(민지·구두 계약 2026-07-22) · 산출물 권리 사용자 귀속·상업 가능(OpenAI 약관) | 2026-08-04 |
+| Assets/_intake/art/ChatGPT/Materials/One-Way Street_헷.mat | 위 텍스처 머티리얼 (파생물) | 상동 | 2026-08-04 |
+| Assets/_intake/art/ChatGPT/Materials/onw-way-logo.mat | 일방통행 로고 머티리얼 (파생물) | 상동 | 2026-08-04 |
+| Assets/_intake/art/ChatGPT/Texture/airplane.mat | 비행기 머티리얼 (파생물 — 기존 ChatGPT 라인) | 상동 | 2026-08-04 |
+| Assets/Art/UI/ui_dialogue_box.png | 대화 박스 **재출력본**(10.1KB→21.5KB, 채도 조정판 — S-117 신판 대체) | 상동 (manifest:202 동일 항목 갱신) | 2026-08-04 |
