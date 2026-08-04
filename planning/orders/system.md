@@ -4185,3 +4185,28 @@ Play 중 `_originalMaterials[i].Length`에서 NullReferenceException이 반복 �
 (`InteractionSensor.Scan` → `PickupBox.SetHighlight:141`). 캐싱 구조(Awake에서 렌더러와 함께
 같은 길이로 저장)는 정상이라 원인이 자명하지 않다 — 별도 조사 필요. 상호작용 하이라이트 경로라
 코어루프에 걸린다. **남규님 판단 요청.**
+
+## S-154 · 발주 2026-08-04 23:02 → 관제 (PickupBox 하이라이트 NRE 원인 규명·수리)
+
+요구 (남규님): S-153에서 별건으로 보고한 `PickupBox.SetHighlight` NRE 조사 지시.
+
+**원인 규명 완료 — 재현했다.**
+`Material[][]`(지그재그 배열)은 **Unity 직렬화가 지원하지 않는 타입**이다. 반면 `Renderer[]`는
+지원한다. 플레이 중 스크립트가 리컴파일되면 도메인 리로드가 일어나 MonoBehaviour 상태를
+Unity 직렬화로 백업·복원하는데, 이때
+  `_renderers` → 살아남음 (3개)
+  `_originalMaterials` → **null** (미지원 타입이라 복원 실패)
+가 되고 `Awake`는 다시 돌지 않는다. `SetHighlight`의 `_renderers == null` 가드는 통과해 버리므로
+`_originalMaterials[i]`에서 NRE가 난다.
+
+실증: 플레이 중 `unity-cli editor refresh --compile --force` 직후 상자 4개 전부
+`렌더러=3 · 원본=null` 관측(직전 같은 상자들은 3/3이었다).
+
+**빌드에는 없는 결함이다** — 실행 중 도메인 리로드가 없다. 다만 에디터에서 플레이 중 코드를
+고치는 것은 일상이라, 그때마다 콘솔이 NRE로 덮이고 하이라이트가 죽는다(재진입 전까지).
+
+처리: 캐시가 유실됐으면 **다시 캐싱한다**(자가 복구). 일어날 수 없는 상황의 방어코드가 아니라
+재현된 조건의 복구다 — YAGNI 위반이 아니다.
+
+수용기준: 플레이 중 강제 리컴파일 후에도 NRE 0 · 하이라이트 정상 · 콘솔 0.
+MDA 판정 (D-070): **무관** — 빌드 무영향. 단 개발 속도(콘솔 오염·하이라이트 사망) 회복.
