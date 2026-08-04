@@ -132,6 +132,15 @@ namespace DontLate
 
         public void SetHighlight(bool on)
         {
+            // S-154 — 캐시가 반쪽만 남았으면 다시 잡는다.
+            // `Material[][]`(지그재그 배열)은 **Unity 직렬화 미지원 타입**이라, 플레이 중
+            // 스크립트를 고쳐 도메인 리로드가 일어나면 `_renderers`(지원 타입)만 복원되고
+            // `_originalMaterials`는 null로 돌아온다. `Awake`는 다시 돌지 않으므로 아래 가드를
+            // 통과해 `_originalMaterials[i]`에서 NRE가 났다(실측 재현: 강제 리컴파일 직후
+            // 상자 전부 `렌더러=3 · 원본=null`). 빌드엔 없는 현상이지만 에디터에선 매번 겪는다.
+            if (_renderers == null || _originalMaterials == null
+                || _originalMaterials.Length != _renderers.Length)
+                CacheRenderers();
             if (_renderers == null) return;
             for (int i = 0; i < _renderers.Length; i++)
             {
