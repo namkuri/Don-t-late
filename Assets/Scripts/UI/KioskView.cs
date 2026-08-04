@@ -18,6 +18,9 @@ namespace DontLate
         [SerializeField] private RectTransform _listRoot;
         [SerializeField] private Button _closeButton;
         [SerializeField] private TMP_FontAsset _font;
+        [SerializeField] private Texture2D _drinkIcon;
+        [SerializeField] private Texture2D _waterIcon;
+        [SerializeField] private Texture2D _cocoaIcon;
 
         /// <summary>구매창이 떠 있는가 — 다른 클릭 소비자(던지기·철거)가 양보하는 데 쓴다.</summary>
         public static bool IsOpen { get; private set; }
@@ -79,6 +82,7 @@ namespace DontLate
             bool illustrated = _panel != null
                 && _panel.TryGetComponent(out Image panelImage)
                 && panelImage.sprite != null;
+            bool showVendingIcons = illustrated && _offer.Title == "자판기";
             float rowHeight = illustrated ? 105f : 74f;
             for (int i = 0; i < _offer.Items.Length; i++)
             {
@@ -105,6 +109,9 @@ namespace DontLate
                 // 일러스트의 왼쪽 정사각형은 상품 아이콘 전용 영역으로 비워 둔다.
                 labelRect.offsetMin = new Vector2(illustrated ? 112f : 20f, 4f);
                 labelRect.offsetMax = new Vector2(-150f, -4f);
+
+                if (showVendingIcons)
+                    MakeVendingIcon(row.transform, item.id);
 
                 KioskItem captured = item;
                 Button buy = MakeButton(row.transform, "Buy", "구매", () => Purchase(captured), illustrated);
@@ -154,6 +161,48 @@ namespace DontLate
             label.alignment = alignment;
             label.raycastTarget = false;
             return label;
+        }
+
+        private void MakeVendingIcon(Transform parent, string itemId)
+        {
+            Texture2D texture;
+            Rect uv;
+            float aspect;
+            switch (itemId)
+            {
+                case "drink":
+                    texture = _drinkIcon;
+                    uv = new Rect(0.37695f, 0.23438f, 0.24544f, 0.55664f);
+                    aspect = 377f / 570f;
+                    break;
+                case "water":
+                    texture = _waterIcon;
+                    uv = new Rect(0.42448f, 0.25977f, 0.14974f, 0.52344f);
+                    aspect = 230f / 536f;
+                    break;
+                case "hot_drink":
+                    texture = _cocoaIcon;
+                    uv = new Rect(0.35872f, 0.26270f, 0.31641f, 0.55176f);
+                    aspect = 486f / 565f;
+                    break;
+                default:
+                    return;
+            }
+
+            if (texture == null) return;
+            GameObject iconGo = new GameObject("Icon_" + itemId, typeof(RectTransform));
+            iconGo.transform.SetParent(parent, false);
+            RawImage icon = iconGo.AddComponent<RawImage>();
+            icon.texture = texture;
+            icon.uvRect = uv;
+            icon.color = Color.white;
+            icon.raycastTarget = false;
+
+            RectTransform iconRect = icon.rectTransform;
+            iconRect.anchorMin = iconRect.anchorMax = new Vector2(0f, 0.5f);
+            iconRect.pivot = new Vector2(0.5f, 0.5f);
+            iconRect.sizeDelta = new Vector2(72f * aspect, 72f);
+            iconRect.anchoredPosition = new Vector2(48f, 0f);
         }
 
         private Button MakeButton(Transform parent, string name, string text,

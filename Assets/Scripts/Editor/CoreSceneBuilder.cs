@@ -929,6 +929,9 @@ namespace DontLate.EditorTools
             canvasGo.AddComponent<GraphicRaycaster>();
 
             KioskView view = canvasGo.AddComponent<KioskView>();
+            Texture2D drinkIcon = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Art/UI/ui_kiosk_drink.png");
+            Texture2D waterIcon = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Art/UI/ui_kiosk_water.png");
+            Texture2D cocoaIcon = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Art/UI/ui_kiosk_cocoa.png");
 
             Image panel = CreateImage(canvasGo.transform, "Panel",
                 hasVendingArt ? Color.white : new Color(0.10f, 0.12f, 0.17f, 0.97f));
@@ -974,10 +977,8 @@ namespace DontLate.EditorTools
             TMP_Text closeLabel = CreateText(closeGo.transform, "Label", hasVendingArt ? "X" : "닫기 (ESC)", font,
                 hasVendingArt ? 30f : 26f,
                 hasVendingArt ? new Color(0.28f, 0.32f, 0.34f) : Color.white,
-                TextAlignmentOptions.Center);
+                hasVendingArt ? TextAlignmentOptions.CenterGeoAligned : TextAlignmentOptions.Center);
             StretchFull(closeLabel.rectTransform);
-            if (hasVendingArt)
-                closeLabel.rectTransform.anchoredPosition = new Vector2(9f, -10f);
 
             SetField(view, "_gameState", gameState);
             SetField(view, "_panel", panel.gameObject);
@@ -986,6 +987,9 @@ namespace DontLate.EditorTools
             SetField(view, "_listRoot", listRect);
             SetField(view, "_closeButton", closeButton);
             SetField(view, "_font", font);
+            SetField(view, "_drinkIcon", drinkIcon);
+            SetField(view, "_waterIcon", waterIcon);
+            SetField(view, "_cocoaIcon", cocoaIcon);
             EditorUtility.SetDirty(view);
             panel.gameObject.SetActive(false);
         }
