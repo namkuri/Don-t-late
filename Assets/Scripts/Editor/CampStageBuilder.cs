@@ -235,23 +235,52 @@ namespace DontLate.EditorTools
 
             // S-146 — 7단계 튜토리얼(대사 + 행동 검증). 남규님 지정 항목 순서 그대로.
             // 한 단계 = 한 줄 대사 + 통과 조건. 조건을 채우기 전엔 다음으로 넘어가지 않는다.
-            var steps = new (string title, string line, CampTutorialDirector.Gate gate, string hint)[]
+            // S-151 — 말투를 따뜻하게 다시 썼다(남규님 "사장이 따뜻한 말투로 해야하는데 너무 딱딱함").
+            // 사장님은 감독관이 아니라 **먼저 이 일을 해본 사람**이다. 지시문 대신 권유·염려로 쓰고,
+            // 단계마다 칭찬을 붙여 플레이어가 잘 따라오고 있다는 신호를 준다.
+            var steps = new (string title, string line, CampTutorialDirector.Gate gate, string hint, string praise)[]
             {
-                ("Move",   "어이 신입! 왔구먼. 일단 WASD로 좀 걸어봐 — 몸부터 풀어야지.",
-                    CampTutorialDirector.Gate.Move,      "WASD로 이동해 보세요"),
-                ("Bag",    "가방은 I키다. 열어봐 — 드링크나 주운 물건이 여기 들어간다.",
-                    CampTutorialDirector.Gate.BagOpen,   "I키로 가방을 열어 보세요"),
-                ("Phone",  "폰은 Tab. 주문·지도·은행 다 여기서 본다. 한번 켜봐.",
-                    CampTutorialDirector.Gate.PhoneOpen, "Tab키로 휴대폰을 열어 보세요"),
-                ("Pickup", "자, 배송이다. 상자를 E로 집어. 스캔 안 한 짐은 못 실으니 바코드부터 찍고.",
-                    CampTutorialDirector.Gate.BoxPickup, "E키로 상자를 집어 보세요"),
-                ("Area",   "구역은 빌라촌·아파트단지·언덕주택가 셋이야. 언덕은 비 오면 미끄러우니 조심하고, "
-                         + "아파트는 엘리베이터랑 비번이 있다. 지도는 폰에서 봐.",
-                    CampTutorialDirector.Gate.ReadOnly,  ""),
-                ("Npc",    "길에서 사람 만나면 E로 말 걸어봐. 단골 트면 팁도 나온다.",
-                    CampTutorialDirector.Gate.NpcTalk,   "NPC에게 E로 말을 걸어 보세요"),
-                ("Kiosk",  "자판기·편의점·포장마차는 E로 열어서 사면 돼. 체력 떨어지면 꼭 챙겨 먹고.",
-                    CampTutorialDirector.Gate.KioskOpen, "자판기·편의점·포장마차를 E로 열어 보세요"),
+                ("Move",   "어어, 왔구나! 기다렸어. 오늘부터 같이 일하는 거지?\n"
+                         + "긴장 풀고, WASD로 천천히 좀 걸어봐. 몸부터 풀어야 안 다쳐.",
+                    CampTutorialDirector.Gate.Move,      "WASD로 이동해 보세요",
+                    "그래 그래, 자연스럽네. 발놀림이 좋은데?"),
+
+                ("Bag",    "가방은 I키야. 한번 열어볼래?\n"
+                         + "드링크나 길에서 주운 것들이 여기 들어가. 급할 때 요긴하다고.",
+                    CampTutorialDirector.Gate.BagOpen,   "I키로 가방을 열어 보세요",
+                    "옳지. 뭐 들었나 가끔 확인해 보면 좋아."),
+
+                ("Phone",  "이제 폰이야. Tab 눌러봐.\n"
+                         + "주문도 지도도 은행도 전부 여기 있어. 하루 종일 들여다볼 물건이지.",
+                    CampTutorialDirector.Gate.PhoneOpen, "Tab키로 휴대폰을 열어 보세요",
+                    "잘했어. 길 잃으면 지도부터 켜는 거, 잊지 말고."),
+
+                ("Barcode","자, 이제 진짜 일이다. 짐은 반드시 바코드를 찍어야 실을 수 있어.\n"
+                         + "폰을 켠 채로 상자를 좌클릭하면 송장이 뜨거든? 거기 바코드에 마우스를 올리고\n"
+                         + "다시 좌클릭하면 찰칵 — 그게 스캔이야. 한번 해봐.",
+                    CampTutorialDirector.Gate.Barcode,   "폰(Tab) → 상자 좌클릭 → 바코드에 올리고 좌클릭",
+                    "찰칵! 바로 그거야. 처음에 헷갈리는데 금방 손에 익어."),
+
+                ("Pickup", "스캔했으면 이제 들면 돼. 상자 앞에서 E를 눌러봐.\n"
+                         + "무거우면 무리하지 말고, 천천히 가도 괜찮아.",
+                    CampTutorialDirector.Gate.BoxPickup, "E키로 상자를 집어 보세요",
+                    "좋아 좋아. 허리 조심하고!"),
+
+                ("Area",   "구역은 셋이야. 빌라촌, 아파트단지, 언덕주택가.\n"
+                         + "언덕은 비 오면 미끄러우니까 그런 날은 특히 조심해. 아파트는 엘리베이터랑\n"
+                         + "현관 비밀번호가 있고. 헷갈리면 폰 지도 보면 돼, 다 나와 있으니까.",
+                    CampTutorialDirector.Gate.ReadOnly,  "",
+                    "뭐, 다니다 보면 몸이 먼저 기억할 거야."),
+
+                ("Npc",    "길에서 사람 마주치면 E로 말 한번 걸어봐.\n"
+                         + "이 동네 사람들 은근히 정 많아. 얼굴 트면 팁도 챙겨주고 그래.",
+                    CampTutorialDirector.Gate.NpcTalk,   "NPC에게 E로 말을 걸어 보세요",
+                    "거봐, 나쁘지 않지? 인사만 잘해도 하루가 편해."),
+
+                ("Kiosk",  "마지막이야. 자판기랑 편의점, 포장마차는 E로 열어서 사면 돼.\n"
+                         + "힘들면 꼭 뭐라도 챙겨 먹어. 굶고 뛰다 쓰러지는 애들 여럿 봤다.",
+                    CampTutorialDirector.Gate.KioskOpen, "자판기·편의점·포장마차를 E로 열어 보세요",
+                    "그래, 이제 다 알려준 것 같네. 무리하지 말고 다녀와. 늦으면... 뭐, 나한테 혼나는 거지!"),
             };
 
             GameObject tutorialGo = new GameObject("__gb_CampTutorial");
@@ -264,10 +293,13 @@ namespace DontLate.EditorTools
             {
                 DialogueScenarioSO line = NpcBuildKit.GetOrCreateScenario(
                     "Scenario_Tutorial_" + steps[i].title, ("사장님", steps[i].line));
+                DialogueScenarioSO praise = NpcBuildKit.GetOrCreateScenario(
+                    "Scenario_Tutorial_" + steps[i].title + "_Praise", ("사장님", steps[i].praise));
                 SerializedProperty element = stepList.GetArrayElementAtIndex(i);
                 element.FindPropertyRelative("scenario").objectReferenceValue = line;
                 element.FindPropertyRelative("gate").enumValueIndex = (int)steps[i].gate;
                 element.FindPropertyRelative("hint").stringValue = steps[i].hint;
+                element.FindPropertyRelative("praise").objectReferenceValue = praise;
             }
             dirSo.ApplyModifiedPropertiesWithoutUndo();
 

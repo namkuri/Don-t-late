@@ -10,12 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a5e3ef5ec1efc4b4397e1c503ec59084, type: 3}
-  m_Name: Scenario_Tutorial_Kiosk
+  m_Name: Scenario_Tutorial_Area_Praise
   m_EditorClassIdentifier: Assembly-CSharp::DontLate.DialogueScenarioSO
   lines:
   - speaker: "\uC0AC\uC7A5\uB2D8"
-    text: "\uB9C8\uC9C0\uB9C9\uC774\uC57C. \uC790\uD310\uAE30\uB791 \uD3B8\uC758\uC810,
-      \uD3EC\uC7A5\uB9C8\uCC28\uB294 E\uB85C \uC5F4\uC5B4\uC11C \uC0AC\uBA74 \uB3FC.\n\uD798\uB4E4\uBA74
-      \uAF2D \uBB50\uB77C\uB3C4 \uCC59\uACA8 \uBA39\uC5B4. \uAD76\uACE0 \uB6F0\uB2E4
-      \uC4F0\uB7EC\uC9C0\uB294 \uC560\uB4E4 \uC5EC\uB7FF \uBD24\uB2E4."
+    text: "\uBB50, \uB2E4\uB2C8\uB2E4 \uBCF4\uBA74 \uBAB8\uC774 \uBA3C\uC800 \uAE30\uC5B5\uD560
+      \uAC70\uC57C."
     portrait: {fileID: 0}

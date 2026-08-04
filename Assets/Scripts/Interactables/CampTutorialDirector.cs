@@ -23,6 +23,7 @@ namespace DontLate
             BagOpen,     // 가방 열기
             PhoneOpen,   // 휴대폰 열기
             BoxPickup,   // 상자 집기
+            Barcode,     // 송장 바코드 스캔 (S-151 — 남규님 "바코드 어떻게 찍는지 설명 안 함")
             ReadOnly,    // 설명만 — 대사가 끝나면 통과 (지역 설명)
             NpcTalk,     // NPC와 대화
             KioskOpen,   // 자판기·편의점·포장마차 구매창 열기
@@ -35,6 +36,8 @@ namespace DontLate
             public Gate gate;
             [Tooltip("이 단계에서 화면에 띄울 한 줄 안내(대사가 끝난 뒤 남는다).")]
             public string hint;
+            [Tooltip("S-151 — 해냈을 때 사장님이 건네는 칭찬. 비면 건너뛴다.")]
+            public DialogueScenarioSO praise;
         }
 
         [SerializeField] private GameStateSO _gameState;
@@ -42,9 +45,17 @@ namespace DontLate
         [Tooltip("이동 판정 거리(u). 이만큼 걸으면 통과.")]
         [SerializeField] private float _moveDistance = 3f;
 
+        // S-151 — 통과 직후 숨 돌리는 시간. 종전엔 게이트가 열리자마자 다음 대사가 나가서
+        // "I키 눌렀는데 가방이 열리기도 전에 사장이 말한다"가 됐다(남규님 지적).
+        // 플레이어가 자기가 한 일의 결과(열린 가방·집은 상자)를 보고 나서 칭찬이 오게 한다.
+        [Tooltip("게이트 통과 후 칭찬까지의 여유(초).")]
+        [SerializeField] private float _beatBeforePraise = 1.1f;
+
         private int _index = -1;
         private bool _gateCleared;
         private bool _waitingDialogue;
+        private bool _praising;
+        private float _beatLeft;
         private Transform _player;
         private Vector3 _moveAnchor;
         private float _moved;
@@ -61,6 +72,7 @@ namespace DontLate
             WorldEvents.BagOpened += OnBagOpened;
             WorldEvents.PhoneOpened += OnPhoneOpened;
             WorldEvents.PackagePickedUp += OnPackagePickedUp;
+            WorldEvents.BarcodeScanned += OnBarcodeScanned;
             WorldEvents.NpcMet += OnNpcMet;
             WorldEvents.KioskRequested += OnKioskRequested;
         }
@@ -70,6 +82,7 @@ namespace DontLate
             WorldEvents.BagOpened -= OnBagOpened;
             WorldEvents.PhoneOpened -= OnPhoneOpened;
             WorldEvents.PackagePickedUp -= OnPackagePickedUp;
+            WorldEvents.BarcodeScanned -= OnBarcodeScanned;
             WorldEvents.NpcMet -= OnNpcMet;
             WorldEvents.KioskRequested -= OnKioskRequested;
         }
@@ -95,6 +108,8 @@ namespace DontLate
 
             _gateCleared = false;
             _waitingDialogue = true;
+            _praising = false;
+            _beatLeft = 0f;
             _moved = 0f;
             if (_player != null) _moveAnchor = _player.position;
 
@@ -126,22 +141,49 @@ namespace DontLate
             {
                 _moved += Vector3.Distance(_player.position, _moveAnchor);
                 _moveAnchor = _player.position;
-                if (_moved >= _moveDistance) _gateCleared = true;
+                if (_moved >= _moveDistance) { _gateCleared = true; _beatLeft = _beatBeforePraise; }
             }
 
-            if (_gateCleared) Advance();
+            if (!_gateCleared) return;
+
+            // S-151 — 통과 → (숨 돌리기) → 칭찬 → 다음 단계. 곧바로 넘기지 않는 이유는 위 주석 참조.
+            if (_beatLeft > 0f)
+            {
+                _beatLeft -= Time.deltaTime;
+                if (_beatLeft > 0f) return;
+                PlayPraise();
+                return;
+            }
+
+            if (_praising)
+            {
+                if (WorldDialogueManager.Instance != null && WorldDialogueManager.Instance.IsPlaying) return;
+                _praising = false;
+            }
+
+            Advance();
         }
 
         private void Clear(Gate gate)
         {
-            if (!Running || _waitingDialogue) return;   // 대사 중 입력은 무시(설명을 다 듣게)
+            if (!Running || _waitingDialogue || _gateCleared) return; // 대사 중 입력은 무시(설명을 다 듣게)
             if (_steps[_index].gate != gate) return;
             _gateCleared = true;
+            _beatLeft = _beatBeforePraise; // 결과를 보고 나서 칭찬이 오도록 한 박자 쉰다
+        }
+
+        private void PlayPraise()
+        {
+            DialogueScenarioSO praise = _steps[_index].praise;
+            if (praise == null || WorldDialogueManager.Instance == null) return;
+            WorldDialogueManager.Instance.PlayScenario(praise);
+            _praising = true;
         }
 
         private void OnBagOpened() => Clear(Gate.BagOpen);
         private void OnPhoneOpened() => Clear(Gate.PhoneOpen);
         private void OnPackagePickedUp(DeliveryData _) => Clear(Gate.BoxPickup);
+        private void OnBarcodeScanned(DeliveryData _) => Clear(Gate.Barcode);
         private void OnNpcMet(string _) => Clear(Gate.NpcTalk);
         private void OnKioskRequested(KioskOffer _) => Clear(Gate.KioskOpen);
     }

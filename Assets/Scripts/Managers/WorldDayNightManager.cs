@@ -53,12 +53,16 @@ namespace DontLate
         // **플레이 구간조차 카메라에서 약 41u** — 포그 계산상 이미 원경이라 캐릭터·소품까지
         // 뿌옇게 떴다(남규님 지적: "근경에 있는 얘들은 영향 안받게"). Linear로 바꿔 시작 거리를
         // 플레이 구간 밖에 두면 근경은 원본 색 그대로고, 원경만 깊이감을 얻는다.
-        [Tooltip("이 거리 안쪽은 안개 영향 0. 플레이 구간(카메라에서 ~41u) 바깥에 둔다.")]
-        [SerializeField] private float _fogStartDistance = 46f;
+        // S-151 — 46u는 **도로 위**였다. 지면이 z −40~40이라 카메라(z −40.4)에서 41~81u인데,
+        // 시작이 46이면 도로 절반이 포그 구간이 되어 평평한 아스팔트에 그라디언트가 깔린다 —
+        // 남규님이 "원거리랑 근거리 텍스처가 다르다"고 읽은 것이 이 이음매다.
+        // 78u면 경계가 배경 건물 뒤(z 38~)로 넘어가 도로 면에는 안 걸린다.
+        [Tooltip("이 거리 안쪽은 안개 영향 0. 도로 면(카메라에서 41~81u) 바깥에 두어야 노면에 이음매가 안 생긴다.")]
+        [SerializeField] private float _fogStartDistance = 78f;
         [Tooltip("안개가 가장 옅을 때의 끝 거리. 짙기 1이면 아래 값까지 좁혀진다.")]
-        [SerializeField] private float _fogEndFar = 190f;
+        [SerializeField] private float _fogEndFar = 260f;
         [Tooltip("안개가 가장 짙을 때의 끝 거리. 작을수록 원경이 빨리 묻힌다.")]
-        [SerializeField] private float _fogEndNear = 70f;
+        [SerializeField] private float _fogEndNear = 110f; // S-151 — 시작이 78로 밀린 만큼 함께 뒤로
 
         private static readonly int SkyTintId = Shader.PropertyToID("_SkyTint");
         private static readonly int ExposureId = Shader.PropertyToID("_Exposure");

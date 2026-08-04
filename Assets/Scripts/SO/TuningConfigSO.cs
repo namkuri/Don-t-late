@@ -22,7 +22,10 @@ namespace DontLate
         [Header("스태미나")]
         public float staminaMax = 100f;
         /// <summary>걷기 소모/초 (S-019 ③).</summary>
-        public float staminaDrainPerSecond = 2f;
+        // S-151 — 걷기는 무소모(남규님 지시 "걸을땐 스테미나 차감 없게").
+        // 소모는 **달리기와 짐 무게**만 부담한다 — 그래야 "뛰면 빨리 지친다 / 무거우면 힘들다"가
+        // 선택의 결과로 읽힌다. 걷기까지 깎으면 가만히 걸어도 줄어 압박이 아니라 소음이 된다.
+        public float staminaDrainPerSecond = 0f;
         /// <summary>달리기 소모/초 — 걷기보다 크게.</summary>
         public float staminaDrainRunPerSecond = 6f;
         /// <summary>든 상자 1kg당 추가 소모/초.</summary>
