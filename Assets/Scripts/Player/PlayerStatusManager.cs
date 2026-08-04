@@ -89,8 +89,28 @@ namespace DontLate
 
         // S-123 ③ — 대사 진행 좌클릭이 상자 던지기로 새지 않게 (대화 중 손 조작 정지).
         private bool _inDialogue;
+        private float _dialogueEndedAt = -99f;
         private void OnDialogueStartedStatus(string _) => _inDialogue = true;
-        private void OnDialogueEndedStatus(string _) => _inDialogue = false;
+
+        private void OnDialogueEndedStatus(string _)
+        {
+            _inDialogue = false;
+            // S-153 — 대화를 **끝낸 그 클릭**이 월드 클릭으로 새는 것을 막는다.
+            // 마지막 클릭에 DialogueEnded가 먼저 발화하면 `_inDialogue`가 이미 false라,
+            // 같은 프레임의 `wasPressedThisFrame`이 그대로 통과해 상자를 던져 버렸다
+            // (남규님 지적 "대화 마지막 끝낼때 클릭하면 상자를 바닥에 던져버려").
+            // 이벤트 발화 순서가 컴포넌트마다 달라 프레임 비교만으론 불안정하므로 짧은 시간창을 쓴다.
+            _dialogueEndedAt = Time.unscaledTime;
+        }
+
+        /// <summary>
+        /// S-153 — 대화가 좌/우클릭을 먹고 있는 동안인가. 대화 중이거나 방금 끝난 직후를 포함한다.
+        /// 던지기(여기)와 송장(InteractionSensor)이 같은 판정을 봐야 새는 구멍이 안 생긴다.
+        /// </summary>
+        public bool DialogueBlocksClick =>
+            _inDialogue || Time.unscaledTime - _dialogueEndedAt < DIALOGUE_CLICK_GRACE;
+
+        private const float DIALOGUE_CLICK_GRACE = 0.18f;
 
         // ── 가방 연동 (S-064) — 손 들기·즉시 사용 ──
         private void OnBagHoldRequested(BagItem item)
@@ -235,8 +255,9 @@ namespace DontLate
             bool overUI = UnityEngine.EventSystems.EventSystem.current != null
                 && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject();
             // S-123 ③ — 대화 중엔 손 조작 정지: 대사 진행용 좌클릭이 상자 던지기로 새면 안 된다.
-            bool leftClick = mouse != null && mouse.leftButton.wasPressedThisFrame && !overUI && !_inDialogue;
-            bool rightClick = mouse != null && mouse.rightButton.wasPressedThisFrame && !overUI && !_inDialogue;
+            // S-153 — `!_inDialogue`가 아니라 `!DialogueBlocksClick`을 본다(대화를 끝낸 클릭까지 차단).
+            bool leftClick = mouse != null && mouse.leftButton.wasPressedThisFrame && !overUI && !DialogueBlocksClick;
+            bool rightClick = mouse != null && mouse.rightButton.wasPressedThisFrame && !overUI && !DialogueBlocksClick;
 
             // S-032 ④: 우클릭 = 드링크 마시기 · 좌클릭 = 던지기(상자 우선, 없으면 드링크 — 택배와 동일 감각).
             if (rightClick && _heldDrink != null)

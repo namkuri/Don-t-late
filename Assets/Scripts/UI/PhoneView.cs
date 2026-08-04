@@ -272,6 +272,16 @@ namespace DontLate
         }
 
         // 실제 개폐 — 내부 자동 오픈/수납(Travel 진입·이탈 등)은 계층 내비를 거치지 않고 이걸 부른다.
+        /// <summary>
+        /// S-153 — 밖에서 폰을 닫는다(튜토리얼이 "확인했으면 닫자"를 대신 해주는 용도).
+        /// 이미 닫혀 있으면 아무 것도 하지 않는다 — 토글이 아니라 **닫기**여야 오작동이 없다.
+        /// </summary>
+        public void ClosePanel()
+        {
+            if (!_open) return;
+            TogglePanel();
+        }
+
         private void TogglePanel()
         {
             _open = !_open;

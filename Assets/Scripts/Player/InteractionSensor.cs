@@ -43,8 +43,13 @@ namespace DontLate
             // S-147 — 던지기가 이 클릭을 이미 먹었으면 물러난다. `!IsCarrying`만으로는 못 막는다:
             // PlayerStatusManager가 먼저 돌아 상자를 던지면 그 순간 IsCarrying이 false가 되고,
             // 같은 프레임의 이 검사는 "빈손"으로 읽어 송장을 띄운다(남규님 지적 — 던졌는데 송장).
+            // S-153 — 대화 중(및 대화를 끝낸 직후)엔 송장을 띄우지 않는다. 종전엔 이 검사에
+            // 대화 가드가 **아예 없어**, 대사를 넘기려고 클릭할 때마다 송장이 열렸다
+            // (남규님 지적 "바코드 찍고나서 사장님 얘기할 때 클릭하면 송장이 열려버려").
+            // 판정은 PlayerStatusManager와 같은 것을 본다 — 둘이 따로 세면 한쪽에 구멍이 남는다.
             bool throwConsumed = _hub.Status.LeftClickConsumedFrame == Time.frameCount;
             if (mouse != null && mouse.leftButton.wasPressedThisFrame && !overUI && !InvoiceView.IsOpen
+                && !_hub.Status.DialogueBlocksClick
                 && !throwConsumed && !_hub.Status.IsCarrying && !_hub.Status.IsHoldingDrink
                 && _current is PickupBox focusedBox && focusedBox.Order != null)
                 WorldEvents.RaiseInvoiceRequested(focusedBox.Order);

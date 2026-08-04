@@ -174,6 +174,11 @@ namespace DontLate
 
         private void PlayPraise()
         {
+            // S-153 — 폰 단계는 확인이 끝나면 폰을 닫아준다(남규님 지시). 열어둔 채로 칭찬이
+            // 나오면 폰이 대화창을 덮어 다음 안내가 안 보인다. 가방은 화면 일부만 가려 그대로 둔다.
+            if (_steps[_index].gate == Gate.PhoneOpen && PhoneView.Instance != null)
+                PhoneView.Instance.ClosePanel();
+
             DialogueScenarioSO praise = _steps[_index].praise;
             if (praise == null || WorldDialogueManager.Instance == null) return;
             WorldDialogueManager.Instance.PlayScenario(praise);
