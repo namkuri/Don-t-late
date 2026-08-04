@@ -16,7 +16,7 @@ namespace DontLate.EditorTools
     public static class ArtTestSceneBuilder
     {
         private const string SCENE_PATH = "Assets/Scenes/ArtTest.unity";
-        private const string FONT_PATH = "Assets/Art/UI/Fonts/Pretendard-Regular SDF.asset";
+        private const string FONT_PATH = "Assets/Art/UI/Fonts/DNFBitBitOTF SDF.asset";
         private const float SLOT_SPACING = 4f;
 
         [MenuItem("DontLate/Build/Art Test Scene", priority = 30)]

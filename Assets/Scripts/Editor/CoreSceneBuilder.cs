@@ -20,9 +20,11 @@ namespace DontLate.EditorTools
         private const string SCENES_ROOT = "Assets/Scenes";
         private const string CORE_PATH = SCENES_ROOT + "/Core.unity";
         private const string DATA_ROOT = "Assets/Data";
-        private const string FONT_PATH = "Assets/Art/UI/Fonts/Pretendard-Regular SDF.asset";
+        private const string FONT_PATH = "Assets/Art/UI/Fonts/DNFBitBitOTF SDF.asset";
+        private const string DIALOGUE_FONT_PATH = "Assets/Art/UI/Fonts/Ramche SDF.asset";
         private const string KIOSK_UI_PREFAB_PATH = "Assets/Prefabs/Hand/UI/KioskPanel.prefab";
         private const string INVENTORY_UI_PREFAB_PATH = "Assets/Prefabs/Hand/UI/InventoryPanel.prefab";
+        private const string PANEL_UI_ROOT = "Assets/Art/UI/panel/";
         private const string BGM_FOLDER = "Assets/Audio/BGM";
         private const string BGM_LIBRARY_PATH = DATA_ROOT + "/BgmLibrary.asset";
         private static readonly Color AMBER = new Color(1f, 0.624f, 0.271f, 1f); // #ff9f45
@@ -413,7 +415,8 @@ namespace DontLate.EditorTools
             cutIn.alignment = TextAnchor.MiddleCenter;
             cutIn.fontSize = 120;
             cutIn.color = new Color(1f, 0.25f, 0.25f, 1f);
-            cutIn.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            cutIn.font = AssetDatabase.LoadAssetAtPath<Font>("Assets/Art/UI/Fonts/DNFBitBitOTF.otf")
+                ?? Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             StretchFull(cutIn.rectTransform);
             cutInGo.SetActive(false);
 
@@ -544,9 +547,9 @@ namespace DontLate.EditorTools
             SetField(hud, "_deliveryCountLabel", countLabel);
 
             // 가방·설정 버튼 (시계 왼쪽).
-            BuildTopBarButton(content.transform, "BagButton", "가방", font, new Vector2(-700f, -20f),
+            BuildTopBarButton(content.transform, "BagButton", "bag_icon", new Vector2(-650f, -20f),
                 bagView != null ? new UnityEngine.Events.UnityAction(bagView.Toggle) : null);
-            BuildTopBarButton(content.transform, "SettingsButton", "설정", font, new Vector2(-560f, -20f),
+            BuildTopBarButton(content.transform, "SettingsButton", "setting_button", new Vector2(-560f, -20f),
                 settingsView != null ? new UnityEngine.Events.UnityAction(settingsView.Toggle) : null);
 
             // 빚 (우상, 시계 아래).
@@ -580,25 +583,34 @@ namespace DontLate.EditorTools
             SetField(hud, "_ePrompt", ePrompt.gameObject);
         }
 
-        // ── 상단 바 버튼 (S-063) ─────────────────────────────
+        // ── 상단 바 이미지 버튼 (S-063) ──────────────────────
 
-        private static void BuildTopBarButton(Transform parent, string name, string label,
-            TMP_FontAsset font, Vector2 anchoredPos, UnityEngine.Events.UnityAction onClick)
+        private static void BuildTopBarButton(Transform parent, string name, string spriteName,
+            Vector2 anchoredPos, UnityEngine.Events.UnityAction onClick)
         {
             GameObject go = new GameObject(name, typeof(RectTransform));
             go.transform.SetParent(parent, false);
             Image image = go.AddComponent<Image>();
-            image.color = new Color(0.16f, 0.20f, 0.28f, 0.95f);
+            image.color = new Color(1f, 1f, 1f, 0.001f); // 기존 120×64 클릭 영역만 담당.
             RectTransform rect = (RectTransform)go.transform;
             rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(1f, 1f);
-            rect.sizeDelta = new Vector2(120f, 64f);
+            rect.sizeDelta = new Vector2(76f, 64f);
             rect.anchoredPosition = anchoredPos;
+
+            // 교체된 두 PNG는 1536×1024 투명 캔버스 안 약 1.2:1 정사각형 버튼 아트다.
+            // Image Rect를 183×122로 보정하면 실제 보이는 패널이 약 70×58이 된다.
+            Image art = CreateImage(go.transform, "Art", Color.white);
+            art.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(PANEL_UI_ROOT + spriteName + ".png");
+            art.preserveAspect = true;
+            art.raycastTarget = false;
+            RectTransform artRect = art.rectTransform;
+            artRect.anchorMin = artRect.anchorMax = artRect.pivot = new Vector2(0.5f, 0.5f);
+            artRect.sizeDelta = new Vector2(183f, 122f);
+            artRect.anchoredPosition = Vector2.zero;
+
             Button button = go.AddComponent<Button>();
-            button.targetGraphic = image;
+            button.targetGraphic = art; // 호버·클릭 색 변화는 실아트에 적용.
             if (onClick != null) UnityEditor.Events.UnityEventTools.AddPersistentListener(button.onClick, onClick);
-            TMP_Text text = CreateText(go.transform, "Label", label, font, 28f, Color.white,
-                TextAlignmentOptions.Center);
-            StretchFull(text.rectTransform);
         }
 
         // ── 가방 캔버스 (S-064) ──────────────────────────────
@@ -1189,6 +1201,7 @@ namespace DontLate.EditorTools
         private static void BuildDialogueCanvas()
         {
             TMP_FontAsset font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FONT_PATH);
+            TMP_FontAsset dialogueFont = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(DIALOGUE_FONT_PATH) ?? font;
             AudioClip blip = EnsureBlipClip();
             EnsureTestScenario();
 
@@ -1219,9 +1232,9 @@ namespace DontLate.EditorTools
             if (boxArt != null) borderImage.sprite = boxArt;
             GameObject border = borderImage.gameObject;
             RectTransform borderRect = border.GetComponent<RectTransform>();
-            // S-027 ① → S-117: 실아트 원본 비율(새 아트 캔버스 891×295 ≈ 3.02:1) 그대로 — 찌그러짐 금지.
+            // Ramche 적용 후 본문 가로 공간이 부족해 실아트 박스를 좌우로 확장한다.
             AnchorMiddleBottom(borderRect, new Vector2(0f, 50f),
-                boxArt != null ? new Vector2(1350f, 447f) : new Vector2(1720f, 260f));
+                boxArt != null ? new Vector2(1450f, 447f) : new Vector2(1820f, 260f));
             borderRect.localScale = Vector3.one * 0.7f;
             SetField(view, "_box", border);
 
@@ -1240,7 +1253,7 @@ namespace DontLate.EditorTools
             SetField(view, "_advanceButton", advanceButton);
 
             // 이름표 — 실아트 좌상 명찰 탭 중앙에 (탭 위치 = 크롭 아트 좌표 ×0.8375 스케일 환산, S-027).
-            TMP_Text nameLabel = CreateText(inner.transform, "Name", "박말순", font,
+            TMP_Text nameLabel = CreateText(inner.transform, "Name", "박말순", dialogueFont,
                 34f, boxArt != null ? new Color(0.10f, 0.30f, 0.22f) : AMBER,
                 boxArt != null ? TextAlignmentOptions.Center : TextAlignmentOptions.TopLeft);
             nameLabel.fontStyle = FontStyles.Bold; // S-027 ② (민지: 이름·내용 볼드)
@@ -1250,14 +1263,15 @@ namespace DontLate.EditorTools
             SetField(view, "_nameLabel", nameLabel);
 
             // 본문 — 실아트 내부가 밝아서 어두운 글자 (흰 글자는 소실). 흰 영역은 명찰 탭 아래부터.
-            TMP_Text body = CreateText(inner.transform, "Body", string.Empty, font,
+            TMP_Text body = CreateText(inner.transform, "Body", string.Empty, dialogueFont,
                 40f, boxArt != null ? new Color(0.12f, 0.14f, 0.18f) : Color.white, TextAlignmentOptions.TopLeft);
             body.fontStyle = FontStyles.Bold; // S-027 ②
             body.textWrappingMode = TextWrappingModes.Normal;
             RectTransform bodyRect = body.rectTransform;
             bodyRect.anchorMin = Vector2.zero;
             bodyRect.anchorMax = Vector2.one;
-            bodyRect.offsetMin = boxArt != null ? new Vector2(80f, 55f) : new Vector2(44f, 24f);
+            // 사용자 실조정: 첫 글자가 좌측 프레임과 충분히 떨어지도록 오른쪽 이동.
+            bodyRect.offsetMin = boxArt != null ? new Vector2(120f, 55f) : new Vector2(84f, 24f);
             bodyRect.offsetMax = boxArt != null ? new Vector2(-80f, -150f) : new Vector2(-44f, -74f);
             SetField(view, "_bodyLabel", body);
 

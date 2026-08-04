@@ -17,7 +17,8 @@ namespace DontLate.EditorTools
     public static class SceneFlowUIBuilder
     {
         private const string SCENES_ROOT = "Assets/Scenes";
-        private const string FONT_PATH = "Assets/Art/UI/Fonts/Pretendard-Regular SDF.asset";
+        private const string FONT_PATH = "Assets/Art/UI/Fonts/DNFBitBitOTF SDF.asset";
+        private const string PANEL_ART_ROOT = "Assets/Art/UI/panel/";
 
         // 타이틀 UI 공통 축소율 — S-139 후속(남규님 씬 실조정 2026-08-04 굽기).
         // 로고·서브로고·시작버튼을 한 값으로 묶어 배경(살아 있는 거리)과의 균형을 한 곳에서 조인다.
@@ -39,7 +40,7 @@ namespace DontLate.EditorTools
                 // 없어** 전 UI가 두부(□)로 저장된다. 컴파일도 콘솔 에러도 통과하므로 아무도
                 // 모르고, 씬이 저장된 뒤에야 화면에서 발견된다(실제로 6개 씬이 그렇게 저장됨).
                 // 조립을 중단한다 — 깨진 씬을 저장하느니 아무것도 안 하는 게 낫다.
-                Debug.LogError("[SceneFlowUIBuilder] Pretendard 폰트 로드 실패 — 조립 중단. "
+                Debug.LogError("[SceneFlowUIBuilder] DNFBitBit 폰트 로드 실패 — 조립 중단. "
                     + $"경로 확인: {FONT_PATH} (한글이 두부로 저장되는 것을 막기 위해 진행하지 않는다)");
                 return;
             }
@@ -149,9 +150,14 @@ namespace DontLate.EditorTools
             Scene scene = EditorSceneManager.OpenScene(SCENES_ROOT + "/" + sceneName + ".unity", OpenSceneMode.Single);
             Transform root = CreateFlowCanvas().transform;
 
-            TMP_Text label = CreateText(root, "Label", labelText, font, 46f, Color.white,
-                TextAlignmentOptions.Top, FontStyles.Normal);
-            AnchorCorner(label.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -78f), new Vector2(1000f, 72f)); // S-030 ②: 상단 중앙 — HUD 카드(좌상)와 중첩 소멸
+            if (sceneName == "Camp")
+                CreateTutorialBanner(root, labelText, font);
+            else
+            {
+                TMP_Text label = CreateText(root, "Label", labelText, font, 46f, Color.white,
+                    TextAlignmentOptions.Top, FontStyles.Normal);
+                AnchorCorner(label.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -78f), new Vector2(1000f, 72f));
+            }
 
             // S-072 ⑥ — 캠프는 출발 버튼 없음: 출발은 엣지 워크(해금 구역 도보)나 트럭 인터랙트 몫.
             if (sceneName != "Camp")
@@ -208,9 +214,7 @@ namespace DontLate.EditorTools
             Transform root = CreateFlowCanvas().transform;
 
             // S-036: 노드 버튼 UI 은퇴 — 목적지 선택은 폰 지도 앱(PhoneView Map)이 전담. 씬엔 안내+복귀만.
-            TMP_Text label = CreateText(root, "Label", "이동 — 폰 지도에서 목적지를 골라라", font,
-                46f, Color.white, TextAlignmentOptions.Top, FontStyles.Normal);
-            AnchorCorner(label.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -78f), new Vector2(1400f, 72f)); // S-030 ②
+            CreateTutorialBanner(root, "이동 — 폰 지도에서 목적지를 골라라", font);
 
             // S-062 ⑤ — 좌상단 ← 뒤로가기 (직전 씬 복귀 · Backspace/Delete 동일).
             GameObject backGo = new GameObject("BackButton", typeof(RectTransform));
@@ -258,9 +262,7 @@ namespace DontLate.EditorTools
             Scene scene = EditorSceneManager.OpenScene(SCENES_ROOT + "/" + sceneName + ".unity", OpenSceneMode.Single);
             Transform root = CreateFlowCanvas().transform;
 
-            TMP_Text label = CreateText(root, "Label", labelText, font, 46f, Color.white,
-                TextAlignmentOptions.Top, FontStyles.Normal);
-            AnchorCorner(label.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -78f), new Vector2(1200f, 72f));
+            CreateTutorialBanner(root, labelText, font);
 
             // S-134 ⑥ — 캔버스 활성 + 내비 버튼만 억제 (District와 동일 규칙).
             BuildDeliveryEndCanvas(root, font, navButtons: false);
@@ -275,16 +277,30 @@ namespace DontLate.EditorTools
             GameObject endDay = new GameObject("EndDayButton", typeof(RectTransform));
             endDay.transform.SetParent(root, false);
             Image endImg = endDay.AddComponent<Image>();
-            endImg.color = CYAN;
+            endImg.color = new Color(1f, 1f, 1f, 0.001f); // 클릭 영역 전용. 실아트는 자식 이미지.
             RectTransform endRect = (RectTransform)endDay.transform;
             endRect.anchorMin = endRect.anchorMax = endRect.pivot = new Vector2(1f, 1f);
-            endRect.sizeDelta = new Vector2(380f, 74f);
-            endRect.anchoredPosition = new Vector2(-40f, -220f);
+            endRect.sizeDelta = new Vector2(380f, 125f);
+            endRect.anchoredPosition = new Vector2(-40f, -160f);
             Button endButton = endDay.AddComponent<Button>();
             endButton.targetGraphic = endImg;
+
+            // gohome.png는 1536×1024 투명 캔버스 안 실제 패널이 984×324다.
+            // 패널을 380×125로 보이게 하려면 원본 Image Rect는 593×395로 둔다.
+            Image endArt = CreateImage(endDay.transform, "BackgroundArt", Color.white);
+            endArt.sprite = LoadPanelSprite("gohome");
+            endArt.preserveAspect = true;
+            endArt.raycastTarget = false;
+            AnchorCentered(endArt.rectTransform, Vector2.zero, new Vector2(593f, 395f));
+
+            CreatePanelIcon(endDay.transform, "TwinkleIcon", "twincle_icon",
+                new Vector2(-142f, 0f), new Vector2(275f, 183f));
+            CreatePanelIcon(endDay.transform, "HouseIcon", "house_icon",
+                new Vector2(142f, 0f), new Vector2(254f, 169f));
+
             TMP_Text endLabel = CreateText(endDay.transform, "Label", "하루 끝 — 집으로", font, 30f, NAVY,
                 TextAlignmentOptions.Center, FontStyles.Bold);
-            StretchFull(endLabel.rectTransform);
+            AnchorCentered(endLabel.rectTransform, Vector2.zero, new Vector2(250f, 70f));
 
             if (navButtons)
             {
@@ -362,6 +378,68 @@ namespace DontLate.EditorTools
         }
 
         // ── UI 헬퍼 ──────────────────────────────────────────
+
+        private static void CreateTutorialBanner(Transform root, string message, TMP_FontAsset font)
+        {
+            GameObject banner = new GameObject("TutorialBanner", typeof(RectTransform));
+            banner.transform.SetParent(root, false);
+            RectTransform bannerRect = (RectTransform)banner.transform;
+            bannerRect.anchorMin = bannerRect.anchorMax = bannerRect.pivot = new Vector2(0.5f, 1f);
+            bannerRect.sizeDelta = new Vector2(900f, 148f);
+            bannerRect.anchoredPosition = new Vector2(0f, -34f);
+
+            // tutorial_long.png는 1536×1024 투명 캔버스 안 실제 패널이 1374×226다.
+            // 원본을 자르거나 9-slice 하지 않고 실제 패널 기준 약 900×148로 맞춘다.
+            Image background = CreateImage(banner.transform, "BackgroundArt", Color.white);
+            background.sprite = LoadPanelSprite("tutorial_long");
+            background.preserveAspect = true;
+            background.raycastTarget = false;
+            AnchorCentered(background.rectTransform, new Vector2(0f, -24f), new Vector2(1006f, 671f));
+
+            CreatePanelIcon(banner.transform, "ParcelIcon", "box_icon",
+                new Vector2(-385f, 0f), new Vector2(265f, 177f));
+
+            TMP_Text label = CreateText(banner.transform, "Label", message, font, 34f, NAVY,
+                TextAlignmentOptions.Center, FontStyles.Bold);
+            AnchorCentered(label.rectTransform, new Vector2(45f, 8f), new Vector2(760f, 76f));
+
+            CreateTutorialCloseButton(banner.transform);
+        }
+
+        private static void CreateTutorialCloseButton(Transform banner)
+        {
+            GameObject closeGo = new GameObject("CloseButton", typeof(RectTransform));
+            closeGo.transform.SetParent(banner, false);
+            Image closeImage = closeGo.AddComponent<Image>();
+            closeImage.sprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/UI/x.png");
+            closeImage.color = Color.white;
+            closeImage.preserveAspect = true;
+            RectTransform closeRect = closeImage.rectTransform;
+            closeRect.anchorMin = closeRect.anchorMax = closeRect.pivot = new Vector2(1f, 1f);
+            closeRect.sizeDelta = new Vector2(47f, 47f);
+            closeRect.anchoredPosition = new Vector2(-20f, -16f);
+            Button closeButton = closeGo.AddComponent<Button>();
+            closeButton.targetGraphic = closeImage;
+            closeGo.AddComponent<DismissTutorialButton>();
+        }
+
+        private static void CreatePanelIcon(Transform parent, string objectName, string spriteName,
+            Vector2 anchoredPosition, Vector2 sourceCanvasSize)
+        {
+            Image icon = CreateImage(parent, objectName, Color.white);
+            icon.sprite = LoadPanelSprite(spriteName);
+            icon.preserveAspect = true;
+            icon.raycastTarget = false;
+            AnchorCentered(icon.rectTransform, anchoredPosition, sourceCanvasSize);
+        }
+
+        private static Sprite LoadPanelSprite(string name)
+        {
+            Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(PANEL_ART_ROOT + name + ".png");
+            if (sprite == null)
+                Debug.LogWarning("[SceneFlowUIBuilder] 패널 스프라이트 로드 실패: " + name);
+            return sprite;
+        }
 
         private static Canvas CreateFlowCanvas()
         {

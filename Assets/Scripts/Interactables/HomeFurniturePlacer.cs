@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 namespace DontLate
 {
@@ -18,6 +19,9 @@ namespace DontLate
 
         [SerializeField] private GameStateSO _gameState;
         [SerializeField] private FurnitureSO[] _catalog;
+        [SerializeField] private Sprite _hintBackground;
+        [SerializeField] private Sprite _hintIcon;
+        [SerializeField] private Sprite _hintCloseIcon;
 
         private static readonly Color GhostColor = new Color(0.208f, 0.878f, 0.784f, 0.45f); // 시안 반투명
 
@@ -202,21 +206,73 @@ namespace DontLate
                 Canvas canvas = _hintCanvasGo.AddComponent<Canvas>();
                 canvas.renderMode = RenderMode.ScreenSpaceOverlay;
                 canvas.sortingOrder = 6;
+                CanvasScaler scaler = _hintCanvasGo.AddComponent<CanvasScaler>();
+                scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+                scaler.referenceResolution = new Vector2(1920f, 1080f);
+                scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+                scaler.matchWidthOrHeight = 0.5f;
+
+                GameObject banner = new GameObject("TutorialBanner", typeof(RectTransform));
+                banner.transform.SetParent(_hintCanvasGo.transform, false);
+                RectTransform bannerRect = (RectTransform)banner.transform;
+                bannerRect.anchorMin = bannerRect.anchorMax = bannerRect.pivot = new Vector2(0.5f, 1f);
+                bannerRect.sizeDelta = new Vector2(900f, 148f);
+                bannerRect.anchoredPosition = new Vector2(0f, -102f);
+
+                Image background = new GameObject("BackgroundArt", typeof(RectTransform)).AddComponent<Image>();
+                background.transform.SetParent(banner.transform, false);
+                background.sprite = _hintBackground;
+                background.color = _hintBackground != null ? Color.white : new Color(0.04f, 0.05f, 0.09f, 0.88f);
+                background.preserveAspect = _hintBackground != null;
+                background.raycastTarget = false;
+                RectTransform backgroundRect = background.rectTransform;
+                backgroundRect.anchorMin = backgroundRect.anchorMax = backgroundRect.pivot = new Vector2(0.5f, 0.5f);
+                backgroundRect.sizeDelta = _hintBackground != null ? new Vector2(1006f, 671f) : bannerRect.sizeDelta;
+                backgroundRect.anchoredPosition = _hintBackground != null ? new Vector2(0f, -24f) : Vector2.zero;
+
+                if (_hintIcon != null)
+                {
+                    Image icon = new GameObject("ParcelIcon", typeof(RectTransform)).AddComponent<Image>();
+                    icon.transform.SetParent(banner.transform, false);
+                    icon.sprite = _hintIcon;
+                    icon.color = Color.white;
+                    icon.preserveAspect = true;
+                    icon.raycastTarget = false;
+                    RectTransform iconRect = icon.rectTransform;
+                    iconRect.anchorMin = iconRect.anchorMax = iconRect.pivot = new Vector2(0.5f, 0.5f);
+                    iconRect.sizeDelta = new Vector2(265f, 177f);
+                    iconRect.anchoredPosition = new Vector2(-385f, 0f);
+                }
+
                 _hintLabel = new GameObject("Hint", typeof(RectTransform)).AddComponent<TextMeshProUGUI>();
-                _hintLabel.transform.SetParent(_hintCanvasGo.transform, false);
+                _hintLabel.transform.SetParent(banner.transform, false);
                 if (UiOverlayFont.Korean != null) _hintLabel.font = UiOverlayFont.Korean;
-                _hintLabel.fontSize = 26f;
+                _hintLabel.fontSize = 34f;
                 _hintLabel.fontStyle = FontStyles.Bold;
-                _hintLabel.color = new Color(0.78f, 1f, 0.96f, 1f);
+                _hintLabel.color = new Color(0.039f, 0.051f, 0.086f, 1f);
                 _hintLabel.alignment = TextAlignmentOptions.Center;
+                _hintLabel.textWrappingMode = TextWrappingModes.NoWrap;
                 _hintLabel.raycastTarget = false;
                 RectTransform rect = _hintLabel.rectTransform;
-                // S-126 — 하단은 대화 박스가 덮어 메시지가 반쯤 가려졌다(캡처 확인). 상단 HUD 아래로.
-                rect.anchorMin = new Vector2(0.5f, 1f);
-                rect.anchorMax = new Vector2(0.5f, 1f);
-                rect.pivot = new Vector2(0.5f, 1f);
-                rect.sizeDelta = new Vector2(900f, 40f);
-                rect.anchoredPosition = new Vector2(0f, -120f);
+                rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
+                rect.sizeDelta = new Vector2(760f, 76f);
+                rect.anchoredPosition = new Vector2(45f, 8f);
+
+                if (_hintCloseIcon != null)
+                {
+                    Image closeImage = new GameObject("CloseButton", typeof(RectTransform)).AddComponent<Image>();
+                    closeImage.transform.SetParent(banner.transform, false);
+                    closeImage.sprite = _hintCloseIcon;
+                    closeImage.color = Color.white;
+                    closeImage.preserveAspect = true;
+                    RectTransform closeRect = closeImage.rectTransform;
+                    closeRect.anchorMin = closeRect.anchorMax = closeRect.pivot = new Vector2(1f, 1f);
+                    closeRect.sizeDelta = new Vector2(47f, 47f);
+                    closeRect.anchoredPosition = new Vector2(-20f, -16f);
+                    Button closeButton = closeImage.gameObject.AddComponent<Button>();
+                    closeButton.targetGraphic = closeImage;
+                    closeImage.gameObject.AddComponent<DismissTutorialButton>();
+                }
             }
             _hintLabel.text = text;
         }
