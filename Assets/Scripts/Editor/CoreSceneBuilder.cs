@@ -21,6 +21,8 @@ namespace DontLate.EditorTools
         private const string CORE_PATH = SCENES_ROOT + "/Core.unity";
         private const string DATA_ROOT = "Assets/Data";
         private const string FONT_PATH = "Assets/Art/UI/Fonts/Pretendard-Regular SDF.asset";
+        private const string KIOSK_UI_PREFAB_PATH = "Assets/Prefabs/Hand/UI/KioskPanel.prefab";
+        private const string INVENTORY_UI_PREFAB_PATH = "Assets/Prefabs/Hand/UI/InventoryPanel.prefab";
         private const string BGM_FOLDER = "Assets/Audio/BGM";
         private const string BGM_LIBRARY_PATH = DATA_ROOT + "/BgmLibrary.asset";
         private static readonly Color AMBER = new Color(1f, 0.624f, 0.271f, 1f); // #ff9f45
@@ -51,6 +53,12 @@ namespace DontLate.EditorTools
         [MenuItem("DontLate/Build/Core Scene", priority = 10)]
         public static void BuildCoreScene()
         {
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+            {
+                Debug.LogWarning("[CoreSceneBuilder] 저장되지 않은 씬이 있어 Core 재조립을 취소했다.");
+                return;
+            }
+
             GameStateSO gameState = AssetDatabase.LoadAssetAtPath<GameStateSO>(DATA_ROOT + "/GameState.asset");
             TuningConfigSO tuning = AssetDatabase.LoadAssetAtPath<TuningConfigSO>(DATA_ROOT + "/Tuning.asset");
             if (gameState == null || tuning == null)
@@ -97,6 +105,12 @@ namespace DontLate.EditorTools
         [MenuItem("DontLate/Build/★ All Scenes", priority = 0)]
         public static void BuildAllScenes()
         {
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+            {
+                Debug.LogWarning("[Build All] 저장되지 않은 씬이 있어 전 씬 재조립을 취소했다.");
+                return;
+            }
+
             CreateContentScenes();          // 씬 파일이 없으면 빈 씬부터 생성 (멱등)
             BuildCoreScene();               // 매니저·HUD·대화·미니게임·폰 캔버스
             CampStageBuilder.BuildCampStage();
@@ -591,9 +605,27 @@ namespace DontLate.EditorTools
 
         private static BagView BuildBagCanvas(GameStateSO gameState)
         {
+            GameObject inventoryPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(INVENTORY_UI_PREFAB_PATH);
+            if (inventoryPrefab != null)
+            {
+                GameObject instance = (GameObject)PrefabUtility.InstantiatePrefab(inventoryPrefab);
+                instance.name = "BagCanvas";
+                BagView prefabView = instance.GetComponent<BagView>();
+                SetField(prefabView, "_gameState", gameState);
+                EditorUtility.SetDirty(prefabView);
+                return prefabView;
+            }
+
             TMP_FontAsset font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FONT_PATH);
-            Sprite inventoryArt = LoadUISprite("ui_inventory_panel");
+            Sprite inventoryArt = LoadSpriteSubAsset("Assets/Art/UI/KioskPanel/ui_back.png");
+            Sprite slotFrame = LoadSpriteSubAsset("Assets/Art/UI/KioskPanel/square-box.png");
+            Sprite buttonFrame = LoadSpriteSubAsset("Assets/Art/UI/KioskPanel/xButton.png");
             bool hasInventoryArt = inventoryArt != null;
+            Texture2D drinkIcon = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Art/UI/ui_kiosk_drink.png");
+            Texture2D waterIcon = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Art/UI/ui_kiosk_water.png");
+            Texture2D cocoaIcon = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Art/UI/ui_kiosk_cocoa.png");
+            Texture2D odengIcon = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Art/UI/ui_kiosk_odeng.png");
+            Texture2D flowerIcon = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Art/UI/ui_kiosk_flower.png");
 
             GameObject canvasGo = new GameObject("BagCanvas");
             Canvas canvas = canvasGo.AddComponent<Canvas>();
@@ -615,7 +647,7 @@ namespace DontLate.EditorTools
             }
             RectTransform panelRect = panel.rectTransform;
             panelRect.anchorMin = panelRect.anchorMax = panelRect.pivot = new Vector2(0.5f, 0.5f);
-            panelRect.sizeDelta = hasInventoryArt ? new Vector2(680f, 756f) : new Vector2(680f, 300f);
+            panelRect.sizeDelta = hasInventoryArt ? new Vector2(680f, 796f) : new Vector2(680f, 300f);
             Image inner = CreateImage(panel.transform, "Inner", hasInventoryArt ? Color.clear : NAVY);
             inner.raycastTarget = true;
             RectTransform innerRect = inner.rectTransform;
@@ -631,7 +663,12 @@ namespace DontLate.EditorTools
             GameObject closeGo = new GameObject("CloseButton", typeof(RectTransform));
             closeGo.transform.SetParent(inner.transform, false);
             Image closeImg = closeGo.AddComponent<Image>();
-            closeImg.color = hasInventoryArt ? new Color(1f, 1f, 1f, 0.001f) : new Color(0.55f, 0.25f, 0.25f, 1f);
+            closeImg.color = hasInventoryArt ? Color.white : new Color(0.55f, 0.25f, 0.25f, 1f);
+            if (hasInventoryArt && buttonFrame != null)
+            {
+                closeImg.sprite = buttonFrame;
+                closeImg.type = Image.Type.Sliced;
+            }
             RectTransform closeRect = (RectTransform)closeGo.transform;
             closeRect.anchorMin = closeRect.anchorMax = closeRect.pivot = new Vector2(1f, 1f);
             closeRect.sizeDelta = new Vector2(72f, 48f);
@@ -642,24 +679,47 @@ namespace DontLate.EditorTools
                 new UnityEngine.Events.UnityAction(view.Close));
             TMP_Text closeLabel = CreateText(closeGo.transform, "Label", "←", font, 30f,
                 hasInventoryArt ? new Color(0.13f, 0.25f, 0.27f) : Color.white,
-                TextAlignmentOptions.Center);
+                hasInventoryArt ? TextAlignmentOptions.CenterGeoAligned : TextAlignmentOptions.Center);
             StretchFull(closeLabel.rectTransform);
+
+            GameObject gridGo = new GameObject("SlotGrid", typeof(RectTransform));
+            gridGo.transform.SetParent(inner.transform, false);
+            RectTransform gridRect = (RectTransform)gridGo.transform;
+            gridRect.anchorMin = gridRect.anchorMax = new Vector2(0.5f, 1f);
+            gridRect.pivot = new Vector2(0.5f, 1f);
+            gridRect.sizeDelta = new Vector2(570f, 140f);
+            gridRect.anchoredPosition = new Vector2(0f, hasInventoryArt ? -185f : -100f);
+            GridLayoutGroup grid = gridGo.AddComponent<GridLayoutGroup>();
+            grid.cellSize = hasInventoryArt ? new Vector2(120f, 120f) : new Vector2(112f, 112f);
+            grid.spacing = hasInventoryArt ? new Vector2(20f, 0f) : new Vector2(14f, 0f);
+            grid.childAlignment = TextAnchor.UpperCenter;
+            grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            grid.constraintCount = BagStorage.CAPACITY;
 
             var slots = new BagSlot[BagStorage.CAPACITY];
             for (int i = 0; i < slots.Length; i++)
             {
                 GameObject slotGo = new GameObject("Slot_" + i, typeof(RectTransform));
-                slotGo.transform.SetParent(inner.transform, false);
+                slotGo.transform.SetParent(gridGo.transform, false);
                 Image slotBg = slotGo.AddComponent<Image>();
-                slotBg.color = hasInventoryArt
-                    ? new Color(0.50f, 0.78f, 0.75f, 0.04f)
-                    : new Color(0.14f, 0.17f, 0.24f, 0.9f);
+                slotBg.color = hasInventoryArt ? Color.white : new Color(0.14f, 0.17f, 0.24f, 0.9f);
+                if (hasInventoryArt && slotFrame != null)
+                {
+                    slotBg.sprite = slotFrame;
+                    slotBg.type = Image.Type.Simple;
+                    slotBg.preserveAspect = true;
+                }
                 RectTransform slotRect = (RectTransform)slotGo.transform;
-                slotRect.anchorMin = slotRect.anchorMax = slotRect.pivot = new Vector2(0f, 0.5f);
                 slotRect.sizeDelta = hasInventoryArt ? new Vector2(120f, 120f) : new Vector2(112f, 112f);
-                slotRect.anchoredPosition = hasInventoryArt
-                    ? new Vector2(70f + i * 138f, 68f)
-                    : new Vector2(32f + i * 126f, -20f);
+
+                GameObject iconGo = new GameObject("Icon", typeof(RectTransform));
+                iconGo.transform.SetParent(slotGo.transform, false);
+                RawImage icon = iconGo.AddComponent<RawImage>();
+                icon.raycastTarget = false;
+                icon.enabled = false;
+                RectTransform iconRect = icon.rectTransform;
+                iconRect.anchorMin = iconRect.anchorMax = iconRect.pivot = new Vector2(0.5f, 0.5f);
+                iconRect.anchoredPosition = Vector2.zero;
 
                 TMP_Text label = CreateText(slotGo.transform, "Label", string.Empty, font, 22f,
                     hasInventoryArt ? new Color(0.13f, 0.19f, 0.22f) : Color.white,
@@ -677,6 +737,12 @@ namespace DontLate.EditorTools
                 SetField(slot, "_background", slotBg);
                 SetField(slot, "_label", label);
                 SetField(slot, "_countLabel", count);
+                SetField(slot, "_icon", icon);
+                SetField(slot, "_drinkIcon", drinkIcon);
+                SetField(slot, "_waterIcon", waterIcon);
+                SetField(slot, "_cocoaIcon", cocoaIcon);
+                SetField(slot, "_odengIcon", odengIcon);
+                SetField(slot, "_flowerIcon", flowerIcon);
                 SetField(slot, "_illustratedStyle", hasInventoryArt);
                 slots[i] = slot;
             }
@@ -915,8 +981,22 @@ namespace DontLate.EditorTools
         // ── 노점 구매창 (S-125 ② — 자판기·편의점·포장마차 공용) ──
         private static void BuildKioskCanvas(GameStateSO gameState)
         {
+            GameObject kioskPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(KIOSK_UI_PREFAB_PATH);
+            if (kioskPrefab != null)
+            {
+                GameObject instance = (GameObject)PrefabUtility.InstantiatePrefab(kioskPrefab);
+                instance.name = "KioskCanvas";
+                KioskView prefabView = instance.GetComponent<KioskView>();
+                SetField(prefabView, "_gameState", gameState);
+                EditorUtility.SetDirty(prefabView);
+                return;
+            }
+
             TMP_FontAsset font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FONT_PATH);
-            Sprite vendingArt = LoadUISprite("ui_vending_panel");
+            Sprite vendingArt = LoadSpriteSubAsset("Assets/Art/UI/KioskPanel/ui_back.png");
+            Sprite rowFrame = LoadSpriteSubAsset("Assets/Art/UI/KioskPanel/square-box.png");
+            Sprite closeFrame = LoadSpriteSubAsset("Assets/Art/UI/KioskPanel/xButton.png");
+            Sprite purchaseButtonFrame = LoadSpriteSubAsset("Assets/Art/UI/KioskPanel/rec_box.png");
             bool hasVendingArt = vendingArt != null;
 
             GameObject canvasGo = new GameObject("KioskCanvas");
@@ -932,6 +1012,8 @@ namespace DontLate.EditorTools
             Texture2D drinkIcon = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Art/UI/ui_kiosk_drink.png");
             Texture2D waterIcon = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Art/UI/ui_kiosk_water.png");
             Texture2D cocoaIcon = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Art/UI/ui_kiosk_cocoa.png");
+            Texture2D odengIcon = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Art/UI/ui_kiosk_odeng.png");
+            Texture2D flowerIcon = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Art/UI/ui_kiosk_flower.png");
 
             Image panel = CreateImage(canvasGo.transform, "Panel",
                 hasVendingArt ? Color.white : new Color(0.10f, 0.12f, 0.17f, 0.97f));
@@ -942,7 +1024,7 @@ namespace DontLate.EditorTools
             }
             RectTransform panelRect = panel.rectTransform;
             panelRect.anchorMin = panelRect.anchorMax = panelRect.pivot = new Vector2(0.5f, 0.5f);
-            panelRect.sizeDelta = hasVendingArt ? new Vector2(620f, 714f) : new Vector2(620f, 520f);
+            panelRect.sizeDelta = hasVendingArt ? new Vector2(620f, 728f) : new Vector2(620f, 520f);
 
             TMP_Text title = CreateText(panel.transform, "Title", "자판기", font, 40f,
                 hasVendingArt ? new Color(0.13f, 0.19f, 0.22f) : CYAN, TextAlignmentOptions.Top);
@@ -960,18 +1042,34 @@ namespace DontLate.EditorTools
             RectTransform listRect = (RectTransform)list.transform;
             listRect.anchorMin = new Vector2(0f, 0f);
             listRect.anchorMax = new Vector2(1f, 1f);
-            listRect.offsetMin = hasVendingArt ? new Vector2(42f, 190f) : new Vector2(0f, 90f);
-            listRect.offsetMax = hasVendingArt ? new Vector2(-42f, -190f) : new Vector2(0f, -116f);
+            listRect.offsetMin = hasVendingArt ? new Vector2(52f, 110f) : new Vector2(0f, 90f);
+            listRect.offsetMax = hasVendingArt ? new Vector2(-52f, -220f) : new Vector2(0f, -116f);
+            if (hasVendingArt)
+            {
+                VerticalLayoutGroup listLayout = list.AddComponent<VerticalLayoutGroup>();
+                listLayout.padding = new RectOffset(0, 0, 0, 0);
+                listLayout.spacing = 8f;
+                listLayout.childAlignment = TextAnchor.UpperCenter;
+                listLayout.childControlWidth = true;
+                listLayout.childControlHeight = true;
+                listLayout.childForceExpandWidth = true;
+                listLayout.childForceExpandHeight = false;
+            }
 
             GameObject closeGo = new GameObject("CloseButton", typeof(RectTransform));
             closeGo.transform.SetParent(panel.transform, false);
             Image closeImg = closeGo.AddComponent<Image>();
-            closeImg.color = hasVendingArt ? new Color(1f, 1f, 1f, 0.001f) : new Color(0.25f, 0.28f, 0.34f, 1f);
+            closeImg.color = hasVendingArt ? Color.white : new Color(0.25f, 0.28f, 0.34f, 1f);
+            if (hasVendingArt && closeFrame != null)
+            {
+                closeImg.sprite = closeFrame;
+                closeImg.type = Image.Type.Sliced;
+            }
             RectTransform closeRect = (RectTransform)closeGo.transform;
             closeRect.anchorMin = closeRect.anchorMax = closeRect.pivot =
                 hasVendingArt ? new Vector2(1f, 1f) : new Vector2(0.5f, 0f);
             closeRect.sizeDelta = hasVendingArt ? new Vector2(58f, 58f) : new Vector2(300f, 60f);
-            closeRect.anchoredPosition = hasVendingArt ? new Vector2(-77f, -72f) : new Vector2(0f, 18f);
+            closeRect.anchoredPosition = hasVendingArt ? new Vector2(-74f, -80f) : new Vector2(0f, 18f);
             Button closeButton = closeGo.AddComponent<Button>();
             closeButton.targetGraphic = closeImg;
             TMP_Text closeLabel = CreateText(closeGo.transform, "Label", hasVendingArt ? "X" : "닫기 (ESC)", font,
@@ -990,6 +1088,10 @@ namespace DontLate.EditorTools
             SetField(view, "_drinkIcon", drinkIcon);
             SetField(view, "_waterIcon", waterIcon);
             SetField(view, "_cocoaIcon", cocoaIcon);
+            SetField(view, "_odengIcon", odengIcon);
+            SetField(view, "_flowerIcon", flowerIcon);
+            SetField(view, "_rowFrame", rowFrame);
+            SetField(view, "_buttonFrame", purchaseButtonFrame);
             EditorUtility.SetDirty(view);
             panel.gameObject.SetActive(false);
         }
@@ -1383,6 +1485,17 @@ namespace DontLate.EditorTools
         /// UI 실아트 로더 (S-025 스왑 계약) — `Assets/Art/UI/<bomId>.png`가 있으면 스프라이트로,
         /// 없으면 null(호출부가 코드 폴백). 텍스처가 Sprite 타입이 아니면 임포터를 교정한다.
         /// </summary>
+        private static Sprite LoadSpriteSubAsset(string path)
+        {
+            foreach (UnityEngine.Object asset in AssetDatabase.LoadAllAssetsAtPath(path))
+            {
+                if (asset is Sprite sprite)
+                    return sprite;
+            }
+
+            return null;
+        }
+
         internal static Sprite LoadUISprite(string bomId)
         {
             string path = "Assets/Art/UI/" + bomId + ".png";
