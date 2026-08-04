@@ -57,6 +57,8 @@ namespace DontLate
         private bool _waitingDialogue;
         private bool _praising;
         private float _beatLeft;
+        private Gate _pendingGate;   // S-157 — 대사 중에 해낸 행동(대사 종료 시 인정)
+        private bool _hasPending;
         private Transform _player;
         private Vector3 _moveAnchor;
         private float _moved;
@@ -113,6 +115,7 @@ namespace DontLate
             _waitingDialogue = true;
             _praising = false;
             _beatLeft = 0f;
+            _hasPending = false;
             _moved = 0f;
             if (_player != null) _moveAnchor = _player.position;
 
@@ -129,22 +132,39 @@ namespace DontLate
         {
             if (!Running) return;
 
-            // 대사가 끝나기 전엔 판정하지 않는다 — 말하는 도중에 통과하면 설명이 잘린다.
-            if (_waitingDialogue)
-            {
-                if (WorldDialogueManager.Instance != null && WorldDialogueManager.Instance.IsPlaying) return;
-                _waitingDialogue = false;
-                // 이동 판정은 **대사가 끝난 지점**을 기준으로 삼는다. 말 듣는 동안 밀린 거리로
-                // 그냥 통과해 버리면 "움직여봐"라고 하자마자 다음으로 넘어간다.
-                if (_player != null) _moveAnchor = _player.position;
-                if (_steps[_index].gate == Gate.ReadOnly) _gateCleared = true;
-            }
-
+            // S-157 — 이동 거리는 **대사 중에도 누적**한다. 대사가 끝난 뒤 다시 재기 시작하면
+            // 설명 듣는 동안 걸은 것이 버려져 "또 걸어야" 한다(discrete 게이트의 보류와 같은 취지).
             if (!_gateCleared && _steps[_index].gate == Gate.Move && _player != null)
             {
                 _moved += Vector3.Distance(_player.position, _moveAnchor);
                 _moveAnchor = _player.position;
-                if (_moved >= _moveDistance) { _gateCleared = true; _beatLeft = _beatBeforePraise; }
+            }
+
+            // 대사가 끝나기 전엔 통과시키지 않는다 — 말하는 도중에 넘어가면 설명이 잘린다.
+            // (해낸 사실은 위/`Clear`에서 기록해 두고, 대사가 끝나는 순간 인정한다.)
+            if (_waitingDialogue)
+            {
+                if (WorldDialogueManager.Instance != null && WorldDialogueManager.Instance.IsPlaying) return;
+                _waitingDialogue = false;
+
+                if (_steps[_index].gate == Gate.ReadOnly) _gateCleared = true;
+
+                // S-157 — 대사 중에 이미 해냈으면 여기서 인정한다(다시 시키지 않는다).
+                // 이동 기준점은 다시 잡지 않는다 — 종전엔 여기서 리셋해 말 듣는 동안 걸은
+                // 거리를 버렸고, 그래서 "이미 걸었는데 또 걸어야" 했다.
+                if (_hasPending && _pendingGate == _steps[_index].gate) _gateCleared = true;
+                _hasPending = false;
+                // 이동도 이미 채웠으면 인정한다(위에서 대사 중에도 누적했다).
+                if (_steps[_index].gate == Gate.Move && _moved >= _moveDistance) _gateCleared = true;
+
+                if (_gateCleared) _beatLeft = _beatBeforePraise;
+            }
+
+            // 누적은 위(대사 중 포함)에서 하고 여기선 판정만 한다 — 두 곳에서 더하면 두 배로 센다.
+            if (!_gateCleared && _steps[_index].gate == Gate.Move && _moved >= _moveDistance)
+            {
+                _gateCleared = true;
+                _beatLeft = _beatBeforePraise;
             }
 
             if (!_gateCleared) return;
@@ -169,8 +189,15 @@ namespace DontLate
 
         private void Clear(Gate gate)
         {
-            if (!Running || _waitingDialogue || _gateCleared) return; // 대사 중 입력은 무시(설명을 다 듣게)
+            if (!Running || _gateCleared) return;
             if (_steps[_index].gate != gate) return;
+
+            // S-157 — 대사 중 행동은 **무시가 아니라 보류**다.
+            // 종전엔 여기서 그냥 return 했다(설명이 잘리는 걸 막으려고). 그 바람에 설명 도중
+            // 이미 해낸 행동이 통째로 버려져, 상자를 들고 있는데도 "상자를 집어 보세요"가 남고
+            // 폰을 껐다 다시 켜야 했다(남규님 지적). 설명은 끝까지 보여주되 한 일은 기억한다.
+            if (_waitingDialogue) { _pendingGate = gate; _hasPending = true; return; }
+
             _gateCleared = true;
             _beatLeft = _beatBeforePraise; // 결과를 보고 나서 칭찬이 오도록 한 박자 쉰다
         }
