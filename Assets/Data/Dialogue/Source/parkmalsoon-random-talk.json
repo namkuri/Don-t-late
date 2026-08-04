@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "scenarioId": "parkmalsoon_random_talk",
+  "npcId": "parkmalsoon",
+  "displayName": "박말순",
+  "trigger": "interact",
+  "selectionMode": "random_single",
+  "avoidImmediateRepeat": true,
+  "lines": [
+    {
+      "lineId": "PMS_RANDOM_01",
+      "speaker": "박말순",
+      "text": "뭐야..? 할매 쳐다볼 시간에 택배 하나라도 더 날라서 빚 갚아!",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_02",
+      "speaker": "박말순",
+      "text": "젊은 사람이 왜 그리 굼떠? 달팽이도 너보단 일찍 퇴근하겄다.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_03",
+      "speaker": "박말순",
+      "text": "택배는 문 앞에 반듯하게 놔야지! 삐딱하면 내 속도 삐딱해져.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_04",
+      "speaker": "박말순",
+      "text": "그 상자 내 거 아녀? 아닌 척 슬쩍 지나가려고 했지?",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_05",
+      "speaker": "박말순",
+      "text": "엘리베이터 기다릴 시간에 계단으로 뛰어! 젊음이 장식이냐?",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_06",
+      "speaker": "박말순",
+      "text": "이 동네 길은 내가 눈 감고도 알아. 근디 넌 눈 뜨고도 헤매냐?",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_07",
+      "speaker": "박말순",
+      "text": "어제 온 기사는 인사라도 했어. 넌 입에 테이프 붙였냐?",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_08",
+      "speaker": "박말순",
+      "text": "빈손으로 올라가지 말고, 한 번에 두 개씩 들어!",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_09",
+      "speaker": "박말순",
+      "text": "배송 메모 안 읽었지? 얼굴에 ‘안 읽음’이라고 써 있다.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_10",
+      "speaker": "박말순",
+      "text": "202호는 냉동이여! 햇볕 아래 두면 네 월급도 같이 녹는다.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_11",
+      "speaker": "박말순",
+      "text": "늦었다고 뛰다가 사람 치면 그날 장사는 끝이여.",
+      "portraitId": ""
+    }
+  ]
+}

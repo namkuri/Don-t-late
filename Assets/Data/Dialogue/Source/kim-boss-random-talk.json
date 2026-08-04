@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "scenarioId": "kim_boss_random_talk",
+  "npcId": "boss",
+  "displayName": "김사장",
+  "trigger": "interact",
+  "selectionMode": "random_single",
+  "avoidImmediateRepeat": true,
+  "lines": [
+    {
+      "lineId": "KIM_BOSS_RANDOM_01",
+      "speaker": "김사장",
+      "text": "그래, 이동은 할 줄 아네. 반은 했다.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KIM_BOSS_RANDOM_02",
+      "speaker": "김사장",
+      "text": "상자 앞에서 상호작용 버튼을 눌러.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KIM_BOSS_RANDOM_03",
+      "speaker": "김사장",
+      "text": "아무 상자나 집으면 안 돼. 송장부터 확인해.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KIM_BOSS_RANDOM_04",
+      "speaker": "김사장",
+      "text": "욕심내서 많이 들지 마. 넘어지면 전부 다시 주워야 한다.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KIM_BOSS_RANDOM_05",
+      "speaker": "김사장",
+      "text": "트럭은 꽤 비싼 편이지.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KIM_BOSS_RANDOM_06",
+      "speaker": "김사장",
+      "text": "휴대폰을 열어서 배송지 정보를 확인하고 가라.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KIM_BOSS_RANDOM_07",
+      "speaker": "김사장",
+      "text": "사실 난 부장이야. 사장은 내 이름이고.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KIM_BOSS_RANDOM_08",
+      "speaker": "김사장",
+      "text": "비 오는 날엔 천천히 움직여. 상자보다 네 치료비가 더 비싸다.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KIM_BOSS_RANDOM_09",
+      "speaker": "김사장",
+      "text": "월급은 많지 않다. 실수하면 더 적어진다.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KIM_BOSS_RANDOM_10",
+      "speaker": "김사장",
+      "text": "처음엔 누구나 헤맨다. 천천히 익히면 돼.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KIM_BOSS_RANDOM_11",
+      "speaker": "김사장",
+      "text": "운전할 땐 서두르지 마. 조금 늦는 건 고치면 되지만 사고는 안 돼.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KIM_BOSS_RANDOM_12",
+      "speaker": "김사장",
+      "text": "휴대폰을 열어서 배송지 정보를 확인하고 가라. 길 잃으면 바로 전화하고.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KIM_BOSS_RANDOM_13",
+      "speaker": "김사장",
+      "text": "스태미나가 떨어지면 잠깐 쉬어. 네 몸도 배송 장비야.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KIM_BOSS_RANDOM_14",
+      "speaker": "김사장",
+      "text": "비 오는 날은 바닥부터 봐. 상자 젖는 것보다 네가 미끄러지는 게 더 걱정이다.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KIM_BOSS_RANDOM_15",
+      "speaker": "김사장",
+      "text": "배송 완료 버튼까지 눌러야 끝난다. 마지막 확인만 잘하면 돼.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KIM_BOSS_RANDOM_16",
+      "speaker": "김사장",
+      "text": "오늘 다 못 외워도 괜찮아. 내일 또 알려줄 테니까.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KIM_BOSS_RANDOM_17",
+      "speaker": "김사장",
+      "text": "다녀와. 너무 힘들면 돌아와도 돼. 혼자 끙끙대지는 말고.",
+      "portraitId": ""
+    }
+  ]
+}
