@@ -28,6 +28,12 @@ namespace DontLate
         public float StaminaNormalized => Mathf.Clamp01(Stamina / _hub.Tuning.staminaMax);
         public DeliveryOrderSO CarriedOrder { get; private set; }
         public bool IsCarrying => CarriedOrder != null;
+
+        /// <summary>
+        /// S-147 — 좌클릭을 던지기로 소비한 프레임 번호. InteractionSensor가 같은 프레임에
+        /// 송장을 띄우지 않도록 보는 표식이다(둘이 같은 마우스 입력을 각자 읽는 구조라 필요).
+        /// </summary>
+        public int LeftClickConsumedFrame { get; private set; } = -1;
         /// <summary>손에 든 음료 여부 (S-071 ② — 송장 좌클릭이 음료 던지기와 충돌하지 않게 센서가 참조).</summary>
         public bool IsHoldingDrink => _heldDrink != null;
 
@@ -235,10 +241,20 @@ namespace DontLate
             // S-032 ④: 우클릭 = 드링크 마시기 · 좌클릭 = 던지기(상자 우선, 없으면 드링크 — 택배와 동일 감각).
             if (rightClick && _heldDrink != null)
                 ConsumeHeldDrink();
+            // S-147 — 던지기가 좌클릭을 **소비했다는 사실을 프레임에 남긴다**.
+            // 종전엔 이 블록이 IsCarrying을 끈 뒤 InteractionSensor가 같은 프레임에 `!IsCarrying`을
+            // 보고 송장을 띄웠다 — 상자를 던졌는데 송장까지 뜨는 것(남규님 지적). 두 컴포넌트가
+            // 같은 입력을 각자 읽는 구조라 조건만으론 못 막는다. 센서는 이 표식을 보고 물러난다.
             if (leftClick && IsCarrying)
+            {
                 ThrowCarryTowardsMouse(tuning.throwSpeed); // 던지기 (S-016 ⑦)
+                LeftClickConsumedFrame = Time.frameCount;
+            }
             else if (leftClick && _heldDrink != null)
+            {
                 ThrowHeldDrink(tuning.throwSpeed);
+                LeftClickConsumedFrame = Time.frameCount;
+            }
 
             bool moving = _hub.Locomotion.PlanarVelocity.sqrMagnitude > 0.01f;
 

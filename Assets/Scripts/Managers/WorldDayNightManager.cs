@@ -40,11 +40,25 @@ namespace DontLate
         [Tooltip("스카이박스가 없을 때 배경색을 구동할 카메라(폴백).")]
         [SerializeField] private Camera _backgroundCamera;
 
-        [Header("거리 안개 (Exponential Squared) — 감각값은 인스펙터 튜닝")]
+        [Header("거리 안개 (Linear — S-145) — 감각값은 인스펙터 튜닝")]
+        [Tooltip("끄면 거리 안개가 완전히 사라진다. 원경 깊이감도 함께 사라지니 룩 비교용.")]
+        [SerializeField] private bool _fogEnabled = true;
         [Tooltip("시각(0~24h 정규화) → 안개 색. 밤 짙은 남색·낮 옅은 회백.")]
         [SerializeField] private Gradient _fogColor;
-        [Tooltip("시각(0~24h 정규화) → 안개 밀도. 밤 ~0.025·낮 ~0.004.")]
+        [Tooltip("시각(0~24h 정규화) → 안개 짙기(0~1). 밤이 짙다. 끝 거리를 조이는 데 쓴다.")]
         [SerializeField] private AnimationCurve _fogDensity;
+
+        // S-145 — 근경 면제. 종전 ExponentialSquared는 **시작 거리 개념이 없어** 카메라에서
+        // 1u만 떨어져도 안개가 먹는다. 이 프로젝트는 카메라가 (0,8.1,−40.4) 망원(FOV 22)이라
+        // **플레이 구간조차 카메라에서 약 41u** — 포그 계산상 이미 원경이라 캐릭터·소품까지
+        // 뿌옇게 떴다(남규님 지적: "근경에 있는 얘들은 영향 안받게"). Linear로 바꿔 시작 거리를
+        // 플레이 구간 밖에 두면 근경은 원본 색 그대로고, 원경만 깊이감을 얻는다.
+        [Tooltip("이 거리 안쪽은 안개 영향 0. 플레이 구간(카메라에서 ~41u) 바깥에 둔다.")]
+        [SerializeField] private float _fogStartDistance = 46f;
+        [Tooltip("안개가 가장 옅을 때의 끝 거리. 짙기 1이면 아래 값까지 좁혀진다.")]
+        [SerializeField] private float _fogEndFar = 190f;
+        [Tooltip("안개가 가장 짙을 때의 끝 거리. 작을수록 원경이 빨리 묻힌다.")]
+        [SerializeField] private float _fogEndNear = 70f;
 
         private static readonly int SkyTintId = Shader.PropertyToID("_SkyTint");
         private static readonly int ExposureId = Shader.PropertyToID("_Exposure");
@@ -202,8 +216,8 @@ namespace DontLate
         private void InitSky()
         {
             RenderSettings.ambientMode = AmbientMode.Flat;
-            RenderSettings.fog = true;
-            RenderSettings.fogMode = FogMode.ExponentialSquared;
+            RenderSettings.fog = _fogEnabled;
+            RenderSettings.fogMode = FogMode.Linear; // S-145 — 시작 거리를 쓰려면 Linear여야 한다
 
             Material sky = RenderSettings.skybox;
             if (sky != null && (sky.HasProperty(SkyTintId) || sky.HasProperty(ExposureId)))
@@ -234,8 +248,20 @@ namespace DontLate
 
             RenderSettings.ambientLight = _ambientColor.Evaluate(t);
 
+            // S-145 — Linear 안개: 낮밤 커브와 날씨 배수를 버리지 않고 **끝 거리**를 조이는 데 쓴다.
+            // 짙을수록(=값이 클수록) 끝이 가까워져 원경이 빨리 묻힌다. 시작 거리는 고정이라
+            // 플레이 구간은 어떤 시각·날씨에도 안개를 먹지 않는다.
+            RenderSettings.fog = _fogEnabled;
             RenderSettings.fogColor = _fogColor.Evaluate(t);
-            RenderSettings.fogDensity = _fogDensity.Evaluate(t) * _weatherFogMultiplier; // S-042 날씨 협조
+            // ⚠ `_fogDensity` 커브는 **지수 포그 시절 값**(낮 ~0.004 · 밤 ~0.025)이 그대로 들어
+            // 있다. 0~1로 쓰려면 환산이 필요하다 — 안 하면 짙기가 최대 0.15에 그쳐 끝 거리가
+            // 사실상 고정된다. 커브를 다시 그리지 않고 여기서 환산해 기존 튜닝을 살린다.
+            const float LEGACY_DENSITY_FULL = 0.05f; // 이 값이 짙기 1(=끝 거리 최소)
+            float thickness = Mathf.Clamp01(
+                _fogDensity.Evaluate(t) * _weatherFogMultiplier / LEGACY_DENSITY_FULL);
+            RenderSettings.fogStartDistance = _fogStartDistance;
+            RenderSettings.fogEndDistance = Mathf.Max(
+                _fogStartDistance + 1f, Mathf.Lerp(_fogEndFar, _fogEndNear, thickness));
 
             // S-043: 전광판 점등 전역값 — 17~19시 램프업 · 새벽 5~7시 램프다운 (자정~5시 점등 유지).
             float night01;

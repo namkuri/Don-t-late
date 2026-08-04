@@ -330,11 +330,15 @@ namespace DontLate
             ColorGradeSO.Layer weather = _grade.ForWeather(Weather);
             ColorGradeSO.Layer district = _grade.ForDistrict(_gameState != null ? _gameState.currentDistrict : null);
 
-            _targetExposure = phase.exposure + weather.exposure + district.exposure;
-            _targetSaturation = phase.saturation + weather.saturation + district.saturation;
-            _targetTemperature = phase.temperature + weather.temperature + district.temperature;
-            _targetFilter = phase.SafeFilter * weather.SafeFilter * district.SafeFilter;
-            _targetBloom = phase.bloom + weather.bloom + district.bloom;
+            // S-145 — `baseGrade`는 상황과 무관하게 **항상** 더해지는 기준선이다(남규님 요구).
+            // 곱셈인 필터도 같은 규칙: 기본 필터가 흰색이면 무영향, 색을 주면 전 상황에 배어든다.
+            ColorGradeSO.Layer basis = _grade.baseGrade;
+
+            _targetExposure = basis.exposure + phase.exposure + weather.exposure + district.exposure;
+            _targetSaturation = basis.saturation + phase.saturation + weather.saturation + district.saturation;
+            _targetTemperature = basis.temperature + phase.temperature + weather.temperature + district.temperature;
+            _targetFilter = basis.SafeFilter * phase.SafeFilter * weather.SafeFilter * district.SafeFilter;
+            _targetBloom = basis.bloom + phase.bloom + weather.bloom + district.bloom;
         }
 
         private void LerpGrade()
