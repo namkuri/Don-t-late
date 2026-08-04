@@ -51,7 +51,15 @@ namespace DontLate.EditorTools
             if (playerGo != null) playerGo.transform.position = new Vector3(-6f, 0.1f, 0f);
 
             (GameObject slotsRoot, List<Transform> buildingSlots, List<Transform> propSlots) = BuildSlots();
-            AttachLayoutGenerator(slotsRoot, buildingSlots, propSlots, gameState);
+
+            // S-143 — **건물 슬롯을 비워 넘긴다.** S-141로 민지님 세트가 거리 정본이 되면서
+            // 건물 층이 둘이 됐다: 절차적 슬롯 건물은 전면 z=3.0에서 뒤로 서고(BUILDING_FRONT_Z),
+            // 세트는 z −0.95~38.95를 차지해 **z 3~15가 통째로 겹친다**(남규님 실관찰 — 건물이
+            // 서로 뚫고 도로까지 나옴). 거리를 두 겹으로 지을 이유가 없으므로 건물은 세트가 맡고,
+            // 슬롯 생성기는 소품·가로수만 담당한다.
+            // ⚠ 대가: 구역별(빌라촌·상가·주택가) 건물 다양성이 사라진다 — 소품만 구역색을 낸다.
+            //   구역별 거리를 되살리려면 세트를 구역 수만큼 만들어 교체하는 쪽이 정도다.
+            AttachLayoutGenerator(slotsRoot, new List<Transform>(), propSlots, gameState);
 
             // S-141 — 민지님 세트 프리팹(`set_district_2`)을 배경 파사드로 깐다.
             // 절차적 슬롯을 대체하지 않는다: 슬롯은 Z=2.6 근경에서 구역별로 채워지고,

@@ -33,7 +33,16 @@ namespace DontLate.EditorTools
         {
             TMP_FontAsset font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FONT_PATH);
             if (font == null)
-                Debug.LogWarning("[SceneFlowUIBuilder] Pretendard 폰트 미발견 — TMP 기본 폰트로 진행.");
+            {
+                // S-142 — 종전엔 경고만 찍고 그대로 진행했다. 그 조용한 성공이 사고의 근원이다:
+                // 폰트가 null이면 TMP가 기본 LiberationSans로 조립되는데 거기엔 **한글 글리프가
+                // 없어** 전 UI가 두부(□)로 저장된다. 컴파일도 콘솔 에러도 통과하므로 아무도
+                // 모르고, 씬이 저장된 뒤에야 화면에서 발견된다(실제로 6개 씬이 그렇게 저장됨).
+                // 조립을 중단한다 — 깨진 씬을 저장하느니 아무것도 안 하는 게 낫다.
+                Debug.LogError("[SceneFlowUIBuilder] Pretendard 폰트 로드 실패 — 조립 중단. "
+                    + $"경로 확인: {FONT_PATH} (한글이 두부로 저장되는 것을 막기 위해 진행하지 않는다)");
+                return;
+            }
 
             BuildMain(font);
             BuildHome(font);
