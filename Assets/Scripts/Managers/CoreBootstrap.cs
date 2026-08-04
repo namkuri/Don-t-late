@@ -65,6 +65,10 @@ namespace DontLate
             _gameState.health = GameStateSO.HEALTH_MAX; // S-134 ④ — 세션 시작은 만체력
             _gameState.mastery = 0f;
             _gameState.bagItems.Clear();  // S-064
+            // S-155 — 시작 지급: 에너지드링크 1개. 튜토리얼에서 사장님이 "써보라"고 시키므로
+            // 가방이 비어 있으면 그 단계를 진행할 수 없다. id·라벨은 `EnergyDrinkPickup`과 같은
+            // 값을 쓴다 — 다르면 같은 물건이 가방에서 두 칸으로 갈라진다.
+            BagStorage.TryAdd(_gameState, "drink", "에너지드링크", stackable: true, holdable: true);
             _gameState.ownsCart = false;  // S-056
             _gameState.catFriend = false;  // S-059
             _gameState.catRanAway = false;

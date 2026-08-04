@@ -24,6 +24,7 @@ namespace DontLate
             PhoneOpen,   // 휴대폰 열기
             BoxPickup,   // 상자 집기
             Barcode,     // 송장 바코드 스캔 (S-151 — 남규님 "바코드 어떻게 찍는지 설명 안 함")
+            DrinkUse,    // 에너지드링크 마시기 (S-155 — 시작 지급분을 써 보게 한다)
             ReadOnly,    // 설명만 — 대사가 끝나면 통과 (지역 설명)
             NpcTalk,     // NPC와 대화
             KioskOpen,   // 자판기·편의점·포장마차 구매창 열기
@@ -75,6 +76,7 @@ namespace DontLate
             WorldEvents.BarcodeScanned += OnBarcodeScanned;
             WorldEvents.NpcMet += OnNpcMet;
             WorldEvents.KioskRequested += OnKioskRequested;
+            WorldEvents.BagItemConsumed += OnBagItemConsumed;
         }
 
         private void OnDisable()
@@ -85,6 +87,7 @@ namespace DontLate
             WorldEvents.BarcodeScanned -= OnBarcodeScanned;
             WorldEvents.NpcMet -= OnNpcMet;
             WorldEvents.KioskRequested -= OnKioskRequested;
+            WorldEvents.BagItemConsumed -= OnBagItemConsumed;
         }
 
         /// <summary>보스가 플레이어 앞에 도착하면 부른다.</summary>
@@ -191,5 +194,25 @@ namespace DontLate
         private void OnBarcodeScanned(DeliveryData _) => Clear(Gate.Barcode);
         private void OnNpcMet(string _) => Clear(Gate.NpcTalk);
         private void OnKioskRequested(KioskOffer _) => Clear(Gate.KioskOpen);
+        private void OnBagItemConsumed(BagItem _) => Clear(Gate.DrinkUse);
+
+        /// <summary>
+        /// S-155 — 놓친 안내를 다시 듣는다(남규님 지시: 사장님에게 E). 지금 단계의 대사를
+        /// 처음부터 재생한다. 게이트를 이미 통과했으면 칭찬을, 아직이면 안내를 다시 튼다 —
+        /// 플레이어가 "지금 뭘 해야 하지?"를 물었을 때 답이 되는 쪽을 준다.
+        /// 되듣기 중에는 게이트 판정을 멈춘다(설명 도중 통과 방지 규칙과 같은 이유).
+        /// </summary>
+        public bool TryRepeatCurrentLine()
+        {
+            if (!Running || WorldDialogueManager.Instance == null) return false;
+            if (WorldDialogueManager.Instance.IsPlaying) return false;
+
+            DialogueScenarioSO line = _gateCleared ? _steps[_index].praise : _steps[_index].scenario;
+            if (line == null) return false;
+
+            WorldDialogueManager.Instance.PlayScenario(line);
+            if (!_gateCleared) _waitingDialogue = true; // 다시 듣는 동안엔 통과 판정을 멈춘다
+            return true;
+        }
     }
 }

@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a5e3ef5ec1efc4b4397e1c503ec59084, type: 3}
+  m_Name: Scenario_Tutorial_Drink
+  m_EditorClassIdentifier: Assembly-CSharp::DontLate.DialogueScenarioSO
+  lines:
+  - speaker: "\uC0AC\uC7A5\uB2D8"
+    text: "\uC544 \uCC38, \uAC00\uBC29\uC5D0 \uC5D0\uB108\uC9C0\uB4DC\uB9C1\uD06C
+      \uD558\uB098 \uB123\uC5B4\uB1A8\uC5B4. \uB0B4\uAC00 \uC8FC\uB294 \uAC70\uC57C.\n\uAC00\uBC29
+      \uC5F4\uC5B4\uC11C \uADF8\uAC70 \uD55C\uBC88 \uB9C8\uC154\uBD10. \uC9C0\uCCE4\uC744
+      \uB54C \uC774\uB9CC\uD55C \uAC8C \uC5C6\uAC70\uB4E0."
+    portrait: {fileID: 0}

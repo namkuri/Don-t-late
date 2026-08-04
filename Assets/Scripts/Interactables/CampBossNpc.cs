@@ -154,6 +154,15 @@ namespace DontLate
 
         public void Interact(PlayerContext ctx)
         {
+            // S-155 — 튜토리얼 중 E는 **직전 안내를 다시 듣기**다(남규님 지시: 실수로 넘겨도
+            // 되찾을 수 있게). 종전엔 `_phase != Phase.Idle`이라 그냥 무시돼, 놓치면 끝이었다.
+            if (_tutorial != null && _tutorial.Running)
+            {
+                FaceTowards(ctx.Transform.position);
+                _tutorial.TryRepeatCurrentLine();
+                return;
+            }
+
             if (_phase != Phase.Idle) return;
             if (WorldDialogueManager.Instance == null || WorldDialogueManager.Instance.IsPlaying) return;
             if (_cheerScenarios == null || _cheerScenarios.Length == 0) return;
