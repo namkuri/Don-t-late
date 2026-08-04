@@ -113,7 +113,11 @@ namespace DontLate.EditorTools
 
             GameObject lane = CreatePrimitive(PrimitiveType.Cube, "Lane", new Vector3(0f, 0.02f, 0f));
             Object.DestroyImmediate(lane.GetComponent<BoxCollider>());
-            lane.transform.localScale = new Vector3(40f, 0.04f, 6f);
+            // S-147 — 지면 폭에 맞춘다. Unity Plane은 스케일 1이 10u라 Ground(스케일 12)는 **120u**인데
+            // 차선은 Cube(스케일 1 = 1u)라 40u뿐이었다 — 좌우 40u 지점에서 도로가 뚝 끊겨
+            // 흙바닥이 드러났다(남규님 지적 "중간에 끊키니까 어색함"). 지면과 같은 120u로 깐다.
+            const float GROUND_HALF_SPAN = 12f * 10f; // Ground 스케일 × Plane 기본 10u
+            lane.transform.localScale = new Vector3(GROUND_HALF_SPAN, 0.04f, 6f);
             lane.GetComponent<Renderer>().sharedMaterial = laneMaterial;
         }
 
