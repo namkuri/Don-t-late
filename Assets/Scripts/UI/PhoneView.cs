@@ -279,7 +279,11 @@ namespace DontLate
             WorldAudioManager.Instance?.PlayPhoneToggleSfx(); // AU-008 — 개폐 공용
             if (_slide != null) StopCoroutine(_slide);
             _slide = StartCoroutine(Slide(_open ? _shownY : HiddenY));
-            if (_open) { ShowScreen(_inTravel ? Screen.Map : Screen.Home); } // S-036 — Travel 기본 앱 = 지도
+            if (_open)
+            {
+                ShowScreen(_inTravel ? Screen.Map : Screen.Home); // S-036 — Travel 기본 앱 = 지도
+                WorldEvents.RaisePhoneOpened();                   // S-146 — 튜토리얼 진행 판정용
+            }
         }
 
         private IEnumerator Slide(float targetY)

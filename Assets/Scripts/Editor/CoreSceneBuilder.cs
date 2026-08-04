@@ -105,6 +105,13 @@ namespace DontLate.EditorTools
             ApartmentStageBuilder.BuildApartmentStage(); // S-038
             HillsideStageBuilder.BuildHillsideStage();   // S-049
             SceneFlowUIBuilder.BuildSceneFlowUI();  // 씬별 전환 UI + 정산 패널 (무대 뒤에 얹는다)
+            // S-144 — 타이틀 무대(District 동일 배치 + 러너 + 카메라 강하). **UI 뒤에 온다**:
+            // SceneFlowUIBuilder가 Main의 UI 캔버스를 다시 만들므로 그보다 먼저 세우면 순서상
+            // 문제는 없지만, 무대가 UI를 참조하지 않으므로 뒤에 두어 "무대 → UI → 무대연출" 대신
+            // "무대 → UI" 한 방향을 유지한다.
+            // ⚠ 여기 등록을 빠뜨리면 다른 PC에서 Build All을 돌려도 **타이틀이 로고만 뜬다**
+            //   (민지님 실제 사례 2026-08-04 — 빌더만 만들고 일괄 조립에 안 넣은 관제 누락).
+            MainTitleStageBuilder.BuildMainTitleStage();
             RegisterBuildSettings();
             EditorSceneManager.OpenScene(CORE_PATH); // Play 시작점으로 복귀
             Debug.Log("[Build All] 전 씬 재조립 완료 — Core에서 Play.");

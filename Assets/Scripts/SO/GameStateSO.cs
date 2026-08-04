@@ -54,6 +54,7 @@ namespace DontLate
         [Header("진행")]
         public GameScene currentScene;
         public bool bossIntroPlayed; // S-052 ① — 캠프 사장님 튜토리얼 1회 재생 여부 (세션제)
+        public bool tutorialDone;    // S-146 — 7단계 튜토리얼 완주 여부 (세션제)
         /// <summary>해금된 배송 구역 (S-054 진행 시스템 — 비어 있으면 전체 해금으로 취급: 테스트·그레이박스 호환).</summary>
         public List<string> unlockedDistricts = new List<string>();
         /// <summary>회사 트럭 수령 여부 (S-054) — 전 구역 개척 보상. 지도앱 즉시 이동 해금.</summary>

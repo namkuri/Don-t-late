@@ -67,7 +67,7 @@ namespace DontLate
             _panel.SetActive(open);
             _selected = -1;
             HideContext();
-            if (open) Refresh();
+            if (open) { Refresh(); WorldEvents.RaiseBagOpened(); } // S-146 — 튜토리얼 진행 판정용
         }
 
         public void Close()

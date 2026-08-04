@@ -16,6 +16,8 @@ namespace DontLate
 
         [SerializeField] private GameStateSO _gameState;
         [SerializeField] private DialogueScenarioSO _tutorialScenario;
+        [Tooltip("S-146 — 7단계 튜토리얼 진행부. 붙어 있으면 이쪽이 우선한다.")]
+        [SerializeField] private CampTutorialDirector _tutorial;
         [SerializeField] private DialogueScenarioSO[] _cheerScenarios;
         [Tooltip("재방문 때 자리를 비울 확률 (간혹 안 나온다).")]
         [SerializeField] private float _absentChance = 0.25f;
@@ -107,8 +109,16 @@ namespace DontLate
             FaceTowards(target);
             if (Vector3.Distance(transform.position, target) <= TALK_DISTANCE)
             {
-                if (WorldDialogueManager.Instance != null && _tutorialScenario != null)
+                // S-146 — 진행부가 붙어 있으면 **7단계 튜토리얼**을 넘긴다(대사+행동 검증).
+                // 없으면 종전대로 한 편짜리 시나리오만 재생한다(폴백 — 다른 씬 재사용 대비).
+                if (_tutorial != null)
+                {
+                    _tutorial.Begin(_player);
+                }
+                else if (WorldDialogueManager.Instance != null && _tutorialScenario != null)
+                {
                     WorldDialogueManager.Instance.PlayScenario(_tutorialScenario);
+                }
                 if (_gameState != null) _gameState.bossIntroPlayed = true;
                 _phase = Phase.Talking;
                 Debug.Log("[사장님] 첫 방문 튜토리얼 시작.");
@@ -120,6 +130,9 @@ namespace DontLate
         private void WaitTalkEnd()
         {
             if (WorldDialogueManager.Instance != null && WorldDialogueManager.Instance.IsPlaying) return;
+            // S-146 — 튜토리얼은 대사 사이에 **행동 대기 구간**이 있어 그때마다 대화가 멈춘다.
+            // 대화 중단만 보고 복귀하면 1단계 만에 사장님이 돌아가 버린다 — 진행부가 끝나야 간다.
+            if (_tutorial != null && _tutorial.Running) return;
             _phase = Phase.Returning;
         }
 

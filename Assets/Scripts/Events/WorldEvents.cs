@@ -124,6 +124,27 @@ namespace DontLate
             KioskRequested?.Invoke(offer);
         }
 
+        /// <summary>
+        /// S-146 — 가방/휴대폰을 **열었다**(닫기는 알리지 않는다). 튜토리얼이 "해봤는지"를
+        /// 판정하려면 뷰가 상태를 경계 밖으로 알려야 한다(폴링 금지·Find 금지 규약).
+        /// 개폐는 사람 조작이라 저빈도 — §9.5 로그 대상이다.
+        /// </summary>
+        public static event Action BagOpened;
+
+        public static void RaiseBagOpened()
+        {
+            Log("BagOpened");
+            BagOpened?.Invoke();
+        }
+
+        public static event Action PhoneOpened;
+
+        public static void RaisePhoneOpened()
+        {
+            Log("PhoneOpened");
+            PhoneOpened?.Invoke();
+        }
+
         public static event Action<DeliveryOrderSO> InvoiceRequested;
 
         public static void RaiseInvoiceRequested(DeliveryOrderSO order)

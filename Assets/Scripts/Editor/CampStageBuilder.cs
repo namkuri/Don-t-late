@@ -233,9 +233,48 @@ namespace DontLate.EditorTools
             DialogueScenarioSO cheer3 = NpcBuildKit.GetOrCreateScenario("Scenario_Boss_Cheer3",
                 ("사장님", "비 오는 날 언덕길은 조심해. 미끄러지면 짐이 먼저 구른다?"));
 
+            // S-146 — 7단계 튜토리얼(대사 + 행동 검증). 남규님 지정 항목 순서 그대로.
+            // 한 단계 = 한 줄 대사 + 통과 조건. 조건을 채우기 전엔 다음으로 넘어가지 않는다.
+            var steps = new (string title, string line, CampTutorialDirector.Gate gate, string hint)[]
+            {
+                ("Move",   "어이 신입! 왔구먼. 일단 WASD로 좀 걸어봐 — 몸부터 풀어야지.",
+                    CampTutorialDirector.Gate.Move,      "WASD로 이동해 보세요"),
+                ("Bag",    "가방은 I키다. 열어봐 — 드링크나 주운 물건이 여기 들어간다.",
+                    CampTutorialDirector.Gate.BagOpen,   "I키로 가방을 열어 보세요"),
+                ("Phone",  "폰은 Tab. 주문·지도·은행 다 여기서 본다. 한번 켜봐.",
+                    CampTutorialDirector.Gate.PhoneOpen, "Tab키로 휴대폰을 열어 보세요"),
+                ("Pickup", "자, 배송이다. 상자를 E로 집어. 스캔 안 한 짐은 못 실으니 바코드부터 찍고.",
+                    CampTutorialDirector.Gate.BoxPickup, "E키로 상자를 집어 보세요"),
+                ("Area",   "구역은 빌라촌·아파트단지·언덕주택가 셋이야. 언덕은 비 오면 미끄러우니 조심하고, "
+                         + "아파트는 엘리베이터랑 비번이 있다. 지도는 폰에서 봐.",
+                    CampTutorialDirector.Gate.ReadOnly,  ""),
+                ("Npc",    "길에서 사람 만나면 E로 말 걸어봐. 단골 트면 팁도 나온다.",
+                    CampTutorialDirector.Gate.NpcTalk,   "NPC에게 E로 말을 걸어 보세요"),
+                ("Kiosk",  "자판기·편의점·포장마차는 E로 열어서 사면 돼. 체력 떨어지면 꼭 챙겨 먹고.",
+                    CampTutorialDirector.Gate.KioskOpen, "자판기·편의점·포장마차를 E로 열어 보세요"),
+            };
+
+            GameObject tutorialGo = new GameObject("__gb_CampTutorial");
+            CampTutorialDirector director = tutorialGo.AddComponent<CampTutorialDirector>();
+            GreyboxStageBuilder.SetReference(director, "_gameState", gameState);
+            SerializedObject dirSo = new SerializedObject(director);
+            SerializedProperty stepList = dirSo.FindProperty("_steps");
+            stepList.arraySize = steps.Length;
+            for (int i = 0; i < steps.Length; i++)
+            {
+                DialogueScenarioSO line = NpcBuildKit.GetOrCreateScenario(
+                    "Scenario_Tutorial_" + steps[i].title, ("사장님", steps[i].line));
+                SerializedProperty element = stepList.GetArrayElementAtIndex(i);
+                element.FindPropertyRelative("scenario").objectReferenceValue = line;
+                element.FindPropertyRelative("gate").enumValueIndex = (int)steps[i].gate;
+                element.FindPropertyRelative("hint").stringValue = steps[i].hint;
+            }
+            dirSo.ApplyModifiedPropertiesWithoutUndo();
+
             CampBossNpc boss = go.AddComponent<CampBossNpc>();
             GreyboxStageBuilder.SetReference(boss, "_gameState", gameState);
             GreyboxStageBuilder.SetReference(boss, "_tutorialScenario", tutorial);
+            GreyboxStageBuilder.SetReference(boss, "_tutorial", director);
             GreyboxStageBuilder.SetReference(boss, "_highlightRenderer", body);
             GreyboxStageBuilder.SetReference(boss, "_normalMaterial", body.sharedMaterial);
             GreyboxStageBuilder.SetReference(boss, "_highlightMaterial", highlight);
