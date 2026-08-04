@@ -15,13 +15,21 @@ namespace DontLate.EditorTools
     public static class CampStageBuilder
     {
         private const string CAMP_PATH = "Assets/Scenes/Camp.unity";
+        private const string CAMP_PLANES_PREFAB_PATH = "Assets/Prefabs/Hand/set_camp_planes.prefab";
         private const int LOAD_ZONE_COUNT = 4; // S-039 ④ — 4번째 = 아파트행 물량
 
         [MenuItem("DontLate/Build/Camp Stage", priority = 12)]
         public static void BuildCampStage()
         {
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+            {
+                Debug.LogWarning("[Camp] 저장되지 않은 씬이 있어 재조립을 취소했다.");
+                return;
+            }
+
             Scene scene = EditorSceneManager.OpenScene(CAMP_PATH, OpenSceneMode.Single);
             GreyboxStageBuilder.Clear();
+            EnsureCampPlaneSet(scene);
 
             var (gameState, tuning, _) = GreyboxStageBuilder.GetOrCreateStageData();
 
@@ -81,6 +89,24 @@ namespace DontLate.EditorTools
             EditorSceneManager.SaveScene(scene, CAMP_PATH);
             Debug.Log("[Camp] 무대 조립 완료 — 박스 " + LOAD_ZONE_COUNT
                     + "개를 E로 들어 트럭 짐칸 뒤에서 E로 싣는다 (S-009).");
+        }
+
+        private static void EnsureCampPlaneSet(Scene scene)
+        {
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                if (root.name == "set_camp_planes") return;
+            }
+
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(CAMP_PLANES_PREFAB_PATH);
+            if (prefab == null)
+            {
+                Debug.LogWarning("[Camp] set_camp_planes 프리팹을 찾지 못해 수제 Plane 배치를 생략했다.");
+                return;
+            }
+
+            GameObject instance = PrefabUtility.InstantiatePrefab(prefab, scene) as GameObject;
+            if (instance != null) instance.name = "set_camp_planes";
         }
 
         // 트럭 = 소품 + 적재존(S-009). 짐칸 뒤에서 박스를 든 채 E → LoadingZone이 짐칸에 쌓는다.

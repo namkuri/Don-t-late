@@ -16,6 +16,7 @@ namespace DontLate.EditorTools
     {
         private const string SCENE_PATH = "Assets/Scenes/Hillside.unity";
         private const string HILL_FBX = "Assets/Art/Terrains/hill.fbx";
+        private const string UPHILL_SET_PREFAB = "Assets/Prefabs/Hand/set_hillside_uphill.prefab";
 
         // 남규님이 씬에서 직접 맞춘 값(S-129 실측) — x·y는 그대로 쓴다.
         // z만 2.70 → 4.00으로 넓혔다: 5.4u 폭에는 보행 레인(±2.6)과 판잣집이 같이 설 자리가 없다.
@@ -30,6 +31,12 @@ namespace DontLate.EditorTools
         [MenuItem("DontLate/Build/Hillside Stage", priority = 15)]
         public static void BuildHillsideStage()
         {
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+            {
+                Debug.LogWarning("[Hillside] 저장되지 않은 씬이 있어 재조립을 취소했다.");
+                return;
+            }
+
             Scene scene;
             if (System.IO.File.Exists(SCENE_PATH))
             {
@@ -62,6 +69,7 @@ namespace DontLate.EditorTools
             baseGround.layer = GreyboxStageBuilder.LAYER_GROUND;
 
             BuildHill(asphalt);
+            EnsureUphillSet(scene);
             Physics.SyncTransforms(); // 이 아래 배치는 전부 GroundY 레이캐스트에 의존한다
 
             // ── 달동네 판잣집 — 능선 뒤편(레인 밖)에 고도를 따라 줄지어 실루엣을 만든다 ──
@@ -130,15 +138,38 @@ namespace DontLate.EditorTools
 
         // ── 지형 ────────────────────────────────────────────────
 
-        /// <summary>손으로 씬에 끌어다 놓은 hill 인스턴스 제거 — Clear()가 __gb_ 접두어만 지우기 때문.</summary>
+        /// <summary>프리팹으로 승격되기 전 손으로 놓은 hill/uphill 인스턴스 제거.</summary>
         private static void StripHandPlacedHill()
         {
             foreach (GameObject go in Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include))
             {
                 if (go == null || go.transform.parent != null) continue;
-                if (go.name != "hill" && !go.name.StartsWith("hill ")) continue;
+                bool isHill = go.name == "hill" || go.name.StartsWith("hill ");
+                bool isUphill = go.name == "uphill" || go.name.StartsWith("uphill ");
+                if (!isHill && !isUphill) continue;
                 Undo.DestroyObjectImmediate(go);
             }
+        }
+
+        private static void EnsureUphillSet(Scene scene)
+        {
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                if (root.name == "set_hillside_uphill") return;
+            }
+
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(UPHILL_SET_PREFAB);
+            if (prefab == null)
+            {
+                Debug.LogWarning("[Hillside] set_hillside_uphill 프리팹을 찾지 못해 수제 uphill 배치를 생략했다.");
+                return;
+            }
+
+            GameObject instance = PrefabUtility.InstantiatePrefab(prefab, scene) as GameObject;
+            if (instance == null) return;
+            instance.name = "set_hillside_uphill";
+            foreach (Transform child in instance.GetComponentsInChildren<Transform>(true))
+                child.gameObject.layer = GreyboxStageBuilder.LAYER_GROUND;
         }
 
         private static void BuildHill(Material surface)
