@@ -107,14 +107,13 @@ namespace DontLate
                 HideBeacon();
         }
 
-        /// <summary>패드 밖으로 굴러 나가면 배치 철회 (재픽업은 PickupBox 쪽에서 철회).</summary>
-        private void OnTriggerExit(Collider other)
-        {
-            if (!other.TryGetComponent(out PickupBox box) || box.Order == null) return;
-            if (WorldDeliveryManager.Instance == null) return;
-            WorldDeliveryManager.Instance.UnplaceDelivery(box.Order.orderId);
-            Debug.Log("[배송] #" + box.Order.orderId + " 패드 이탈 — 배치 철회.");
-        }
+        // S-156 — **패드 이탈 철회를 없앴다**(남규님 난이도 조절 지시).
+        // 종전엔 `OnTriggerExit`에서 배치를 철회했다. 그래서 E로 제대로 내려놨어도 상자가 살짝
+        // 굴러 나가면 정산에서 실패로 잡혔다 — 플레이어가 한 행동을 물리가 나중에 뒤집는 구조라
+        // "제대로 했는데 실패"라는 억울함이 남는다. 판정 기준은 **E를 누른 그 순간의 의사**다.
+        // 정산은 원래부터 기록만 본다(`placedDeliveries[i].beaconAddress == order.address`,
+        // 물리 검사 없음) — 즉 이 철회만 없애면 기록이 그대로 살아 성공으로 잡힌다.
+        // 재픽업 철회(`PickupBox`)는 그대로 둔다: 다시 집는 건 플레이어의 명시적 의사다.
 
         /// <summary>지금 들고 있는 상자의 목적지인가 (S-133 ①④) — 패드 색과 E키 우선순위가 이걸 본다.</summary>
         public bool IsCarriedDestination => _isDestination;

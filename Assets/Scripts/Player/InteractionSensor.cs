@@ -107,7 +107,12 @@ namespace DontLate
                 //   2 = 들고 있는 상자의 목적지 패드 (발밑 패드 우선 — 남규님 결정)
                 //   1 = 택배상자 (사장님·행인보다 우선)
                 //   0 = 나머지 (문·게이트·NPC…)
-                int rank = candidate is DeliveryPoint pad && pad.IsCarriedDestination ? 2
+                // S-156 — 상자를 들고 있으면 **목적지가 아니어도** 배송 패드를 우선한다.
+                // 종전 조건(`IsCarriedDestination`)은 정확한 목적지에만 붙어서, 다른 주소 상자를
+                // 들었을 땐 패드가 랭크 0이 되어 자판기와 동급이었다 — 범위가 겹치면 거리로 갈려
+                // 자판기가 열렸다(남규님 지적). 짐을 든 사람이 원하는 건 내려놓기다.
+                bool carryingBox = _hub.Status.CarryCount > 0;
+                int rank = candidate is DeliveryPoint pad && (pad.IsCarriedDestination || carryingBox) ? 2
                     : candidate is PickupBox ? 1 : 0;
                 if (rank < nearestRank) continue;
 
