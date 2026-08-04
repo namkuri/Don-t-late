@@ -18,6 +18,10 @@ namespace DontLate.EditorTools
     {
         private const string SCENES_ROOT = "Assets/Scenes";
         private const string FONT_PATH = "Assets/Art/UI/Fonts/Pretendard-Regular SDF.asset";
+
+        // 타이틀 UI 공통 축소율 — S-139 후속(남규님 씬 실조정 2026-08-04 굽기).
+        // 로고·서브로고·시작버튼을 한 값으로 묶어 배경(살아 있는 거리)과의 균형을 한 곳에서 조인다.
+        private const float TITLE_UI_SCALE = 0.7f;
         private const string UI_PREFIX = "__ui_";
 
         private static readonly Color AMBER = new Color(1f, 0.624f, 0.271f, 1f);      // #ff9f45 목표
@@ -29,7 +33,16 @@ namespace DontLate.EditorTools
         {
             TMP_FontAsset font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FONT_PATH);
             if (font == null)
-                Debug.LogWarning("[SceneFlowUIBuilder] Pretendard 폰트 미발견 — TMP 기본 폰트로 진행.");
+            {
+                // S-142 — 종전엔 경고만 찍고 그대로 진행했다. 그 조용한 성공이 사고의 근원이다:
+                // 폰트가 null이면 TMP가 기본 LiberationSans로 조립되는데 거기엔 **한글 글리프가
+                // 없어** 전 UI가 두부(□)로 저장된다. 컴파일도 콘솔 에러도 통과하므로 아무도
+                // 모르고, 씬이 저장된 뒤에야 화면에서 발견된다(실제로 6개 씬이 그렇게 저장됨).
+                // 조립을 중단한다 — 깨진 씬을 저장하느니 아무것도 안 하는 게 낫다.
+                Debug.LogError("[SceneFlowUIBuilder] Pretendard 폰트 로드 실패 — 조립 중단. "
+                    + $"경로 확인: {FONT_PATH} (한글이 두부로 저장되는 것을 막기 위해 진행하지 않는다)");
+                return;
+            }
 
             BuildMain(font);
             BuildHome(font);
@@ -63,7 +76,11 @@ namespace DontLate.EditorTools
                 logo.sprite = logoArt;
                 logo.preserveAspect = true;
                 // S-027 ⑥: 민지 목업 점유율 — 로고 폭 ≈ 화면 46% (크롭 아트 1.74:1이라 렉트=실표시).
-                AnchorCentered(logo.rectTransform, new Vector2(0f, 240f), new Vector2(900f, 518f));
+                // S-139 후속(남규님 씬 실조정 2026-08-04 굽기) — 배경이 정지 이미지에서 살아 있는
+                // 거리로 바뀌면서 UI가 화면을 너무 먹었다. 세 요소를 0.7배로 줄이고 로고를 내렸다.
+                // 렉트(900×518)는 그대로 두고 스케일만 건드린다 — 아트 비율을 지키기 위해서다.
+                AnchorCentered(logo.rectTransform, new Vector2(0f, 156f), new Vector2(900f, 518f));
+                logo.rectTransform.localScale = Vector3.one * TITLE_UI_SCALE;
             }
             else
             {
@@ -81,6 +98,7 @@ namespace DontLate.EditorTools
                 sub.preserveAspect = true;
                 // S-027 ⑥⑦: 목업 폭 ≈ 43% + 알파 펄스 폐지 → 사선 광 좌→우 시머 스윕(UIShine).
                 AnchorCentered(sub.rectTransform, new Vector2(0f, -80f), new Vector2(830f, 104f));
+                sub.rectTransform.localScale = Vector3.one * TITLE_UI_SCALE; // S-139 후속
                 sub.gameObject.AddComponent<UIShine>();
             }
             else
@@ -90,18 +108,10 @@ namespace DontLate.EditorTools
                 AnchorCentered(sub.rectTransform, new Vector2(0f, -30f), new Vector2(1200f, 80f));
             }
 
-            // 늦지마맨 일러스트 — ui_title_man (좌하, 시작 버튼과 비겹침). 없으면 요소 자체 생략.
-            Sprite manArt = CoreSceneBuilder.LoadUISprite("ui_title_man");
-            if (manArt != null)
-            {
-                Image man = CreateImage(root, "TitleMan", Color.white);
-                man.sprite = manArt;
-                man.preserveAspect = true;
-                RectTransform manRect = man.rectTransform;
-                manRect.anchorMin = manRect.anchorMax = manRect.pivot = new Vector2(0f, 0f);
-                manRect.sizeDelta = new Vector2(380f, 576f); // 크롭 아트 0.66:1 정합 (S-027 ⑥)
-                manRect.anchoredPosition = new Vector2(60f, 40f);
-            }
+            // 늦지마맨 일러스트(ui_title_man) 은퇴 — S-139 후속(남규님 씬 실조정 2026-08-04).
+            // 타이틀 배경이 정지 이미지에서 살아 있는 거리로 바뀌면서, 좌하단을 덮던 이 일러스트가
+            // 배경(가로등·행인·달리는 배달원)을 가렸다. 아트 자체는 남아 있으므로 되살리려면
+            // 이 블록을 복구하면 된다 — 아트 삭제가 아니라 배치 은퇴다.
 
             // 시작 버튼 — 실아트(ui_start_button — "▶시작" 자체 텍스트 포함) 있으면 이미지 버튼 (S-026).
             Sprite startArt = CoreSceneBuilder.LoadUISprite("ui_start_button");
@@ -115,7 +125,8 @@ namespace DontLate.EditorTools
                 RectTransform startRect = (RectTransform)startGo.transform;
                 startRect.anchorMin = startRect.anchorMax = startRect.pivot = new Vector2(0.5f, 0f);
                 startRect.sizeDelta = new Vector2(460f, 222f); // 목업 폭 ≈ 23%, 크롭 아트 2.07:1 (S-027 ⑥)
-                startRect.anchoredPosition = new Vector2(0f, 90f);
+                startRect.anchoredPosition = new Vector2(0f, 208f); // S-139 후속 — 90→208로 올림
+                startRect.localScale = Vector3.one * TITLE_UI_SCALE;
                 Button startButton = startGo.AddComponent<Button>();
                 startButton.targetGraphic = startImage;
                 SceneAdvanceButton advance = startGo.AddComponent<SceneAdvanceButton>();

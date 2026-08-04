@@ -74,8 +74,8 @@ namespace DontLate.EditorTools
             GreyboxStageBuilder.ConfigureCamera();
             GreyboxStageBuilder.AttachCameraFollow();
 
-            // S-138 — 민지님이 `Camp 1.unity`에서 손으로 확정한 물류장 소품·건물(12개).
-            // 표는 ArtBackdropKit 정본 — 씬 본문 대신 좌표만 굳혀 매 조립마다 재현한다.
+            // S-141 — 민지님 세트 프리팹(`set_camp_1`)으로 물류장 소품·건물을 깐다.
+            // 프리팹이 정본이라 민지님이 고치면 코드 수정 없이 반영된다.
             ArtBackdropKit.Build(ArtBackdropKit.Camp);
 
             EditorSceneManager.SaveScene(scene, CAMP_PATH);
