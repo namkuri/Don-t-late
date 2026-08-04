@@ -17,5 +17,5 @@ MonoBehaviour:
   price: 8000
   size: {x: 1.6, y: 1, z: 0.25}
   color: {r: 0.15, g: 0.15, b: 0.2, a: 1}
-  prefab: {fileID: 0}
+  prefab: {fileID: 7087728939520946261, guid: f16151d9e94a1264e8a9bc844185cdba, type: 3}
   wallMountable: 1
