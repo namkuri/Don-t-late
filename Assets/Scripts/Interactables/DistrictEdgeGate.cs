@@ -56,6 +56,9 @@ namespace DontLate
 
         private void OnDistrictUnlocked(string _) => RefreshLockWall();
 
+        // S-159 — 튜토리얼 잠금은 SO 값이라 이벤트가 없다. 값이 바뀔 때만 벽을 갱신한다.
+        private bool _lastTutorialLock;
+
         // 도착 스폰 (S-062 ①) — 씬의 플레이어를 이 게이트 앞(안쪽 2.5u)으로 옮긴다.
         private IEnumerator SpawnPlayerHere()
         {
@@ -79,6 +82,13 @@ namespace DontLate
         private void Update()
         {
             if (_denyCooldown > 0f) _denyCooldown -= Time.deltaTime;
+
+            // S-159 — 튜토리얼 잠금 변화를 벽에 반영. **바뀔 때만** 갱신한다
+            // (매 프레임 SetActive를 때리면 불필요한 활성화 콜백이 계속 돈다).
+            bool locked = _gameState != null && _gameState.tutorialExitLocked;
+            if (locked == _lastTutorialLock) return;
+            _lastTutorialLock = locked;
+            RefreshLockWall();
         }
 
         private void OnTriggerEnter(Collider other)
@@ -104,6 +114,13 @@ namespace DontLate
         {
             int index = FindTargetIndex();
             if (index == int.MinValue) return false;
+
+            // S-159 — 튜토리얼 중 귀가 잠금도 **물리 벽**으로 세운다(남규님: "투명 블록 설치").
+            // 종전엔 Deny 문구만 띄워 캐릭터가 맵 끝까지 걸어가 버렸다. 막을 거면 몸으로 막아야
+            // "여기까지"가 읽힌다. 대상은 캠프 왼쪽(귀가) 게이트뿐 — 오른쪽은 건드리지 않는다.
+            if (_direction == Direction.Prev && index == -1
+                && _gameState != null && _gameState.tutorialExitLocked) return true;
+
             int target = index + (_direction == Direction.Next ? 1 : -1);
             string[] progression = DeliveryOrderSO.DISTRICT_PROGRESSION;
             if (target < 0 || target >= progression.Length) return false; // 캠프·집 방향은 항상 열림
