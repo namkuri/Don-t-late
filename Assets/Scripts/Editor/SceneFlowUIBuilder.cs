@@ -151,7 +151,7 @@ namespace DontLate.EditorTools
             Transform root = CreateFlowCanvas().transform;
 
             if (sceneName == "Camp")
-                CreateTutorialBanner(root, labelText, font);
+                CreateTutorialBanner(root, labelText, font, -94f, "tutorial");
             else
             {
                 TMP_Text label = CreateText(root, "Label", labelText, font, 46f, Color.white,
@@ -183,8 +183,7 @@ namespace DontLate.EditorTools
                 TextAlignmentOptions.Top, FontStyles.Normal);
             AnchorCorner(label.rectTransform, new Vector2(0.5f, 1f), new Vector2(0f, -78f), new Vector2(1000f, 72f)); // S-030 ②: 상단 중앙 — HUD 카드(좌상)와 중첩 소멸
 
-            CreateButton(root, "AdvanceButton", "하루 시작 → 물류캠프", GameScene.Camp, font, CYAN,
-                new Vector2(0.5f, 0f), new Vector2(0f, 150f), new Vector2(600f, 104f), 40f);
+            CreateHomeAdvanceButton(root, font);
 
             // 게이트는 상시 활성인 캔버스에 붙인다 — 버튼 자신에 붙이면 꺼질 때 구독이 끊긴다.
             HideDuringDialogue gate = root.gameObject.AddComponent<HideDuringDialogue>();
@@ -296,7 +295,7 @@ namespace DontLate.EditorTools
             CreatePanelIcon(endDay.transform, "TwinkleIcon", "twincle_icon",
                 new Vector2(-142f, 0f), new Vector2(275f, 183f));
             CreatePanelIcon(endDay.transform, "HouseIcon", "house_icon",
-                new Vector2(142f, 0f), new Vector2(254f, 169f));
+                new Vector2(142f, 0f), new Vector2(178f, 118f));
 
             TMP_Text endLabel = CreateText(endDay.transform, "Label", "하루 끝 — 집으로", font, 30f, NAVY,
                 TextAlignmentOptions.Center, FontStyles.Bold);
@@ -377,31 +376,67 @@ namespace DontLate.EditorTools
             panel.SetActive(false);
         }
 
+        private static void CreateHomeAdvanceButton(Transform root, TMP_FontAsset font)
+        {
+            GameObject go = new GameObject("AdvanceButton", typeof(RectTransform));
+            go.transform.SetParent(root, false);
+
+            Image clickArea = go.AddComponent<Image>();
+            clickArea.color = new Color(1f, 1f, 1f, 0.001f);
+            RectTransform rect = (RectTransform)go.transform;
+            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0f);
+            rect.sizeDelta = new Vector2(500f, 165f);
+            rect.anchoredPosition = new Vector2(0f, 150f);
+
+            Button button = go.AddComponent<Button>();
+            button.targetGraphic = clickArea;
+            SceneAdvanceButton advance = go.AddComponent<SceneAdvanceButton>();
+            SetField(advance, "_target", GameScene.Camp);
+            EditorUtility.SetDirty(advance);
+
+            // gohome.png의 1536×1024 원본 비율을 유지한다. 실제 패널은 약 500×165로 보인다.
+            Image background = CreateImage(go.transform, "BackgroundArt", Color.white);
+            background.sprite = LoadPanelSprite("gohome");
+            background.preserveAspect = true;
+            background.raycastTarget = false;
+            AnchorCentered(background.rectTransform, Vector2.zero, new Vector2(780f, 520f));
+
+            CreatePanelIcon(go.transform, "SunIcon", "sun",
+                new Vector2(-190f, 0f), new Vector2(270f, 180f));
+
+            TMP_Text label = CreateText(go.transform, "Label", "하루 시작 → 물류캠프", font, 30f, NAVY,
+                TextAlignmentOptions.Center, FontStyles.Bold);
+            AnchorCentered(label.rectTransform, new Vector2(45f, 0f), new Vector2(380f, 72f));
+        }
+
         // ── UI 헬퍼 ──────────────────────────────────────────
 
-        private static void CreateTutorialBanner(Transform root, string message, TMP_FontAsset font)
+        private static void CreateTutorialBanner(Transform root, string message, TMP_FontAsset font,
+            float anchoredY = -34f, string panelSpriteName = "tutorial_long")
         {
+            bool useCampPanel = panelSpriteName == "tutorial";
             GameObject banner = new GameObject("TutorialBanner", typeof(RectTransform));
             banner.transform.SetParent(root, false);
             RectTransform bannerRect = (RectTransform)banner.transform;
             bannerRect.anchorMin = bannerRect.anchorMax = bannerRect.pivot = new Vector2(0.5f, 1f);
-            bannerRect.sizeDelta = new Vector2(900f, 148f);
-            bannerRect.anchoredPosition = new Vector2(0f, -34f);
+            bannerRect.sizeDelta = useCampPanel ? new Vector2(746f, 170f) : new Vector2(900f, 148f);
+            bannerRect.anchoredPosition = new Vector2(0f, anchoredY);
 
-            // tutorial_long.png는 1536×1024 투명 캔버스 안 실제 패널이 1374×226다.
-            // 원본을 자르거나 9-slice 하지 않고 실제 패널 기준 약 900×148로 맞춘다.
+            // 두 패널 모두 1536×1024 원본 비율 그대로 사용한다. Image Rect 역시 1006×671
+            // (동일한 1.5:1)이므로 가로·세로가 따로 늘어나 찌부되는 일이 없다.
             Image background = CreateImage(banner.transform, "BackgroundArt", Color.white);
-            background.sprite = LoadPanelSprite("tutorial_long");
+            background.sprite = LoadPanelSprite(panelSpriteName);
             background.preserveAspect = true;
             background.raycastTarget = false;
             AnchorCentered(background.rectTransform, new Vector2(0f, -24f), new Vector2(1006f, 671f));
 
             CreatePanelIcon(banner.transform, "ParcelIcon", "box_icon",
-                new Vector2(-385f, 0f), new Vector2(265f, 177f));
+                new Vector2(useCampPanel ? -310f : -385f, 0f), new Vector2(265f, 177f));
 
             TMP_Text label = CreateText(banner.transform, "Label", message, font, 34f, NAVY,
                 TextAlignmentOptions.Center, FontStyles.Bold);
-            AnchorCentered(label.rectTransform, new Vector2(45f, 8f), new Vector2(760f, 76f));
+            AnchorCentered(label.rectTransform, new Vector2(useCampPanel ? 35f : 45f, 8f),
+                new Vector2(useCampPanel ? 600f : 760f, 76f));
 
             CreateTutorialCloseButton(banner.transform);
         }
