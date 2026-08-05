@@ -853,7 +853,8 @@ MDA 판정 (D-070): 강화 — AU-025와 동형, 날씨 몰입을 시간대 축�
 
 - **코드** `WorldAudioManager`: `_bgmSnow`→`_bgmSnowDay`/`_bgmSnowNight` 분리. `RefreshWeatherBgm()` Snow 케이스를 `night ? _bgmSnowNight : _bgmSnowDay`로(비와 동일 로직). `OnDayPhaseChanged` 재평가 경로는 AU-025가 이미 설치 → 눈 오는 중 낮↔밤 전환 시 곡 교체 자동 적용. Heat/Fog 단곡 유지.
 - **배선** `CoreSceneBuilder`: `_bgmSnowNight`=`Neon Snowfall`, `_bgmSnowDay`=`Daylight Snowfall`. Core 재빌드 후 `Core.unity` guid 주입 확인(SnowDay cfdda866·SnowNight 4b92653c, 구 `_bgmSnow` 고아 없음, fileID 8300000 정상 참조).
-- **반입** `Daylight Snowfall.wav`: `_audio_intake`→`Assets/Audio/BGM/`. **루프 트림** — 아웃트로 페이드아웃 3.5s 검출·제거(52.8→49.3s, RMS 분석: 49.3s 이후 단조 감쇠→무음) + 컷엣지 15ms 마이크로페이드. AudioImportPostprocessor 자동 설정: loadType CompressedInMemory·Vorbis q0.30·stereo. `.gitignore` allowlist·CREDITS·assets_manifest 등재.
+- **반입** `Daylight Snowfall.wav`: `_audio_intake`→`Assets/Audio/BGM/`. **루프 트림** — 아웃트로 페이드아웃 3.5s 검출·제거(52.8→49.3s, RMS 분석: 49.3s 이후 단조 감쇠→무음) + 컷엣지 15ms 마이크로페이드. AudioImportPostprocessor 자동 설정: loadType CompressedInMemory·Vorbis **q0.26·모노**. `.gitignore` allowlist·CREDITS·assets_manifest 등재.
+  > ⚠ **정정 (2026-08-05 리베이스)**: 최초 기술은 `q0.30·stereo`. AU-025와 동일 원인 — main 임포터가 S-136으로 BGM 전량 모노·q0.26을 강제하게 바뀌어 커밋해 둔 meta가 덮어써졌다(실측). 임포터 산출값으로 갱신.
 - **셀프검증 3종**: ① 컴파일 완료 ② 콘솔 에러/워닝 0(빌드·Play 중) ③ Play 실측 exec — `SnowMorning=Daylight Snowfall · SnowDay=Daylight Snowfall · SnowEvening=Neon Snowfall · SnowNight=Neon Snowfall · RainDay=Rain on the Window · RainNight=Neon Rain · HeatDay=Midnight Heatwave`. 눈 낮/밤 분리·시간대 교체·비/폭염 회귀 불변 모두 정상.
 - 잔여: main 머지는 관제 게이트([[factory-no-merge]]). PR base=AU-025 브랜치(스택) → #30 선머지 후 리베이스/머지. 폭염·안개 낮밤 분리 미착수(YAGNI — 곡 없음).
 - **ACCEPT (2026-08-01 · Director)**: 인게임 Play 실측 — 낮/밤 눈 BGM 정상 재생 육안·청음 확인 → **통과**. 머지는 규율대로 관제 대기(공장 미머지). 관제 처리 순서: **PR #30(AU-025) 선머지 → #31(AU-026)** rebase/머지. 재검수 불요(사전 승인됨).
