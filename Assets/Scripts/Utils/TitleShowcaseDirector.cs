@@ -27,6 +27,8 @@ namespace DontLate
         [SerializeField] private float _turnPause = 0.35f;
 
         [Header("순환")]
+        [Tooltip("인트로 시작 후 낮·맑음을 유지하는 시간(초).")]
+        [SerializeField] private float _initialClearDaySeconds = 300f;
         [Tooltip("시간대 1칸 머무는 시간(초)")]
         [SerializeField] private float _phaseSeconds = 9f;
         [Tooltip("날씨 1종 머무는 시간(초)")]
@@ -47,9 +49,10 @@ namespace DontLate
         private bool _initialApplied;
         private int _direction = 1;      // +1 = 오른쪽
         private float _pauseLeft;
+        private float _initialHoldElapsed;
         private float _phaseTimer;
         private float _weatherTimer;
-        private int _phaseIndex;
+        private int _phaseIndex = 1; // 12시 낮에서 시작
         private int _weatherIndex;
 
         private void Start()
@@ -105,6 +108,12 @@ namespace DontLate
 
         private void TickCycles()
         {
+            if (_initialHoldElapsed < _initialClearDaySeconds)
+            {
+                _initialHoldElapsed += Time.deltaTime;
+                return;
+            }
+
             _phaseTimer += Time.deltaTime;
             if (_phaseTimer >= _phaseSeconds)
             {

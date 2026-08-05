@@ -130,7 +130,7 @@ namespace DontLate
             if (_bubbleRect != null) _bubbleRect.position = new Vector3(screen.x, screen.y, 0f);
             _nameLabel.rectTransform.position = new Vector3(screen.x, screen.y + 12f, 0f);
             _affinityLabel.rectTransform.position = new Vector3(screen.x, screen.y - 12f, 0f);
-            _interactionLabel.rectTransform.position = new Vector3(screen.x, screen.y - 58f, 0f);
+            _interactionLabel.rectTransform.position = new Vector3(screen.x, screen.y - 50f, 0f);
         }
 
         private void OnDestroy()

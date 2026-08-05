@@ -180,20 +180,22 @@ namespace DontLate.EditorTools
             WorldWeatherManager weather = managers.AddComponent<WorldWeatherManager>(); // S-042
             SetField(weather, "_gameState", gameState);
             SetField(weather, "_grade", GetOrCreateColorGrade()); // S-131 — 색보정 수치표(인스펙터 조절)
+            SetField(weather, "_skyBackgroundTexture",
+                AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Art/Textures/sky_bg.png"));
             // S-047: 구름 실아트 소켓 — Art/Backgrounds/fx_cloud_*.png 있으면 배선 (없으면 코드 블롭 폴백).
-            var cloudSprites = new System.Collections.Generic.List<Sprite>();
+            var cloudTextures = new System.Collections.Generic.List<Texture2D>();
             foreach (string suffix in new[] { "a", "b", "c" })
             {
-                var sprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Backgrounds/fx_cloud_" + suffix + ".png");
-                if (sprite != null) cloudSprites.Add(sprite);
+                var texture = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Art/Backgrounds/fx_cloud_" + suffix + ".png");
+                if (texture != null) cloudTextures.Add(texture);
             }
-            if (cloudSprites.Count > 0)
+            if (cloudTextures.Count > 0)
             {
                 SerializedObject weatherSerialized = new SerializedObject(weather);
-                SerializedProperty cloudsProp = weatherSerialized.FindProperty("_cloudSprites");
-                cloudsProp.arraySize = cloudSprites.Count;
-                for (int i = 0; i < cloudSprites.Count; i++)
-                    cloudsProp.GetArrayElementAtIndex(i).objectReferenceValue = cloudSprites[i];
+                SerializedProperty cloudsProp = weatherSerialized.FindProperty("_cloudTextures");
+                cloudsProp.arraySize = cloudTextures.Count;
+                for (int i = 0; i < cloudTextures.Count; i++)
+                    cloudsProp.GetArrayElementAtIndex(i).objectReferenceValue = cloudTextures[i];
                 weatherSerialized.ApplyModifiedPropertiesWithoutUndo();
             }
 

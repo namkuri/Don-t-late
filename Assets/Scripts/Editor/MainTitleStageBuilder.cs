@@ -27,6 +27,8 @@ namespace DontLate.EditorTools
         private const string STAGE_ROOT = "__gb_TitleStage";
         private const string COURIER_FBX = "Assets/Art/Characters/chr_courier.fbx";
         private const string COURIER_AC = "Assets/Art/Characters/AC_chr_courier.controller";
+        private const string CLOUD_A = "Assets/Art/Backgrounds/fx_cloud_a.png";
+        private const string CLOUD_B = "Assets/Art/Backgrounds/fx_cloud_b.png";
 
         /// <summary>
         /// 타이틀 화면에 있으면 안 되는 플레이 전용 오브젝트.
@@ -134,8 +136,28 @@ namespace DontLate.EditorTools
             }
             camera.farClipPlane = Mathf.Max(camera.farClipPlane, 500f); // 강하 시작 고도에서 원경 유지
 
-            if (camera.GetComponent<TitleCameraDrop>() == null)
-                camera.gameObject.AddComponent<TitleCameraDrop>();
+            TitleCameraDrop drop = camera.GetComponent<TitleCameraDrop>();
+            if (drop == null) drop = camera.gameObject.AddComponent<TitleCameraDrop>();
+            BuildIntroClouds(camera, drop);
+        }
+
+        private static void BuildIntroClouds(Camera camera, TitleCameraDrop drop)
+        {
+            Transform old = camera.transform.Find("IntroClouds");
+            if (old != null) Object.DestroyImmediate(old.gameObject);
+
+            Texture2D[] cloudTextures =
+            {
+                AssetDatabase.LoadAssetAtPath<Texture2D>(CLOUD_A),
+                AssetDatabase.LoadAssetAtPath<Texture2D>(CLOUD_B),
+            };
+
+            SerializedObject serialized = new SerializedObject(drop);
+            SerializedProperty cloudProp = serialized.FindProperty("_introCloudTextures");
+            cloudProp.arraySize = cloudTextures.Length;
+            for (int i = 0; i < cloudTextures.Length; i++)
+                cloudProp.GetArrayElementAtIndex(i).objectReferenceValue = cloudTextures[i];
+            serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static Bounds RenderBounds(GameObject go)
