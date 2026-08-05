@@ -699,32 +699,39 @@ namespace DontLate.EditorTools
             SetField(hud, "_levelLabel", level);
 
             // S-134 ④ — 체력 5칸. 레벨 라벨 오른쪽 빈자리에 붙인다(카드 높이 불변).
+            // S-168 — 칸 치수는 여기가 단일 소유다. 경험치 칸도 같은 상수를 쓴다(남규님: 크기 동일).
+            const float PIP_SIZE = 22f;
+            const float PIP_STRIDE = 28f;   // 칸 폭 + 6px 틈
             var healthPips = new Image[GameStateSO.HEALTH_MAX];
             for (int i = 0; i < healthPips.Length; i++)
             {
                 healthPips[i] = CreateImage(charCard.transform, "HealthPip" + i, new Color(0.90f, 0.35f, 0.32f, 1f));
                 AnchorCorner(healthPips[i].rectTransform, new Vector2(0f, 1f),
-                    new Vector2(248f + i * 28f, -18f), new Vector2(22f, 22f));
+                    new Vector2(248f + i * PIP_STRIDE, -18f), new Vector2(PIP_SIZE, PIP_SIZE));
             }
             SetField(hud, "_healthPips", healthPips);
 
-            // S-166 ⑤ — 경험치도 HP처럼 **낱개 5칸**. 바 폭(360)을 다섯으로 나누고 칸 사이에
-            // 배경색 틈(GAP)을 남겨 경계가 보이게 한다 — 계단 fill과 달리 칸 수가 눈에 박힌다.
-            Image masteryBg = CreateImage(charCard.transform, "MasteryBg", new Color(0.06f, 0.07f, 0.10f, 1f));
-            AnchorCorner(masteryBg.rectTransform, new Vector2(0f, 0f), new Vector2(20f, 44f), new Vector2(360f, 16f));
+            // S-166 ⑤ — 경험치도 HP처럼 **낱개 5칸**.
+            // S-168 — 칸 치수를 HP와 동일하게(22×22 · 간격 28). 종전엔 스태미나 바 폭(360)을 다섯으로
+            // 쪼갠 69×12라 같은 "5칸"인데도 HP와 다른 물건처럼 보였다. 배경 바도 칸에 맞춰 줄인다.
+            const int MASTERY_CELLS = 5;
+            float masteryRowWidth = PIP_STRIDE * (MASTERY_CELLS - 1) + PIP_SIZE;
+            // 바는 **투명한 판정면**이다. 색을 채우면 칸 사이 틈까지 메워져 꺼진 두 칸이 한 덩어리로
+            // 읽힌다 — HP엔 배경 바가 없어 틈이 트여 있다(같은 크기여도 다른 물건으로 보이는 원인).
+            // 호버 판정은 `RectangleContainsScreenPoint` 기하 검사라 알파 0이어도 그대로 걸린다.
+            Image masteryBg = CreateImage(charCard.transform, "MasteryBg", new Color(0f, 0f, 0f, 0f));
+            AnchorCorner(masteryBg.rectTransform, new Vector2(0f, 0f),
+                // 윗변(y 60)은 종전과 같게 두고 아래로만 키운다 — 레벨 라벨과 안 부딪힌다.
+                new Vector2(20f, 38f), new Vector2(masteryRowWidth, PIP_SIZE));
             SetField(hud, "_masteryBar", masteryBg); // 호버 툴팁 판정 대상
 
-            const int MASTERY_CELLS = 5;
-            const float MASTERY_GAP = 4f;
-            float cellWidth = (360f - MASTERY_GAP * (MASTERY_CELLS - 1)) / MASTERY_CELLS;
             var masteryPips = new Image[MASTERY_CELLS];
             for (int i = 0; i < MASTERY_CELLS; i++)
             {
                 masteryPips[i] = CreateImage(masteryBg.transform, "MasteryPip" + i, AMBER);
                 // 피벗=앵커=(0,0.5) → anchoredPosition.x는 칸의 **왼쪽 모서리** 위치다.
                 AnchorCorner(masteryPips[i].rectTransform, new Vector2(0f, 0.5f),
-                    new Vector2(i * (cellWidth + MASTERY_GAP), 0f),
-                    new Vector2(cellWidth, 12f));
+                    new Vector2(i * PIP_STRIDE, 0f), new Vector2(PIP_SIZE, PIP_SIZE));
             }
             SetField(hud, "_masteryPips", masteryPips);
 
