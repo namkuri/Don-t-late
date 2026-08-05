@@ -124,7 +124,11 @@ namespace DontLate
                 nearestRank = rank;
             }
 
-            if (ReferenceEquals(nearest, _current)) return;
+            if (ReferenceEquals(nearest, _current))
+            {
+                RefreshHint(); // 대상은 그대로여도 상태는 변한다 — 스캔을 마치면 안내가 사라져야 한다
+                return;
+            }
 
             _current?.SetHighlight(false);
             _current = nearest;
@@ -133,6 +137,19 @@ namespace DontLate
             WorldEvents.RaiseInteractionFocusChanged(_current != null);
             // 배송지 포커스면 주소를 HUD로 (S-021 ② — 월드 텍스트는 픽셀화에 뭉개짐).
             WorldEvents.RaiseFocusAddressChanged(_current is DeliveryPoint point ? point.Address : null);
+            RefreshHint();
+        }
+
+        // S-169 — 포커스 대상의 보조 안내. 매 프레임 계산하되 **바뀔 때만** 발행한다
+        // (프레임 데이터를 이벤트로 흘리지 않는다 — CODE_RULES §3.3).
+        private string _hint;
+
+        private void RefreshHint()
+        {
+            string next = _current is PickupBox box ? box.FocusHint : null;
+            if (next == _hint) return;
+            _hint = next;
+            WorldEvents.RaiseFocusHintChanged(next);
         }
 
         private void OnDrawGizmosSelected()

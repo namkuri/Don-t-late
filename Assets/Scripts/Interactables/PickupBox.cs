@@ -19,6 +19,22 @@ namespace DontLate
 
         public DeliveryOrderSO Order => _order;
 
+        /// <summary>
+        /// S-169 — 지금 이 상자에 필요한 다음 동작 안내(필요 없으면 null).
+        /// **판정을 여기 두는 이유**: 픽업을 막는 조건(`_requireScanned` + 미스캔)이 `Interact`
+        /// 안에 있다. 안내 문구를 센서 쪽에서 따로 판정하면 조건이 두 곳으로 갈라져
+        /// "안내는 뜨는데 집히거나 / 집히지도 않는데 안내가 없는" 어긋남이 생긴다.
+        /// </summary>
+        public string FocusHint
+        {
+            get
+            {
+                if (!_requireScanned || _order == null) return null;
+                if (WorldDeliveryManager.Instance == null) return null;
+                return WorldDeliveryManager.Instance.IsScanned(_order) ? null : "[상자 클릭] 바코드 스캔";
+            }
+        }
+
         private void Awake() => CacheRenderers();
 
         // S-119 ① — 정지 스폰 강체는 첫 프레임부터 잠들 수 있다(스택 위 상자 공중부양 실관찰).

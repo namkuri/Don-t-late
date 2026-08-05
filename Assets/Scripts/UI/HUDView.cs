@@ -59,6 +59,8 @@ namespace DontLate
 
         [Header("상호작용 안내 (하단 중앙)")]
         [SerializeField] private GameObject _ePrompt;
+        [Tooltip("E 프롬프트 아래 보조 안내 (S-169 — 예: 바코드 스캔). 문구는 센서가 정한다.")]
+        [SerializeField] private TMP_Text _focusHintLabel;
 
         private static readonly Color CardNormal = new Color(0.10f, 0.12f, 0.16f, 0.85f);
         private static readonly Color CardWarn = new Color(1f, 0.624f, 0.271f, 0.92f); // #ff9f45
@@ -92,6 +94,7 @@ namespace DontLate
             WorldEvents.StaminaPenaltyChanged += OnStaminaPenaltyChanged; // S-088 ④
             WorldEvents.InteractionFocusChanged += OnInteractionFocusChanged;
             WorldEvents.FocusAddressChanged += OnFocusAddressChanged;
+            WorldEvents.FocusHintChanged += OnFocusHintChanged; // S-169
             WorldEvents.SceneTransitionCompleted += OnSceneTransitionCompleted;
         }
 
@@ -111,6 +114,7 @@ namespace DontLate
             WorldEvents.StaminaPenaltyChanged -= OnStaminaPenaltyChanged;
             WorldEvents.InteractionFocusChanged -= OnInteractionFocusChanged;
             WorldEvents.FocusAddressChanged -= OnFocusAddressChanged;
+            WorldEvents.FocusHintChanged -= OnFocusHintChanged;
             WorldEvents.SceneTransitionCompleted -= OnSceneTransitionCompleted;
         }
 
@@ -414,6 +418,17 @@ namespace DontLate
         private void OnInteractionFocusChanged(bool focused)
         {
             if (_ePrompt != null) _ePrompt.SetActive(focused);
+            // 포커스가 풀리면 보조 안내도 같이 내린다 — 힌트 이벤트가 뒤늦게 와도 한 프레임 남지 않게.
+            if (!focused && _focusHintLabel != null) _focusHintLabel.gameObject.SetActive(false);
+        }
+
+        // S-169 — E 프롬프트 아래 한 줄. 뷰는 문구를 만들지 않고 받아 쓴다(판정은 PickupBox 몫).
+        private void OnFocusHintChanged(string hint)
+        {
+            if (_focusHintLabel == null) return;
+            bool show = !string.IsNullOrEmpty(hint);
+            if (show) _focusHintLabel.text = hint;
+            _focusHintLabel.gameObject.SetActive(show);
         }
 
         // 배송지 포커스면 주소를 [E] 안내에 병기 — 풀해상 오버레이라 픽셀화에 안 뭉개진다 (S-021 ②).

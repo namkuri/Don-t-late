@@ -100,7 +100,13 @@ namespace DontLate
         /// InteractionFocusChanged와 같은 빈도로 같이 발행되므로 별도 로그는 달지 않는다.</summary>
         public static event Action<string> FocusAddressChanged;
 
+        /// <summary>S-169 — 포커스 대상의 보조 조작 안내(없으면 null). E 프롬프트 아래 한 줄.
+        /// FocusAddressChanged와 같은 성격이라 로그는 달지 않는다(포커스 통지와 동반 발행).</summary>
+        public static event Action<string> FocusHintChanged;
+
         public static void RaiseFocusAddressChanged(string address) => FocusAddressChanged?.Invoke(address);
+
+        public static void RaiseFocusHintChanged(string hint) => FocusHintChanged?.Invoke(hint);
 
         public static void RaiseCarryStateChanged(bool isCarrying)
         {

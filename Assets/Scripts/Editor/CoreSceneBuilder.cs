@@ -820,6 +820,15 @@ namespace DontLate.EditorTools
                 38f, CYAN, TextAlignmentOptions.Center);
             AnchorMiddleBottom(ePrompt.rectTransform, new Vector2(0f, 120f), new Vector2(640f, 60f));
             SetField(hud, "_ePrompt", ePrompt.gameObject);
+
+            // S-169 — 보조 안내 한 줄. E 프롬프트(y 120, 높이 60) **바로 밑**에 눕힌다.
+            // 형제로 두는 이유: E 프롬프트는 포커스에 따라 통째로 꺼지는데, 보조 안내는 조건이
+            // 달라 따로 켜고 꺼야 한다(자식이면 부모가 꺼질 때 같이 죽어 제어가 겹친다).
+            TMP_Text focusHint = CreateText(content.transform, "FocusHint", "", font,
+                28f, new Color(1f, 0.72f, 0.25f, 1f), TextAlignmentOptions.Center);
+            AnchorMiddleBottom(focusHint.rectTransform, new Vector2(0f, 84f), new Vector2(640f, 40f));
+            focusHint.gameObject.SetActive(false);
+            SetField(hud, "_focusHintLabel", focusHint);
         }
 
         // ── 상단 바 버튼 (S-063) ─────────────────────────────
