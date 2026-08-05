@@ -32,7 +32,7 @@ namespace DontLate
         [SerializeField] private AudioClip _sfxThrow;
         [SerializeField] private AudioClip _sfxCoin;
         [SerializeField] private AudioClip _sfxPhone;
-        // AU-025 (S-162) — 튜토리얼 한 단계 성공. 9단계 내내 반복되므로 짧고 절제된 톤.
+        // AU-028 (S-162) — 튜토리얼 한 단계 성공. 9단계 내내 반복되므로 짧고 절제된 톤.
         [SerializeField] private AudioClip _sfxTutorialStep;
         [Tooltip("AU-027 — 레벨업. 비면 무음 폴백(파일 도착 전에도 안전).")]
         [SerializeField] private AudioClip _sfxLevelUp;
@@ -427,7 +427,7 @@ namespace DontLate
         public void PlayCoinSfx() => PlaySfx(_sfxCoin);
         public void PlayPhoneToggleSfx() => PlaySfx(_sfxPhone);
 
-        /// <summary>AU-025 — 튜토리얼 단계 성공. 클립이 없으면 무음(소켓 — 파일 도착 전에도 안전).</summary>
+        /// <summary>AU-028 — 튜토리얼 단계 성공. 클립이 없으면 무음(소켓 — 파일 도착 전에도 안전).</summary>
         public void PlayTutorialStepSfx() => PlaySfx(_sfxTutorialStep);
 
         // AU-027 — 레벨업. 이벤트 구독으로 자동 재생(호출부가 오디오를 몰라도 된다).

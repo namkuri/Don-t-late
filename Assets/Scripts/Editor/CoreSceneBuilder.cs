@@ -204,7 +204,7 @@ namespace DontLate.EditorTools
             SetField(audio, "_sfxThrow", LoadSfx("sfx_throw"));
             SetField(audio, "_sfxCoin", LoadSfx("sfx_coin"));
             SetField(audio, "_sfxPhone", LoadSfx("sfx_phone"));
-            SetField(audio, "_sfxTutorialStep", LoadSfx("sfx_tutorial_step")); // AU-025 — 없으면 무음 폴백
+            SetField(audio, "_sfxTutorialStep", LoadSfx("sfx_tutorial_step")); // AU-028 — 없으면 무음 폴백
             SetField(audio, "_sfxDeadlineWarn", LoadSfx("sfx_deadline_warn"));  // AU-009 잔여 배선 8종
             SetField(audio, "_sfxPhoneRing", LoadSfx("sfx_phone_ring"));
             SetField(audio, "_sfxRhythmHit", LoadSfx("sfx_rhythm_hit"));
