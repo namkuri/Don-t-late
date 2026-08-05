@@ -27,6 +27,16 @@ namespace DontLate
         [SerializeField] private float _roadHalfWidth = 2.6f;
 
         private float _centerX;
+        // S-166 ④ — 회피용 옆걸음. 종전엔 막히면 **제자리에 서 있다가 2초 뒤 되돌아갔다**.
+        // 자판기·상자 앞에서 서성이거나(또는 콜라이더가 없어 그냥 통과) 보기 흉했다는 게 남규님 지적.
+        // 이제 Z로 한 발 비켜서 옆으로 돌아간다 — 2.5D라 깊이 한 뼘이면 충분히 지나간다.
+        private float _centerZ;
+        private float _sideStep;                     // 현재 회피 오프셋 목표(원 레인 기준 ±u)
+        private const float SIDESTEP_MAX = 1.2f;     // 보도를 벗어나지 않을 만큼만
+        private const float SIDESTEP_RETURN = 0.55f; // 초당 복귀 속도 — 너무 빠르면 되돌아 부딪힌다
+        // 비켜서는 속도는 **보행 속도와 무관**하다. _speed에 묶었더니 느린 행인은 3초 안에
+        // 다 못 비켜서 포기하고 되돌아갔다(실측: _speed 0.2 → 반전). 사람도 옆걸음은 빠르게 뗀다.
+        private const float SIDESTEP_SPEED = 1.6f;
         private int _direction = 1;
         private float _pauseTimer;
         private float _blockedTime;   // 회피 — 연속 막힘 누적
@@ -38,6 +48,7 @@ namespace DontLate
         private void Start()
         {
             _centerX = transform.position.x;
+            _centerZ = transform.position.z;
             _direction = Random.value < 0.5f ? 1 : -1;
             // 같은 씬 행인들이 발맞추지 않게 시작 위상 분산.
             transform.position += Vector3.right * Random.Range(-_patrolHalf * 0.5f, _patrolHalf * 0.5f);
@@ -84,16 +95,36 @@ namespace DontLate
             bool entering = outsideRoad && Mathf.Abs(nextX - _roadX) <= _roadHalfWidth;
             if (entering && _signal != null && !_signal.IsWalkable) return; // 제자리 대기 (다음 프레임 재판정)
 
-            // S-076 ② — 전방 회피: 행인·플레이어·장애물이 코앞이면 잠깐 멈춤, 오래 막히면 반전.
-            if (FrontBlocked())
+            // S-076 ② → S-166 ④ — 전방 회피: 막히면 **옆으로 비켜서 돌아간다**.
+            bool blocked = FrontBlocked(out float obstacleZ);
+            if (blocked)
+            {
+                // 장애물 반대쪽으로 비킨다. 정면으로 겹쳐 있으면(중심이 같으면) 아무 쪽이나.
+                // **이미 비켜서던 쪽이 있으면 그 쪽을 지킨다** — 매번 새로 고르면 좌우로 헤맨다.
+                // 막혀 있는 동안엔 목표를 계속 최대로 되돌린다: 복귀 도중 다시 막혔는데 목표가
+                // 반쯤 접혀 있으면 그 자리에서 3초를 버티다 포기해 버린다(실측).
+                float away = transform.position.z - obstacleZ;
+                int side = Mathf.Abs(_sideStep) > 0.01f ? (int)Mathf.Sign(_sideStep)
+                    : Mathf.Abs(away) < 0.05f ? (Random.value < 0.5f ? 1 : -1)
+                    : away > 0f ? 1 : -1;
+                _sideStep = side * SIDESTEP_MAX;
+            }
+
+            // 목표 Z로 옆걸음. 막힘이 풀리면 _sideStep이 0으로 잦아들며 원래 레인으로 돌아온다.
+            float z = Mathf.MoveTowards(transform.position.z, _centerZ + _sideStep, SIDESTEP_SPEED * Time.deltaTime);
+
+            if (blocked)
             {
                 _blockedTime += Time.deltaTime;
-                if (_blockedTime > 2f) { _direction = -_direction; Face(); _blockedTime = 0f; }
+                // 옆걸음으로도 3초를 못 뚫으면(골목 막힘) 포기하고 왔던 길로.
+                if (_blockedTime > 3f) { _direction = -_direction; Face(); _blockedTime = 0f; _sideStep = 0f; }
+                transform.position = new Vector3(x, transform.position.y, z); // 전진 정지·옆걸음만
                 return;
             }
             _blockedTime = 0f;
+            _sideStep = Mathf.MoveTowards(_sideStep, 0f, SIDESTEP_RETURN * Time.deltaTime);
 
-            transform.position = new Vector3(nextX, transform.position.y, transform.position.z);
+            transform.position = new Vector3(nextX, transform.position.y, z);
 
             float offset = transform.position.x - _centerX;
             if (Mathf.Abs(offset) >= _patrolHalf)
@@ -104,12 +135,19 @@ namespace DontLate
             }
         }
 
-        private bool FrontBlocked()
+        /// <summary>
+        /// 전방 장애물 검사. S-166 ④ — 가는 선(Raycast) 대신 **몸통 굵기의 구**를 던진다.
+        /// 종전 레이는 눈높이(y 0.8) 한 줄이라 **바닥의 상자를 그냥 통과**했다 — 남규님이 본
+        /// "상자를 안 피한다"의 절반이 이것이었다(나머지 절반은 자판기 콜라이더 부재 = ③).
+        /// </summary>
+        private bool FrontBlocked(out float obstacleZ)
         {
-            Vector3 origin = transform.position + Vector3.up * 0.8f;
-            if (!Physics.Raycast(origin, Vector3.right * _direction, out RaycastHit hit, 0.8f,
+            obstacleZ = transform.position.z;
+            Vector3 origin = transform.position + Vector3.up * 0.55f;
+            if (!Physics.SphereCast(origin, 0.32f, Vector3.right * _direction, out RaycastHit hit, 0.9f,
                 ~0, QueryTriggerInteraction.Ignore)) return false;
             if (hit.collider.transform.IsChildOf(transform)) return false;
+            obstacleZ = hit.collider.bounds.center.z;
             return true;
         }
 

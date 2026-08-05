@@ -42,7 +42,7 @@ namespace DontLate
 
         [Header("거리 안개 (Linear — S-145) — 감각값은 인스펙터 튜닝")]
         [Tooltip("끄면 거리 안개가 완전히 사라진다. 원경 깊이감도 함께 사라지니 룩 비교용.")]
-        [SerializeField] private bool _fogEnabled = true;
+        [SerializeField] private bool _fogEnabled = false;
         [Tooltip("시각(0~24h 정규화) → 안개 색. 밤 짙은 남색·낮 옅은 회백.")]
         [SerializeField] private Gradient _fogColor;
         [Tooltip("시각(0~24h 정규화) → 안개 짙기(0~1). 밤이 짙다. 끝 거리를 조이는 데 쓴다.")]

@@ -71,7 +71,13 @@ namespace DontLate
             if (player.Status.IsCarrying) player.Status.ReleaseCarry(dropAsPhysics: true); // 승격분
 
             // S-066 ③ — 사람이 날아간다 + 끼익!쿵! (클립 소켓 비면 무음 — AU-020).
-            player.Locomotion.ApplyKnockback(new Vector3(Random.Range(-2.5f, 2.5f), 7.5f, Mathf.Sign(_velocityZ) * 5.5f));
+            // S-166 ⑥ — 남규님 "3배 더 크게". 수평만 3배로 키운다 — 수직까지 3배면 22.5로
+            // 지붕 높이까지 솟아 만화가 되고, 착지 전 낙사 안전망(FALL_LIMIT_Y)에 걸릴 수 있다.
+            const float KNOCKBACK_GAIN = 3f;
+            player.Locomotion.ApplyKnockback(new Vector3(
+                Random.Range(-2.5f, 2.5f) * KNOCKBACK_GAIN,
+                9f,
+                Mathf.Sign(_velocityZ) * 5.5f * KNOCKBACK_GAIN));
             WorldAudioManager.Instance?.PlayCarCrashSfx();
 
             Debug.Log("[교통사고] 차에 치였다!");

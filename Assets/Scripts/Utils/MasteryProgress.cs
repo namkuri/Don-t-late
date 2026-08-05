@@ -18,7 +18,9 @@ namespace DontLate
 
         // ⚠ 주행 경험치는 **0으로 껐다**. 상한이 15로 낮아져 종전 비율(50m당 +1)이면 걷기만 해도
         // 레벨이 오른다 — "상자 1개에 3씩"이라는 기준이 무의미해진다. 되살리려면 값을 올려 잡아야 한다.
-        public const float RUN_METERS_PER_POINT = 0f;
+        // static readonly인 이유: const 0이면 호출부 가드가 `if(false)`로 접혀 CS0162(도달 불가)
+        // 워닝이 뜬다. 워닝 0건이 납품 조건(§8)이라 상수 접기만 막는다 — 값·의미는 동일.
+        public static readonly float RUN_METERS_PER_POINT = 0f;
 
         public static float MaxFor(int level) => SEGMENTS * PER_SEGMENT;
 

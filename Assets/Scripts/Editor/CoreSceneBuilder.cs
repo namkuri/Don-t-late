@@ -708,12 +708,25 @@ namespace DontLate.EditorTools
             }
             SetField(hud, "_healthPips", healthPips);
 
+            // S-166 ⑤ — 경험치도 HP처럼 **낱개 5칸**. 바 폭(360)을 다섯으로 나누고 칸 사이에
+            // 배경색 틈(GAP)을 남겨 경계가 보이게 한다 — 계단 fill과 달리 칸 수가 눈에 박힌다.
             Image masteryBg = CreateImage(charCard.transform, "MasteryBg", new Color(0.06f, 0.07f, 0.10f, 1f));
             AnchorCorner(masteryBg.rectTransform, new Vector2(0f, 0f), new Vector2(20f, 44f), new Vector2(360f, 16f));
-            Image masteryFill = CreateImage(masteryBg.transform, "MasteryFill", AMBER);
-            StretchFull(masteryFill.rectTransform);
-            ConfigureGaugeFill(masteryFill, 0f); // S-070 ② — 순백 직사각 스프라이트·왼쪽부터 참
-            SetField(hud, "_masteryFill", masteryFill);
+            SetField(hud, "_masteryBar", masteryBg); // 호버 툴팁 판정 대상
+
+            const int MASTERY_CELLS = 5;
+            const float MASTERY_GAP = 4f;
+            float cellWidth = (360f - MASTERY_GAP * (MASTERY_CELLS - 1)) / MASTERY_CELLS;
+            var masteryPips = new Image[MASTERY_CELLS];
+            for (int i = 0; i < MASTERY_CELLS; i++)
+            {
+                masteryPips[i] = CreateImage(masteryBg.transform, "MasteryPip" + i, AMBER);
+                // 피벗=앵커=(0,0.5) → anchoredPosition.x는 칸의 **왼쪽 모서리** 위치다.
+                AnchorCorner(masteryPips[i].rectTransform, new Vector2(0f, 0.5f),
+                    new Vector2(i * (cellWidth + MASTERY_GAP), 0f),
+                    new Vector2(cellWidth, 12f));
+            }
+            SetField(hud, "_masteryPips", masteryPips);
 
             Image staminaBg = CreateImage(charCard.transform, "StaminaBg", new Color(0.06f, 0.07f, 0.10f, 1f));
             AnchorCorner(staminaBg.rectTransform, new Vector2(0f, 0f), new Vector2(20f, 16f), new Vector2(360f, 16f));

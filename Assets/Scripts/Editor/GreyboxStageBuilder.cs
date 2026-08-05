@@ -398,6 +398,43 @@ namespace DontLate.EditorTools
             return instance;
         }
 
+        /// <summary>
+        /// S-166 ③ — 통과 금지 몸통을 얹는다. 자판기·트럭처럼 **부피가 있는 물건**은 데코가 아니라
+        /// 장애물이다. PlaceCatalog가 데코 콜라이더를 싹 끄는 규약(S-119 ①) 때문에 지금은
+        /// 플레이어가 자판기·트럭 몸을 뚫고 지나가고, 행인도 그 안으로 걸어 들어간다.
+        ///
+        /// **자식으로 다는 이유**: 부모엔 이미 상호작용용 트리거가 붙어 있다. 같은 오브젝트에
+        /// 솔리드를 겹치면 트리거 판정과 뒤섞이므로, 이름 붙인 자식 하나에 격리한다.
+        /// 살짝(INSET) 줄여 다는 이유: 눈에 보이는 면과 딱 맞추면 모서리에 끼어 못 빠져나온다.
+        /// </summary>
+        internal static void AddSolidBlocker(GameObject host, float insetXZ = 0.15f, float heightScale = 1f)
+        {
+            if (host == null) return;
+            if (host.transform.Find("Blocker") != null) return; // 멱등 — 재빌드해도 하나만
+
+            Renderer[] renderers = host.GetComponentsInChildren<Renderer>();
+            if (renderers.Length == 0) return;
+            Bounds bounds = renderers[0].bounds;
+            foreach (Renderer r in renderers) bounds.Encapsulate(r.bounds);
+
+            var blocker = new GameObject("Blocker");
+            blocker.transform.SetParent(host.transform, false);
+            blocker.transform.position = bounds.center;
+            blocker.transform.rotation = Quaternion.identity; // 월드 AABB 기준이므로 회전 없음
+
+            BoxCollider box = blocker.AddComponent<BoxCollider>();
+            Vector3 lossy = blocker.transform.lossyScale;
+            Vector3 size = new Vector3(
+                Mathf.Max(0.2f, bounds.size.x - insetXZ * 2f),
+                Mathf.Max(0.2f, bounds.size.y * heightScale),
+                Mathf.Max(0.2f, bounds.size.z - insetXZ * 2f));
+            // 부모 스케일이 1이 아닐 수 있다 — 로컬 크기로 되돌려야 월드에서 의도한 부피가 된다.
+            box.size = new Vector3(
+                size.x / Mathf.Max(0.0001f, lossy.x),
+                size.y / Mathf.Max(0.0001f, lossy.y),
+                size.z / Mathf.Max(0.0001f, lossy.z));
+        }
+
         internal static void BuildGroundMist()
         {
             Material mist = GetOrCreateGroundMistMaterial();

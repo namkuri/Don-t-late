@@ -236,7 +236,7 @@ namespace DontLate.EditorTools
         /// </summary>
         private static void DestroyLegacyCenterLines()
         {
-            foreach (GameObject go in Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            foreach (GameObject go in Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include))
             {
                 if (go == null || go.name != "CenterLine") continue;
                 if (go.transform.parent != null) continue; // 최상위 잔재만
@@ -420,6 +420,7 @@ namespace DontLate.EditorTools
             trigger.isTrigger = true;
             trigger.size = bounds.size + new Vector3(0.8f, 0f, 0.8f); // 앞에 서면 잡히게 여유
             trigger.center = vend.transform.InverseTransformPoint(bounds.center);
+            GreyboxStageBuilder.AddSolidBlocker(vend); // S-166 ③ — 통과 금지
 
             VendingMachine vending = vend.AddComponent<VendingMachine>(); // E → 구매창 (S-125 ②)
             GreyboxStageBuilder.SetReference(vending, "_tuning", tuning);

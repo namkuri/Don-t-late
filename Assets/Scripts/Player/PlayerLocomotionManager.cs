@@ -47,8 +47,14 @@ namespace DontLate
         private const bool SLIPPERY_ENABLED = false;
 
         // S-119 ③ — 차 사고 부상: 이동·점프 입력 무시 (넉백 궤적·중력은 유지 — 날아가는 연출).
-        // 해제는 "치료 후 집으로" 씬 전이 시 플레이어 재생성으로 자연히 이뤄진다.
+        //
+        // S-166 ⑦ — **시한부로 바꾼다.** 종전엔 한 번 켜지면 안 껐다. 사고 = 즉시 정산 =
+        // 씬 전이로 플레이어가 새로 태어나던 시절엔 그게 해제였는데, S-165 ③에서 HP가 남으면
+        // 그냥 튕겨나가고 끝나도록 바뀌면서 **해제 주체가 사라졌다** — 남규님 관찰 "치이고 나서
+        // 안움직이네". 넉백이 날아가는 동안만 조작을 뺏고 그 뒤엔 돌려준다.
         private bool _injured;
+        private float _injuredUntil;
+        private const float INJURY_STUN = 0.9f;   // 넉백 감쇠(약 0.8초)와 맞춘 길이
 
         // S-123 ③ — 대화 중 이동 잠금(방해요소): 박말순 전화·행인 대화가 붙으면 발이 묶인다.
         // InputAction을 만지지 않는 이유: 미니게임(진상 전화)이 끝날 때 _move.Enable()이
@@ -73,7 +79,11 @@ namespace DontLate
             WorldEvents.DialogueEnded -= OnDialogueEndedLoco;
         }
 
-        private void OnHitByCarLoco() => _injured = true;
+        private void OnHitByCarLoco()
+        {
+            _injured = true;
+            _injuredUntil = Time.time + INJURY_STUN;
+        }
         private void OnDialogueStartedLoco(string _) => _inDialogue = true;
         private void OnDialogueEndedLoco(string _) => _inDialogue = false;
 
@@ -129,6 +139,8 @@ namespace DontLate
                 _cc.enabled = true;
                 Debug.Log("[안전망] 낙사 감지 — 마지막 접지점 위로 복귀.");
             }
+
+            if (_injured && Time.time >= _injuredUntil) _injured = false; // S-166 ⑦ — 기절 해제
 
             TuningConfigSO tuning = _hub.Tuning;
             Vector2 input = _injured || _inDialogue ? Vector2.zero : _hub.Input.MoveVector; // S-119 ③ · S-123 ③

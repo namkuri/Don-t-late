@@ -104,6 +104,9 @@ namespace DontLate.EditorTools
                     partCollider.enabled = false;
                 bodyRenderer = visual.GetComponentInChildren<Renderer>();
                 if (bodyRenderer != null) bodyNormal = bodyRenderer.sharedMaterial;
+                // S-166 ③ — 트럭 몸통은 통과 금지(남규님: 플레이어와 겹침). 짐칸 뒤 적재 트리거는
+                // 차체 바깥(로컬 z −1.8)이라 이 블로커에 가리지 않는다.
+                GreyboxStageBuilder.AddSolidBlocker(visual, 0.2f);
             }
             else
             {
@@ -112,6 +115,7 @@ namespace DontLate.EditorTools
                 AddPart(root, "WheelF", new Vector3(2.2f, 0.35f, 0f), new Vector3(0.7f, 0.7f, 2.1f), material);
                 AddPart(root, "WheelB", new Vector3(-1.6f, 0.35f, 0f), new Vector3(0.7f, 0.7f, 2.1f), material);
                 bodyRenderer = cargo.GetComponent<Renderer>();
+                GreyboxStageBuilder.AddSolidBlocker(root, 0.2f); // S-166 ③ — 폴백도 같은 부피
             }
 
             // 적재 감지 트리거 — 짐칸 뒤편(보도 쪽) 앞 공간.
@@ -346,6 +350,8 @@ namespace DontLate.EditorTools
                 trigger.isTrigger = true;
                 trigger.size = bounds.size + new Vector3(0.8f, 0f, 0.8f); // 앞에 서면 잡히게 여유
                 trigger.center = go.transform.InverseTransformPoint(bounds.center);
+                // S-166 ③ — 자판기는 뚫고 지나갈 물건이 아니다(남규님: 플레이어와 겹침).
+                GreyboxStageBuilder.AddSolidBlocker(go);
                 bodyRenderer = renderers[0];
             }
             else

@@ -42,13 +42,19 @@ namespace DontLate
 
         // S-063 상단 바 — 캐릭터 진행·당일 배송수량.
         [SerializeField] private TMP_Text _levelLabel;
-        [SerializeField] private Image _masteryFill;
+        [Tooltip("경험치 5칸 (S-166 ⑤) — 배송 1건당 1칸. HP와 같은 낱개 표기.")]
+        [SerializeField] private Image[] _masteryPips;
+        [Tooltip("경험치 칸들이 올라앉은 바 배경 — 호버 툴팁 판정용.")]
+        [SerializeField] private Image _masteryBar;
         [Tooltip("체력 5칸 (S-134 ④) — 차에 치이면 2칸 꺼진다. 0칸이면 강제 귀가+정산.")]
         [SerializeField] private Image[] _healthPips;
 
         private const float MASTERY_CELLS = 5f; // S-134 ① — 경험치 5칸
         private static readonly Color HEALTH_ON = new Color(0.90f, 0.35f, 0.32f, 1f);
         private static readonly Color HEALTH_OFF = new Color(0.20f, 0.16f, 0.18f, 1f);
+        // S-166 ⑤ — 앰버 채움/꺼짐. HP와 색만 다르고 규칙은 같다.
+        private static readonly Color MASTERY_ON = new Color(1f, 0.72f, 0.25f, 1f);
+        private static readonly Color MASTERY_OFF = new Color(0.16f, 0.14f, 0.10f, 1f);
         [SerializeField] private TMP_Text _deliveryCountLabel;
 
         [Header("상호작용 안내 (하단 중앙)")]
@@ -371,7 +377,8 @@ namespace DontLate
             else if (IsHovering(_penaltyStormFill, pointer)) { hovered = _penaltyStormFill; reason = "강풍"; }
             // S-098 ③ — 세그먼트에 안 걸렸으면 바 전체: 스태미나·경험치 이름표.
             else if (IsHovering(_staminaFill, pointer)) { hovered = _staminaFill; reason = "스태미나"; }
-            else if (IsHovering(_masteryFill, pointer)) { hovered = _masteryFill; reason = "경험치"; }
+            // S-166 ⑤ — 칸이 낱개로 쪼개져 채움 이미지가 사라졌다. 호버 판정은 바 배경으로 옮긴다.
+            else if (IsHovering(_masteryBar, pointer)) { hovered = _masteryBar; reason = "경험치"; }
 
             if (hovered == null)
             {
@@ -454,10 +461,15 @@ namespace DontLate
                 _levelLabel.text = $"Lv.{_gameState.playerLevel}  {_gameState.nickname}";
             }
             // S-134 ① — 경험치를 **5칸**으로 간략화(정수님 QA). 연속 게이지는 진행이 안 읽혔다.
-            if (_masteryFill != null)
+            // S-166 ⑤ — 칸 나눔을 fillAmount 계단이 아니라 **낱개 이미지**로 바꾼다(HP와 동일 표기).
+            // 계단 fill은 잘린 지점에 경계선이 없어 "다섯 칸"이 눈에 안 들어왔다(남규님 지적).
+            if (_masteryPips != null)
             {
                 float ratio = Mathf.Clamp01(_gameState.mastery / MasteryProgress.MaxFor(_gameState.playerLevel));
-                _masteryFill.fillAmount = Mathf.Floor(ratio * MASTERY_CELLS) / MASTERY_CELLS;
+                int lit = Mathf.FloorToInt(ratio * MASTERY_CELLS);
+                for (int i = 0; i < _masteryPips.Length; i++)
+                    if (_masteryPips[i] != null)
+                        _masteryPips[i].color = i < lit ? MASTERY_ON : MASTERY_OFF;
             }
             // S-134 ④ — 체력 5칸.
             if (_healthPips != null)
