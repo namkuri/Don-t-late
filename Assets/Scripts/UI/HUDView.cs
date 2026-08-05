@@ -42,7 +42,7 @@ namespace DontLate
 
         // S-063 상단 바 — 캐릭터 진행·당일 배송수량.
         [SerializeField] private TMP_Text _levelLabel;
-        [Tooltip("경험치 5칸 (S-166 ⑤) — 배송 1건당 1칸. HP와 같은 낱개 표기.")]
+        [Tooltip("경험치 바 5칸 — 배송 1건당 2칸(S-174 ②). 칸 단위로 순차 펀치한다.")]
         [SerializeField] private Image[] _masteryPips;
         [Tooltip("경험치 칸들이 올라앉은 바 배경 — 호버 툴팁 판정용.")]
         [SerializeField] private Image _masteryBar;
@@ -52,8 +52,9 @@ namespace DontLate
         private const float MASTERY_CELLS = 5f; // S-134 ① — 경험치 5칸
         private static readonly Color HEALTH_ON = new Color(0.90f, 0.35f, 0.32f, 1f);
         private static readonly Color HEALTH_OFF = new Color(0.20f, 0.16f, 0.18f, 1f);
-        // S-166 ⑤ — 앰버 채움/꺼짐. HP와 색만 다르고 규칙은 같다.
-        private static readonly Color MASTERY_ON = new Color(1f, 0.72f, 0.25f, 1f);
+        // S-174 후속 — 경험치는 **노랑**(남규님 지시). 앰버(주황기)는 마감 경고·엣지 화살표가
+        // 이미 쓰고 있어, 성장 게이지는 더 밝은 노랑으로 갈라놓는다.
+        private static readonly Color MASTERY_ON = new Color(1f, 0.85f, 0.2f, 1f);   // #ffd933
         private static readonly Color MASTERY_OFF = new Color(0.16f, 0.14f, 0.10f, 1f);
         [SerializeField] private TMP_Text _deliveryCountLabel;
 
@@ -95,6 +96,7 @@ namespace DontLate
             WorldEvents.InteractionFocusChanged += OnInteractionFocusChanged;
             WorldEvents.FocusAddressChanged += OnFocusAddressChanged;
             WorldEvents.FocusHintChanged += OnFocusHintChanged; // S-169
+            WorldEvents.MasteryChanged += OnMasteryChanged;     // S-174 ④
             WorldEvents.SceneTransitionCompleted += OnSceneTransitionCompleted;
         }
 
@@ -115,6 +117,7 @@ namespace DontLate
             WorldEvents.InteractionFocusChanged -= OnInteractionFocusChanged;
             WorldEvents.FocusAddressChanged -= OnFocusAddressChanged;
             WorldEvents.FocusHintChanged -= OnFocusHintChanged;
+            WorldEvents.MasteryChanged -= OnMasteryChanged;
             WorldEvents.SceneTransitionCompleted -= OnSceneTransitionCompleted;
         }
 
@@ -274,6 +277,73 @@ namespace DontLate
         }
 
         // S-088 ③ — 돈 증가 펀치: 순간 확대+민트 플래시 후 원복.
+        // ── S-174 ④ 경험치 칸 순차 펀치 ────────────────────
+        // 2칸이 한 번에 올라도 **한 칸씩 차례로** 튄다 — 동시에 튀면 "몇 칸 올랐는지"가 안 세어진다.
+        private int _shownLit = -1;      // 마지막으로 표시한 켜진 칸 수 (-1 = 아직 모름)
+        private bool _masteryPunching;
+        private Coroutine _masteryRoutine;
+
+        private int LitCount()
+        {
+            if (_gameState == null) return 0;
+            float ratio = Mathf.Clamp01(_gameState.mastery / MasteryProgress.MaxFor(_gameState.playerLevel));
+            return Mathf.FloorToInt(ratio * MASTERY_CELLS);
+        }
+
+        private void PaintMasteryPips()
+        {
+            if (_masteryPips == null) return;
+            int lit = LitCount();
+            _shownLit = lit;
+            for (int i = 0; i < _masteryPips.Length; i++)
+                if (_masteryPips[i] != null)
+                    _masteryPips[i].color = i < lit ? MASTERY_ON : MASTERY_OFF;
+        }
+
+        private void OnMasteryChanged(float mastery, int level)
+        {
+            if (_masteryPips == null) return;
+            int before = _shownLit;
+            int after = LitCount();
+            // 첫 통지이거나 줄었으면(실패·레벨업 랩) 연출 없이 그냥 맞춘다.
+            if (before < 0 || after <= before) { PaintMasteryPips(); return; }
+
+            if (_masteryRoutine != null) StopCoroutine(_masteryRoutine);
+            _masteryRoutine = StartCoroutine(PunchMasteryPips(before, after));
+        }
+
+        private System.Collections.IEnumerator PunchMasteryPips(int from, int to)
+        {
+            _masteryPunching = true;
+            for (int i = from; i < to && i < _masteryPips.Length; i++)
+            {
+                if (_masteryPips[i] == null) continue;
+                _masteryPips[i].color = MASTERY_ON; // 켜면서 튄다
+                yield return PunchGraphic(_masteryPips[i].rectTransform);
+            }
+            _masteryPunching = false;
+            _masteryRoutine = null;
+            PaintMasteryPips(); // 중간에 값이 또 변했을 수 있으니 마지막에 실측으로 맞춘다
+        }
+
+        /// <summary>한 칸을 키웠다 되돌린다. 정산창(timeScale=0)에서도 돌도록 unscaled.</summary>
+        private System.Collections.IEnumerator PunchGraphic(RectTransform rect)
+        {
+            const float DURATION = 0.22f;
+            const float PEAK = 1.3f; // 바 칸은 넓다 — 1.55면 옆 칸을 덮는다
+            float e = 0f;
+            while (e < DURATION && rect != null)
+            {
+                e += Time.unscaledDeltaTime;
+                float k = Mathf.Clamp01(e / DURATION);
+                // 앞부분에서 확 커졌다 감속하며 원복 — 1-(1-k)²로 되돌아온다.
+                float scale = Mathf.Lerp(PEAK, 1f, 1f - (1f - k) * (1f - k));
+                rect.localScale = Vector3.one * scale;
+                yield return null;
+            }
+            if (rect != null) rect.localScale = Vector3.one;
+        }
+
         private System.Collections.IEnumerator PunchLabel(TMP_Text label)
         {
             Color baseColor = label.color;
@@ -485,14 +555,9 @@ namespace DontLate
             // S-134 ① — 경험치를 **5칸**으로 간략화(정수님 QA). 연속 게이지는 진행이 안 읽혔다.
             // S-166 ⑤ — 칸 나눔을 fillAmount 계단이 아니라 **낱개 이미지**로 바꾼다(HP와 동일 표기).
             // 계단 fill은 잘린 지점에 경계선이 없어 "다섯 칸"이 눈에 안 들어왔다(남규님 지적).
-            if (_masteryPips != null)
-            {
-                float ratio = Mathf.Clamp01(_gameState.mastery / MasteryProgress.MaxFor(_gameState.playerLevel));
-                int lit = Mathf.FloorToInt(ratio * MASTERY_CELLS);
-                for (int i = 0; i < _masteryPips.Length; i++)
-                    if (_masteryPips[i] != null)
-                        _masteryPips[i].color = i < lit ? MASTERY_ON : MASTERY_OFF;
-            }
+            // S-174 ④ — 칠하기는 여기(주기 갱신), **펀치는 MasteryChanged 이벤트**가 맡는다.
+            // 연출 도중 이 루프가 색을 덮어써도 무해하다: 펀치는 크기만 건드린다.
+            if (!_masteryPunching) PaintMasteryPips();
             // S-134 ④ — 체력 5칸.
             if (_healthPips != null)
             {

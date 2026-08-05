@@ -113,8 +113,24 @@ namespace DontLate
         // S-042: 날씨별 안개 배율 — WeatherChanged 구독 (조명·안개는 이 매니저가 단일 소유).
         private float _weatherFogMultiplier = 1f;
 
-        private void OnEnable() => WorldEvents.WeatherChanged += OnWeatherChanged;
-        private void OnDisable() => WorldEvents.WeatherChanged -= OnWeatherChanged;
+        private void OnEnable()
+        {
+            WorldEvents.WeatherChanged += OnWeatherChanged;
+            WorldEvents.SceneTransitionCompleted += OnSceneArrivedSky; // S-176
+        }
+
+        private void OnDisable()
+        {
+            WorldEvents.WeatherChanged -= OnWeatherChanged;
+            WorldEvents.SceneTransitionCompleted -= OnSceneArrivedSky;
+        }
+
+        // S-176 — 새 씬의 라이팅 설정이 원본 스카이박스를 다시 걸어 놓는다. 도착할 때마다 되잡는다.
+        private void OnSceneArrivedSky(GameScene _)
+        {
+            InitSky();
+            ApplyVisuals(_gameState.minuteOfDay); // 새 복제본에 현재 시각 색을 즉시 반영
+        }
 
         private void OnWeatherChanged(WeatherType weather)
         {
@@ -216,7 +232,14 @@ namespace DontLate
 
         // ── 비주얼 구동 ───────────────────────────────────────
 
-        /// <summary>스카이박스가 있으면 런타임 복제본을 만들어 구동(원본 에셋 보호).</summary>
+        /// <summary>
+        /// 스카이박스가 있으면 런타임 복제본을 만들어 구동(원본 에셋 보호).
+        ///
+        /// S-176 — **씬을 넘을 때마다 다시 부른다.** `RenderSettings`는 씬별 라이팅 설정이라
+        /// 새 씬이 로드되면 그 씬의 스카이박스로 갈아탄다 — 부팅 시 한 번만 잡으면 이후 씬은
+        /// 원본 그대로 돌아가 태양 원반이 되살아난다(실측: 부팅 씬 Main은 스카이박스가 없어
+        /// 폴백으로 빠지고, 이어 로드된 Camp는 Default-Skybox 원본이 그대로 걸려 있었다).
+        /// </summary>
         private void InitSky()
         {
             RenderSettings.ambientMode = AmbientMode.Flat;
@@ -224,10 +247,13 @@ namespace DontLate
             RenderSettings.fogMode = FogMode.Linear; // S-145 — 시작 거리를 쓰려면 Linear여야 한다
 
             Material sky = RenderSettings.skybox;
+            if (sky == _skyInstance && sky != null) return; // 이미 우리 복제본이 걸려 있다
             if (sky != null && (sky.HasProperty(SkyTintId) || sky.HasProperty(ExposureId)))
             {
                 _originalSkybox = sky;
+                if (_skyInstance != null) Destroy(_skyInstance); // 씬마다 새로 뜨는 누수 방지
                 _skyInstance = new Material(sky);
+                DisableSkyboxSunDisk(_skyInstance);
                 RenderSettings.skybox = _skyInstance;
                 _driveSkyTint = _skyInstance.HasProperty(SkyTintId);
                 _driveExposure = _skyInstance.HasProperty(ExposureId);
@@ -236,6 +262,22 @@ namespace DontLate
 
             // 폴백: 스카이박스 없음 → 카메라 배경색 그라디언트.
             if (_backgroundCamera != null) _backgroundCamera.clearFlags = CameraClearFlags.SolidColor;
+        }
+
+        /// <summary>
+        /// S-176 — 스카이박스가 그리는 태양 원반을 끈다. 이 게임의 해·달은 `SkyBodyOrbit`이
+        /// 실물로 띄우므로(픽셀 룩·궤도 통제) 절차 스카이박스의 태양은 **두 번째 태양**이 된다
+        /// (남규님 관찰). 복제본에만 적용해 원본 에셋(Default-Skybox)은 건드리지 않는다.
+        /// ⚠ `_SunDisk` 값만 바꾸면 안 된다 — Skybox/Procedural은 셰이더 키워드로 분기하므로
+        ///   키워드까지 갈아야 실제로 사라진다.
+        /// </summary>
+        private static void DisableSkyboxSunDisk(Material sky)
+        {
+            if (sky == null || !sky.HasProperty("_SunDisk")) return;
+            sky.SetFloat("_SunDisk", 0f); // 0 = None
+            sky.DisableKeyword("_SUNDISK_SIMPLE");
+            sky.DisableKeyword("_SUNDISK_HIGH_QUALITY");
+            sky.EnableKeyword("_SUNDISK_NONE");
         }
 
         private void ApplyVisuals(float minuteOfDay)

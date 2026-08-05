@@ -9,13 +9,19 @@ namespace DontLate.EditorTools
     /// </summary>
     internal static class EdgeGateBuildKit
     {
-        /// <summary>도보 게이트 1기 — direction: Next=시안 / Prev=앰버. 화살표는 씬 바깥 방향을 가리킨다.</summary>
+        /// <summary>
+        /// 도보 게이트 1기. 화살표는 씬 바깥 방향을 가리킨다.
+        /// S-174 ⑤ — 색은 **좌우 동일**(앰버 #ff9f45). 종전엔 Next=시안/Prev=앰버로 갈라 놨는데,
+        /// 색이 다르면 "다른 종류의 문"으로 읽힌다 — 둘 다 그냥 옆 동네로 걸어가는 길이다(남규님 지시).
+        /// <paramref name="showArrow"/>가 false면 표식 없이 통로만 만든다(같은 자리에 게이트가
+        /// 둘 겹치는 아파트 마당용 — 화살표가 겹쳐 보인다).
+        /// </summary>
         internal static void BuildGate(string name, Vector3 position, DistrictEdgeGate.Direction direction,
-            GameStateSO gameState, float zoneDepth = 6f)
+            GameStateSO gameState, float zoneDepth = 6f, bool showArrow = true)
         {
             bool next = direction == DistrictEdgeGate.Direction.Next;
-            Color color = next ? new Color(0.208f, 0.878f, 0.784f) : new Color(1f, 0.624f, 0.271f);
-            Material gateMat = GreyboxStageBuilder.GetOrCreateMaterial(next ? "EdgeGateNext" : "EdgeGatePrev", color, true);
+            Color color = new Color(1f, 0.624f, 0.271f);
+            Material gateMat = GreyboxStageBuilder.GetOrCreateMaterial("EdgeGate", color, true);
 
             GameObject root = GreyboxStageBuilder.CreateEmpty(name, position);
 
@@ -34,15 +40,18 @@ namespace DontLate.EditorTools
             pillarRenderer.enabled = false;
 
             // S-062 ③ — 둥둥 뜨는 방향 화살표 (셰브런 2장 + 축) — 씬 바깥쪽을 가리킨다.
-            float outward = position.x >= 0f ? 1f : -1f;
-            GameObject arrow = new GameObject("Arrow");
-            arrow.transform.SetParent(root.transform, false);
-            arrow.transform.localPosition = new Vector3(0f, 3.2f, 0f);
-            BuildArrowMesh(arrow.transform, gateMat, outward);
-            FloatingArrow bob = arrow.AddComponent<FloatingArrow>();
-            SerializedObject bobSerialized = new SerializedObject(bob);
-            bobSerialized.FindProperty("_pushDirection").vector3Value = new Vector3(outward, 0f, 0f);
-            bobSerialized.ApplyModifiedPropertiesWithoutUndo();
+            if (showArrow)
+            {
+                float outward = position.x >= 0f ? 1f : -1f;
+                GameObject arrow = new GameObject("Arrow");
+                arrow.transform.SetParent(root.transform, false);
+                arrow.transform.localPosition = new Vector3(0f, 3.2f, 0f);
+                BuildArrowMesh(arrow.transform, gateMat, outward);
+                FloatingArrow bob = arrow.AddComponent<FloatingArrow>();
+                SerializedObject bobSerialized = new SerializedObject(bob);
+                bobSerialized.FindProperty("_pushDirection").vector3Value = new Vector3(outward, 0f, 0f);
+                bobSerialized.ApplyModifiedPropertiesWithoutUndo();
+            }
 
             // S-062 ④ — 미해금 물리 벽 (게이트가 잠김 판정 시 활성화).
             GameObject wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
