@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace DontLate
@@ -21,8 +22,10 @@ namespace DontLate
         [SerializeField] private string _id;
         [Tooltip("UI 맥동 크기(배). 월드 대상은 화살표를 쓰므로 무관.")]
         [SerializeField] private float _pulseScale = 1.12f;
-        [Tooltip("초당 왕복 횟수(화살표·맥동 공용).")]
+        [Tooltip("UI 맥동의 초당 왕복 횟수.")]
         [SerializeField] private float _pulseSpeed = 2.2f;
+        [Tooltip("화살표 상하 왕복의 초당 횟수. 맥동보다 훨씬 느려야 '가리킨다'로 읽힌다.")]
+        [SerializeField] private float _arrowSpeed = 0.6f;
         [Tooltip("월드 대상 화살표 **끝**이 뜰 높이(대상 상단에서 +u). 크면 대상과 떨어져 읽힌다.")]
         [SerializeField] private float _arrowGap = 0.45f;
         [Tooltip("화살표 상하 진폭(u).")]
@@ -30,16 +33,24 @@ namespace DontLate
 
         private static readonly Color ARROW_COLOR = new Color(0.21f, 0.88f, 0.78f, 1f); // 상호작용 시안
 
+        // S-166 후속 ① — 같은 id를 가진 대상이 여럿이면(캠프 상자 4개) **하나만** 가리킨다.
+        // 넷이 동시에 흔들리면 "어느 걸 집으라는 거냐"가 되고, 화면도 시끄럽다(남규님 지적).
+        // 진행부가 대표를 고르려면 대상을 찾아다녀야 하므로(=Find 금지), 대상들이 이 명부에
+        // 스스로 등록하고 **가장 위에 있는 것**이 스스로 대표가 된다.
+        private static readonly List<TutorialHighlightTarget> Registry = new List<TutorialHighlightTarget>();
+
         private RectTransform _rect;   // UI면 non-null
         private Vector3 _baseScale;
         private bool _active;
         private GameObject _arrow;
         private float _arrowBaseY;
+        private Collider[] _colliders;
 
         private void Awake()
         {
             _rect = transform as RectTransform;
             _baseScale = transform.localScale;
+            _colliders = GetComponents<Collider>();
 
             // S-166 ② — UI는 **중심 기준**으로 커져야 한다. 가방 버튼 피벗이 (1,1)이라 커질 때
             // 좌하단으로 자라 우측 상단이 붙박인 것처럼 보였다(남규님 지적). 피벗을 가운데로
@@ -59,15 +70,51 @@ namespace DontLate
 
         private void OnEnable()
         {
+            Registry.Add(this);
             WorldEvents.TutorialStepStarted += OnStepStarted;
             WorldEvents.TutorialStepCleared += OnStepCleared;
         }
 
         private void OnDisable()
         {
+            Registry.Remove(this);
             WorldEvents.TutorialStepStarted -= OnStepStarted;
             WorldEvents.TutorialStepCleared -= OnStepCleared;
             Stop();
+        }
+
+        /// <summary>
+        /// 지금 이 대상이 화살표를 띄울 자격이 있는가.
+        /// 콜라이더가 **전부** 꺼진 것은 제외한다 — `PickupBox`는 손에 들리는 순간 자기 콜라이더를 끈다.
+        /// 그래서 "들면 화살표가 사라진다"(남규님 요구)가 상자를 특정해 참조하지 않고도 성립한다.
+        /// ⚠ "첫 콜라이더가 켜졌나"로 보면 안 된다: 자판기는 꺼진 데코 콜라이더가 앞에 있고
+        ///   살아 있는 건 뒤에 붙인 상호작용 트리거다 — 그렇게 보면 자판기 단계가 통째로 죽는다(실측).
+        /// </summary>
+        private bool Eligible
+        {
+            get
+            {
+                if (!isActiveAndEnabled) return false;
+                if (_colliders == null || _colliders.Length == 0) return true;
+                foreach (Collider c in _colliders)
+                    if (c != null && c.enabled) return true;
+                return false;
+            }
+        }
+
+        /// <summary>같은 id를 가진 자격자 중 가장 높이 있는 하나인가 (동률이면 먼저 등록된 쪽).</summary>
+        private bool IsChosen()
+        {
+            if (!Eligible) return false;
+            TutorialHighlightTarget best = null;
+            for (int i = 0; i < Registry.Count; i++)
+            {
+                TutorialHighlightTarget candidate = Registry[i];
+                if (candidate == null || candidate._id != _id || !candidate.Eligible) continue;
+                // 더 높은 것이 이긴다. 동률이면 먼저 등록된 쪽을 지켜 대표가 깜빡이지 않게 한다.
+                if (best == null || candidate.transform.position.y > best.transform.position.y) best = candidate;
+            }
+            return best == this;
         }
 
         private void OnDestroy()
@@ -91,12 +138,7 @@ namespace DontLate
             Stop();
         }
 
-        private void Begin()
-        {
-            if (_rect != null) return;           // UI는 맥동만 — 화살표 불요
-            if (_arrow == null) _arrow = BuildArrow();
-            _arrow.SetActive(true);
-        }
+        private void Begin() { /* 화살표 표시는 Update가 매 프레임 대표를 재판정해 결정한다 */ }
 
         private void Stop()
         {
@@ -107,19 +149,29 @@ namespace DontLate
         private void Update()
         {
             if (!_active) return;
-            // unscaled — 정산창(timeScale=0)에서도 멈추지 않는다.
-            float wave = Mathf.Sin(Time.unscaledTime * _pulseSpeed * Mathf.PI * 2f);
 
             if (_rect != null)
             {
-                transform.localScale = _baseScale * Mathf.Lerp(1f, _pulseScale, (wave + 1f) * 0.5f);
+                // unscaled — 정산창(timeScale=0)에서도 멈추지 않는다.
+                float pulse = Mathf.Sin(Time.unscaledTime * _pulseSpeed * Mathf.PI * 2f);
+                transform.localScale = _baseScale * Mathf.Lerp(1f, _pulseScale, (pulse + 1f) * 0.5f);
                 return;
             }
 
-            if (_arrow == null) return;
+            // 대표 판정은 **매 프레임** 다시 한다: 위 상자를 집어 가면 그 아래가 대표가 되고,
+            // 들린 상자는 콜라이더가 꺼져 자격을 잃는다(= 손에 드는 순간 화살표가 사라진다).
+            bool chosen = IsChosen();
+            if (!chosen)
+            {
+                if (_arrow != null) _arrow.SetActive(false);
+                return;
+            }
+            if (_arrow == null) _arrow = BuildArrow();
+            if (!_arrow.activeSelf) _arrow.SetActive(true);
+
             // 화살표만 흔든다 — **대상 자체는 건드리지 않는다**(물리 비침습).
             Vector3 local = _arrow.transform.localPosition;
-            local.y = _arrowBaseY + wave * _arrowBob;
+            local.y = _arrowBaseY + Mathf.Sin(Time.unscaledTime * _arrowSpeed * Mathf.PI * 2f) * _arrowBob;
             _arrow.transform.localPosition = local;
         }
 

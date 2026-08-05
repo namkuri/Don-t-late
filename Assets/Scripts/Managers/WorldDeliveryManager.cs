@@ -251,7 +251,15 @@ namespace DontLate
         // S-057 — 교통사고: 병원비 청구 + 아직 배치 못 한 짐 전량 실패 정산 + 집으로 후송.
         private void OnPlayerHitByCar()
         {
-            int fee = _accidentBilled ? 0 : HOSPITAL_FEE;
+            // S-134 ④ — 패널티 완화(정수님 QA). 종전엔 **적재 전량 실패**라 한 번 치이면 하루가 끝났다.
+            // 이제 체력 2칸만 깎고 짐은 그대로 — 0칸이 돼야 하루가 끝난다(강제 귀가 + 정산).
+            _gameState.health = Mathf.Max(0, _gameState.health - HIT_DAMAGE);
+            bool hospitalized = _gameState.health <= 0;
+
+            // 병원비는 **후송될 때** 청구한다. 처음엔 충돌마다 청구했는데, 영수증은 후송(체력 0)에만
+            // 뜨므로 그 시점엔 이미 1회차에서 청구가 끝나 영수증에 늘 "−0"이 찍혔다(남규님 관찰).
+            // 스쳐 지나간 사고는 체력과 떨어뜨린 짐으로 갚고, 실려 갈 때만 돈이 나간다 — 이름값도 맞다.
+            int fee = hospitalized && !_accidentBilled ? HOSPITAL_FEE : 0;
             if (fee > 0)
             {
                 _accidentBilled = true;
@@ -260,13 +268,8 @@ namespace DontLate
                 WorldEvents.RaiseMoneySpent(fee);
             }
 
-            // S-134 ④ — 패널티 완화(정수님 QA). 종전엔 **적재 전량 실패**라 한 번 치이면 하루가 끝났다.
-            // 이제 체력 2칸만 깎고 짐은 그대로 — 0칸이 돼야 하루가 끝난다(강제 귀가 + 정산).
-            _gameState.health = Mathf.Max(0, _gameState.health - HIT_DAMAGE);
-            bool hospitalized = _gameState.health <= 0;
-
             Debug.Log("[교통사고] 병원비 -₩" + fee.ToString("N0")
-                + (fee == 0 ? "(오늘 청구 완료)" : "")
+                + (fee == 0 ? (hospitalized ? "(오늘 청구 완료)" : "(후송 아님 — 무상)") : "")
                 + " · 체력 " + _gameState.health + "/" + GameStateSO.HEALTH_MAX
                 + (hospitalized ? " → 후송(강제 귀가)" : ""));
             // 정산 오케스트레이션은 View 층(AccidentView) 몫 — 매니저끼리 직접 부르지 않는다(§3).
