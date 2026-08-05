@@ -744,8 +744,11 @@ namespace DontLate
             // 상태바 — 시계·통신사·배터리 (실사 폰 감각).
             _statusClock = MakeText(screenBg, "StatusClock", "--:--", 22f, Color.white, TextAlignmentOptions.TopLeft);
             Anchor(_statusClock.rectTransform, new Vector2(0f, 1f), new Vector2(0.5f, 1f), new Vector2(18f, -8f), 28f);
-            TMP_Text carrier = MakeText(screenBg, "StatusRight", "LateTel LTE 100%", 20f, new Color(1f, 1f, 1f, 0.85f), TextAlignmentOptions.TopRight);
-            Anchor(carrier.rectTransform, new Vector2(0.5f, 1f), new Vector2(1f, 1f), new Vector2(-18f, -8f), 28f);
+            // S-164 ⑦ — 개구 폭(298)에서 "LateTel LTE 100%"가 **줄바꿈돼 내려와** 홈 버튼과 겹쳤다
+            // (남규님 캡처). 문구를 줄이고 줄바꿈을 막는다 — 상태바는 한 줄이어야 상태바다.
+            TMP_Text carrier = MakeText(screenBg, "StatusRight", "LTE 100%", 18f, new Color(1f, 1f, 1f, 0.85f), TextAlignmentOptions.TopRight);
+            carrier.textWrappingMode = TextWrappingModes.NoWrap;
+            Anchor(carrier.rectTransform, new Vector2(0.42f, 1f), new Vector2(1f, 1f), new Vector2(-14f, -8f), 26f);
 
             _titleLabel = MakeText(screenBg, "Title", "홈", 34f, Color.white, TextAlignmentOptions.Top);
             Anchor(_titleLabel.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -38f), 44f);
@@ -755,7 +758,8 @@ namespace DontLate
             homeRect.anchorMin = homeRect.anchorMax = homeRect.pivot = new Vector2(1f, 1f);
             homeRect.sizeDelta = new Vector2(54f, 40f);
             // S-117 — 새 프레임 개구(폭 298)에선 -38이 상태바 "100%"를 가린다(캡처 게이트 적발) — 한 줄 아래로.
-            homeRect.anchoredPosition = new Vector2(-10f, -46f);
+            // S-164 ⑦ — 상태바가 한 줄로 고정됐으므로 홈 버튼도 그 아래 고정 위치로 내린다.
+            homeRect.anchoredPosition = new Vector2(-10f, -40f);
 
             _screenRoot = new GameObject("Screens", typeof(RectTransform)).transform;
             _screenRoot.SetParent(screenBg, false);
@@ -894,8 +898,14 @@ namespace DontLate
             GameObject screen = NewScreen(Screen.Delivery);
             _deliveryHover = MakeText(screen.transform, "Hover", "-", 28f, new Color(0.208f, 0.878f, 0.784f), TextAlignmentOptions.Top);
             Anchor(_deliveryHover.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 0f), 38f);
-            _deliveryWarn = MakeText(screen.transform, "Warn", "", 22f, new Color(1f, 0.45f, 0.35f), TextAlignmentOptions.Top);
-            Anchor(_deliveryWarn.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -40f), 30f);
+            // S-164 ⑦ — 경고문이 길어 줄바꿈되면 아래 목록을 덮었다(남규님 캡처).
+            // 폰트를 줄이고 **오토사이징**으로 한 줄에 욱여넣는다 — 경고는 한 줄이어야 목록을 안 가린다.
+            _deliveryWarn = MakeText(screen.transform, "Warn", "", 19f, new Color(1f, 0.45f, 0.35f), TextAlignmentOptions.Top);
+            _deliveryWarn.textWrappingMode = TextWrappingModes.NoWrap;
+            _deliveryWarn.enableAutoSizing = true;
+            _deliveryWarn.fontSizeMin = 13f;
+            _deliveryWarn.fontSizeMax = 19f;
+            Anchor(_deliveryWarn.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -40f), 26f);
             // S-034 ③: 리스트가 폰을 뚫고 내려가던 것 — 스크롤 영역으로 격리.
             GameObject viewport = new GameObject("ListViewport", typeof(RectTransform));
             viewport.transform.SetParent(screen.transform, false);
@@ -1020,7 +1030,7 @@ namespace DontLate
             }
             if (WorldDeliveryManager.Instance == null) return false;
             if (!WorldDeliveryManager.Instance.RegisterBarcode(order))
-                ShowWarn("⚠ " + Invoice(order.orderId) + " — 이미 등록된 운송장");
+                ShowWarn("⚠ " + Invoice(order.orderId) + " 이미 등록됨"); // S-164 ⑦ 축약
             CloseBarcodeAim();
             return true; // 중복이어도 촬영은 성립 — 송장을 접는다
         }
@@ -1864,7 +1874,7 @@ namespace DontLate
             if (box == null || box.Order == null || !mouse.leftButton.wasPressedThisFrame) return;
             if (WorldDeliveryManager.Instance == null) return;
             if (!WorldDeliveryManager.Instance.RegisterBarcode(box.Order))
-                ShowWarn("⚠ " + Invoice(box.Order.orderId) + " — 이미 등록된 운송장");
+                ShowWarn("⚠ " + Invoice(box.Order.orderId) + " 이미 등록됨"); // S-164 ⑦ 축약
         }
 
         private Coroutine _warnFade;

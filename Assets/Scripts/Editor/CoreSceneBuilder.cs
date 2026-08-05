@@ -74,6 +74,7 @@ namespace DontLate.EditorTools
             BuildKioskCanvas(gameState);                        // S-125 ② 노점 구매창
             BuildHUDCanvas(gameState, bagView, settingsView);
             BuildTutorialCardCanvas();   // S-162 — 튜토리얼 미션 카드
+            BuildTutorialDirector(gameState); // S-164 — 튜토리얼 진행부(씬 넘나듦)
             BuildDialogueCanvas();
             BuildMinigameCanvas();
             BuildPhoneCanvas();
@@ -422,6 +423,133 @@ namespace DontLate.EditorTools
         }
 
         // ── HUD 캔버스 (Core 상주) ───────────────────────────
+
+        /// <summary>
+        /// S-161 — 대사 한 덩어리를 줄바꿈 기준으로 여러 대화 라인으로 쪼갠다.
+        /// 대화창은 고정 높이라 긴 문단을 한 라인에 담으면 밖으로 넘친다.
+        /// </summary>
+        private static (string speaker, string text)[] SplitLines(string body)
+        {
+            if (string.IsNullOrEmpty(body)) return new[] { ("사장님", string.Empty) };
+            string[] chunks = body.Split('\n');
+            var lines = new System.Collections.Generic.List<(string, string)>();
+            foreach (string chunk in chunks)
+            {
+                string trimmed = chunk.Trim();
+                if (trimmed.Length > 0) lines.Add(("사장님", trimmed));
+            }
+            return lines.Count > 0 ? lines.ToArray() : new[] { ("사장님", body) };
+        }
+
+        /// <summary>
+        /// S-164 — 튜토리얼 진행부(Core 상주). 단계 저술이 여기 있는 이유: 진행부가
+        /// **씬을 넘나들어야** 하기 때문이다(배송지역 이동·NPC 대화 미션). Camp 씬
+        /// 오브젝트였을 땐 씬을 떠나는 순간 파괴돼 그 뒤 행동을 못 받았다.
+        /// </summary>
+        private static void BuildTutorialDirector(GameStateSO gameState)
+        {
+            // S-151 — 말투를 따뜻하게 다시 썼다(남규님 "사장이 따뜻한 말투로 해야하는데 너무 딱딱함").
+            // 사장님은 감독관이 아니라 **먼저 이 일을 해본 사람**이다. 지시문 대신 권유·염려로 쓰고,
+            // 단계마다 칭찬을 붙여 플레이어가 잘 따라오고 있다는 신호를 준다.
+            var steps = new (string title, string line, CampTutorialDirector.Gate gate, string hint, string praise, string card)[]
+            {
+                ("Move",   "어어, 왔구나! 기다렸어. 오늘부터 같이 일하는 거지?\n"
+                         + "긴장 풀고, WASD로 천천히 좀 걸어봐. 몸부터 풀어야 안 다쳐.",
+                    CampTutorialDirector.Gate.Move,      "WASD로 이동해 보세요",
+                    "그래 그래, 자연스럽네. 발놀림이 좋은데?", "걸어보기"),
+
+                // S-152 — 남규님 지적: I키만 알려주면 화면 위 [가방] 버튼을 못 찾는다. 둘 다 안내한다.
+                ("Bag",    "가방 한번 열어볼래? I키를 누르거나, 화면 위쪽 [가방] 버튼을 눌러도 열려.\n"
+                         + "드링크나 길에서 주운 것들이 여기 들어가. 급할 때 요긴하다고.",
+                    CampTutorialDirector.Gate.BagOpen,   "I키 또는 화면 위 [가방] 버튼",
+                    "옳지. 뭐 들었나 가끔 확인해 보면 좋아.", "가방 열기"),
+
+                ("Phone",  "이제 폰이야. Tab 눌러봐.\n"
+                         + "주문도 지도도 은행도 전부 여기 있어. 하루 종일 들여다볼 물건이지.",
+                    CampTutorialDirector.Gate.PhoneOpen, "Tab키로 휴대폰을 열어 보세요",
+                    "잘했어. 길 잃으면 지도부터 켜는 거, 잊지 말고.", "휴대폰 켜기"),
+
+                // S-152 — 종전 설명이 틀렸다(남규님 정정). 폰을 먼저 켜는 게 아니라,
+                // 바코드에 마우스를 올리면 **폰이 알아서 올라오고** 카메라 중앙에 맞춰야 찍힌다.
+                ("Barcode","자, 이제 진짜 일이다. 짐은 바코드를 찍어야 실을 수 있어.\n"
+                         + "상자 가까이 가서 마우스로 상자를 클릭해봐. 송장이 뜰 거야.\n"
+                         + "거기 바코드에 마우스를 갖다 대면 폰이 저절로 올라와. 그 상태로\n"
+                         + "카메라 한가운데에 바코드를 맞추고 잠깐 있으면 — 찰칵, 알아서 찍힌다.",
+                    CampTutorialDirector.Gate.Barcode,   "상자에 가까이 가서 클릭 → 송장 바코드에 마우스 → 카메라 중앙",
+                    "찰칵! 바로 그거야. 처음엔 손이 떨리는데 금방 익숙해져.", "바코드 스캔"),
+
+                // S-155 — 남규님: 픽업 때 목적지를 알려주면 좋겠다.
+                ("Pickup", "스캔했으면 이제 들면 돼. 상자 앞에서 E를 눌러봐.\n"
+                         + "이 건은 빌라촌이야. 골목 모퉁이 돌아서 양옥집 쪽으로 가면\n"
+                         + "바닥이 은은하게 빛나는 자리가 있을 거야 — 거기가 내려놓는 데다.\n"
+                         + "무거우면 무리하지 말고, 천천히 가도 괜찮아.",
+                    CampTutorialDirector.Gate.BoxPickup, "E키로 상자를 집어 보세요",
+                    // S-158 — 짐을 든 직후가 "어디로 가지?"가 생기는 순간이다. 방향을 여기서 준다(남규님).
+                    "좋아 좋아, 허리 조심하고!\n"
+                  + "여기서 오른쪽으로 쭉 걸어가면 빌라촌이 나와. 오늘 갈 데가 거기야.\n"
+                  + "거기서 더 가면 다른 동네들도 이어져 있고 — 차차 알게 될 거야.", "상자 집기"),
+
+                // S-155 — 시작 가방에 드링크 1개를 넣어뒀다(CoreBootstrap). 여기서 써 보게 한다.
+                // S-156 — 조작까지 적는다(남규님: 우클릭 → 사용 버튼). 물건만 주고 쓰는 법을 안 알려주면
+                // 가방을 열어놓고도 못 쓴다.
+                ("Drink",  "아 참, 가방에 에너지드링크 하나 넣어놨어. 내가 주는 거야.\n"
+                         // ⚠ 마크다운(**)은 TMP에서 별표 그대로 보인다 — 강조는 리치텍스트 태그로.
+                         + "가방(I) 열고 그 드링크를 <b>우클릭</b>하면 [사용] 버튼이 뜰 거야.\n"
+                         + "그거 눌러서 한번 마셔봐. 지쳤을 때 이만한 게 없거든.",
+                    CampTutorialDirector.Gate.DrinkUse,  "가방(I) → 드링크 우클릭 → [사용]",
+                    "그렇지! 힘들 때 미루지 말고 바로 마셔. 쓰러지고 나면 늦어.", "드링크 마시기"),
+
+                // S-156 — 넷인데 셋이라고 했다(남규님 정정). 먹자골목이 빠져 있었다.
+                ("Area",   "구역은 넷이야. 빌라촌, 먹자골목, 아파트단지, 언덕주택가.\n"
+                         + "먹자골목은 사람도 많고 노점도 많아 — 배 고프면 거기서 뭐 사 먹어도 되고.\n"
+                         + "언덕은 비 오면 미끄러우니까 그런 날은 특히 조심하고. 아파트는 엘리베이터랑\n"
+                         + "현관 비밀번호가 있어. 헷갈리면 폰 지도 보면 돼, 다 나와 있으니까.",
+                    CampTutorialDirector.Gate.ReadOnly,  "",
+                    "뭐, 다니다 보면 몸이 먼저 기억할 거야.", "지역 익히기"),
+
+                // S-164 ⑤ — NPC 대화 전에 **배송지역까지 가는** 미션(남규님 지시).
+                // 짐만 들려 보내면 어디로 가야 할지 모른 채 캠프에서 서성인다.
+                ("Travel", "자 이제 나가볼까. 오른쪽 끝까지 걸어가면 빌라촌이야.\n"
+                         + "가는 길 조심하고, 도착하면 다시 알려줄게.",
+                    CampTutorialDirector.Gate.ReachDistrict, "오른쪽 끝으로 걸어 빌라촌까지 가세요",
+                    "왔구나! 여기가 빌라촌이야. 이제 진짜 배달이다.", "배송지역 가기"),
+
+                ("Npc",    "길에서 사람 마주치면 E로 말 한번 걸어봐.\n"
+                         + "이 동네 사람들 은근히 정 많아. 얼굴 트면 팁도 챙겨주고 그래.",
+                    CampTutorialDirector.Gate.NpcTalk,   "NPC에게 E로 말을 걸어 보세요",
+                    "거봐, 나쁘지 않지? 인사만 잘해도 하루가 편해.", "NPC와 대화"),
+
+                ("Kiosk",  "마지막이야. 자판기랑 편의점, 포장마차는 E로 열어서 사면 돼.\n"
+                         + "힘들면 꼭 뭐라도 챙겨 먹어. 굶고 뛰다 쓰러지는 애들 여럿 봤다.",
+                    CampTutorialDirector.Gate.KioskOpen, "자판기·편의점·포장마차를 E로 열어 보세요",
+                    "그래, 이제 다 알려준 것 같네. 무리하지 말고 다녀와. 늦으면... 뭐, 나한테 혼나는 거지!", "자판기 이용"),
+            };
+
+            GameObject tutorialGo = new GameObject("__gb_CampTutorial");
+            CampTutorialDirector director = tutorialGo.AddComponent<CampTutorialDirector>();
+            GreyboxStageBuilder.SetReference(director, "_gameState", gameState);
+            SerializedObject dirSo = new SerializedObject(director);
+            SerializedProperty stepList = dirSo.FindProperty("_steps");
+            stepList.arraySize = steps.Length;
+            for (int i = 0; i < steps.Length; i++)
+            {
+                // S-161 — 한 덩어리로 넣으면 대화창 밖으로 흘러넘친다(남규님 캡처).
+                // 위 대사에 이미 의미 단위로 줄바꿈을 넣어뒀으므로 **그 경계로 라인을 쪼갠다** —
+                // 각 조각이 한 번의 클릭으로 넘어가고 창 안에 들어온다.
+                DialogueScenarioSO line = NpcBuildKit.GetOrCreateScenario(
+                    "Scenario_Tutorial_" + steps[i].title, SplitLines(steps[i].line));
+                DialogueScenarioSO praise = NpcBuildKit.GetOrCreateScenario(
+                    "Scenario_Tutorial_" + steps[i].title + "_Praise", SplitLines(steps[i].praise));
+                SerializedProperty element = stepList.GetArrayElementAtIndex(i);
+                element.FindPropertyRelative("scenario").objectReferenceValue = line;
+                element.FindPropertyRelative("gate").enumValueIndex = (int)steps[i].gate;
+                element.FindPropertyRelative("hint").stringValue = steps[i].hint;
+                element.FindPropertyRelative("praise").objectReferenceValue = praise;
+                element.FindPropertyRelative("title").stringValue = steps[i].card; // S-162 미션 카드 제목
+            }
+            dirSo.ApplyModifiedPropertiesWithoutUndo();
+
+        }
 
         /// <summary>
         /// S-162 — 튜토리얼 미션 카드. 화면 **오른쪽, 세로 아래 1/3** 지점에서 슬라이드 인 한다.

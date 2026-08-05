@@ -16,6 +16,23 @@ namespace DontLate
     /// </summary>
     public class CampTutorialDirector : MonoBehaviour
     {
+        // S-164 ⑤⑥ — **Core 상주로 옮겼다.** 종전엔 Camp 씬 오브젝트라 씬을 떠나면 파괴됐고,
+        // 배송지에서 NPC와 인사해도 `NpcMet`을 받을 주체가 없어 미션이 안 풀렸다(남규님 실관찰).
+        // 튜토리얼이 이제 씬을 넘나들므로(배송지역 이동 미션) 진행부도 씬을 넘어 살아야 한다.
+        // World 싱글톤 규약: Core 씬에만 존재 · `Instance`는 명령 호출용 · DontDestroyOnLoad 미사용.
+        public static CampTutorialDirector Instance { get; private set; }
+
+        private void Awake()
+        {
+            if (Instance != null && Instance != this) { Destroy(this); return; }
+            Instance = this;
+        }
+
+        private void OnDestroy()
+        {
+            if (Instance == this) Instance = null;
+        }
+
         /// <summary>한 단계가 "해냈다"고 볼 조건.</summary>
         public enum Gate
         {
@@ -26,6 +43,7 @@ namespace DontLate
             Barcode,     // 송장 바코드 스캔 (S-151 — 남규님 "바코드 어떻게 찍는지 설명 안 함")
             DrinkUse,    // 에너지드링크 마시기 (S-155 — 시작 지급분을 써 보게 한다)
             ReadOnly,    // 설명만 — 대사가 끝나면 통과 (지역 설명)
+            ReachDistrict, // S-164 ⑤ — 배송지역(빌라촌) 도착
             NpcTalk,     // NPC와 대화
             KioskOpen,   // 자판기·편의점·포장마차 구매창 열기
         }
@@ -81,6 +99,7 @@ namespace DontLate
             WorldEvents.NpcMet += OnNpcMet;
             WorldEvents.KioskRequested += OnKioskRequested;
             WorldEvents.BagItemConsumed += OnBagItemConsumed;
+            WorldEvents.SceneTransitionCompleted += OnSceneArrived; // S-164 ⑤
         }
 
         private void OnDisable()
@@ -92,6 +111,7 @@ namespace DontLate
             WorldEvents.NpcMet -= OnNpcMet;
             WorldEvents.KioskRequested -= OnKioskRequested;
             WorldEvents.BagItemConsumed -= OnBagItemConsumed;
+            WorldEvents.SceneTransitionCompleted -= OnSceneArrived;
         }
 
         private void Start()
@@ -147,15 +167,6 @@ namespace DontLate
             else
                 _waitingDialogue = false;
 
-            // S-162 — 미션 카드에 알린다. 힌트가 빈 단계(읽기 전용)는 카드를 띄우지 않는다 —
-            // 할 일이 없는데 "미션"이 뜨면 무엇을 기다리는지 헷갈린다.
-            if (!string.IsNullOrEmpty(step.hint))
-            {
-                string title = string.IsNullOrEmpty(step.title)
-                    ? $"튜토리얼 {_index + 1}/{_steps.Length}" : step.title;
-                WorldEvents.RaiseTutorialStepStarted(title, step.hint);
-            }
-
             Debug.Log($"[튜토리얼] {_index + 1}/{_steps.Length} — {step.gate}");
         }
 
@@ -177,6 +188,10 @@ namespace DontLate
             {
                 if (WorldDialogueManager.Instance != null && WorldDialogueManager.Instance.IsPlaying) return;
                 _waitingDialogue = false;
+
+                // S-164 ① — 카드는 **사장님 설명이 끝난 뒤** 뜬다(남규님 지시).
+                // 종전엔 단계 시작과 동시에 띄워 대사 도중에 카드가 먼저 나왔다.
+                ShowCard();
 
                 if (_steps[_index].gate == Gate.ReadOnly) _gateCleared = true;
 
@@ -233,6 +248,20 @@ namespace DontLate
             _beatLeft = _beatBeforePraise; // 결과를 보고 나서 칭찬이 오도록 한 박자 쉰다
         }
 
+        /// <summary>
+        /// S-164 ① — 현재 단계의 미션 카드를 띄운다. 힌트가 빈 단계(읽기 전용)는 띄우지 않는다 —
+        /// 할 일이 없는데 "미션"이 뜨면 무엇을 기다리는지 헷갈린다.
+        /// </summary>
+        private void ShowCard()
+        {
+            if (!Running || _gateCleared) return;
+            Step step = _steps[_index];
+            if (string.IsNullOrEmpty(step.hint)) return;
+            string title = string.IsNullOrEmpty(step.title)
+                ? $"튜토리얼 {_index + 1}/{_steps.Length}" : step.title;
+            WorldEvents.RaiseTutorialStepStarted(title, step.hint);
+        }
+
         private void PlayPraise()
         {
             // S-162 — 카드를 "완료"로 전환한다(칭찬 대사와 같은 타이밍).
@@ -265,6 +294,13 @@ namespace DontLate
         private void OnNpcMet(string _) => Clear(Gate.NpcTalk);
         private void OnKioskRequested(KioskOffer _) => Clear(Gate.KioskOpen);
         private void OnBagItemConsumed(BagItem _) => Clear(Gate.DrinkUse);
+
+        // S-164 ⑤ — 배송지역 도착. 캠프·집이 아닌 배송 씬에 들어서면 통과다.
+        private void OnSceneArrived(GameScene scene)
+        {
+            if (scene == GameScene.District || scene == GameScene.Apartment || scene == GameScene.Hillside)
+                Clear(Gate.ReachDistrict);
+        }
 
         /// <summary>
         /// S-155 — 놓친 안내를 다시 듣는다(남규님 지시: 사장님에게 E). 지금 단계의 대사를

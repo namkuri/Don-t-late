@@ -127,6 +127,13 @@ namespace DontLate
 
         public bool IsPlaced(int orderId) => _gameState.placedDeliveries.Exists(p => p.orderId == orderId);
 
+        /// <summary>
+        /// S-164 — 지금 손에 들고 있는 건인가. 씬 진입 시 스폰되는 비콘이 "이미 들고 있는 짐"을
+        /// 알아야 목적지 표시를 켤 수 있다 — 픽업 이벤트는 스폰 **전에** 이미 지나갔기 때문이다.
+        /// </summary>
+        public bool IsCarried(int orderId) =>
+            _gameState.carriedOrders.Exists(o => o != null && o.orderId == orderId);
+
         /// <summary>이 주소 패드에 배치돼 있는가 (S-097 ① — 재방문 비콘·연출 억제 판정).</summary>
         public bool IsPlacedAt(int orderId, string address)
             => _gameState.placedDeliveries.Exists(p => p.orderId == orderId && p.beaconAddress == address);

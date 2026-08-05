@@ -105,6 +105,23 @@ namespace DontLate
             if (_expectedOrder != null && WorldDeliveryManager.Instance != null
                 && WorldDeliveryManager.Instance.IsPlacedAt(_expectedOrder.orderId, Address))
                 HideBeacon();
+
+            // S-164 — **씬 진입 시 이미 들고 있는 짐을 인식한다.**
+            // 종전엔 `PackagePickedUp` 이벤트만 들었는데, 배송지 비콘은 씬 진입 때 스폰되므로
+            // 픽업은 그 **전에** 이미 끝나 있다 — 그래서 두 번째 짐부터 목적지 표시(파랑)가
+            // 아예 안 떴다(남규님 실관찰: "2번째 짐 가져오니까 파란색 비콘이 없어").
+            // 이벤트를 놓친 게 아니라 **들을 때 이미 지나간 사건**이라 상태를 직접 조회해야 한다.
+            RefreshDestinationFromCarried();
+        }
+
+        /// <summary>지금 들고 있는 짐 중에 이 패드 목적지가 있으면 목적지 표시를 켠다.</summary>
+        private void RefreshDestinationFromCarried()
+        {
+            if (_expectedOrder == null || WorldDeliveryManager.Instance == null) return;
+            if (!WorldDeliveryManager.Instance.IsCarried(_expectedOrder.orderId)) return;
+            _isDestination = true;
+            ApplyHighlight();
+            ApplyRiseAlpha(_focused);
         }
 
         // S-156 — **패드 이탈 철회를 없앴다**(남규님 난이도 조절 지시).

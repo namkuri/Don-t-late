@@ -16,8 +16,9 @@ namespace DontLate
 
         [SerializeField] private GameStateSO _gameState;
         [SerializeField] private DialogueScenarioSO _tutorialScenario;
-        [Tooltip("S-146 — 7단계 튜토리얼 진행부. 붙어 있으면 이쪽이 우선한다.")]
-        [SerializeField] private CampTutorialDirector _tutorial;
+        // S-164 — 진행부가 **Core 상주**로 옮겨져 씬 참조로는 못 잡는다(씬이 다르다).
+        // World 싱글톤 규약대로 `Instance`로 부른다 — 명령 호출용이라 규칙에 맞는다.
+        private CampTutorialDirector _tutorial => CampTutorialDirector.Instance;
         [SerializeField] private DialogueScenarioSO[] _cheerScenarios;
         [Tooltip("재방문 때 자리를 비울 확률 (간혹 안 나온다).")]
         [SerializeField] private float _absentChance = 0.25f;
