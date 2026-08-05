@@ -763,6 +763,18 @@ L129 직접 ++ 후 L130 Raise가 자기 구독 핸들러(L144 OnDeliveryFailed)�
 - 톤: 잔잔·따뜻한 이별+감사 — 낮곡(메이저)보다 느리고, 밤곡(마이너)보다 온기. 60~90초 루프.
 - **파일명 = bgm_ending** (스왑 계약 — Audio/BGM/에 넣으면 관제가 라이브러리 Ending 슬롯 등재).
 - 소켓은 S-107이 기시공 예정 — 클립 도착 즉시 엔딩에서 자동 재생됩니다.
+
+### 결과 (AU-023 · 라이브러리 등재) · 2026-08-01 (정수 공장 · feature/jjs-au023-ending-slot, base=main · Director 지시)
+
+- **잔여였던 "관제 라이브러리 Ending 슬롯 등재" 완료.** 곡 반입(`Fading Into Dawn.wav`)은 2db3acf로 main 도달,
+  소켓·배선(S-107)도 main 도달했으나 **BgmLibrary Ending 슬롯이 비어 엔딩 무음**이었다(0801 실측).
+- 파일명이 스왑계약 `bgm_ending`이 아닌 Suno 원제 `Fading Into Dawn`이라 자동 등재 불발 → **수동 등재**.
+- 작업: `Assets/Data/BgmLibrary.asset`에 `{clip: Fading Into Dawn (guid 515450a4…), slot: Ending}` 1항목 추가
+  (코드 변경 0 — SO 데이터 1줄. 에디터 API로 라이브 등재·저장).
+- 검증(3종): 컴파일·콘솔 에러/워닝 0 · Play → `DialogueEnded`(BGM 해제) → `EndingStarted` →
+  **`CurrentSlot=Ending, CurrentClip=Fading Into Dawn`** 실경로 확인 · `[EVENT] EndingStarted` 로그 발화.
+- 이로써 엔딩 시퀀스(빚 청산 → 마중 → 크레딧)에서 엔딩곡 자동 재생. AU-023 종결.
+
 ## AU-021 · 발주 2026-07-29 00:40 → 정수 공장 (개척 해금 팡파레 SFX — S-086 소켓 충전 · Director 세션 내 승인)
 
 요구 (남규님 지시 S-086 ②): 정산에서 개척 해금/트럭 지급 라인이 찍히는 순간의 **빵빠레** 1클립.
