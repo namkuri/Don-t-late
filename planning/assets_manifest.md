@@ -191,6 +191,7 @@
 | sfx_car_crash.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료 · --no-anchors 비토이톤) — AU-020 | 상업 가능·표기 불요 | 2026-07-29 |
 | sfx_thunder.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료 · --no-anchors 비토이톤) — AU-022 | 상업 가능·표기 불요 | 2026-07-29 |
 | sfx_fanfare.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료 · 토이톤+칩튠 브라스 스탭) — AU-021 | 상업 가능·표기 불요 | 2026-07-29 |
+| sfx_level_up.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료 · 토이톤 3음 상승 아르페지오) — AU-027 | 상업 가능·표기 불요 | 2026-08-05 |
 
 ## ChatGPT UI INTAKE (민지) — 2026-07-22
 

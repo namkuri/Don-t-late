@@ -847,3 +847,27 @@ L129 직접 ++ 후 L130 Raise가 자기 구독 핸들러(L144 OnDeliveryFailed)�
 배선: 관제가 `WorldAudioManager.PlayLevelUpSfx()` 소켓을 먼저 깔아 둔다 —
 **클립이 없으면 무음 폴백**이라 파일이 도착하기 전에도 게임은 정상 동작한다.
 파일만 위 경로에 넣고 PR을 열면 자동으로 울린다.
+
+### 결과 (AU-027) · 2026-08-05 20:35 (정수 공장 · 리드 ~45분 실작업 · feature/jjs-au027-levelup-sfx, base=main)
+
+- **채택 태그**: `short level up chime, three quick ascending notes, bright cheerful chiptune arpeggio, tiny sparkle tail`
+  + SFX 토이톤 앵커(마림바·둥근 신스 플럭) · 요청 길이 0.9s.
+- **16 take · Director 청취 2라운드**. 1차 7 take(1.2s·0.9s 혼합) → 후공정 4종 발신 → "B(0.59s)" 지목 →
+  B 프롬프트를 기준선으로 고정하고 4계열 변주(동일/4음+벨꼬리/글로켄슈필/스케일런) 9 take 재생성 →
+  **V02 채택** = V0 계열, 즉 **B와 완전 동일 프롬프트의 다른 take**. 태그 변주보다 take 뽑기가 이겼다.
+- **후공정**: 트림(≤-40dBFS) → 단일게인 min(RMS→-14dB, peak→-1dB) = **-3.5dB(감쇠)** → 8ms 페이드아웃 → 모노.
+  V02 원본이 peak 0.0dB로 붙어 있었고 밀집음이라 **RMS가 한계** — peak가 -1에 못 미치는 건 규칙상 정상
+  (팡파레 AU-021은 반대로 트랜지언트라 peak 한계였다).
+- **임포트 실측**: len 0.569s · ch 1(forceMono) · 44100 · Vorbis · q0.40 · DecompressOnLoad — SFX 계약 정합.
+- **Play 실측**: `RaisePlayerLeveledUp(2)` 발화 → `_sfxSource.isPlaying` False→True · 콘솔 `[EVENT] PlayerLeveledUp → Lv.2` ·
+  에러/워닝 0. 씬 재빌드 후 YAML에 클립 guid `8fa882c2ac232a5469e604a457bfd5d2` 실재 확인.
+- **발주 사양 반증 2건**
+  1. **"파일만 넣으면 자동으로 울린다" = 거짓**. 이벤트 체인(MasteryProgress→RaisePlayerLeveledUp→구독→
+     PlaySfx)은 전부 실재했으나 `CoreSceneBuilder`에 `LoadSfx("sfx_level_up")` 주입 라인이 없어
+     재빌드해도 `_sfxLevelUp`은 null 유지 = 영원히 무음이었다. 본 브랜치에서 1줄 추가(CoreSceneBuilder.cs:231).
+     부기: 발주서가 지목한 `PlayLevelUpSfx()` 메서드도 실명은 `OnPlayerLeveledUp`.
+  2. **길이 0.8~1.4초 미달** — 채택본 0.569s. 사양대로면 1차 take2(1.20s)였으나 Director 청취에서
+     짧은 쪽이 채택됐다. 발주 의도("팡파레보다 작고 짧게")가 수치 사양보다 우선한 판정으로 기록한다.
+- 라이선스: CREDITS.md + assets_manifest.md LICENSE 표 등재(2026-08-05).
+- **잔여(관제)**: BOM §8 SFX 행 `sfx_level_up` 추가 — 정수는 CREDITS+manifest만(AU-011 선례).
+  미등재라 파이프라인 `intake`/`promote` 게이트가 막혀 수동 후공정 경로로 진행했다.
