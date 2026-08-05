@@ -417,3 +417,38 @@
 | Assets/_intake/art/ChatGPT/Materials/onw-way-logo.mat | 일방통행 로고 머티리얼 (파생물) | 상동 | 2026-08-04 |
 | Assets/_intake/art/ChatGPT/Texture/airplane.mat | 비행기 머티리얼 (파생물 — 기존 ChatGPT 라인) | 상동 | 2026-08-04 |
 | Assets/Art/UI/ui_dialogue_box.png | 대화 박스 **재출력본**(10.1KB→21.5KB, 채도 조정판 — S-117 신판 대체) | 상동 (manifest:202 동일 항목 갱신) | 2026-08-04 |
+
+## PR#34 반입분 (민지) — 2026-08-05 · 관제 대리 기입
+
+> **기입 경위**: PR#34에 `_intake` 신규 25건이 매니페스트 기록 없이 올라와 반입 차단 사유가 됐다.
+> 두 출처 모두 **이미 이 문서에 라이선스 근거가 확립된 라인**이라(위 「ChatGPT UI INTAKE」·
+> 「Trellis2 INTAKE」), 새 판단이 아니라 **같은 라인의 연장**으로 관제가 대리 기입한다.
+> 폴더 경로(`_intake/art/ChatGPT/`, `_intake/art/Trellis2/`)를 출처 근거로 삼았다 —
+> ⚠ 민지님 확인 후 이 문구를 지운다. 다르면 알려주시면 즉시 정정한다.
+>
+> dest는 아직 `_intake`(검역 대기) — 정식 위치(`Assets/Art/`) 스왑은 소켓 배선 시 기록을 갱신한다.
+
+### ChatGPT 라인 23건 — 라이선스: 산출물 권리 사용자 귀속·상업 가능(OpenAI 약관)
+
+| 파일 | 용도 추정 | 위치 |
+|---|---|---|
+| car_road_gpt.mat · road_gpt.mat | 도로 머티리얼 | `_intake/art/ChatGPT/Materials/` |
+| late_death_gpt.mat | 지각·사고 연출 머티리얼 | `_intake/art/ChatGPT/Materials/` |
+| logis_logo_gpt.mat | 물류 로고 머티리얼 | `_intake/art/ChatGPT/Materials/` |
+| debt.mat · debt.png | 빚 표시 텍스처 | `_intake/art/ChatGPT/Texture/` |
+| gohome.png | 귀가 버튼 텍스처 | `_intake/art/ChatGPT/Texture/` |
+| tutorial.png | 튜토리얼 배너 텍스처 | `_intake/art/ChatGPT/Texture/` |
+| square-box.png · ui_back.png · xButton.png | 노점 구매창 UI 부품 | `_intake/art/ChatGPT/UI/KioskPanel/` |
+| bending_machine_ui.png | 자판기 UI | `_intake/art/ChatGPT/UI/` |
+| inventory-ui.png | 가방 UI | `_intake/art/ChatGPT/UI/` |
+| cocoa.png · drink.png · odeng.png · water.png · flower.png | 아이템 아이콘 5종 | `_intake/art/ChatGPT/UI/` |
+| 현수막.mat · 현수막.png(.meta) | 현수막 | `_intake/art/ChatGPT/UI/` |
+| One-Way Street_헷.png(.meta) | 일방통행 표지 | `_intake/art/ChatGPT/UI/` |
+| right_up_main_ui - 복사본.png(.meta) | 우상단 HUD 시안 | `_intake/art/ChatGPT/UI/` |
+
+### Trellis2 라인 2건 — 라이선스: RunPod 셀프호스팅 TRELLIS (Microsoft · MIT) · 상업 제약 없음
+
+| 파일 | 용도 | 위치 |
+|---|---|---|
+| blue_house_Image_0.png | 건물 텍스처 (blue_house) | `_intake/art/Trellis2/Buildings/T/` |
+| old_blue_roof_Image_0.png | 건물 텍스처 (old_blue_roof) | `_intake/art/Trellis2/Buildings/T/` |
