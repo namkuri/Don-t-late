@@ -961,6 +961,7 @@ namespace DontLate
         private RectTransform _aimBarcode;
         private Image _aimGuide;
         private TMP_Text _aimHint;
+        private TMP_Text _aimIdle;   // S-170 — 비호버 대기 안내
         private bool _aimCentered;
         private const float AIM_CENTER_THRESHOLD = 0.35f;
 
@@ -975,7 +976,9 @@ namespace DontLate
             panelRect.offsetMin = new Vector2(6f, -170f);
             panelRect.offsetMax = new Vector2(-6f, -6f);
             Image bg = _aimPanel.AddComponent<Image>(); // 카메라 파인더 — 검은 유리
-            bg.color = new Color(0.03f, 0.04f, 0.06f, 0.97f);
+            // S-170 — **불투명**. 0.97이면 뒤 배송앱 본문 글씨가 3%만큼 비쳐 파인더 위에 겹쳐 보인다.
+            // 호버 순간에만 뜰 땐 눈에 안 띄었는데, 송장 내내 떠 있게 되니 바로 드러났다.
+            bg.color = new Color(0.03f, 0.04f, 0.06f, 1f);
             _aimPanel.AddComponent<RectMask2D>();       // 흐르는 바코드가 파인더 밖으로 안 샌다
 
             // 중앙 조준 가이드 (색 = 조준 판정 피드백).
@@ -998,7 +1001,37 @@ namespace DontLate
             Anchor(_aimHint.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0f, 6f), 28f);
             ((RectTransform)_aimHint.transform).anchoredPosition = new Vector2(0f, 6f);
 
+            // S-170 — 대기(비호버) 안내. 파인더가 송장 내내 켜져 있으므로 "지금 뭘 하라는 건지"를
+            // 빈 화면 대신 여기에 적는다. 조준이 시작되면 이 줄이 내려가고 바코드·가이드가 올라온다.
+            _aimIdle = MakeText(_aimPanel.transform, "AimIdle",
+                "[스캔중] 송장 바코드 중앙에\n마우스를 올려주세요.", 20f,
+                new Color(1f, 0.624f, 0.271f), TextAlignmentOptions.Center);
+            // Anchor 헬퍼는 피벗을 위쪽(0.5,1)으로 고정한다 — 그대로 쓰면 글이 중앙에서 아래로
+            // 늘어져 걸린다(실측). 진짜 중앙 정렬이 필요하므로 여기선 직접 세운다.
+            RectTransform idleRect = _aimIdle.rectTransform;
+            idleRect.anchorMin = new Vector2(0f, 0.5f);
+            idleRect.anchorMax = new Vector2(1f, 0.5f);
+            idleRect.pivot = new Vector2(0.5f, 0.5f);
+            idleRect.sizeDelta = new Vector2(-12f, 64f); // 가로 스트레치 → x는 좌우 여백 6씩
+            idleRect.anchoredPosition = Vector2.zero;
+
             _aimPanel.SetActive(false);
+        }
+
+        /// <summary>
+        /// S-170 — 조준(호버) / 대기 전환. 파인더 자체는 송장이 열려 있는 동안 계속 떠 있고,
+        /// 마우스가 바코드 위에 있느냐만 여기서 갈린다.
+        /// ⚠ 대기로 내려갈 땐 `_aimCentered`를 **반드시 끈다**: 켠 채로 두면 송장을 열어 둔
+        ///   것만으로 자동 촬영(0.3초 유지)이 돌아 스캔이 공짜가 된다.
+        /// </summary>
+        public void SetBarcodeAiming(bool aiming)
+        {
+            if (_aimPanel == null || !_aimPanel.activeSelf) return;
+            if (!aiming) _aimCentered = false;
+            if (_aimIdle != null) _aimIdle.gameObject.SetActive(!aiming);
+            if (_aimBarcode != null) _aimBarcode.gameObject.SetActive(aiming);
+            if (_aimGuide != null) _aimGuide.gameObject.SetActive(aiming);
+            if (_aimHint != null) _aimHint.gameObject.SetActive(aiming);
         }
 
         public void OpenBarcodeAim(DeliveryOrderSO order)
@@ -1007,8 +1040,10 @@ namespace DontLate
             if (!_open && !_inTitle) TogglePanel();     // 폰 자동 오픈
             if (_screen != Screen.Delivery) ShowScreen(Screen.Delivery);
             _aimPanel.SetActive(true);
+            _aimPanel.transform.SetAsLastSibling(); // 파인더는 배송앱 본문 위에 덮인다
             _aimCentered = false;
             RebuildAimBarcode(order.orderId);
+            SetBarcodeAiming(false); // S-170 — 파인더는 켜지되 시작은 대기 상태
         }
 
         public void CloseBarcodeAim()
@@ -1592,10 +1627,10 @@ namespace DontLate
                 ShowScreen(Screen.Home);
                 WorldMinigameManager.Instance?.AcceptCall(); // 미니게임 패널이 폰 위로 뜬다
             });
-            RectTransform acceptRect = (RectTransform)accept.transform;
-            acceptRect.anchorMin = acceptRect.anchorMax = acceptRect.pivot = new Vector2(0.5f, 0f);
-            acceptRect.sizeDelta = new Vector2(170f, 70f);
-            acceptRect.anchoredPosition = new Vector2(-95f, 60f);
+            // S-172 — 화면 폭에 **따라가게** 한다. 종전엔 170px 고정 둘을 ±95에 놓아 좌우로
+            // 180씩, 폭 266짜리 폰 화면 밖으로 삐져나갔다(남규님 캡처). 가로 스트레치라
+            // sizeDelta.x = 0 이 곧 "앵커 구간을 꽉 채움"이다 — 폰 크기가 바뀌어도 안 넘친다.
+            LayoutCallButton((RectTransform)accept.transform, 0.05f, 0.48f);
             accept.GetComponentInChildren<TMP_Text>().color = new Color(0.3f, 0.95f, 0.5f);
 
             Button decline = MakeButton(screen.transform, "Decline", "거절", () =>
@@ -1603,11 +1638,18 @@ namespace DontLate
                 if (_open) TogglePanel();
                 WorldMinigameManager.Instance?.DeclineCall();
             });
-            RectTransform declineRect = (RectTransform)decline.transform;
-            declineRect.anchorMin = declineRect.anchorMax = declineRect.pivot = new Vector2(0.5f, 0f);
-            declineRect.sizeDelta = new Vector2(170f, 70f);
-            declineRect.anchoredPosition = new Vector2(95f, 60f);
+            LayoutCallButton((RectTransform)decline.transform, 0.52f, 0.95f);
             decline.GetComponentInChildren<TMP_Text>().color = new Color(1f, 0.45f, 0.35f);
+        }
+
+        /// <summary>S-172 — 통화 버튼 배치: 가로는 화면 비율, 세로는 바닥에서 60px 위 고정 높이.</summary>
+        private static void LayoutCallButton(RectTransform rect, float leftFraction, float rightFraction)
+        {
+            rect.anchorMin = new Vector2(leftFraction, 0f);
+            rect.anchorMax = new Vector2(rightFraction, 0f);
+            rect.pivot = new Vector2(0.5f, 0f);
+            rect.sizeDelta = new Vector2(0f, 64f); // x=0 → 앵커 구간 그대로 / y는 절대 높이
+            rect.anchoredPosition = new Vector2(0f, 60f);
         }
 
         private void RefreshCall()

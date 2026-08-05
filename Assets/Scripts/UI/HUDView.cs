@@ -446,6 +446,13 @@ namespace DontLate
         private void OnSceneTransitionCompleted(GameScene scene)
         {
             if (_content != null) _content.SetActive(scene != GameScene.Main);
+
+            // S-173 ① — 씬을 넘으면 상호작용 안내를 내린다. HUD는 Core 상주라 살아남는데
+            // 포커스를 잡던 오브젝트는 이전 씬과 함께 사라진다. 새 씬의 센서는 **바뀔 때만**
+            // 발행하므로 아무것도 안 잡히면 영영 안 쏜다 — 이전 씬의 "[E] 상호작용"이 그대로
+            // 남는다(남규님: 정산하고 Home 들어왔는데 EPrompt가 쓸데없이 떠 있음).
+            if (_ePrompt != null) _ePrompt.SetActive(false);
+            if (_focusHintLabel != null) _focusHintLabel.gameObject.SetActive(false);
         }
 
         // ── 헬퍼 ─────────────────────────────────────────────

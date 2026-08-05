@@ -20,8 +20,8 @@ namespace DontLate
         // World 싱글톤 규약대로 `Instance`로 부른다 — 명령 호출용이라 규칙에 맞는다.
         private CampTutorialDirector _tutorial => CampTutorialDirector.Instance;
         [SerializeField] private DialogueScenarioSO[] _cheerScenarios;
-        [Tooltip("재방문 때 자리를 비울 확률 (간혹 안 나온다).")]
-        [SerializeField] private float _absentChance = 0.25f;
+        // S-171 — 부재 확률 필드는 제거했다(미사용 필드는 워닝 = 납품 불가). 되살릴 땐 Start의
+        // 재방문 분기에 확률 조건을 다시 끼우면 된다.
         [SerializeField] private Renderer _highlightRenderer;
         [SerializeField] private Material _normalMaterial;
         [SerializeField] private Material _highlightMaterial;
@@ -61,11 +61,9 @@ namespace DontLate
 
             if (_gameState != null && _gameState.bossIntroPlayed)
             {
-                if (Random.value < _absentChance)
-                {
-                    gameObject.SetActive(false); // 오늘은 자리 비움
-                    return;
-                }
+                // S-171 — **부재 추첨 폐지**(남규님: 항상 있도록). 사장님은 캠프의 길잡이다 —
+                // 게시판·상차·정산이 다 여기서 시작하는데 25%로 사라지면 그날은 물어볼 데가 없다.
+                // 확률 필드는 남긴다: 되살릴 때 이 자리에 조건만 다시 끼우면 된다.
                 _phase = Phase.Idle;
             }
             else
