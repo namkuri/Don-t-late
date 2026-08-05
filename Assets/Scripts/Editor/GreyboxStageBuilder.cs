@@ -939,8 +939,9 @@ namespace DontLate.EditorTools
             SetReference(point, "_renderer", renderer);
             SetReference(point, "_normalMaterial", normal);
             SetReference(point, "_highlightMaterial", highlight);
-            // S-133 ① — 목적지 표시색(앰버=상자색). 들고 있는 상자의 목적지 패드가 이 색이 된다.
-            SetReference(point, "_targetMaterial", GetOrCreateMaterial("BeaconTarget", ParseColor("#ff9f45"), true));
+            // S-133 ① → S-160 — 목적지 표시색을 **파랑**으로(남규님 지시). 종전 앰버(#ff9f45)는
+            // 가로등 색과 같아 밤에 묻혔다. 들고 있는 상자의 목적지 패드가 이 색이 된다.
+            SetReference(point, "_targetMaterial", GetOrCreateMaterial("BeaconTarget", ParseColor("#3aa0ff"), true));
             SetVector2(point, "_padSize", padSize);
 
             GameObject fx = new GameObject("Fx");
@@ -989,8 +990,9 @@ namespace DontLate.EditorTools
             SetReference(point, "_renderer", renderer);
             SetReference(point, "_normalMaterial", normal);
             SetReference(point, "_highlightMaterial", highlight);
-            // S-133 ① — 목적지 표시색(앰버=상자색). 들고 있는 상자의 목적지 패드가 이 색이 된다.
-            SetReference(point, "_targetMaterial", GetOrCreateMaterial("BeaconTarget", ParseColor("#ff9f45"), true));
+            // S-133 ① → S-160 — 목적지 표시색을 **파랑**으로(남규님 지시). 종전 앰버(#ff9f45)는
+            // 가로등 색과 같아 밤에 묻혔다. 들고 있는 상자의 목적지 패드가 이 색이 된다.
+            SetReference(point, "_targetMaterial", GetOrCreateMaterial("BeaconTarget", ParseColor("#3aa0ff"), true));
             SetVector2(point, "_padSize", padSize);
 
             // 테두리 4면 빛기둥 (높이 1.2u, _padSize 연동) — 부모 __gb_BeaconFx.

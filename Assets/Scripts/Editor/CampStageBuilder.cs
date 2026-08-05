@@ -37,7 +37,7 @@ namespace DontLate.EditorTools
             GreyboxStageBuilder.BuildWalkableVolume();
             GreyboxStageBuilder.BuildGroundMist();
             GreyboxStageBuilder.BuildStarField(); // S-033 ① — 캠프 밤하늘 별 (밤 페이드는 StarField.cs 공용)
-            GreyboxStageBuilder.BuildDeliveryCart(new Vector3(-4f, 0f, 1.2f)); // S-039 ④ — 캠프에서도 대차 운반
+            GreyboxStageBuilder.BuildDeliveryCart(new Vector3(12.88f, 0f, 0f)); // S-039 ④ · S-160 남규님 실배치
             BuildTruck(truck, box, highlight, gameState);
             System.Collections.Generic.List<PickupBox> boxes = BuildPickupBoxes(box, highlight, tuning);
             BuildOrderBoard(gameState, boxes);
@@ -50,10 +50,10 @@ namespace DontLate.EditorTools
                 DontLate.DistrictEdgeGate.Direction.Prev, gameState);             // S-062 ② 집 방향
             // S-115 — 실물 데코: 물류 배경 건물 + 야드 소품 (없으면 생략 — 소켓).
             GreyboxStageBuilder.PlaceCatalog("logi_center", new Vector3(0f, 0f, 16f)); // 원경 1채
-            GreyboxStageBuilder.PlaceCatalog("belt", new Vector3(-6.5f, 0f, 2.2f), 90f);
+            GreyboxStageBuilder.PlaceCatalog("belt", new Vector3(8.44f, 0f, 5.73f), 90f); // S-160 남규님 실배치
             // S-123 ① — 포장마차 독백. District 프랍 풀에 넣으면 결정론 배치 계약이 깨지므로
             // (풀 길이가 바뀌면 전 구역 배치가 달라진다) 캠프의 손배치 데코에 붙인다.
-            GameObject foodCart = GreyboxStageBuilder.PlaceCatalog("Food_cart_unity", new Vector3(6.5f, 0f, 2.6f), 180f);
+            GameObject foodCart = GreyboxStageBuilder.PlaceCatalog("Food_cart_unity", new Vector3(28.78f, 0f, 2.6f), 180f); // S-160 남규님 실배치
             if (foodCart != null)
             {
                 DistrictSceneBuilder.AttachRemarkSpot(foodCart, 3f, new[]
@@ -63,7 +63,7 @@ namespace DontLate.EditorTools
                 KioskBuildKit.MakeKiosk(foodCart, "포장마차", KioskBuildKit.StreetFoodItems); // S-125 ②
             }
             // S-116 ② — white_van 데코 철거: 실모델 트럭과 함께 서면 "트럭 2대"로 읽힌다 (남규님 실관찰).
-            GreyboxStageBuilder.PlaceCatalog("Trash_Bin_unity", new Vector3(-2.2f, 0f, 2.4f));
+            GreyboxStageBuilder.PlaceCatalog("Trash_Bin_unity", new Vector3(-1.72f, 0f, 2.4f)); // S-160 남규님 실배치
 
             NpcBuildKit.BuildPedestrian("Walker_A", new Vector3(-9f, 0f, 2.4f), new Color(0.45f, 0.52f, 0.62f), 5f,
                 null, 0f, "camp_walker_a", gameState);
@@ -192,7 +192,7 @@ namespace DontLate.EditorTools
                 // 강체는 sleep 임계 아래라 낙하도 안 한다 (남규님 실관찰 — 건드려야 떨어짐).
                 var (boxGo, _, _) = GreyboxStageBuilder.CreateParcelBox(
                     "CampBox_" + (i + 1).ToString("00"),
-                    new Vector3(-7f + (i % 2) * 0.9f, (i / 2) * 0.705f, 1.5f), material,
+                    new Vector3(1.31f + (i % 2) * 0.9f, (i / 2) * 0.705f, -0.21f), material, // S-160 남규님 실배치
                     physical: true); // 실물 스택 (S-016 ⑥) — 아래 상자를 빼면 위가 떨어진다
 
                 BoxDurability durability = boxGo.AddComponent<BoxDurability>(); // 취급주의 (S-019 ①)

@@ -137,6 +137,10 @@ namespace DontLate.EditorTools
             WorldDayNightManager dayNight = managers.AddComponent<WorldDayNightManager>();
             SetField(dayNight, "_gameState", gameState);
             SetField(dayNight, "_tuning", tuning);
+            // S-160 — 거리 안개 **끔 고정**(남규님 지시 "Fog Enabled는 계속 true로 바뀌는데 false로").
+            // 코드 기본값에만 의존하면, 이미 true로 직렬화된 씬이 그 값을 이겨 계속 켜진다.
+            // 빌더가 정본이므로 여기서 명시적으로 박는다 — 재조립하면 항상 false가 된다.
+            SetField(dayNight, "_fogEnabled", false);
 
             WorldDialogueManager dialogue = managers.AddComponent<WorldDialogueManager>();
             EnsureTestScenario(); // 박말순 인트로 SO 확보(멱등)

@@ -44,6 +44,7 @@ namespace DontLate
         private ParticleSystem _snow;
         private GameObject _hazeRoot; // S-044 ③ — 일렁 셰이더 쿼드 (파티클 박스룩 폐지)
         private Transform _cloudRoot;
+        private const float CLOUD_Y_OFFSET = -15f; // S-160 — 구름 높이(남규님 감각값)
         private float _snowAmount;
         private SpriteRenderer[] _clouds;
         private DayPhase _phase = DayPhase.Morning;
@@ -846,6 +847,9 @@ namespace DontLate
         {
             _cloudRoot = new GameObject("Clouds").transform;
             _cloudRoot.SetParent(transform, false);
+            // S-160 — 구름을 Y −15 내린다(남규님 지시). 매니저는 Core 상주라 여기서 한 번 내리면
+            // 전 씬에 함께 적용된다 — 씬마다 따로 손볼 곳이 없다.
+            _cloudRoot.localPosition = new Vector3(0f, CLOUD_Y_OFFSET, 0f);
 
             Sprite blob = MakeCloudSprite();
             _clouds = new SpriteRenderer[8];

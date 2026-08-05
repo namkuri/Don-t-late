@@ -92,6 +92,15 @@ namespace DontLate
             WorldEvents.BagItemConsumed -= OnBagItemConsumed;
         }
 
+        private void Start()
+        {
+            // S-160 — **소유자 없는 잠금은 즉시 푼다**(이중 안전).
+            // 튜토리얼을 이미 본 세션이면 이 진행부는 시작되지 않는다. 그런데 잠금은 SO에 남아
+            // 있을 수 있어(씬 이동으로 진행부가 파괴된 경우) 아무도 풀지 못하는 상태가 된다.
+            if (_gameState != null && _gameState.bossIntroPlayed && !Running)
+                _gameState.tutorialExitLocked = false;
+        }
+
         /// <summary>보스가 플레이어 앞에 도착하면 부른다.</summary>
         public void Begin(Transform player)
         {
@@ -228,7 +237,16 @@ namespace DontLate
 
         private void OnBagOpened() => Clear(Gate.BagOpen);
         private void OnPhoneOpened() => Clear(Gate.PhoneOpen);
-        private void OnPackagePickedUp(DeliveryData _) => Clear(Gate.BoxPickup);
+        private void OnPackagePickedUp(DeliveryData _)
+        {
+            // S-160 — 잠금 해제를 **단계 진행이 아니라 "상자를 들었다"는 사실 자체**에 건다.
+            // S-158에선 `Advance()` 안에서만 풀었는데, 진행부는 Camp 씬과 함께 파괴된다.
+            // 픽업 후 배송하러 나갔다 오면 진행부가 새로 생기고 `Begin()`은 다시 안 불리므로
+            // (`bossIntroPlayed`=true) **잠금을 풀 주체가 사라져** SO에 영구 잔존했다 —
+            // 집에 영영 못 간다(남규님 실관찰). 남규님 지시: "상자 하나 들기 성공하면 집으로".
+            if (_gameState != null) _gameState.tutorialExitLocked = false;
+            Clear(Gate.BoxPickup);
+        }
         private void OnBarcodeScanned(DeliveryData _) => Clear(Gate.Barcode);
         private void OnNpcMet(string _) => Clear(Gate.NpcTalk);
         private void OnKioskRequested(KioskOffer _) => Clear(Gate.KioskOpen);
