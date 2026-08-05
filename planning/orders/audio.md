@@ -763,6 +763,18 @@ L129 직접 ++ 후 L130 Raise가 자기 구독 핸들러(L144 OnDeliveryFailed)�
 - 톤: 잔잔·따뜻한 이별+감사 — 낮곡(메이저)보다 느리고, 밤곡(마이너)보다 온기. 60~90초 루프.
 - **파일명 = bgm_ending** (스왑 계약 — Audio/BGM/에 넣으면 관제가 라이브러리 Ending 슬롯 등재).
 - 소켓은 S-107이 기시공 예정 — 클립 도착 즉시 엔딩에서 자동 재생됩니다.
+
+### 결과 (AU-023 · 라이브러리 등재) · 2026-08-01 (정수 공장 · feature/jjs-au023-ending-slot, base=main · Director 지시)
+
+- **잔여였던 "관제 라이브러리 Ending 슬롯 등재" 완료.** 곡 반입(`Fading Into Dawn.wav`)은 2db3acf로 main 도달,
+  소켓·배선(S-107)도 main 도달했으나 **BgmLibrary Ending 슬롯이 비어 엔딩 무음**이었다(0801 실측).
+- 파일명이 스왑계약 `bgm_ending`이 아닌 Suno 원제 `Fading Into Dawn`이라 자동 등재 불발 → **수동 등재**.
+- 작업: `Assets/Data/BgmLibrary.asset`에 `{clip: Fading Into Dawn (guid 515450a4…), slot: Ending}` 1항목 추가
+  (코드 변경 0 — SO 데이터 1줄. 에디터 API로 라이브 등재·저장).
+- 검증(3종): 컴파일·콘솔 에러/워닝 0 · Play → `DialogueEnded`(BGM 해제) → `EndingStarted` →
+  **`CurrentSlot=Ending, CurrentClip=Fading Into Dawn`** 실경로 확인 · `[EVENT] EndingStarted` 로그 발화.
+- 이로써 엔딩 시퀀스(빚 청산 → 마중 → 크레딧)에서 엔딩곡 자동 재생. AU-023 종결.
+
 ## AU-021 · 발주 2026-07-29 00:40 → 정수 공장 (개척 해금 팡파레 SFX — S-086 소켓 충전 · Director 세션 내 승인)
 
 요구 (남규님 지시 S-086 ②): 정산에서 개척 해금/트럭 지급 라인이 찍히는 순간의 **빵빠레** 1클립.
@@ -814,7 +826,58 @@ L129 직접 ++ 후 L130 Raise가 자기 구독 핸들러(L144 OnDeliveryFailed)�
 - 셀프검증: 문서 산출물(코드·에셋 0) — 컴파일/콘솔/Play 3종 비대상. 렌더·규격 확인으로 갈음.
 - 잔여: Director Suno 생성(필수 rain·snow → 권장 storm·heat·fog). 곡 확보 후 임포트·BgmLibrary 등재·WeatherChanged 배선은 별건(통합설계 §대로).
 
-## AU-025 · 발주 2026-08-05 12:49 → 정수 공장 (튜토리얼 미션 성공 SFX)
+---
+
+## AU-025 · 발주 2026-08-01 19:10 → 정수 공장 (비 날씨 BGM 낮/밤 분리)
+
+요구 (남규 원문 요약): 곡 2개 확보 — 낮=`Rain on the Window.wav`(신규, `_audio_intake` 반입), 밤=`Neon Rain.wav`(기존). 비 오는 날 낮엔 Rain on the Window, 밤엔 Neon Rain이 나오게. Neon Rain은 비-밤 전용으로 분리.
+
+- **배경**: 현재 날씨 BGM은 날씨당 1곡·phase-blind(`WorldAudioManager` 날씨 오버라이드가 시간대 슬롯을 통째로 덮어씀) → 비 오면 낮/밤 무관 Neon Rain 하나. `audio-weather-bgm-songlist.md` §확장 "날씨×시간대 분리"(뒤로 미룬 확장)를 **비(Rain)만** 켠다.
+- **작업**: (1) `WorldAudioManager` `_bgmRain`→`_bgmRainDay`/`_bgmRainNight` 분리 + 날씨 BGM 선택을 `_phase` 참조(Evening/Night→Night, else→Day) + `OnDayPhaseChanged`에서도 날씨 BGM 재평가(비 오는 중 낮↔밤 전환 반영). (2) `CoreSceneBuilder` 배선 RainNight=`Neon Rain`/RainDay=`Rain on the Window`. (3) `Rain on the Window.wav` `_audio_intake`→`Assets/Audio/BGM/` 반입(.gitignore allowlist·CREDITS·assets_manifest 등재·루프 이음새 트림 확인).
+- **경계**: 눈/폭염/안개는 낮밤 공용 1곡 유지(YAGNI). 씬 본문 미커밋(빌더 정본). 공장→PR까지, main 머지 관제 게이트.
+
+수용기준: Rain 진입 시 Evening/Night면 Neon Rain, Morning/Day면 Rain on the Window 재생 · 비 오는 중 낮↔밤 넘어가면 크로스페이드로 교체 · Snow/Heat/Fog 동작 불변 · 컴파일·콘솔0·Play 실측.
+MDA 판정 (D-070): 강화 — 기존 날씨 BGM 몰입을 시간대 축으로 심화(코어 "늦지마" 시간압박 무드 각인 보강). 곡 확보됨 = 저비용. 코어루프 불변.
+
+### 결과 (AU-025) · 2026-08-01 (정수 공장 · feature/jjs-storm-bgm-doc, base=main)
+
+- **코드** `WorldAudioManager`: `_bgmRain`→`_bgmRainDay`/`_bgmRainNight` 분리. 날씨 BGM 선택을 인라인 switch→`RefreshWeatherBgm()` 헬퍼로 추출, `_phase`(Evening·Night→밤곡, else→낮곡) 참조. `OnDayPhaseChanged`도 `RefreshWeatherBgm()` 호출 → 비 오는 중 낮↔밤 넘어가면 곡 교체. Snow/Heat/Fog는 단곡 유지(분기 없음).
+- **배선** `CoreSceneBuilder`: `_bgmRainNight`=`Neon Rain`, `_bgmRainDay`=`Rain on the Window`. Core 재빌드 후 `Core.unity`에 guid 주입 확인(RainDay 583a926c·RainNight 5fcdc31e, 구 `_bgmRain` 고아 없음).
+- **반입** `Rain on the Window.wav`: `_audio_intake`→`Assets/Audio/BGM/`. **루프 트림** — 아웃트로 페이드아웃 4.1s 검출·제거(152.9→148.6s) + 컷엣지 15ms 마이크로페이드. 꼬리 풀레벨 종료 확인(Neon Rain 기준과 동형, RMS 분석 근거). AudioImportPostprocessor 자동 설정: loadType CompressedInMemory·Vorbis **q0.26·모노**. `.gitignore` allowlist·CREDITS·assets_manifest 등재.
+  > ⚠ **정정 (2026-08-05 리베이스)**: 최초 기술은 `q0.30·stereo`였다. main의 임포터가 S-136(WebGL 100MB 예산)으로 **BGM 전량 모노·q0.26**을 강제하게 바뀌었고, 커밋해 둔 `.meta`가 구 규칙 산물이라 Unity를 열면 자동으로 덮어써졌다(실측). 임포터 산출값으로 meta를 갱신하고 기술을 정정한다 — main의 기존 BGM(`Neon Rain`·`Neon Snowfall`)도 이미 모노·q0.26이다.
+- **셀프검증 3종**: ① 컴파일 완료 ② 콘솔 에러/워닝 0(컴파일·Play 중) ③ Play 실측 exec — `RainDay=Rain on the Window · RainNight=Neon Rain · RainMorning=Rain on the Window · RainEvening=Neon Rain · Clear(evening)=Seoul_Afternoon_Stroll(밤슬롯 폴백)`. 낮/밤 분리·시간대 전환 교체·날씨 해제 폴백 모두 정상.
+- 잔여: main 머지는 관제 게이트([[factory-no-merge]]). 눈/폭염/안개 낮밤 분리는 미착수(YAGNI — 곡 없음).
+
+---
+
+## AU-026 · 발주 2026-08-01 → 정수 공장 (눈 날씨 BGM 낮/밤 분리)
+
+요구 (남규 원문): `Daylight Snowfall.wav`를 눈 내리는 날 **낮 전용** BGM으로 게임에 추가. 밤=`Neon Snowfall.wav`(기존). AU-025(비) 낮/밤 분리와 동형.
+
+- **배경**: AU-025로 비(Rain)만 낮/밤 2곡 분리됨. 눈(Snow)은 아직 `_bgmSnow`(Neon Snowfall) 단곡·phase-blind → 눈 오면 낮/밤 무관 한 곡. `Daylight Snowfall.wav` 확보(`_audio_intake`) → 눈도 시간대 분리.
+- **작업**: (1) `WorldAudioManager` `_bgmSnow`→`_bgmSnowDay`/`_bgmSnowNight` 분리 + `RefreshWeatherBgm()` Snow 케이스를 `_phase` 참조(Evening/Night→Night, else→Day). (2) `CoreSceneBuilder` 배선 SnowNight=`Neon Snowfall`/SnowDay=`Daylight Snowfall`. (3) `Daylight Snowfall.wav` `_audio_intake`→`Assets/Audio/BGM/` 반입(.gitignore allowlist·CREDITS·assets_manifest 등재·루프 꼬리 페이드 트림).
+- **경계**: 비는 AU-025 그대로, 폭염/안개는 낮밤 공용 1곡 유지(YAGNI). 씬 본문 미커밋(빌더 정본). 공장→PR, main 머지 관제 게이트. AU-025 스택(base=`feature/jjs-au025-rain-bgm` — 같은 메서드 수정).
+
+수용기준: Snow 진입 시 Evening/Night면 Neon Snowfall, Morning/Day면 Daylight Snowfall 재생 · 눈 오는 중 낮↔밤 넘어가면 크로스페이드 교체 · Rain/Heat/Fog 동작 불변 · 컴파일·콘솔0·Play 실측.
+MDA 판정 (D-070): 강화 — AU-025와 동형, 날씨 몰입을 시간대 축으로 심화. 곡 확보됨 = 저비용. 코어루프 불변.
+
+### 결과 (AU-026) · 2026-08-01 (정수 공장 · feature/jjs-au026-snow-day-bgm, base=feature/jjs-au025-rain-bgm 스택)
+
+- **코드** `WorldAudioManager`: `_bgmSnow`→`_bgmSnowDay`/`_bgmSnowNight` 분리. `RefreshWeatherBgm()` Snow 케이스를 `night ? _bgmSnowNight : _bgmSnowDay`로(비와 동일 로직). `OnDayPhaseChanged` 재평가 경로는 AU-025가 이미 설치 → 눈 오는 중 낮↔밤 전환 시 곡 교체 자동 적용. Heat/Fog 단곡 유지.
+- **배선** `CoreSceneBuilder`: `_bgmSnowNight`=`Neon Snowfall`, `_bgmSnowDay`=`Daylight Snowfall`. Core 재빌드 후 `Core.unity` guid 주입 확인(SnowDay cfdda866·SnowNight 4b92653c, 구 `_bgmSnow` 고아 없음, fileID 8300000 정상 참조).
+- **반입** `Daylight Snowfall.wav`: `_audio_intake`→`Assets/Audio/BGM/`. **루프 트림** — 아웃트로 페이드아웃 3.5s 검출·제거(52.8→49.3s, RMS 분석: 49.3s 이후 단조 감쇠→무음) + 컷엣지 15ms 마이크로페이드. AudioImportPostprocessor 자동 설정: loadType CompressedInMemory·Vorbis **q0.26·모노**. `.gitignore` allowlist·CREDITS·assets_manifest 등재.
+  > ⚠ **정정 (2026-08-05 리베이스)**: 최초 기술은 `q0.30·stereo`. AU-025와 동일 원인 — main 임포터가 S-136으로 BGM 전량 모노·q0.26을 강제하게 바뀌어 커밋해 둔 meta가 덮어써졌다(실측). 임포터 산출값으로 갱신.
+- **셀프검증 3종**: ① 컴파일 완료 ② 콘솔 에러/워닝 0(빌드·Play 중) ③ Play 실측 exec — `SnowMorning=Daylight Snowfall · SnowDay=Daylight Snowfall · SnowEvening=Neon Snowfall · SnowNight=Neon Snowfall · RainDay=Rain on the Window · RainNight=Neon Rain · HeatDay=Midnight Heatwave`. 눈 낮/밤 분리·시간대 교체·비/폭염 회귀 불변 모두 정상.
+- 잔여: main 머지는 관제 게이트([[factory-no-merge]]). PR base=AU-025 브랜치(스택) → #30 선머지 후 리베이스/머지. 폭염·안개 낮밤 분리 미착수(YAGNI — 곡 없음).
+- **ACCEPT (2026-08-01 · Director)**: 인게임 Play 실측 — 낮/밤 눈 BGM 정상 재생 육안·청음 확인 → **통과**. 머지는 규율대로 관제 대기(공장 미머지). 관제 처리 순서: **PR #30(AU-025) 선머지 → #31(AU-026)** rebase/머지. 재검수 불요(사전 승인됨).
+
+
+## AU-028 · 발주 2026-08-05 12:49 → 정수 공장 (튜토리얼 미션 성공 SFX)
+
+> ⚠ **번호 정정 (2026-08-05 20:55)**: 최초 AU-025로 채번했으나 정수님이 PR#30에서
+> AU-025(비 날씨 BGM 낮/밤 분리)를 2026-08-01에 **선점**하고 있었다. AU-026→AU-027 정정과
+> 원인이 같다 — 그 건이 대장에 append되지 않아 다음 번호를 25로 읽은 것이다.
+> **선발 유지·후발 재번호** 규칙대로 AU-028로 옮긴다. 코드 주석 참조 4곳도 함께 갱신했다.
 
 요구 (남규님 원문): "sfx에는 튜토리얼 미션 성공 sfx 발주 넣어" (S-162 튜토리얼 미션 카드 UI 연계)
 
@@ -828,7 +891,12 @@ L129 직접 ++ 후 L130 Raise가 자기 구독 핸들러(L144 OnDeliveryFailed)�
 수용기준: 파일 존재 · 길이 1초 이내 · 팡파레와 구분되는 절제된 톤 · 라이선스/출처 기록.
 연계: 배선은 관제가 S-162에서 처리(파일이 없으면 무음 폴백 — 소켓).
 
-## AU-026 · 발주 2026-08-05 17:18 → 정수 공장 (레벨업 SFX — S-174 ③ 소켓 충전)
+## AU-027 · 발주 2026-08-05 17:18 → 정수 공장 (레벨업 SFX — S-174 ③ 소켓 충전)
+
+> ⚠ **번호 정정 (2026-08-05 18:40)**: 최초 AU-026으로 채번했으나 정수님이 PR#31에서
+> AU-026(눈 날씨 BGM 낮/밤 분리)을 2026-08-01에 선점하고 있었다. 대장에 그 건이 append되지
+> 않아 다음 번호를 26으로 읽은 것 — **선발 유지·후발 재번호** 규칙에 따라 AU-027로 옮긴다.
+> 재발 방지: 채번 전에 대장뿐 아니라 **열린 PR 제목까지** 훑는다.
 
 요구 (남규 원문): 레벨업시 발생하는 sfx 발주내줘
 
@@ -842,3 +910,27 @@ L129 직접 ++ 후 L130 Raise가 자기 구독 핸들러(L144 OnDeliveryFailed)�
 배선: 관제가 `WorldAudioManager.PlayLevelUpSfx()` 소켓을 먼저 깔아 둔다 —
 **클립이 없으면 무음 폴백**이라 파일이 도착하기 전에도 게임은 정상 동작한다.
 파일만 위 경로에 넣고 PR을 열면 자동으로 울린다.
+
+### 결과 (AU-027) · 2026-08-05 20:35 (정수 공장 · 리드 ~45분 실작업 · feature/jjs-au027-levelup-sfx, base=main)
+
+- **채택 태그**: `short level up chime, three quick ascending notes, bright cheerful chiptune arpeggio, tiny sparkle tail`
+  + SFX 토이톤 앵커(마림바·둥근 신스 플럭) · 요청 길이 0.9s.
+- **16 take · Director 청취 2라운드**. 1차 7 take(1.2s·0.9s 혼합) → 후공정 4종 발신 → "B(0.59s)" 지목 →
+  B 프롬프트를 기준선으로 고정하고 4계열 변주(동일/4음+벨꼬리/글로켄슈필/스케일런) 9 take 재생성 →
+  **V02 채택** = V0 계열, 즉 **B와 완전 동일 프롬프트의 다른 take**. 태그 변주보다 take 뽑기가 이겼다.
+- **후공정**: 트림(≤-40dBFS) → 단일게인 min(RMS→-14dB, peak→-1dB) = **-3.5dB(감쇠)** → 8ms 페이드아웃 → 모노.
+  V02 원본이 peak 0.0dB로 붙어 있었고 밀집음이라 **RMS가 한계** — peak가 -1에 못 미치는 건 규칙상 정상
+  (팡파레 AU-021은 반대로 트랜지언트라 peak 한계였다).
+- **임포트 실측**: len 0.569s · ch 1(forceMono) · 44100 · Vorbis · q0.40 · DecompressOnLoad — SFX 계약 정합.
+- **Play 실측**: `RaisePlayerLeveledUp(2)` 발화 → `_sfxSource.isPlaying` False→True · 콘솔 `[EVENT] PlayerLeveledUp → Lv.2` ·
+  에러/워닝 0. 씬 재빌드 후 YAML에 클립 guid `8fa882c2ac232a5469e604a457bfd5d2` 실재 확인.
+- **발주 사양 반증 2건**
+  1. **"파일만 넣으면 자동으로 울린다" = 거짓**. 이벤트 체인(MasteryProgress→RaisePlayerLeveledUp→구독→
+     PlaySfx)은 전부 실재했으나 `CoreSceneBuilder`에 `LoadSfx("sfx_level_up")` 주입 라인이 없어
+     재빌드해도 `_sfxLevelUp`은 null 유지 = 영원히 무음이었다. 본 브랜치에서 1줄 추가(CoreSceneBuilder.cs:231).
+     부기: 발주서가 지목한 `PlayLevelUpSfx()` 메서드도 실명은 `OnPlayerLeveledUp`.
+  2. **길이 0.8~1.4초 미달** — 채택본 0.569s. 사양대로면 1차 take2(1.20s)였으나 Director 청취에서
+     짧은 쪽이 채택됐다. 발주 의도("팡파레보다 작고 짧게")가 수치 사양보다 우선한 판정으로 기록한다.
+- 라이선스: CREDITS.md + assets_manifest.md LICENSE 표 등재(2026-08-05).
+- **잔여(관제)**: BOM §8 SFX 행 `sfx_level_up` 추가 — 정수는 CREDITS+manifest만(AU-011 선례).
+  미등재라 파이프라인 `intake`/`promote` 게이트가 막혀 수동 후공정 경로로 진행했다.

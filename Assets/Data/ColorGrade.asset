@@ -13,14 +13,14 @@ MonoBehaviour:
   m_Name: ColorGrade
   m_EditorClassIdentifier: Assembly-CSharp::DontLate.ColorGradeSO
   baseGrade:
-    exposure: -1.5
-    saturation: 100
-    temperature: -5
+    exposure: 0
+    saturation: 0
+    temperature: 0
     filter: {r: 0, g: 0, b: 0, a: 0}
     bloom: 0
   morning:
-    exposure: 0.9
-    saturation: 56
+    exposure: 0
+    saturation: 0
     temperature: 4
     filter: {r: 1, g: 1, b: 1, a: 1}
     bloom: 0.3

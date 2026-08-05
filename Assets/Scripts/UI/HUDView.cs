@@ -141,11 +141,13 @@ namespace DontLate
 
             if (_hasCard && _remainingLabel != null)
             {
+                // S-179 — 카드가 여러 건을 담으므로 남은시간도 목록 전체를 다시 쓴다.
+                // 분이 바뀔 때만 — 시계 틱은 초당 2회라 매번 재조립하면 TMP GC가 튄다(S-069).
                 int remaining = Mathf.FloorToInt(_activeDeadline - clock.MinuteOfDay);
                 if (remaining != _shownRemaining)
                 {
                     _shownRemaining = remaining;
-                    _remainingLabel.text = remaining > 0 ? $"마감까지 {remaining}분" : "지각";
+                    RefreshDeliveryCard();
                 }
             }
         }
@@ -154,7 +156,9 @@ namespace DontLate
         private void OnCarryStateChanged(bool isCarrying)
         {
             if (_cardRoot != null) _cardRoot.SetActive(isCarrying);
-            if (!isCarrying) _hasCard = false;
+            if (!isCarrying) { _hasCard = false; _shownCarryCount = -1; }
+            // S-179 — 한 건만 내려놓고 나머지를 계속 들고 있는 경우: 카드는 남고 목록만 줄어든다.
+            else RefreshDeliveryCard();
             // 카드 내용은 PackagePickedUp(실제 든 건의 페이로드)이 채운다 (S-016 ① —
             // 구현이 적재 첫 건을 읽던 결함 수리: 든 것과 다른 주소가 표시됐다).
         }
@@ -164,14 +168,63 @@ namespace DontLate
             _activeDeadline = data.DeadlineMinuteOfDay;
             _hasCard = true;
             if (_cardRoot != null) _cardRoot.SetActive(true);
-            if (_addressLabel != null)
-                _addressLabel.text = data.Address
-                    + (string.IsNullOrEmpty(data.District) ? "" : "  <size=70%><color=#8a93a8>" + data.District + "</color></size>");
             if (_cardBackground != null) _cardBackground.color = CardNormal;
+            RefreshDeliveryCard();
+        }
 
-            int remaining = Mathf.FloorToInt(_activeDeadline - _gameState.minuteOfDay);
-            if (_remainingLabel != null)
-                _remainingLabel.text = remaining > 0 ? $"마감까지 {remaining}분" : "지각";
+        // ── S-179 다중 적재 카드 ───────────────────────────────
+        // 종전엔 `PackagePickedUp` **페이로드 한 건**만 그려서, 둘을 들면 나중에 집은 것만 남았다
+        // (남규님 지적). Lv2부터 2개·Lv5부터 3개를 드는데 UI가 1건 시절 그대로였다.
+        // 이제 **적재 목록(GameStateSO.carriedOrders)을 그린다** — 이벤트는 "갱신 신호"일 뿐이다.
+        private const float CARD_LINE_H = 96f;   // 한 건이 차지하는 높이(주소 56 + 마감 48에서 겹침 보정)
+        private const float CARD_BASE_H = 150f;  // 1건 카드 높이 — 이 값이 곧 종전 레이아웃이다
+        private int _shownCarryCount = -1;
+
+        private void RefreshDeliveryCard()
+        {
+            if (_gameState == null || _addressLabel == null || _remainingLabel == null) return;
+            var carried = _gameState.carriedOrders;
+            int count = carried != null ? carried.Count : 0;
+            if (count == 0) return; // 내려놓기 처리는 CarryStateChanged가 한다
+
+            var addressText = new System.Text.StringBuilder();
+            var remainText = new System.Text.StringBuilder();
+            for (int i = 0; i < count; i++)
+            {
+                DeliveryOrderSO order = carried[i];
+                if (order == null) continue;
+                if (addressText.Length > 0) { addressText.Append('\n'); remainText.Append('\n'); }
+
+                addressText.Append(order.address);
+                if (!string.IsNullOrEmpty(order.district))
+                    addressText.Append("  <size=70%><color=#8a93a8>").Append(order.district).Append("</color></size>");
+
+                int left = Mathf.FloorToInt(order.deadlineMinuteOfDay - _gameState.minuteOfDay);
+                // 지각한 건도 목록에서 빠지지 않는다 — 들고 있는 건 전부 보여야 어디로 갈지 정한다.
+                remainText.Append(left > 0 ? $"마감까지 {left}분" : "<color=#ff7359>지각</color>");
+            }
+            _addressLabel.text = addressText.ToString();
+            _remainingLabel.text = remainText.ToString();
+
+            if (count == _shownCarryCount) return; // 크기 조정은 건수가 바뀔 때만
+            _shownCarryCount = count;
+            ResizeDeliveryCard(count);
+        }
+
+        /// <summary>건수만큼 카드와 두 라벨을 늘린다. 1건이면 빌더가 깐 치수 그대로다.</summary>
+        private void ResizeDeliveryCard(int count)
+        {
+            float extra = CARD_LINE_H * (count - 1);
+            if (_cardRoot != null && _cardRoot.transform is RectTransform cardRect)
+                cardRect.sizeDelta = new Vector2(cardRect.sizeDelta.x, CARD_BASE_H + extra);
+            // 주소는 위에서 아래로, 마감은 아래에서 위로 자란다(각자 앵커 방향).
+            GrowLabel(_addressLabel.rectTransform, 56f, count);
+            GrowLabel(_remainingLabel.rectTransform, 48f, count);
+        }
+
+        private static void GrowLabel(RectTransform rect, float lineHeight, int count)
+        {
+            rect.sizeDelta = new Vector2(rect.sizeDelta.x, lineHeight * count);
         }
 
         private void OnDeadlineWarned(DeliveryData data)

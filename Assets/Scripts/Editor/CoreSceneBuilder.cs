@@ -222,7 +222,7 @@ namespace DontLate.EditorTools
             SetField(audio, "_sfxThrow", LoadSfx("sfx_throw"));
             SetField(audio, "_sfxCoin", LoadSfx("sfx_coin"));
             SetField(audio, "_sfxPhone", LoadSfx("sfx_phone"));
-            SetField(audio, "_sfxTutorialStep", LoadSfx("sfx_tutorial_step")); // AU-025 — 없으면 무음 폴백
+            SetField(audio, "_sfxTutorialStep", LoadSfx("sfx_tutorial_step")); // AU-028 — 없으면 무음 폴백
             SetField(audio, "_sfxDeadlineWarn", LoadSfx("sfx_deadline_warn"));  // AU-009 잔여 배선 8종
             SetField(audio, "_sfxPhoneRing", LoadSfx("sfx_phone_ring"));
             SetField(audio, "_sfxRhythmHit", LoadSfx("sfx_rhythm_hit"));
@@ -246,11 +246,14 @@ namespace DontLate.EditorTools
             SetField(audio, "_sfxLand", LoadSfx("sfx_land"));
             SetField(audio, "_sfxFootstepSnow", LoadSfx("sfx_footstep_snow"));
             SetField(audio, "_sfxCarCrash", LoadSfx("sfx_car_crash"));            // S-066 ③ (AU-020 — 도착 전 null 무음)
+            SetField(audio, "_sfxLevelUp", LoadSfx("sfx_level_up"));              // AU-027 (도착 전 null 무음)
             SetField(audio, "_ambWeatherRain", LoadSfx("amb_weather_rain"));      // AU-018 ① 날씨 앰비언스 3종
             SetField(audio, "_ambWeatherSnow", LoadSfx("amb_weather_snow"));
             SetField(audio, "_ambWeatherHeat", LoadSfx("amb_weather_heat"));
-            SetField(audio, "_bgmRain", LoadBgm("Neon Rain"));                    // AU-018 ② 날씨 BGM 4종(원제)
-            SetField(audio, "_bgmSnow", LoadBgm("Neon Snowfall"));
+            SetField(audio, "_bgmRainNight", LoadBgm("Neon Rain"));               // AU-018 ②/AU-025 비·밤(원제)
+            SetField(audio, "_bgmRainDay", LoadBgm("Rain on the Window"));         // AU-025 비·낮
+            SetField(audio, "_bgmSnowNight", LoadBgm("Neon Snowfall"));           // AU-026 눈·밤(원제)
+            SetField(audio, "_bgmSnowDay", LoadBgm("Daylight Snowfall"));          // AU-026 눈·낮
             SetField(audio, "_bgmHeat", LoadBgm("Midnight Heatwave"));
             SetField(audio, "_bgmFog", LoadBgm("Sodium Fog"));
             SetField(audio, "_gameState", AssetDatabase.LoadAssetAtPath<GameStateSO>(DATA_ROOT + "/GameState.asset"));
@@ -556,6 +559,15 @@ namespace DontLate.EditorTools
                          + "가는 길 조심하고, 도착하면 다시 알려줄게.",
                     CampTutorialDirector.Gate.ReachDistrict, "오른쪽 끝으로 걸어 빌라촌까지 가세요",
                     "왔구나! 여기가 빌라촌이야. 이제 진짜 배달이다.", "배송지역 가기"),
+
+                // S-178 — NPC 대화 **앞에** 배송 배치. 종전엔 짐을 들고 빌라촌까지 가 놓고
+                // 다음 지시가 "사람한테 말 걸어봐"라, 정작 배달을 안 하고 튜토리얼이 끝났다
+                // (남규님 지적). 코어루프의 결말을 튜토리얼이 안 가르치던 구멍이다.
+                ("Place",  "자, 이제 진짜다. 주소지 앞 바닥에 파랗게 빛나는 자리가 보일 거야.\n"
+                         + "그 위에 서서 E를 누르면 짐이 내려간다. 그게 배달 끝이야.\n"
+                         + "아, 내려놨다고 돈이 바로 들어오는 건 아니고 — 정산은 집에 가서 한번에 한다.",
+                    CampTutorialDirector.Gate.PlaceDelivery, "파란 비콘 위에서 E로 짐을 내려놓으세요",
+                    "좋아, 그게 네 첫 배달이다. 별거 아니지? 이걸 하루에 몇 번씩 하는 거야.", "배송지에 내려놓기"),
 
                 ("Npc",    "길에서 사람 마주치면 E로 말 한번 걸어봐.\n"
                          + "이 동네 사람들 은근히 정 많아. 얼굴 트면 팁도 챙겨주고 그래.",

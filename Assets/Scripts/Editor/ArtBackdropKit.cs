@@ -46,8 +46,18 @@ namespace DontLate.EditorTools
         public static readonly SetPlacement Camp =
             new SetPlacement("Assets/Prefabs/Hand/set_camp_1.prefab", Vector3.zero);
 
+        // S-180 ② — 나머지 씬에도 **빈 소켓**을 깐다. 프리팹이 없으면 Build가 경고 한 줄 남기고
+        // 그냥 지나가므로(아래 구현) 지금 당장은 아무 것도 안 바뀐다. 소켓을 먼저 까 두는 이유는,
+        // 민지님이 그 씬에서 배치를 담는 순간 **다음 재조립부터 자동으로 살아나게** 하기 위해서다.
+        // 소켓이 없으면 프리팹을 만들어도 아무도 꽂아 주지 않아 작업이 또 사라진다.
+        public static readonly SetPlacement Home =
+            new SetPlacement("Assets/Prefabs/Hand/set_home.prefab", Vector3.zero);
+
         public static readonly SetPlacement Hillside =
             new SetPlacement("Assets/Prefabs/Hand/set_hillside.prefab", Vector3.zero);
+
+        public static readonly SetPlacement Apartment =
+            new SetPlacement("Assets/Prefabs/Hand/set_apartment.prefab", Vector3.zero);
 
         /// <summary>
         /// 세트를 씬에 세운다. 멱등 — 기존 `__gb_ArtBackdrop` 루트를 지우고 새로 만든다.
@@ -62,6 +72,8 @@ namespace DontLate.EditorTools
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(set.PrefabPath);
             if (prefab == null)
             {
+                // S-180 ② — 빈 소켓은 **정상 상태**다(아직 아무도 배치를 담지 않은 씬).
+                // 워닝으로 두면 재조립마다 콘솔이 더러워지고 "워닝 0건" 납품 기준이 무력해진다.
                 Debug.Log($"[아트배경] 세트 미배치 — {set.PrefabPath} (담으면 자동으로 꽂힌다).");
                 return null;
             }

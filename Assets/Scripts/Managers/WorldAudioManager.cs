@@ -32,9 +32,9 @@ namespace DontLate
         [SerializeField] private AudioClip _sfxThrow;
         [SerializeField] private AudioClip _sfxCoin;
         [SerializeField] private AudioClip _sfxPhone;
-        // AU-025 (S-162) — 튜토리얼 한 단계 성공. 9단계 내내 반복되므로 짧고 절제된 톤.
+        // AU-028 (S-162) — 튜토리얼 한 단계 성공. 9단계 내내 반복되므로 짧고 절제된 톤.
         [SerializeField] private AudioClip _sfxTutorialStep;
-        [Tooltip("AU-026 — 레벨업. 비면 무음 폴백(파일 도착 전에도 안전).")]
+        [Tooltip("AU-027 — 레벨업. 비면 무음 폴백(파일 도착 전에도 안전).")]
         [SerializeField] private AudioClip _sfxLevelUp;
 
         [Header("SFX — 잔여 배선 8종 (AU-009)")]
@@ -82,9 +82,11 @@ namespace DontLate
         [SerializeField] private AudioClip _ambWeatherSnow;
         [SerializeField] private AudioClip _ambWeatherHeat;
 
-        [Header("날씨 BGM 4종 (AU-018 ②) — 시간대 슬롯을 덮어쓰는 무드 곡")]
-        [SerializeField] private AudioClip _bgmRain;
-        [SerializeField] private AudioClip _bgmSnow;
+        [Header("날씨 BGM (AU-018 ② / AU-025) — 시간대 슬롯을 덮어쓰는 무드 곡")]
+        [SerializeField] private AudioClip _bgmRainDay;   // AU-025 — 비·낮 (Rain on the Window)
+        [SerializeField] private AudioClip _bgmRainNight; // AU-025 — 비·밤 (구 _bgmRain=Neon Rain)
+        [SerializeField] private AudioClip _bgmSnowDay;   // AU-026 — 눈·낮 (Daylight Snowfall)
+        [SerializeField] private AudioClip _bgmSnowNight; // AU-026 — 눈·밤 (구 _bgmSnow=Neon Snowfall)
         [SerializeField] private AudioClip _bgmHeat;
         [SerializeField] private AudioClip _bgmFog;
 
@@ -226,7 +228,7 @@ namespace DontLate
             WorldEvents.SnowCoverChanged += OnSnowCoverChanged; // AU-018 ③
             WorldEvents.WeatherChanged += OnWeatherChanged;     // AU-018 ①
             WorldEvents.EndingStarted += OnEndingStarted;       // S-107 ①
-            WorldEvents.PlayerLeveledUp += OnPlayerLeveledUp;   // AU-026
+            WorldEvents.PlayerLeveledUp += OnPlayerLeveledUp;   // AU-027
         }
 
         private void OnDisable()
@@ -247,7 +249,7 @@ namespace DontLate
             WorldEvents.SceneTransitionStarted -= OnSceneTransitionStarted;
             WorldEvents.SnowCoverChanged -= OnSnowCoverChanged; // AU-018 ③
             WorldEvents.WeatherChanged -= OnWeatherChanged;     // AU-018 ①
-            WorldEvents.PlayerLeveledUp -= OnPlayerLeveledUp;   // AU-026
+            WorldEvents.PlayerLeveledUp -= OnPlayerLeveledUp;   // AU-027
         }
 
         private void OnDestroy()
@@ -319,6 +321,7 @@ namespace DontLate
         private void OnDayPhaseChanged(DayPhase phase)
         {
             _phase = phase;
+            RefreshWeatherBgm(); // AU-025 — 비 오는 중 낮↔밤 넘어가면 비-낮/비-밤 곡 교체
             ApplySlot();
             UpdateAmbient();
         }
@@ -399,10 +402,18 @@ namespace DontLate
         {
             _weather = weather;
             UpdateAmbient();
-            AudioClip wb = weather switch // AU-018 ② — 날씨 무드 BGM (없는 날씨는 시간대 슬롯 유지)
+            RefreshWeatherBgm(); // AU-018 ② + AU-025(비는 시간대별 곡)
+        }
+
+        /// <summary>날씨 무드 BGM을 현재 날씨·시간대로 다시 정한다. 비·눈은 낮/밤 곡이 갈리고(AU-025·AU-026),
+        /// 나머지는 낮밤 공용 1곡. 없는 날씨는 null → 시간대 슬롯 유지. 바뀌면 ApplySlot로 크로스페이드.</summary>
+        private void RefreshWeatherBgm()
+        {
+            bool night = _phase == DayPhase.Evening || _phase == DayPhase.Night;
+            AudioClip wb = _weather switch // AU-018 ② — 날씨 무드 BGM (없는 날씨는 시간대 슬롯 유지)
             {
-                WeatherType.Rain => _bgmRain,
-                WeatherType.Snow => _bgmSnow,
+                WeatherType.Rain => night ? _bgmRainNight : _bgmRainDay, // AU-025
+                WeatherType.Snow => night ? _bgmSnowNight : _bgmSnowDay, // AU-026
                 WeatherType.Heat => _bgmHeat,
                 WeatherType.Fog => _bgmFog,
                 _ => null
@@ -417,10 +428,10 @@ namespace DontLate
         public void PlayCoinSfx() => PlaySfx(_sfxCoin);
         public void PlayPhoneToggleSfx() => PlaySfx(_sfxPhone);
 
-        /// <summary>AU-025 — 튜토리얼 단계 성공. 클립이 없으면 무음(소켓 — 파일 도착 전에도 안전).</summary>
+        /// <summary>AU-028 — 튜토리얼 단계 성공. 클립이 없으면 무음(소켓 — 파일 도착 전에도 안전).</summary>
         public void PlayTutorialStepSfx() => PlaySfx(_sfxTutorialStep);
 
-        // AU-026 — 레벨업. 이벤트 구독으로 자동 재생(호출부가 오디오를 몰라도 된다).
+        // AU-027 — 레벨업. 이벤트 구독으로 자동 재생(호출부가 오디오를 몰라도 된다).
         private void OnPlayerLeveledUp(int _) => PlaySfx(_sfxLevelUp);
 
         // AU-009 — 리듬 판정(노트당 1회)·드링크·발소리(고빈도라 이벤트 금지, PlayThrowSfx 선례).

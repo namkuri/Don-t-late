@@ -295,8 +295,10 @@ Suno 프롬프트로 직접 생성 → 공장이 반입·트림·배선.
 
 | 파일명 | 날씨 | 길이(트림후) | 후처리 |
 |---|---|---|---|
-| `Neon Rain.wav` | Rain | 147.9s → 145.6s | 인트로 페이드인 0.3s + 아웃트로 페이드아웃 2.0s 트림 (풀레벨 루프 경계) |
-| `Neon Snowfall.wav` | Snow | 84.2s → 82.4s | 아웃트로 페이드 1.8s 트림 |
+| `Neon Rain.wav` | Rain(밤) | 147.9s → 145.6s | 인트로 페이드인 0.3s + 아웃트로 페이드아웃 2.0s 트림 (풀레벨 루프 경계) |
+| `Rain on the Window.wav` | Rain(낮) | 152.9s → 148.6s | 아웃트로 페이드아웃 4.1s 트림 + 컷엣지 15ms 마이크로페이드 (AU-025) |
+| `Neon Snowfall.wav` | Snow(밤) | 84.2s → 82.4s | 아웃트로 페이드 1.8s 트림 |
+| `Daylight Snowfall.wav` | Snow(낮) | 52.8s → 49.3s | 아웃트로 페이드아웃 3.5s 트림 + 컷엣지 15ms 마이크로페이드 (AU-026) |
 | `Midnight Heatwave.wav` | Heat | 60.1s → 59.9s | 미세 트림(거의 플랫) |
 | `Sodium Fog.wav` | Fog | 65.2s → 65.2s | 트림 불요(플랫) |
 
@@ -305,6 +307,11 @@ Suno 프롬프트로 직접 생성 → 공장이 반입·트림·배선.
   플레이리스트 3s 크로스페이드가 풀레벨↔풀레벨을 섞어 매끄럽게 루프. 원본은 Downloads 보존.
 - **배선**: `WeatherChanged` 구독 → 날씨 ∈ {Rain·Snow·Heat·Fog} 이고 곡 있으면 시간대(낮/밤) 슬롯을 override,
   Clear·Cloudy는 기존 Day/Night 곡 유지(amb 우선순위와 동형). 단곡이라 PlaylistTick 셀프 크로스페이드로 루프.
+- **비만 낮/밤 분리 (AU-025 · 2026-08-01)**: Rain은 `_bgmRainDay`(Rain on the Window)/`_bgmRainNight`(Neon Rain)
+  2곡. `WorldAudioManager`가 `_phase`(Evening·Night→밤곡, else→낮곡) 참조로 선택하고 `DayPhaseChanged`에서도
+  재평가 → 비 오는 중 낮↔밤 전환 시 곡이 크로스페이드로 교체된다. 폭염·안개는 여전히 낮밤 공용 1곡.
+- **눈도 낮/밤 분리 (AU-026 · 2026-08-01)**: Snow는 `_bgmSnowDay`(Daylight Snowfall)/`_bgmSnowNight`(Neon Snowfall)
+  2곡. 비와 동일 로직(`_phase` 참조 + `DayPhaseChanged` 재평가). 폭염·안개만 낮밤 공용 1곡 잔존.
 - 라우드니스: 4곡 rms -16.6~-17.2dB(Suno 자체 정규화 일관) · peak -3.2~-3.8dB. 정규화 불요.
 
 ## sfx_footstep 교체 (걷는 소리 재생성) — ElevenLabs · 2026-07-28
@@ -365,3 +372,14 @@ S-086 소켓(WorldAudioManager `_sfxFanfare`) 충전 — 정산 개척 해금/�
 - **원샷(A) 곡**: 인트로 성김(-20dB)→정점 75~85s(-14dB)→아웃트로 페이드아웃 145~150s(-31dB). 날씨곡과 달리 페이드 트림 안 함(페이드=아크의 일부). 실측 peak -3.2dB · rms -17.1dB — 다이내믹=감정 핵심이라 평탄화·정규화 안 함.
 - 임포트: Vorbis q30 · Compressed In Memory · 스테레오(BGM 규격 자동, 실측 검증 loadType=CompressedInMemory).
 - 배선: **엔딩 원샷 재생 소켓(S-107)은 관제 몫**(남규). BgmLibrary Ending 슬롯 등재 + WorldAudioManager 엔딩 훅 배선 필요. 배선 전엔 무음.
+
+## AU-027 sfx_level_up (레벨업) — ElevenLabs · 2026-08-05
+
+S-174 ③ 소켓(WorldAudioManager `_sfxLevelUp`) 충전 — `PlayerLeveledUp` 이벤트에 재생.
+발주 사양은 "팡파레보다 작고 짧게" — 레벨업은 정산 화면에 자주 나와 축포급이면 물린다.
+
+- 채택 프롬프트(창작 태그): `short level up chime, three quick ascending notes, bright cheerful chiptune arpeggio, tiny sparkle tail` + SFX 토이톤 앵커(마림바·둥근 신스 플럭), 요청 길이 0.9s
+- **16 take 생성 → Director 청취 2라운드**. 1차 7 take(1.2s·0.9s 혼합) 중 4종 발신 → "B(0.59s)가 낫다" → B 프롬프트 고정하고 4계열 변주 9 take 재생성 → **V02 채택**(V0 계열 = B와 완전 동일 프롬프트의 다른 take).
+- ⚠ SFX는 API가 seed 미수용 → 같은 프롬프트도 매 gen 새 결과, 복원 불가(로컬 wav가 정본).
+- 실측: 0.57s · 모노 pcm44100 · peak -3.5dB · rms -14.0dB(**밀집음이라 RMS가 한계** — peak가 -1에 못 미치는 건 규칙상 정상). 후공정 = 트림(≤-40dBFS) → 단일게인 min(RMS→-14dB, peak→-1dB) = -3.5dB → 8ms 페이드아웃.
+- 발주서 반증 1건: "파일만 넣으면 자동으로 울린다"는 **거짓이었다** — 이벤트 체인(MasteryProgress→Raise→구독→PlaySfx)은 전부 실재했으나 `CoreSceneBuilder`에 `LoadSfx("sfx_level_up")` 주입 라인이 없어 재빌드해도 null 유지. 본 PR에서 1줄 추가.

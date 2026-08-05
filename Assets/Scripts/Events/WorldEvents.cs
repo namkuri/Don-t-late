@@ -316,6 +316,15 @@ namespace DontLate
             DistrictUnlocked?.Invoke(district);
         }
 
+        /// <summary>S-178 — 비콘 패드에 짐을 내려놓았다(판정은 정산 때). 저빈도 경계 통지.</summary>
+        public static event Action<string> DeliveryPlaced;
+
+        public static void RaiseDeliveryPlaced(string beaconAddress)
+        {
+            Log("DeliveryPlaced → " + beaconAddress);
+            DeliveryPlaced?.Invoke(beaconAddress);
+        }
+
         /// <summary>S-174 ④ — 숙련도 변동(정산 건별). 주행 경험치가 꺼져 있어 저빈도다.</summary>
         public static event Action<float, int> MasteryChanged;
 
