@@ -372,3 +372,14 @@ S-086 소켓(WorldAudioManager `_sfxFanfare`) 충전 — 정산 개척 해금/�
 - **원샷(A) 곡**: 인트로 성김(-20dB)→정점 75~85s(-14dB)→아웃트로 페이드아웃 145~150s(-31dB). 날씨곡과 달리 페이드 트림 안 함(페이드=아크의 일부). 실측 peak -3.2dB · rms -17.1dB — 다이내믹=감정 핵심이라 평탄화·정규화 안 함.
 - 임포트: Vorbis q30 · Compressed In Memory · 스테레오(BGM 규격 자동, 실측 검증 loadType=CompressedInMemory).
 - 배선: **엔딩 원샷 재생 소켓(S-107)은 관제 몫**(남규). BgmLibrary Ending 슬롯 등재 + WorldAudioManager 엔딩 훅 배선 필요. 배선 전엔 무음.
+
+## AU-027 sfx_level_up (레벨업) — ElevenLabs · 2026-08-05
+
+S-174 ③ 소켓(WorldAudioManager `_sfxLevelUp`) 충전 — `PlayerLeveledUp` 이벤트에 재생.
+발주 사양은 "팡파레보다 작고 짧게" — 레벨업은 정산 화면에 자주 나와 축포급이면 물린다.
+
+- 채택 프롬프트(창작 태그): `short level up chime, three quick ascending notes, bright cheerful chiptune arpeggio, tiny sparkle tail` + SFX 토이톤 앵커(마림바·둥근 신스 플럭), 요청 길이 0.9s
+- **16 take 생성 → Director 청취 2라운드**. 1차 7 take(1.2s·0.9s 혼합) 중 4종 발신 → "B(0.59s)가 낫다" → B 프롬프트 고정하고 4계열 변주 9 take 재생성 → **V02 채택**(V0 계열 = B와 완전 동일 프롬프트의 다른 take).
+- ⚠ SFX는 API가 seed 미수용 → 같은 프롬프트도 매 gen 새 결과, 복원 불가(로컬 wav가 정본).
+- 실측: 0.57s · 모노 pcm44100 · peak -3.5dB · rms -14.0dB(**밀집음이라 RMS가 한계** — peak가 -1에 못 미치는 건 규칙상 정상). 후공정 = 트림(≤-40dBFS) → 단일게인 min(RMS→-14dB, peak→-1dB) = -3.5dB → 8ms 페이드아웃.
+- 발주서 반증 1건: "파일만 넣으면 자동으로 울린다"는 **거짓이었다** — 이벤트 체인(MasteryProgress→Raise→구독→PlaySfx)은 전부 실재했으나 `CoreSceneBuilder`에 `LoadSfx("sfx_level_up")` 주입 라인이 없어 재빌드해도 null 유지. 본 PR에서 1줄 추가.

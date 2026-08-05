@@ -228,6 +228,7 @@ namespace DontLate.EditorTools
             SetField(audio, "_sfxLand", LoadSfx("sfx_land"));
             SetField(audio, "_sfxFootstepSnow", LoadSfx("sfx_footstep_snow"));
             SetField(audio, "_sfxCarCrash", LoadSfx("sfx_car_crash"));            // S-066 ③ (AU-020 — 도착 전 null 무음)
+            SetField(audio, "_sfxLevelUp", LoadSfx("sfx_level_up"));              // AU-027 (도착 전 null 무음)
             SetField(audio, "_ambWeatherRain", LoadSfx("amb_weather_rain"));      // AU-018 ① 날씨 앰비언스 3종
             SetField(audio, "_ambWeatherSnow", LoadSfx("amb_weather_snow"));
             SetField(audio, "_ambWeatherHeat", LoadSfx("amb_weather_heat"));
