@@ -831,7 +831,8 @@ MDA 판정 (D-070): 강화 — 기존 날씨 BGM 몰입을 시간대 축으로 �
 
 - **코드** `WorldAudioManager`: `_bgmRain`→`_bgmRainDay`/`_bgmRainNight` 분리. 날씨 BGM 선택을 인라인 switch→`RefreshWeatherBgm()` 헬퍼로 추출, `_phase`(Evening·Night→밤곡, else→낮곡) 참조. `OnDayPhaseChanged`도 `RefreshWeatherBgm()` 호출 → 비 오는 중 낮↔밤 넘어가면 곡 교체. Snow/Heat/Fog는 단곡 유지(분기 없음).
 - **배선** `CoreSceneBuilder`: `_bgmRainNight`=`Neon Rain`, `_bgmRainDay`=`Rain on the Window`. Core 재빌드 후 `Core.unity`에 guid 주입 확인(RainDay 583a926c·RainNight 5fcdc31e, 구 `_bgmRain` 고아 없음).
-- **반입** `Rain on the Window.wav`: `_audio_intake`→`Assets/Audio/BGM/`. **루프 트림** — 아웃트로 페이드아웃 4.1s 검출·제거(152.9→148.6s) + 컷엣지 15ms 마이크로페이드. 꼬리 풀레벨 종료 확인(Neon Rain 기준과 동형, RMS 분석 근거). AudioImportPostprocessor 자동 설정: loadType CompressedInMemory·Vorbis q0.30·stereo. `.gitignore` allowlist·CREDITS·assets_manifest 등재.
+- **반입** `Rain on the Window.wav`: `_audio_intake`→`Assets/Audio/BGM/`. **루프 트림** — 아웃트로 페이드아웃 4.1s 검출·제거(152.9→148.6s) + 컷엣지 15ms 마이크로페이드. 꼬리 풀레벨 종료 확인(Neon Rain 기준과 동형, RMS 분석 근거). AudioImportPostprocessor 자동 설정: loadType CompressedInMemory·Vorbis **q0.26·모노**. `.gitignore` allowlist·CREDITS·assets_manifest 등재.
+  > ⚠ **정정 (2026-08-05 리베이스)**: 최초 기술은 `q0.30·stereo`였다. main의 임포터가 S-136(WebGL 100MB 예산)으로 **BGM 전량 모노·q0.26**을 강제하게 바뀌었고, 커밋해 둔 `.meta`가 구 규칙 산물이라 Unity를 열면 자동으로 덮어써졌다(실측). 임포터 산출값으로 meta를 갱신하고 기술을 정정한다 — main의 기존 BGM(`Neon Rain`·`Neon Snowfall`)도 이미 모노·q0.26이다.
 - **셀프검증 3종**: ① 컴파일 완료 ② 콘솔 에러/워닝 0(컴파일·Play 중) ③ Play 실측 exec — `RainDay=Rain on the Window · RainNight=Neon Rain · RainMorning=Rain on the Window · RainEvening=Neon Rain · Clear(evening)=Seoul_Afternoon_Stroll(밤슬롯 폴백)`. 낮/밤 분리·시간대 전환 교체·날씨 해제 폴백 모두 정상.
 - 잔여: main 머지는 관제 게이트([[factory-no-merge]]). 눈/폭염/안개 낮밤 분리는 미착수(YAGNI — 곡 없음).
 
