@@ -98,6 +98,7 @@ namespace DontLate.EditorTools
             BuildCat(gameState, OnGround(34f, -1.2f));
 
             // ── 플레이어·카메라(Y 팔로우) ────────────────────
+            ArtBackdropKit.Build(ArtBackdropKit.Hillside); // S-180 ② — 아트 세트 소켓(프리팹 없으면 무시)
             GreyboxStageBuilder.BuildPlayer(gameState, tuning);
             GameObject player = GameObject.Find("__gb_Player");
             if (player != null) player.transform.position = OnGround(-16f, 0f, 0.1f);

@@ -103,6 +103,7 @@ namespace DontLate.EditorTools
             EdgeGateBuildKit.BuildGate("EdgeGate_Prev", new Vector3(-19.5f, 0f, -1.7f), DontLate.DistrictEdgeGate.Direction.Prev, gameState, 2.6f);
             EdgeGateBuildKit.BuildGate("EdgeGate_Next", new Vector3(-19.5f, 0f, 1.7f), DontLate.DistrictEdgeGate.Direction.Next, gameState, 2.6f, showArrow: false);
 
+            ArtBackdropKit.Build(ArtBackdropKit.Apartment); // S-180 ② — 아트 세트 소켓(프리팹 없으면 무시)
             GreyboxStageBuilder.BuildPlayer(gameState, tuning);
             GameObject player = GameObject.Find("__gb_Player");
             if (player != null) player.transform.position = new Vector3(-16f, 0.1f, 0f);

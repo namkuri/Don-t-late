@@ -26,6 +26,7 @@ namespace DontLate.EditorTools
 
             BuildRoom(floor, wall, door);
             // 침대는 S-031 ③부터 가구(fur_bed 시드) — 무대 고정물로 만들지 않는다.
+            ArtBackdropKit.Build(ArtBackdropKit.Home); // S-180 ② — 아트 세트 소켓(프리팹 없으면 무시)
             BuildSky();
             BuildFurniturePlacer();
             GreyboxStageBuilder.BuildPostVolume();
