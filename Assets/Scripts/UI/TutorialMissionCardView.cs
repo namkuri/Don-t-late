@@ -76,7 +76,7 @@ namespace DontLate
             if (_titleLabel != null) _titleLabel.text = _title + "   <color=#b8f5c8>완료</color>";
             if (_background != null) _background.color = ClearedColor;
 
-            WorldAudioManager.Instance?.PlayTutorialStepSfx(); // AU-025 — 없으면 무음 폴백
+            WorldAudioManager.Instance?.PlayTutorialStepSfx(); // AU-028 — 없으면 무음 폴백
 
             if (_routine != null) StopCoroutine(_routine);
             _routine = StartCoroutine(HoldThenExit());

@@ -204,7 +204,7 @@ namespace DontLate.EditorTools
             SetField(audio, "_sfxThrow", LoadSfx("sfx_throw"));
             SetField(audio, "_sfxCoin", LoadSfx("sfx_coin"));
             SetField(audio, "_sfxPhone", LoadSfx("sfx_phone"));
-            SetField(audio, "_sfxTutorialStep", LoadSfx("sfx_tutorial_step")); // AU-025 — 없으면 무음 폴백
+            SetField(audio, "_sfxTutorialStep", LoadSfx("sfx_tutorial_step")); // AU-028 — 없으면 무음 폴백
             SetField(audio, "_sfxDeadlineWarn", LoadSfx("sfx_deadline_warn"));  // AU-009 잔여 배선 8종
             SetField(audio, "_sfxPhoneRing", LoadSfx("sfx_phone_ring"));
             SetField(audio, "_sfxRhythmHit", LoadSfx("sfx_rhythm_hit"));
@@ -231,8 +231,10 @@ namespace DontLate.EditorTools
             SetField(audio, "_ambWeatherRain", LoadSfx("amb_weather_rain"));      // AU-018 ① 날씨 앰비언스 3종
             SetField(audio, "_ambWeatherSnow", LoadSfx("amb_weather_snow"));
             SetField(audio, "_ambWeatherHeat", LoadSfx("amb_weather_heat"));
-            SetField(audio, "_bgmRain", LoadBgm("Neon Rain"));                    // AU-018 ② 날씨 BGM 4종(원제)
-            SetField(audio, "_bgmSnow", LoadBgm("Neon Snowfall"));
+            SetField(audio, "_bgmRainNight", LoadBgm("Neon Rain"));               // AU-018 ②/AU-025 비·밤(원제)
+            SetField(audio, "_bgmRainDay", LoadBgm("Rain on the Window"));         // AU-025 비·낮
+            SetField(audio, "_bgmSnowNight", LoadBgm("Neon Snowfall"));           // AU-026 눈·밤(원제)
+            SetField(audio, "_bgmSnowDay", LoadBgm("Daylight Snowfall"));          // AU-026 눈·낮
             SetField(audio, "_bgmHeat", LoadBgm("Midnight Heatwave"));
             SetField(audio, "_bgmFog", LoadBgm("Sodium Fog"));
             SetField(audio, "_gameState", AssetDatabase.LoadAssetAtPath<GameStateSO>(DATA_ROOT + "/GameState.asset"));
