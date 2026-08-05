@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 1,
+  "scenarioId": "yoo_jihye_random_talk",
+  "npcId": "yoo_jihye",
+  "displayName": "유지혜",
+  "npcRole": "꽃집 주인",
+  "trigger": "interact",
+  "selectionMode": "random_single",
+  "avoidImmediateRepeat": true,
+  "lines": [
+    {
+      "lineId": "YOO_JIHYE_RANDOM_01",
+      "speaker": "유지혜",
+      "text": "어서 오세요. 오늘은 어떤 꽃을 찾으세요?",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YOO_JIHYE_RANDOM_02",
+      "speaker": "유지혜",
+      "text": "구경만 하셔도 괜찮아요. 꽃은 보는 것만으로도 좋으니까요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YOO_JIHYE_RANDOM_03",
+      "speaker": "유지혜",
+      "text": "이 꽃은 오늘 아침에 들어왔어요. 향이 참 깨끗하죠?",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YOO_JIHYE_RANDOM_04",
+      "speaker": "유지혜",
+      "text": "선물하실 거면 받는 분이 어떤 사람인지 알려주세요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YOO_JIHYE_RANDOM_05",
+      "speaker": "유지혜",
+      "text": "예쁜 꽃보다 그 사람한테 어울리는 꽃이 더 좋은 선물이에요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YOO_JIHYE_RANDOM_06",
+      "speaker": "유지혜",
+      "text": "꽃 이름을 몰라도 괜찮아요. 색이나 느낌으로 골라도 돼요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YOO_JIHYE_RANDOM_07",
+      "speaker": "유지혜",
+      "text": "이 아이는 햇빛을 좋아해요. 창가에 두면 오래 볼 수 있어요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YOO_JIHYE_RANDOM_08",
+      "speaker": "유지혜",
+      "text": "물을 너무 자주 주면 오히려 힘들어해요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YOO_JIHYE_RANDOM_09",
+      "speaker": "유지혜",
+      "text": "사람도 꽃도 숨 쉴 틈이 있어야 잘 자라나 봐요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YOO_JIHYE_RANDOM_10",
+      "speaker": "유지혜",
+      "text": "오늘 많이 바쁘셨죠? 얼굴에 조금 쓰여 있어요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YOO_JIHYE_RANDOM_11",
+      "speaker": "유지혜",
+      "text": "잠깐 앉았다 가세요. 물이라도 한 잔 드릴게요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YOO_JIHYE_RANDOM_12",
+      "speaker": "유지혜",
+      "text": "혼자 들 수 있다고 무리하지 마세요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YOO_JIHYE_RANDOM_13",
+      "speaker": "유지혜",
+      "text": "천천히 가셔도 괜찮아요. 안전하게 도착하는 게 먼저예요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YOO_JIHYE_RANDOM_14",
+      "speaker": "유지혜",
+      "text": "비가 오니까 포장을 한 겹 더 해드릴게요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YOO_JIHYE_RANDOM_15",
+      "speaker": "유지혜",
+      "text": "배송하시는 분들 오시면 늘 걱정돼요. 다들 너무 급하게 다니셔서요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YOO_JIHYE_RANDOM_16",
+      "speaker": "유지혜",
+      "text": "늦는 것보다 다치지 않는 게 훨씬 중요해요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YOO_JIHYE_RANDOM_17",
+      "speaker": "유지혜",
+      "text": "바쁜데도 인사해줘서 고마워요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YOO_JIHYE_RANDOM_18",
+      "speaker": "유지혜",
+      "text": "힘든 날에는 굳이 괜찮은 척하지 않아도 돼요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YOO_JIHYE_RANDOM_19",
+      "speaker": "유지혜",
+      "text": "여기서는 잠깐 쉬었다 가도 아무도 뭐라고 안 해요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YOO_JIHYE_RANDOM_20",
+      "speaker": "유지혜",
+      "text": "다음에 오시면 따뜻한 차라도 준비해둘게요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YOO_JIHYE_RANDOM_21",
+      "speaker": "유지혜",
+      "text": "오늘도 무사히 끝내고 돌아오세요. 꼭이요.",
+      "portraitId": ""
+    }
+  ]
+}

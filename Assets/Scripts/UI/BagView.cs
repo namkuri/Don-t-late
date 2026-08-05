@@ -4,7 +4,7 @@ using UnityEngine.UI;
 namespace DontLate
 {
     /// <summary>
-    /// 가방(인벤토리) 팝업 (S-064). 기본 5칸 — 좌클릭 선택(들 수 있으면 손에 들기 요청),
+    /// 가방(인벤토리) 팝업 (S-064). 기본 4칸 — 좌클릭 선택(들 수 있으면 손에 들기 요청),
     /// 우클릭 컨텍스트(사용/버리기), 드래그 드랍 칸 이동. 데이터는 GameStateSO.bagItems 단일 소유.
     /// 손 들기·소비는 도메인 경계 규칙대로 WorldEvents로 Player에 통지한다.
     /// </summary>

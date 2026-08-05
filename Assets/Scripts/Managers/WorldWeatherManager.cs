@@ -16,8 +16,10 @@ namespace DontLate
         public static WorldWeatherManager Instance { get; private set; }
 
         [SerializeField] private GameStateSO _gameState;
-        [Tooltip("구름 실아트 스왑 슬롯 (S-047 — bom_id: fx_cloud_a/b/c, Art/Backgrounds). 비면 코드 블롭 폴백.")]
-        [SerializeField] private Sprite[] _cloudSprites;
+        [Tooltip("모든 씬의 카메라 뒤에 표시할 공통 하늘 배경.")]
+        [SerializeField] private Texture2D _skyBackgroundTexture;
+        [Tooltip("구름 실아트 텍스처 (S-047 — bom_id: fx_cloud_a/b/c, Art/Backgrounds). 비면 코드 블롭 폴백.")]
+        [SerializeField] private Texture2D[] _cloudTextures;
         [Tooltip("그레이드 전이 속도 (1/초) — 낮을수록 느긋한 트랜지션.")]
         [SerializeField] private float _gradeLerpSpeed = 0.5f;
         [Tooltip("색보정 수치표 (S-131) — 시간대·날씨·구역별 노출·채도·색온도·필터·블룸. 비면 무보정.")]
@@ -43,7 +45,11 @@ namespace DontLate
         private ParticleSystem _rain;
         private ParticleSystem _snow;
         private GameObject _hazeRoot; // S-044 ③ — 일렁 셰이더 쿼드 (파티클 박스룩 폐지)
+        private Sprite _runtimeSkySprite;
+        private SpriteRenderer _skyBackground;
+        private Camera _skyCamera;
         private Transform _cloudRoot;
+        private Sprite[] _runtimeCloudSprites;
         private const float CLOUD_Y_OFFSET = -15f; // S-160 — 구름 높이(남규님 감각값)
         private float _snowAmount;
         private SpriteRenderer[] _clouds;
@@ -64,6 +70,11 @@ namespace DontLate
 
         private void OnDestroy()
         {
+            if (_skyBackground != null) Destroy(_skyBackground.gameObject);
+            if (_runtimeSkySprite != null) Destroy(_runtimeSkySprite);
+            if (_runtimeCloudSprites != null)
+                for (int i = 0; i < _runtimeCloudSprites.Length; i++)
+                    if (_runtimeCloudSprites[i] != null) Destroy(_runtimeCloudSprites[i]);
             if (Instance == this) Instance = null;
         }
 
@@ -120,6 +131,7 @@ namespace DontLate
             // 연출 리그는 카메라 X를 따라간다 (씬·구역 무관).
             Camera camera = Camera.main;
             if (camera == null) return;
+            UpdateSkyBackground(camera);
             Vector3 cam = camera.transform.position;
             transform.position = new Vector3(cam.x, 0f, _sceneZOffset);
         }
@@ -383,6 +395,7 @@ namespace DontLate
         // ── 연출물 조립 (코드 — 그레이박스) ──────────────────
         private void BuildEffects()
         {
+            BuildSkyBackground();
             _rain = BuildFallSystem("RainEmitter", new Color(0.62f, 0.72f, 0.92f, 0.55f),
                 startSpeed: 26f, size: 0.05f, lengthScale: 6f, rate: 340f, gravity: 1.2f,
                 tiltDegrees: 15f); // 아트 피드백 (2026-07-24) — 수직 낙하는 부자연, 15° 사선
@@ -393,6 +406,56 @@ namespace DontLate
             ConfigureSnowPile(_snow);   // S-046 ③ — 낙하 지점 실누적 (반드시 _snow 생성 후)
             _hazeRoot = BuildHazeQuads();
             BuildClouds();
+        }
+
+        private void BuildSkyBackground()
+        {
+            if (_skyBackgroundTexture == null) return;
+
+            _runtimeSkySprite = Sprite.Create(
+                _skyBackgroundTexture,
+                new Rect(0f, 0f, _skyBackgroundTexture.width, _skyBackgroundTexture.height),
+                new Vector2(0.5f, 0.5f), 100f);
+
+            CreateSkyRenderer();
+        }
+
+        private void CreateSkyRenderer()
+        {
+            GameObject sky = new GameObject("SkyBackground");
+            _skyBackground = sky.AddComponent<SpriteRenderer>();
+            _skyBackground.sprite = _runtimeSkySprite;
+            _skyBackground.sortingOrder = -1000;
+        }
+
+        private void UpdateSkyBackground(Camera camera)
+        {
+            if (_runtimeSkySprite == null) return;
+            if (_skyBackground == null) CreateSkyRenderer();
+
+            Transform sky = _skyBackground.transform;
+            if (_skyCamera != camera || sky.parent != camera.transform)
+            {
+                _skyCamera = camera;
+                sky.SetParent(camera.transform, false);
+                sky.localRotation = Quaternion.identity;
+            }
+
+            float depthRange = Mathf.Max(0.1f, camera.farClipPlane - camera.nearClipPlane);
+            float distance = Mathf.Min(90f, camera.nearClipPlane + depthRange * 0.9f);
+            sky.localPosition = new Vector3(0f, 0f, distance);
+
+            float height = camera.orthographic
+                ? camera.orthographicSize * 2f
+                : 2f * distance * Mathf.Tan(camera.fieldOfView * 0.5f * Mathf.Deg2Rad);
+            float width = height * camera.aspect;
+            Vector2 spriteSize = _runtimeSkySprite.bounds.size;
+            float scale = Mathf.Max(width / spriteSize.x, height / spriteSize.y) * 1.02f;
+            sky.localScale = new Vector3(scale, scale, 1f);
+
+            DayPhase phase = WorldDayNightManager.Instance != null
+                ? WorldDayNightManager.Instance.Phase : _phase;
+            _skyBackground.enabled = phase == DayPhase.Morning || phase == DayPhase.Day;
         }
 
         private ParticleSystem BuildFallSystem(string name, Color color, float startSpeed,
@@ -852,11 +915,23 @@ namespace DontLate
             _cloudRoot.localPosition = new Vector3(0f, CLOUD_Y_OFFSET, 0f);
 
             Sprite blob = MakeCloudSprite();
+            if (_cloudTextures != null && _cloudTextures.Length > 0)
+            {
+                _runtimeCloudSprites = new Sprite[_cloudTextures.Length];
+                for (int i = 0; i < _cloudTextures.Length; i++)
+                {
+                    Texture2D texture = _cloudTextures[i];
+                    if (texture == null) continue;
+                    _runtimeCloudSprites[i] = Sprite.Create(texture,
+                        new Rect(0f, 0f, texture.width, texture.height), new Vector2(0.5f, 0.5f), 100f);
+                }
+            }
             _clouds = new SpriteRenderer[8];
             for (int i = 0; i < _clouds.Length; i++)
             {
-                Sprite sprite = _cloudSprites != null && _cloudSprites.Length > 0
-                    ? _cloudSprites[i % _cloudSprites.Length] : blob; // 실아트 로테이션
+                Sprite sprite = _runtimeCloudSprites != null && _runtimeCloudSprites.Length > 0
+                    ? _runtimeCloudSprites[i % _runtimeCloudSprites.Length] : null;
+                if (sprite == null) sprite = blob;
                 GameObject cloud = new GameObject("Cloud_" + i);
                 cloud.transform.SetParent(_cloudRoot, false);
                 cloud.transform.localPosition = new Vector3(-40f + i * 11f, 21f + (i * 13 % 7), 64f + (i % 3) * 3f);

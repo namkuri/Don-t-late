@@ -53,7 +53,7 @@ namespace DontLate.EditorTools
                 GreyboxStageBuilder.GetOrCreateMaterial("Ground", new Color(0.24f, 0.24f, 0.26f), false);
 
             TMP_FontAsset font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(
-                "Assets/Art/UI/Fonts/Pretendard-Regular SDF.asset");
+                "Assets/Art/UI/Fonts/DNFBitBitOTF SDF.asset");
 
             var missing = new List<string>();
             float cursorX = 0f;

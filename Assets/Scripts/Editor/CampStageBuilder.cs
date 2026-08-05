@@ -1,4 +1,5 @@
 using UnityEditor;
+using UnityEditor.Animations;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -15,13 +16,27 @@ namespace DontLate.EditorTools
     public static class CampStageBuilder
     {
         private const string CAMP_PATH = "Assets/Scenes/Camp.unity";
+        private const string CAMP_PLANES_PREFAB_PATH = "Assets/Prefabs/Hand/set_camp_planes.prefab";
+        private const string BOSS_MODEL_PATH = "Assets/Art/Characters/Kimboss/kim_boss.fbx";
+        private const string BOSS_IDLE_PATH = "Assets/Art/Characters/Kimboss/kimboss_Breathing Idle.fbx";
+        private const string BOSS_WALK_PATH = "Assets/Art/Characters/Kimboss/kimboss_Walking (2).fbx";
+        private const string BOSS_TALK_PATH = "Assets/Art/Characters/Kimboss/kim_bossTalking.fbx";
+        private const string BOSS_CONTROLLER_PATH = "Assets/Art/Characters/Kimboss/AC_kim_boss.controller";
+        private const float BOSS_VISUAL_YAW = 90f;
         private const int LOAD_ZONE_COUNT = 4; // S-039 ④ — 4번째 = 아파트행 물량
 
         [MenuItem("DontLate/Build/Camp Stage", priority = 12)]
         public static void BuildCampStage()
         {
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+            {
+                Debug.LogWarning("[Camp] 저장되지 않은 씬이 있어 재조립을 취소했다.");
+                return;
+            }
+
             Scene scene = EditorSceneManager.OpenScene(CAMP_PATH, OpenSceneMode.Single);
             GreyboxStageBuilder.Clear();
+            EnsureCampPlaneSet(scene);
 
             var (gameState, tuning, _) = GreyboxStageBuilder.GetOrCreateStageData();
 
@@ -81,6 +96,24 @@ namespace DontLate.EditorTools
             EditorSceneManager.SaveScene(scene, CAMP_PATH);
             Debug.Log("[Camp] 무대 조립 완료 — 박스 " + LOAD_ZONE_COUNT
                     + "개를 E로 들어 트럭 짐칸 뒤에서 E로 싣는다 (S-009).");
+        }
+
+        private static void EnsureCampPlaneSet(Scene scene)
+        {
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                if (root.name == "set_camp_planes") return;
+            }
+
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(CAMP_PLANES_PREFAB_PATH);
+            if (prefab == null)
+            {
+                Debug.LogWarning("[Camp] set_camp_planes 프리팹을 찾지 못해 수제 Plane 배치를 생략했다.");
+                return;
+            }
+
+            GameObject instance = PrefabUtility.InstantiatePrefab(prefab, scene) as GameObject;
+            if (instance != null) instance.name = "set_camp_planes";
         }
 
         // 트럭 = 소품 + 적재존(S-009). 짐칸 뒤에서 박스를 든 채 E → LoadingZone이 짐칸에 쌓는다.
@@ -225,8 +258,31 @@ namespace DontLate.EditorTools
         // S-052 ① — 사장님 NPC: 첫 방문 접근 튜토리얼 + 재방문 격려(부재 추첨).
         private static void BuildBossNpc(GameStateSO gameState, Material highlight)
         {
-            var (go, body) = NpcBuildKit.BuildFigure("BossNpc", new Vector3(-7.5f, 0f, 1.6f),
-                "NpcBoss", new Color(0.32f, 0.45f, 0.38f), 1.8f);
+            GameObject go;
+            Renderer body;
+            Animator animator = null;
+            GameObject bossModel = AssetDatabase.LoadAssetAtPath<GameObject>(BOSS_MODEL_PATH);
+            if (bossModel != null)
+            {
+                go = GreyboxStageBuilder.CreateEmpty("BossNpc", new Vector3(9.99102402f, 0.0432802439f, 0.0104106665f));
+                GameObject visual = (GameObject)PrefabUtility.InstantiatePrefab(bossModel, go.transform);
+                visual.name = "Visual";
+                NormalizeBossVisual(visual, go.transform.position, 1.8f);
+                foreach (Collider visualCollider in visual.GetComponentsInChildren<Collider>(true))
+                    visualCollider.enabled = false;
+
+                body = visual.GetComponentInChildren<Renderer>(true);
+                animator = visual.GetComponentInChildren<Animator>(true);
+                if (animator == null) animator = visual.AddComponent<Animator>();
+                animator.runtimeAnimatorController = GetOrCreateBossAnimatorController();
+                animator.applyRootMotion = false;
+            }
+            else
+            {
+                (go, body) = NpcBuildKit.BuildFigure("BossNpc", new Vector3(9.99102402f, 0.0432802439f, 0.0104106665f),
+                    "NpcBoss", new Color(0.32f, 0.45f, 0.38f), 1.8f);
+                Debug.LogWarning("[Camp] kim_boss.fbx 미발견 — 기존 그레이박스 사장님을 사용한다.");
+            }
             NpcBuildKit.AddInteractTrigger(go, 1.8f);
             NpcBuildKit.AttachNameLabel(go, "boss", "사장님"); // S-120 — 근접 이름표
 
@@ -253,6 +309,7 @@ namespace DontLate.EditorTools
             GreyboxStageBuilder.SetReference(boss, "_highlightRenderer", body);
             GreyboxStageBuilder.SetReference(boss, "_normalMaterial", body.sharedMaterial);
             GreyboxStageBuilder.SetReference(boss, "_highlightMaterial", highlight);
+            GreyboxStageBuilder.SetReference(boss, "_animator", animator);
             SerializedObject serialized = new SerializedObject(boss);
             SerializedProperty cheers = serialized.FindProperty("_cheerScenarios");
             cheers.arraySize = 3;
@@ -260,6 +317,99 @@ namespace DontLate.EditorTools
             cheers.GetArrayElementAtIndex(1).objectReferenceValue = cheer2;
             cheers.GetArrayElementAtIndex(2).objectReferenceValue = cheer3;
             serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void NormalizeBossVisual(GameObject visual, Vector3 rootPosition, float targetHeight)
+        {
+            visual.transform.localPosition = Vector3.zero;
+            visual.transform.localRotation = Quaternion.Euler(0f, BOSS_VISUAL_YAW, 0f);
+            visual.transform.localScale = Vector3.one;
+
+            Renderer[] renderers = visual.GetComponentsInChildren<Renderer>(true);
+            if (renderers.Length == 0) return;
+
+            Bounds bounds = renderers[0].bounds;
+            for (int i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
+            if (bounds.size.y > 0.001f)
+                visual.transform.localScale = Vector3.one * (targetHeight / bounds.size.y);
+
+            bounds = renderers[0].bounds;
+            for (int i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
+            visual.transform.position += rootPosition - new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);
+        }
+
+        private static RuntimeAnimatorController GetOrCreateBossAnimatorController()
+        {
+            AnimationClip idleClip = GetOrCreateCleanAnimationClip(BOSS_IDLE_PATH, "kim_boss_idle_clean.anim");
+            AnimationClip walkClip = GetOrCreateCleanAnimationClip(BOSS_WALK_PATH, "kim_boss_walk_clean.anim");
+            AnimationClip talkClip = GetOrCreateCleanAnimationClip(BOSS_TALK_PATH, "kim_boss_talk_clean.anim");
+            if (idleClip == null || walkClip == null || talkClip == null)
+            {
+                Debug.LogWarning("[Camp] kim_boss 애니메이션 클립을 모두 찾지 못했다.");
+                return null;
+            }
+
+            AnimatorController controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(BOSS_CONTROLLER_PATH);
+            if (controller == null)
+                controller = AnimatorController.CreateAnimatorControllerAtPath(BOSS_CONTROLLER_PATH);
+            AnimatorStateMachine stateMachine = controller.layers[0].stateMachine;
+            AnimatorState idle = FindOrAddState(stateMachine, "Idle");
+            AnimatorState walk = FindOrAddState(stateMachine, "Walk");
+            AnimatorState talk = FindOrAddState(stateMachine, "Talk");
+            idle.motion = idleClip;
+            walk.motion = walkClip;
+            talk.motion = talkClip;
+            stateMachine.defaultState = idle;
+            EnsureLoopTransition(idle);
+            EnsureLoopTransition(walk);
+            EnsureLoopTransition(talk);
+            EditorUtility.SetDirty(controller);
+            AssetDatabase.SaveAssetIfDirty(controller);
+            return controller;
+        }
+
+        private static AnimatorState FindOrAddState(AnimatorStateMachine stateMachine, string name)
+        {
+            foreach (ChildAnimatorState child in stateMachine.states)
+                if (child.state.name == name) return child.state;
+            return stateMachine.AddState(name);
+        }
+
+        private static AnimationClip GetOrCreateCleanAnimationClip(string sourcePath, string generatedName)
+        {
+            string folder = System.IO.Path.GetDirectoryName(sourcePath).Replace('\\', '/');
+            string generatedPath = folder + "/" + generatedName;
+            AnimationClip generated = AssetDatabase.LoadAssetAtPath<AnimationClip>(generatedPath);
+            if (generated != null) return generated;
+
+            AnimationClip source = null;
+            foreach (Object asset in AssetDatabase.LoadAllAssetsAtPath(sourcePath))
+                if (asset is AnimationClip clip && !clip.name.StartsWith("__preview__")) { source = clip; break; }
+            if (source == null) return null;
+
+            generated = Object.Instantiate(source);
+            generated.name = System.IO.Path.GetFileNameWithoutExtension(generatedName);
+            generated.wrapMode = WrapMode.Loop;
+            foreach (EditorCurveBinding binding in AnimationUtility.GetCurveBindings(generated))
+            {
+                if (binding.path == "Armature/Root" && binding.propertyName.StartsWith("m_Local"))
+                    AnimationUtility.SetEditorCurve(generated, binding, null);
+            }
+            AssetDatabase.CreateAsset(generated, generatedPath);
+            AssetDatabase.SaveAssets();
+            return generated;
+        }
+
+        private static void EnsureLoopTransition(AnimatorState state)
+        {
+            foreach (AnimatorStateTransition existing in state.transitions)
+                if (existing.destinationState == state) return;
+            AnimatorStateTransition transition = state.AddTransition(state);
+            transition.hasExitTime = true;
+            transition.exitTime = 1f;
+            transition.duration = 0f;
+            transition.hasFixedDuration = true;
+            transition.canTransitionToSelf = true;
         }
 
         private static void BuildOrderBoard(GameStateSO gameState, System.Collections.Generic.List<PickupBox> boxes)

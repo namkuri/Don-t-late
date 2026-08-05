@@ -18,6 +18,13 @@ namespace DontLate
         [SerializeField] private RectTransform _listRoot;
         [SerializeField] private Button _closeButton;
         [SerializeField] private TMP_FontAsset _font;
+        [SerializeField] private Texture2D _drinkIcon;
+        [SerializeField] private Texture2D _waterIcon;
+        [SerializeField] private Texture2D _cocoaIcon;
+        [SerializeField] private Texture2D _odengIcon;
+        [SerializeField] private Texture2D _flowerIcon;
+        [SerializeField] private Sprite _rowFrame;
+        [SerializeField] private Sprite _buttonFrame;
 
         /// <summary>구매창이 떠 있는가 — 다른 클릭 소비자(던지기·철거)가 양보하는 데 쓴다.</summary>
         public static bool IsOpen { get; private set; }
@@ -76,34 +83,71 @@ namespace DontLate
             RefreshMoney();
             if (_offer.Items == null) return;
 
-            const float ROW_H = 74f;
+            bool illustrated = _panel != null
+                && _panel.TryGetComponent(out Image panelImage)
+                && panelImage.sprite != null;
+            bool showItemIcons = illustrated && (_offer.Title == "자판기" || _offer.Title == "포장마차");
+            float rowHeight = illustrated ? 105f : 74f;
             for (int i = 0; i < _offer.Items.Length; i++)
             {
                 KioskItem item = _offer.Items[i];
                 GameObject row = new GameObject("Kiosk_" + item.id, typeof(RectTransform));
                 row.transform.SetParent(_listRoot, false);
                 Image bg = row.AddComponent<Image>();
-                bg.color = new Color(0.12f, 0.15f, 0.22f, 0.95f);
+                bg.color = illustrated
+                    ? new Color(0.88f, 0.96f, 0.93f, 0.38f)
+                    : new Color(0.12f, 0.15f, 0.22f, 0.95f);
                 RectTransform rowRect = (RectTransform)row.transform;
-                rowRect.anchorMin = new Vector2(0f, 1f);
-                rowRect.anchorMax = new Vector2(1f, 1f);
-                rowRect.pivot = new Vector2(0.5f, 1f);
-                rowRect.sizeDelta = new Vector2(-24f, ROW_H - 10f);
-                rowRect.anchoredPosition = new Vector2(0f, -8f - i * ROW_H);
+                rowRect.sizeDelta = new Vector2(0f, rowHeight - 10f);
+                LayoutElement rowLayout = row.AddComponent<LayoutElement>();
+                rowLayout.preferredHeight = rowHeight - 10f;
+                rowLayout.flexibleWidth = 1f;
+                HorizontalLayoutGroup rowGroup = row.AddComponent<HorizontalLayoutGroup>();
+                rowGroup.padding = new RectOffset(14, 14, 8, 8);
+                rowGroup.spacing = 10f;
+                rowGroup.childAlignment = TextAnchor.MiddleCenter;
+                rowGroup.childControlWidth = true;
+                rowGroup.childControlHeight = true;
+                rowGroup.childForceExpandWidth = false;
+                rowGroup.childForceExpandHeight = false;
 
+                GameObject iconCell = new GameObject("IconCell", typeof(RectTransform));
+                iconCell.transform.SetParent(row.transform, false);
+                LayoutElement iconLayout = iconCell.AddComponent<LayoutElement>();
+                iconLayout.minWidth = iconLayout.preferredWidth = 80f;
+                iconLayout.minHeight = iconLayout.preferredHeight = 80f;
+                if (illustrated && _rowFrame != null)
+                {
+                    Image iconFrame = iconCell.AddComponent<Image>();
+                    iconFrame.sprite = _rowFrame;
+                    iconFrame.type = Image.Type.Simple;
+                    iconFrame.preserveAspect = true;
+                    iconFrame.color = Color.white;
+                    iconFrame.raycastTarget = false;
+                }
+                if (showItemIcons)
+                    MakeItemIcon(iconCell.transform, item.id, _offer.Title);
+
+                string priceColor = illustrated ? "#437d7c" : "#8fe3d5";
                 TMP_Text label = MakeText(row.transform, "Label",
-                    item.label + "\n<size=70%><color=#8fe3d5>₩" + item.price.ToString("N0") + "</color></size>",
-                    30f, Color.white, TextAlignmentOptions.Left);
+                    item.label + "\n<size=70%><color=" + priceColor + ">₩" +
+                    item.price.ToString("N0") + "</color></size>",
+                    30f, illustrated ? new Color(0.13f, 0.19f, 0.22f) : Color.white,
+                    TextAlignmentOptions.Left);
                 RectTransform labelRect = label.rectTransform;
-                labelRect.anchorMin = Vector2.zero; labelRect.anchorMax = Vector2.one;
-                labelRect.offsetMin = new Vector2(20f, 4f); labelRect.offsetMax = new Vector2(-150f, -4f);
+                labelRect.sizeDelta = new Vector2(260f, 72f);
+                LayoutElement labelLayout = label.gameObject.AddComponent<LayoutElement>();
+                labelLayout.minWidth = 160f;
+                labelLayout.flexibleWidth = 1f;
+                labelLayout.preferredHeight = 72f;
 
                 KioskItem captured = item;
-                Button buy = MakeButton(row.transform, "Buy", "구매", () => Purchase(captured));
+                Button buy = MakeButton(row.transform, "Buy", "구매", () => Purchase(captured), illustrated);
                 RectTransform buyRect = (RectTransform)buy.transform;
-                buyRect.anchorMin = buyRect.anchorMax = buyRect.pivot = new Vector2(1f, 0.5f);
-                buyRect.sizeDelta = new Vector2(120f, 52f);
-                buyRect.anchoredPosition = new Vector2(-14f, 0f);
+                buyRect.sizeDelta = new Vector2(136f, 40f);
+                LayoutElement buyLayout = buy.gameObject.AddComponent<LayoutElement>();
+                buyLayout.minWidth = buyLayout.preferredWidth = 136f;
+                buyLayout.minHeight = buyLayout.preferredHeight = 40f;
             }
         }
 
@@ -148,16 +192,76 @@ namespace DontLate
             return label;
         }
 
-        private Button MakeButton(Transform parent, string name, string text, UnityEngine.Events.UnityAction action)
+        private void MakeItemIcon(Transform parent, string itemId, string kioskTitle)
+        {
+            Texture2D texture;
+            Rect uv;
+            float aspect;
+            switch (itemId)
+            {
+                case "drink":
+                    texture = _drinkIcon;
+                    uv = new Rect(0.37695f, 0.23438f, 0.24544f, 0.55664f);
+                    aspect = 377f / 570f;
+                    break;
+                case "water":
+                    texture = _waterIcon;
+                    uv = new Rect(0.42448f, 0.25977f, 0.14974f, 0.52344f);
+                    aspect = 230f / 536f;
+                    break;
+                case "hot_drink" when kioskTitle == "포장마차":
+                    texture = _odengIcon;
+                    uv = new Rect(0.36784f, 0.19727f, 0.27214f, 0.68848f);
+                    aspect = 418f / 705f;
+                    break;
+                case "hot_drink":
+                    texture = _cocoaIcon;
+                    uv = new Rect(0.35872f, 0.26270f, 0.31641f, 0.55176f);
+                    aspect = 486f / 565f;
+                    break;
+                case "flower":
+                    texture = _flowerIcon;
+                    uv = new Rect(0.37240f, 0.24707f, 0.28060f, 0.52930f);
+                    aspect = 431f / 542f;
+                    break;
+                default:
+                    return;
+            }
+
+            if (texture == null) return;
+            GameObject iconGo = new GameObject("Icon_" + itemId, typeof(RectTransform));
+            iconGo.transform.SetParent(parent, false);
+            RawImage icon = iconGo.AddComponent<RawImage>();
+            icon.texture = texture;
+            icon.uvRect = uv;
+            icon.color = Color.white;
+            icon.raycastTarget = false;
+
+            RectTransform iconRect = icon.rectTransform;
+            iconRect.anchorMin = iconRect.anchorMax = new Vector2(0.5f, 0.5f);
+            iconRect.pivot = new Vector2(0.5f, 0.5f);
+            iconRect.sizeDelta = new Vector2(56f * aspect, 56f);
+            iconRect.anchoredPosition = Vector2.zero;
+        }
+
+        private Button MakeButton(Transform parent, string name, string text,
+            UnityEngine.Events.UnityAction action, bool illustrated)
         {
             var go = new GameObject(name, typeof(RectTransform));
             go.transform.SetParent(parent, false);
             Image image = go.AddComponent<Image>();
-            image.color = new Color(0.208f, 0.878f, 0.784f, 1f);
+            image.color = illustrated ? Color.white : new Color(0.208f, 0.878f, 0.784f, 1f);
+            if (illustrated && _buttonFrame != null)
+            {
+                image.sprite = _buttonFrame;
+                image.type = Image.Type.Simple;
+                image.preserveAspect = true;
+            }
             Button button = go.AddComponent<Button>();
             button.targetGraphic = image;
             button.onClick.AddListener(action);
-            TMP_Text label = MakeText(go.transform, "Label", text, 26f, new Color(0.06f, 0.09f, 0.14f),
+            TMP_Text label = MakeText(go.transform, "Label", text, 26f,
+                illustrated ? new Color(0.13f, 0.25f, 0.27f) : new Color(0.06f, 0.09f, 0.14f),
                 TextAlignmentOptions.Center);
             RectTransform labelRect = label.rectTransform;
             labelRect.anchorMin = Vector2.zero; labelRect.anchorMax = Vector2.one;

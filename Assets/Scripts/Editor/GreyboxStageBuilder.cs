@@ -1115,7 +1115,7 @@ namespace DontLate.EditorTools
 
             // S-073 ④ — 든 상자 마감 라벨용 한글 폰트 주입.
             var overlayFont = AssetDatabase.LoadAssetAtPath<TMPro.TMP_FontAsset>(
-                "Assets/Art/UI/Fonts/Pretendard-Regular SDF.asset");
+                "Assets/Art/UI/Fonts/DNFBitBitOTF SDF.asset");
             if (overlayFont != null)
                 SetReference(player.GetComponent<PlayerStatusManager>(), "_overlayFont", overlayFont);
 

@@ -24,19 +24,19 @@ namespace DontLate.Tests
         }
 
         [Test]
-        public void 비겹침_아이템은_칸을_따로_쓰고_상한_5칸에서_거절된다()
+        public void 비겹침_아이템은_칸을_따로_쓰고_상한_4칸에서_거절된다()
         {
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < 4; i++)
                 Assert.IsTrue(BagStorage.TryAdd(_gameState, "item" + i, "아이템" + i, stackable: false, holdable: false));
-            Assert.IsFalse(BagStorage.TryAdd(_gameState, "item5", "아이템5", stackable: false, holdable: false));
-            Assert.AreEqual(5, _gameState.bagItems.Count);
+            Assert.IsFalse(BagStorage.TryAdd(_gameState, "item4", "아이템4", stackable: false, holdable: false));
+            Assert.AreEqual(4, _gameState.bagItems.Count);
         }
 
         [Test]
         public void 가득_차도_겹침_기존_칸에는_더_쌓인다()
         {
             BagStorage.TryAdd(_gameState, "drink", "드링크", stackable: true, holdable: true);
-            for (int i = 0; i < 4; i++) BagStorage.TryAdd(_gameState, "item" + i, "아이템" + i, false, false);
+            for (int i = 0; i < 3; i++) BagStorage.TryAdd(_gameState, "item" + i, "아이템" + i, false, false);
             Assert.IsTrue(BagStorage.TryAdd(_gameState, "drink", "드링크", stackable: true, holdable: true));
             Assert.AreEqual(2, _gameState.bagItems[0].count);
         }

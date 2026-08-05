@@ -107,6 +107,12 @@ namespace DontLate.EditorTools
             GameObject go = GreyboxStageBuilder.CreateEmpty("FurniturePlacer", Vector3.zero);
             HomeFurniturePlacer placer = go.AddComponent<HomeFurniturePlacer>();
             GreyboxStageBuilder.SetReference(placer, "_gameState", gameState);
+            GreyboxStageBuilder.SetReference(placer, "_hintBackground",
+                AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/UI/panel/tutorial_long.png"));
+            GreyboxStageBuilder.SetReference(placer, "_hintIcon",
+                AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/UI/panel/box_icon.png"));
+            GreyboxStageBuilder.SetReference(placer, "_hintCloseIcon",
+                AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/UI/x.png"));
 
             var catalog = new System.Collections.Generic.List<FurnitureSO>();
             foreach (string guid in AssetDatabase.FindAssets("t:FurnitureSO", new[] { "Assets/Data/Furniture" }))

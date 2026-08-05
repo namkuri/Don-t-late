@@ -278,7 +278,7 @@ namespace DontLate.EditorTools
 
             ApartmentUIView view = canvasGo.AddComponent<ApartmentUIView>();
             GreyboxStageBuilder.SetReference(view, "_font",
-                AssetDatabase.LoadAssetAtPath<TMPro.TMP_FontAsset>("Assets/Art/UI/Fonts/Pretendard-Regular SDF.asset"));
+                AssetDatabase.LoadAssetAtPath<TMPro.TMP_FontAsset>("Assets/Art/UI/Fonts/DNFBitBitOTF SDF.asset"));
         }
     }
 }

@@ -1,0 +1,312 @@
+{
+  "schemaVersion": 1,
+  "scenarioId": "na_ara_random_talk",
+  "npcId": "na_ara",
+  "displayName": "나아라",
+  "npcRole": "편의점 알바생",
+  "trigger": "interact",
+  "selectionMode": "random_single",
+  "avoidImmediateRepeat": true,
+  "lines": [
+    {
+      "lineId": "NA_ARA_RANDOM_01",
+      "speaker": "나아라",
+      "text": "박말순 할머니는 목소리만 크지, 기사님들 간식은 제일 잘 챙겨줘요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_02",
+      "speaker": "나아라",
+      "text": "박말순 할머니 택배는 현관문 왼쪽에 둬야 해요. 오른쪽은 문이 걸려요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_03",
+      "speaker": "나아라",
+      "text": "박말순 할머니가 화를 내면 일단 끝까지 들으세요. 중간에 끼어들면 처음부터 다시 시작해요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_04",
+      "speaker": "나아라",
+      "text": "박말순 할머니는 배송 조회를 저보다 자주 확인해요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_05",
+      "speaker": "나아라",
+      "text": "박말순 할머니 집에 빈 박스 쌓여 있죠? 전부 언젠가 쓴다고 모아두신 거래요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_06",
+      "speaker": "나아라",
+      "text": "박말순 할머니는 꽃무늬 조끼가 열두 벌이나 있는데 전부 다 다르대요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_07",
+      "speaker": "나아라",
+      "text": "박말순 할머니가 잔소리하면 미움받는 건 아니에요. 관심 없으면 말도 안 걸어요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_08",
+      "speaker": "나아라",
+      "text": "박말순 할머니는 별점 하나 준다고 협박하지만 실제로는 대부분 다섯 개 줘요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_09",
+      "speaker": "나아라",
+      "text": "김사장님은 사장님이 아니라 부장님이에요. 이름 때문에 평생 해명하고 다니세요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_10",
+      "speaker": "나아라",
+      "text": "김사장님은 신입이 실수하면 혼내기 전에 어디 다친 데 없는지부터 봐요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_11",
+      "speaker": "나아라",
+      "text": "김사장님은 편의점에 오면 늘 캔커피를 두 개 사요. 하나는 신입 주려고요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_12",
+      "speaker": "나아라",
+      "text": "김사장님이 조용히 한숨 쉬면 화난 게 아니라 계산 중인 거예요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_13",
+      "speaker": "나아라",
+      "text": "김사장님은 길을 물어보면 주소보다 위험한 계단부터 알려줘요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_14",
+      "speaker": "나아라",
+      "text": "김사장님은 비 오는 날마다 기사들 우비를 직접 확인해요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_15",
+      "speaker": "나아라",
+      "text": "김사장님은 본인 점심은 거르면서 남들 밥은 꼭 먹으라고 해요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_16",
+      "speaker": "나아라",
+      "text": "김사장님이 괜찮다고 하면 진짜 괜찮은 거고, 말이 없으면 한 번 더 확인해야 해요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_17",
+      "speaker": "나아라",
+      "text": "유지혜 씨 꽃집은 골목 끝이에요. 길을 몰라도 꽃향기 따라가면 나와요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_18",
+      "speaker": "나아라",
+      "text": "유지혜 씨는 동네 공식 미녀인데 본인은 그 별명 별로 안 좋아해요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_19",
+      "speaker": "나아라",
+      "text": "유지혜 씨한테 예쁘다고 하면 웃기는 하는데 바로 꽃 얘기로 돌려요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_20",
+      "speaker": "나아라",
+      "text": "유지혜 씨는 시든 꽃도 바로 버리지 않고 끝까지 살려보려고 해요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_21",
+      "speaker": "나아라",
+      "text": "유지혜 씨 꽃집 화분은 보기보다 무거워요. 허리 믿고 덤비지 마세요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_22",
+      "speaker": "나아라",
+      "text": "유지혜 씨는 배송이 늦은 것보다 기사가 다쳐서 오는 걸 더 싫어해요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_23",
+      "speaker": "나아라",
+      "text": "유지혜 씨는 남은 꽃을 동네 어르신들한테 한 송이씩 나눠줘요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_24",
+      "speaker": "나아라",
+      "text": "유지혜 씨가 화내는 건 보기 힘들지만 꽃을 함부로 다루면 표정이 달라져요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_25",
+      "speaker": "나아라",
+      "text": "유지혜 씨는 매일 딸기우유를 사 가면서 단 건 별로 안 좋아한다고 해요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_26",
+      "speaker": "나아라",
+      "text": "유지혜 씨 꽃집 뒷문은 좁아요. 큰 상자는 무조건 앞문으로 가세요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_27",
+      "speaker": "나아라",
+      "text": "박말순 할머니는 유지혜 씨만 보면 누구랑 결혼시킬 생각부터 해요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_28",
+      "speaker": "나아라",
+      "text": "박말순 할머니가 유지혜 씨 칭찬을 시작하면 최소 십 분은 잡아야 해요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_29",
+      "speaker": "나아라",
+      "text": "김사장님은 유지혜 씨 꽃집 앞에서 무거운 화분을 자주 옮겨줘요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_30",
+      "speaker": "나아라",
+      "text": "김사장님과 유지혜 씨가 친하냐고요? 둘 다 그냥 동네 사이라고 하던데요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_31",
+      "speaker": "나아라",
+      "text": "박말순 할머니는 김사장님하고 유지혜 씨를 볼 때마다 표정이 수상해져요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_32",
+      "speaker": "나아라",
+      "text": "이 동네 소문은 박말순 할머니가 만들고 제가 사실 여부를 확인해요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_33",
+      "speaker": "나아라",
+      "text": "저는 험담 안 해요. 확인된 정보만 빠르게 공유할 뿐이에요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_34",
+      "speaker": "나아라",
+      "text": "편의점 카운터에 오래 앉아 있으면 동네 역사가 저절로 들어와요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_35",
+      "speaker": "나아라",
+      "text": "여기서 비밀 얘기하지 마세요. 제가 일부러 듣는 건 아닌데 귀가 좋아요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_36",
+      "speaker": "나아라",
+      "text": "101동 경비 아저씨는 새벽에도 안 자요. CCTV보다 먼저 발견할 때도 있어요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_37",
+      "speaker": "나아라",
+      "text": "102동 엘리베이터는 7층에서 자주 멈춰요. 급하면 계단이 더 빨라요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_38",
+      "speaker": "나아라",
+      "text": "103동은 공동현관 비밀번호가 자주 바뀌니까 배송 메모를 다시 확인하세요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_39",
+      "speaker": "나아라",
+      "text": "노란 대문 집은 초인종을 누르면 개가 먼저 대답해요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_40",
+      "speaker": "나아라",
+      "text": "꽃집 맞은편 집은 아기가 있으니까 초인종 누르면 안 돼요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_41",
+      "speaker": "나아라",
+      "text": "골목 끝집은 택배를 화분 뒤에 두라고 하지만 본인도 자주 못 찾아요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_42",
+      "speaker": "나아라",
+      "text": "파란 지붕 집은 저녁 여덟 시 이후엔 대문을 잠가요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_43",
+      "speaker": "나아라",
+      "text": "편의점 앞에 트럭을 오래 세우면 점장님이 싫어해요. 딱 오 분까지만 봐드릴게요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_44",
+      "speaker": "나아라",
+      "text": "화장실 급하면 말하세요. 물건 하나 안 사도 열어드려요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_45",
+      "speaker": "나아라",
+      "text": "목마르면 생수 하나 가져가세요. 기사님 쓰러지면 배송도 멈추잖아요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_46",
+      "speaker": "나아라",
+      "text": "오늘 박말순 할머니 기분 좋아요. 아침에 꽃을 한 다발 받으셨거든요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_47",
+      "speaker": "나아라",
+      "text": "김사장님이 웃고 있으면 신입이 사고 없이 돌아왔다는 뜻이에요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_48",
+      "speaker": "나아라",
+      "text": "유지혜 씨가 가게 문을 일찍 닫으면 아픈 게 아니라 꽃시장 가는 날이에요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_49",
+      "speaker": "나아라",
+      "text": "이 동네에서 길 잃으면 지도보다 저한테 묻는 게 빨라요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "NA_ARA_RANDOM_50",
+      "speaker": "나아라",
+      "text": "누구한테 가는지만 말해요. 성격부터 현관문 방향까지 알려드릴게요.",
+      "portraitId": ""
+    }
+  ]
+}

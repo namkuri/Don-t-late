@@ -9,6 +9,7 @@ namespace DontLate.EditorTools
     /// </summary>
     internal static class NpcBuildKit
     {
+        private const string NPC_INFO_SPRITE_PATH = "Assets/Art/UI/npc_info.png";
         private const string DIALOGUE_DIR = "Assets/Data/Dialogue";
 
         /// <summary>캡슐 몸통 + 머리 피규어. 반환 GO에 컴포넌트를 붙여 쓴다. 콜라이더는 호출부 몫.</summary>
@@ -178,6 +179,26 @@ namespace DontLate.EditorTools
             // 에셋 참조는 리플렉션 직접 주입 — SerializedObject 경유는 SaveScene 시 유실된다(2026-07-20 실측).
             GreyboxStageBuilder.SetReference(label, "_gameState",
                 UnityEditor.AssetDatabase.LoadAssetAtPath<GameStateSO>("Assets/Data/GameState.asset"));
+            GreyboxStageBuilder.SetReference(label, "_backgroundSprite", LoadNpcInfoSprite());
+            GreyboxStageBuilder.SetReference(label, "_hintFont",
+                AssetDatabase.LoadAssetAtPath<TMPro.TMP_FontAsset>("Assets/Art/UI/Fonts/Ramche SDF.asset"));
+        }
+
+        private static Sprite LoadNpcInfoSprite()
+        {
+            TextureImporter importer = AssetImporter.GetAtPath(NPC_INFO_SPRITE_PATH) as TextureImporter;
+            if (importer != null && (importer.textureType != TextureImporterType.Sprite
+                || importer.spriteImportMode != SpriteImportMode.Single
+                || !importer.alphaIsTransparency
+                || importer.maxTextureSize < 2048))
+            {
+                importer.textureType = TextureImporterType.Sprite;
+                importer.spriteImportMode = SpriteImportMode.Single;
+                importer.alphaIsTransparency = true;
+                importer.maxTextureSize = 2048;
+                importer.SaveAndReimport();
+            }
+            return AssetDatabase.LoadAssetAtPath<Sprite>(NPC_INFO_SPRITE_PATH);
         }
     }
 }
