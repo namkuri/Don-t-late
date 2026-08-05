@@ -12,6 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 11aac0a5306c8d54ea736e945570323a, type: 3}
   m_Name: ColorGrade
   m_EditorClassIdentifier: Assembly-CSharp::DontLate.ColorGradeSO
+  baseGrade:
+    exposure: 0
+    saturation: 0
+    temperature: 0
+    filter: {r: 0, g: 0, b: 0, a: 0}
+    bloom: 0
   morning:
     exposure: 0
     saturation: 0
