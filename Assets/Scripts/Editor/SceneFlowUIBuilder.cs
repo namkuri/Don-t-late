@@ -261,7 +261,7 @@ namespace DontLate.EditorTools
             Scene scene = EditorSceneManager.OpenScene(SCENES_ROOT + "/" + sceneName + ".unity", OpenSceneMode.Single);
             Transform root = CreateFlowCanvas().transform;
 
-            CreateTutorialBanner(root, labelText, font);
+            CreateTutorialBanner(root, labelText, font, -94f);
 
             // S-134 ⑥ — 캔버스 활성 + 내비 버튼만 억제 (District와 동일 규칙).
             BuildDeliveryEndCanvas(root, font, navButtons: false);
