@@ -55,6 +55,12 @@ namespace DontLate
         public GameScene currentScene;
         public bool bossIntroPlayed; // S-052 ① — 캠프 사장님 튜토리얼 1회 재생 여부 (세션제)
         public bool tutorialDone;    // S-146 — 튜토리얼 완주 여부 (세션제)
+        /// <summary>
+        /// S-184 — 첫 인상 구간. 세션 시작 ~ **첫 배송 성공 후 집 복귀**까지 참.
+        /// 이 동안 하늘은 낮·맑음으로 고정된다(시계는 정상 진행 — 마감 압박은 코어루프라 안 멈춘다).
+        /// 처음 켠 사람이 안개·비·밤을 먼저 만나면 "잘 안 보이는 게임"으로 각인되기 때문(민지님 요청).
+        /// </summary>
+        public bool introGraceActive = true;
 
         // S-158 — 튜토리얼 중 귀가 엣지워크 잠금(캠프 왼쪽 끝 → 집).
         // 도중에 나가면 `bossIntroPlayed`가 이미 true라 **다시 와도 재개되지 않아** 조작을

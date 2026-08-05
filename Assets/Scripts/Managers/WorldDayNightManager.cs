@@ -104,9 +104,9 @@ namespace DontLate
         {
             EnsureVisualDefaults();
             InitSky();
-            ApplyVisuals(_gameState.minuteOfDay);
+            ApplyVisuals(SkyMinute);
 
-            _phase = ResolvePhase(_gameState.minuteOfDay);
+            _phase = ResolvePhase(SkyMinute);
             WorldEvents.RaiseDayPhaseChanged(_phase);
         }
 
@@ -129,7 +129,7 @@ namespace DontLate
         private void OnSceneArrivedSky(GameScene _)
         {
             InitSky();
-            ApplyVisuals(_gameState.minuteOfDay); // 새 복제본에 현재 시각 색을 즉시 반영
+            ApplyVisuals(SkyMinute); // 새 복제본에 현재 시각 색을 즉시 반영
         }
 
         private void OnWeatherChanged(WeatherType weather)
@@ -142,7 +142,7 @@ namespace DontLate
                 WeatherType.Cloudy => 1.3f,
                 _ => 1f
             };
-            ApplyVisuals(_gameState.minuteOfDay);
+            ApplyVisuals(SkyMinute);
         }
 
         private void Update()
@@ -164,9 +164,9 @@ namespace DontLate
 
             _lastTickedMinute = minute;
             WorldEvents.RaiseClockTicked(BuildClock());
-            ApplyVisuals(_gameState.minuteOfDay);
+            ApplyVisuals(SkyMinute);
 
-            DayPhase phase = ResolvePhase(_gameState.minuteOfDay);
+            DayPhase phase = ResolvePhase(SkyMinute);
             if (phase == _phase) return;
 
             _phase = phase;
@@ -390,6 +390,14 @@ namespace DontLate
             g.SetKeys(ck, new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 1f) });
             return g;
         }
+
+        // S-184 — **하늘 전용 시각**. 시계(minuteOfDay)는 그대로 흐르고(마감·HUD 불변),
+        // 첫 인상 구간에는 조명·LUT·페이즈 판정만 정오로 고정한다. 시간을 멈추면 "늦지마"라는
+        // 게임의 심장(마감 압박)이 멈추므로, 흐르는 시계와 보이는 하늘을 갈라놓는다.
+        private const float INTRO_SKY_MINUTE = 12f * 60f; // 정오
+
+        private float SkyMinute => _gameState != null && _gameState.introGraceActive
+            ? INTRO_SKY_MINUTE : _gameState.minuteOfDay;
 
         private DayPhase ResolvePhase(float minuteOfDay)
         {

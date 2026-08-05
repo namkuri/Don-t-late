@@ -150,9 +150,21 @@ namespace DontLate
             (WeatherType.Storm, 7), // S-088 ⑤
         };
 
+        /// <summary>S-184 — 첫 인상 고정이 풀린 직후 자연 날씨로 복귀시키는 외부 창구.</summary>
+        public void RerollNow() => Reroll();
+
         private void Reroll()
         {
             _lastRolledDay = _gameState != null ? _gameState.day : 0;
+
+            // S-184 — 첫 배송 후 귀가 전까지는 무조건 맑음. 예보(TomorrowWeather)는 그대로
+            // 굴려 둔다 — 고정이 풀린 뒤 예보 승계(S-058)가 끊기지 않게 하기 위해서다.
+            if (_gameState != null && _gameState.introGraceActive)
+            {
+                if (!_hasForecast) { TomorrowWeather = Draw(); _hasForecast = true; }
+                SetWeather(WeatherType.Clear);
+                return;
+            }
             // S-058 — 예보 승계: 어제 예보가 오늘 날씨가 된다 (예보 신뢰). 내일 것은 새로 추첨.
             WeatherType today = _hasForecast ? TomorrowWeather : Draw();
             TomorrowWeather = Draw();
@@ -277,6 +289,12 @@ namespace DontLate
             // _clouds 가드 = 씬 단독 Play: CoreBootstrap의 도착 통지가 이 매니저의 Start보다 먼저 돌 수 있다.
             if (_clouds != null) ApplyIndoorGate();
             RefreshGradeTarget();
+
+            // S-184 — 타이틀 쇼케이스(TitleShowcaseDirector)가 날씨를 순환시키므로, 게임 씬으로
+            // 들어올 때 비·눈이 묻어 들어올 수 있다. 고정 구간이면 도착 시 맑음으로 되돌린다.
+            if (_gameState != null && _gameState.introGraceActive
+                && scene != GameScene.Main && Weather != WeatherType.Clear)
+                SetWeather(WeatherType.Clear);
         }
 
         // S-122 ⑤ — 실내 게이트만 재적용 (구름 개수·WindX 추첨·StormRainCycle 소유권 불가침).

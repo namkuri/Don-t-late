@@ -16,6 +16,7 @@ namespace DontLate.EditorTools
     {
         private const string SCENE_PATH = "Assets/Scenes/Hillside.unity";
         private const string HILL_FBX = "Assets/Art/Terrains/hill.fbx";
+        private const string UPHILL_SET_PREFAB = "Assets/Prefabs/Hand/set_hillside_uphill.prefab";
 
         // 남규님이 씬에서 직접 맞춘 값(S-129 실측) — x·y는 그대로 쓴다.
         // z만 2.70 → 4.00으로 넓혔다: 5.4u 폭에는 보행 레인(±2.6)과 판잣집이 같이 설 자리가 없다.
@@ -43,6 +44,7 @@ namespace DontLate.EditorTools
             }
             GreyboxStageBuilder.Clear();
             StripHandPlacedHill(); // Clear는 __gb_만 지운다 — 손으로 놓은 "hill"이 남으면 지형이 겹친다
+            EnsureUphillSet(scene); // S-183 — 민지님 수제 오르막 세트 (병합에서 유실된 것 복원)
 
             var (gameState, tuning, _) = GreyboxStageBuilder.GetOrCreateStageData();
 
@@ -140,6 +142,32 @@ namespace DontLate.EditorTools
                 if (go.name != "hill" && !go.name.StartsWith("hill ")) continue;
                 Undo.DestroyObjectImmediate(go);
             }
+        }
+
+        /// <summary>
+        /// 민지님 수제 오르막 세트를 꽂는다. S-183 — 이 메서드는 민지님이 PR#34에 넣었는데
+        /// 본인이 main을 병합할 때(49c6b67a) 충돌을 main 쪽으로 해소하며 **통째로 지워졌다**.
+        /// 프리팹만 남고 꽂아줄 코드가 없어 배치가 게임에 안 나오는 상태였다 — 원문 그대로 복원.
+        /// </summary>
+        private static void EnsureUphillSet(Scene scene)
+        {
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                if (root.name == "set_hillside_uphill") return;
+            }
+
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(UPHILL_SET_PREFAB);
+            if (prefab == null)
+            {
+                Debug.Log("[Hillside] set_hillside_uphill 미배치 — 수제 오르막 세트 생략.");
+                return;
+            }
+
+            GameObject instance = PrefabUtility.InstantiatePrefab(prefab, scene) as GameObject;
+            if (instance == null) return;
+            instance.name = "set_hillside_uphill";
+            foreach (Transform child in instance.GetComponentsInChildren<Transform>(true))
+                child.gameObject.layer = GreyboxStageBuilder.LAYER_GROUND;
         }
 
         private static void BuildHill(Material surface)
