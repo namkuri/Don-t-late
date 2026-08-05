@@ -102,7 +102,8 @@
 |---|---|---|---|---|---|---|
 | Neon Rain.wav | Rain(밤) | 145.6s | `Assets/Audio/BGM/` | Suno (유료) — 페이드 트림 | 상업 사용 가능·소유권 귀속·무기한 | 2026-07-27 |
 | Rain on the Window.wav | Rain(낮) | 148.6s | `Assets/Audio/BGM/` | Suno (유료) — 페이드 트림 (AU-025) | 상업 사용 가능·소유권 귀속·무기한 | 2026-08-01 |
-| Neon Snowfall.wav | Snow | 82.4s | `Assets/Audio/BGM/` | Suno (유료) — 페이드 트림 | 〃 | 2026-07-27 |
+| Neon Snowfall.wav | Snow(밤) | 82.4s | `Assets/Audio/BGM/` | Suno (유료) — 페이드 트림 | 〃 | 2026-07-27 |
+| Daylight Snowfall.wav | Snow(낮) | 49.3s | `Assets/Audio/BGM/` | Suno (유료) — 페이드 트림 (AU-026) | 상업 사용 가능·소유권 귀속·무기한 | 2026-08-01 |
 | Midnight Heatwave.wav | Heat | 59.9s | `Assets/Audio/BGM/` | Suno (유료) — 페이드 트림 | 〃 | 2026-07-27 |
 | Sodium Fog.wav | Fog | 65.2s | `Assets/Audio/BGM/` | Suno (유료) — 페이드 트림 | 〃 | 2026-07-27 |
 

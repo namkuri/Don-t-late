@@ -297,7 +297,8 @@ Suno 프롬프트로 직접 생성 → 공장이 반입·트림·배선.
 |---|---|---|---|
 | `Neon Rain.wav` | Rain(밤) | 147.9s → 145.6s | 인트로 페이드인 0.3s + 아웃트로 페이드아웃 2.0s 트림 (풀레벨 루프 경계) |
 | `Rain on the Window.wav` | Rain(낮) | 152.9s → 148.6s | 아웃트로 페이드아웃 4.1s 트림 + 컷엣지 15ms 마이크로페이드 (AU-025) |
-| `Neon Snowfall.wav` | Snow | 84.2s → 82.4s | 아웃트로 페이드 1.8s 트림 |
+| `Neon Snowfall.wav` | Snow(밤) | 84.2s → 82.4s | 아웃트로 페이드 1.8s 트림 |
+| `Daylight Snowfall.wav` | Snow(낮) | 52.8s → 49.3s | 아웃트로 페이드아웃 3.5s 트림 + 컷엣지 15ms 마이크로페이드 (AU-026) |
 | `Midnight Heatwave.wav` | Heat | 60.1s → 59.9s | 미세 트림(거의 플랫) |
 | `Sodium Fog.wav` | Fog | 65.2s → 65.2s | 트림 불요(플랫) |
 
@@ -308,7 +309,9 @@ Suno 프롬프트로 직접 생성 → 공장이 반입·트림·배선.
   Clear·Cloudy는 기존 Day/Night 곡 유지(amb 우선순위와 동형). 단곡이라 PlaylistTick 셀프 크로스페이드로 루프.
 - **비만 낮/밤 분리 (AU-025 · 2026-08-01)**: Rain은 `_bgmRainDay`(Rain on the Window)/`_bgmRainNight`(Neon Rain)
   2곡. `WorldAudioManager`가 `_phase`(Evening·Night→밤곡, else→낮곡) 참조로 선택하고 `DayPhaseChanged`에서도
-  재평가 → 비 오는 중 낮↔밤 전환 시 곡이 크로스페이드로 교체된다. 눈·폭염·안개는 여전히 낮밤 공용 1곡.
+  재평가 → 비 오는 중 낮↔밤 전환 시 곡이 크로스페이드로 교체된다. 폭염·안개는 여전히 낮밤 공용 1곡.
+- **눈도 낮/밤 분리 (AU-026 · 2026-08-01)**: Snow는 `_bgmSnowDay`(Daylight Snowfall)/`_bgmSnowNight`(Neon Snowfall)
+  2곡. 비와 동일 로직(`_phase` 참조 + `DayPhaseChanged` 재평가). 폭염·안개만 낮밤 공용 1곡 잔존.
 - 라우드니스: 4곡 rms -16.6~-17.2dB(Suno 자체 정규화 일관) · peak -3.2~-3.8dB. 정규화 불요.
 
 ## sfx_footstep 교체 (걷는 소리 재생성) — ElevenLabs · 2026-07-28

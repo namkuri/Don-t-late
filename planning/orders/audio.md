@@ -836,6 +836,30 @@ MDA 판정 (D-070): 강화 — 기존 날씨 BGM 몰입을 시간대 축으로 �
 - **셀프검증 3종**: ① 컴파일 완료 ② 콘솔 에러/워닝 0(컴파일·Play 중) ③ Play 실측 exec — `RainDay=Rain on the Window · RainNight=Neon Rain · RainMorning=Rain on the Window · RainEvening=Neon Rain · Clear(evening)=Seoul_Afternoon_Stroll(밤슬롯 폴백)`. 낮/밤 분리·시간대 전환 교체·날씨 해제 폴백 모두 정상.
 - 잔여: main 머지는 관제 게이트([[factory-no-merge]]). 눈/폭염/안개 낮밤 분리는 미착수(YAGNI — 곡 없음).
 
+---
+
+## AU-026 · 발주 2026-08-01 → 정수 공장 (눈 날씨 BGM 낮/밤 분리)
+
+요구 (남규 원문): `Daylight Snowfall.wav`를 눈 내리는 날 **낮 전용** BGM으로 게임에 추가. 밤=`Neon Snowfall.wav`(기존). AU-025(비) 낮/밤 분리와 동형.
+
+- **배경**: AU-025로 비(Rain)만 낮/밤 2곡 분리됨. 눈(Snow)은 아직 `_bgmSnow`(Neon Snowfall) 단곡·phase-blind → 눈 오면 낮/밤 무관 한 곡. `Daylight Snowfall.wav` 확보(`_audio_intake`) → 눈도 시간대 분리.
+- **작업**: (1) `WorldAudioManager` `_bgmSnow`→`_bgmSnowDay`/`_bgmSnowNight` 분리 + `RefreshWeatherBgm()` Snow 케이스를 `_phase` 참조(Evening/Night→Night, else→Day). (2) `CoreSceneBuilder` 배선 SnowNight=`Neon Snowfall`/SnowDay=`Daylight Snowfall`. (3) `Daylight Snowfall.wav` `_audio_intake`→`Assets/Audio/BGM/` 반입(.gitignore allowlist·CREDITS·assets_manifest 등재·루프 꼬리 페이드 트림).
+- **경계**: 비는 AU-025 그대로, 폭염/안개는 낮밤 공용 1곡 유지(YAGNI). 씬 본문 미커밋(빌더 정본). 공장→PR, main 머지 관제 게이트. AU-025 스택(base=`feature/jjs-au025-rain-bgm` — 같은 메서드 수정).
+
+수용기준: Snow 진입 시 Evening/Night면 Neon Snowfall, Morning/Day면 Daylight Snowfall 재생 · 눈 오는 중 낮↔밤 넘어가면 크로스페이드 교체 · Rain/Heat/Fog 동작 불변 · 컴파일·콘솔0·Play 실측.
+MDA 판정 (D-070): 강화 — AU-025와 동형, 날씨 몰입을 시간대 축으로 심화. 곡 확보됨 = 저비용. 코어루프 불변.
+
+### 결과 (AU-026) · 2026-08-01 (정수 공장 · feature/jjs-au026-snow-day-bgm, base=feature/jjs-au025-rain-bgm 스택)
+
+- **코드** `WorldAudioManager`: `_bgmSnow`→`_bgmSnowDay`/`_bgmSnowNight` 분리. `RefreshWeatherBgm()` Snow 케이스를 `night ? _bgmSnowNight : _bgmSnowDay`로(비와 동일 로직). `OnDayPhaseChanged` 재평가 경로는 AU-025가 이미 설치 → 눈 오는 중 낮↔밤 전환 시 곡 교체 자동 적용. Heat/Fog 단곡 유지.
+- **배선** `CoreSceneBuilder`: `_bgmSnowNight`=`Neon Snowfall`, `_bgmSnowDay`=`Daylight Snowfall`. Core 재빌드 후 `Core.unity` guid 주입 확인(SnowDay cfdda866·SnowNight 4b92653c, 구 `_bgmSnow` 고아 없음, fileID 8300000 정상 참조).
+- **반입** `Daylight Snowfall.wav`: `_audio_intake`→`Assets/Audio/BGM/`. **루프 트림** — 아웃트로 페이드아웃 3.5s 검출·제거(52.8→49.3s, RMS 분석: 49.3s 이후 단조 감쇠→무음) + 컷엣지 15ms 마이크로페이드. AudioImportPostprocessor 자동 설정: loadType CompressedInMemory·Vorbis **q0.26·모노**. `.gitignore` allowlist·CREDITS·assets_manifest 등재.
+  > ⚠ **정정 (2026-08-05 리베이스)**: 최초 기술은 `q0.30·stereo`. AU-025와 동일 원인 — main 임포터가 S-136으로 BGM 전량 모노·q0.26을 강제하게 바뀌어 커밋해 둔 meta가 덮어써졌다(실측). 임포터 산출값으로 갱신.
+- **셀프검증 3종**: ① 컴파일 완료 ② 콘솔 에러/워닝 0(빌드·Play 중) ③ Play 실측 exec — `SnowMorning=Daylight Snowfall · SnowDay=Daylight Snowfall · SnowEvening=Neon Snowfall · SnowNight=Neon Snowfall · RainDay=Rain on the Window · RainNight=Neon Rain · HeatDay=Midnight Heatwave`. 눈 낮/밤 분리·시간대 교체·비/폭염 회귀 불변 모두 정상.
+- 잔여: main 머지는 관제 게이트([[factory-no-merge]]). PR base=AU-025 브랜치(스택) → #30 선머지 후 리베이스/머지. 폭염·안개 낮밤 분리 미착수(YAGNI — 곡 없음).
+- **ACCEPT (2026-08-01 · Director)**: 인게임 Play 실측 — 낮/밤 눈 BGM 정상 재생 육안·청음 확인 → **통과**. 머지는 규율대로 관제 대기(공장 미머지). 관제 처리 순서: **PR #30(AU-025) 선머지 → #31(AU-026)** rebase/머지. 재검수 불요(사전 승인됨).
+
+
 ## AU-028 · 발주 2026-08-05 12:49 → 정수 공장 (튜토리얼 미션 성공 SFX)
 
 > ⚠ **번호 정정 (2026-08-05 20:55)**: 최초 AU-025로 채번했으나 정수님이 PR#30에서
