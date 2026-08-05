@@ -20,6 +20,18 @@ namespace DontLate
         private void OnSceneArrivedBootstrap(GameScene scene)
         {
             if (scene == GameScene.Main) ResetSession();
+
+            // S-184 — 첫 인상 구간 종료: **배송을 한 건이라도 마치고 집에 돌아온 순간**.
+            // 남규님 문구 그대로 "첫 배송 후 홈 복귀까지". 여기서 푸는 이유는 이 클래스가
+            // 세션 수명(시작·리셋)을 이미 소유해서다 — 같은 성격의 상태를 두 곳에 두지 않는다.
+            if (scene == GameScene.Home && _gameState != null
+                && _gameState.introGraceActive && _gameState.completedCount > 0)
+            {
+                _gameState.introGraceActive = false;
+                Debug.Log("[첫인상] 낮·맑음 고정 해제 — 이제부터 시각·날씨가 자연 진행한다.");
+                // 고정 동안 억눌린 날씨를 지금 다시 뽑는다(해제 즉시 자연 상태로).
+                WorldWeatherManager.Instance?.RerollNow();
+            }
         }
 
         private void Start()
@@ -62,6 +74,7 @@ namespace DontLate
             // **다음 세션에서 귀가가 영구히 막힌다**(SO는 세션 간 값이 남는다).
             _gameState.tutorialDone = false;
             _gameState.tutorialExitLocked = false;
+            _gameState.introGraceActive = true; // S-184 — 첫 인상 구간 재개시
             _gameState.unlockedDistricts.Clear(); // S-054 — 빌라촌부터 걸어서 개척
             _gameState.unlockedDistricts.Add(DeliveryOrderSO.DISTRICT_VILLATOWN);
             _gameState.hasTruck = false;
