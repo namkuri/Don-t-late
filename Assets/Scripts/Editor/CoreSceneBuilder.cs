@@ -471,6 +471,8 @@ namespace DontLate.EditorTools
 
             // ── S-063 상단 바 ─────────────────────────────
             Color chipColor = new Color(0.10f, 0.12f, 0.16f, 0.85f);
+            Texture2D basicChipArt = AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Art/UI/basic_ui_box.png");
+            Color chipTextColor = basicChipArt != null ? new Color(0.20f, 0.18f, 0.15f, 1f) : Color.white;
 
             // 캐릭터 카드 — Lv·닉네임 + 숙련도(앰버)·스태미나(초록) 게이지.
             Image charCard = CreateImage(content.transform, "CharacterCard", chipColor);
@@ -523,8 +525,9 @@ namespace DontLate.EditorTools
             }
 
             // 현금 칩. S-117 — 실아트 코인 아이콘 있으면 칩 왼쪽에 붙인다 (스왑 계약 — 없으면 텍스트만).
-            Image moneyChip = CreateImage(content.transform, "MoneyChip", chipColor);
+            Image moneyChip = CreateImage(content.transform, "MoneyChip", basicChipArt != null ? Color.clear : chipColor);
             AnchorCorner(moneyChip.rectTransform, new Vector2(0f, 1f), new Vector2(460f, -20f), new Vector2(250f, 64f));
+            AddBasicChipBackground(moneyChip.transform, basicChipArt);
             Sprite coinArt = LoadUISprite("ui_coin");
             if (coinArt != null)
             {
@@ -534,16 +537,31 @@ namespace DontLate.EditorTools
                 AnchorCorner(coinIcon.rectTransform, new Vector2(0f, 1f), new Vector2(10f, -10f), new Vector2(44f, 44f));
             }
             TMP_Text money = CreateText(moneyChip.transform, "Money", "₩0", font,
-                32f, Color.white, TextAlignmentOptions.Center);
+                32f, chipTextColor, TextAlignmentOptions.Center);
             StretchFull(money.rectTransform);
+            if (basicChipArt != null) money.rectTransform.offsetMin = new Vector2(48f, 0f);
             SetField(hud, "_moneyLabel", money);
 
             // 당일 배송수량 칩.
-            Image countChip = CreateImage(content.transform, "DeliveryCountChip", chipColor);
+            Image countChip = CreateImage(content.transform, "DeliveryCountChip", basicChipArt != null ? Color.clear : chipColor);
             AnchorCorner(countChip.rectTransform, new Vector2(0f, 1f), new Vector2(730f, -20f), new Vector2(220f, 64f));
+            AddBasicChipBackground(countChip.transform, basicChipArt);
+            Sprite boxArt = LoadUISprite("ui_dialogue_arrow");
+            if (boxArt != null)
+            {
+                Image boxIcon = CreateImage(countChip.transform, "BoxIcon", Color.white);
+                boxIcon.sprite = boxArt;
+                boxIcon.preserveAspect = true;
+                boxIcon.raycastTarget = false;
+                AnchorCorner(boxIcon.rectTransform, new Vector2(0f, 1f), new Vector2(10f, -8f), new Vector2(48f, 48f));
+                Vector3 boxIconPosition = boxIcon.rectTransform.localPosition;
+                boxIconPosition.z = 2f;
+                boxIcon.rectTransform.localPosition = boxIconPosition;
+            }
             TMP_Text countLabel = CreateText(countChip.transform, "Count", "박스 0/0", font,
-                30f, Color.white, TextAlignmentOptions.Center);
+                30f, chipTextColor, TextAlignmentOptions.Center);
             StretchFull(countLabel.rectTransform);
+            if (basicChipArt != null) countLabel.rectTransform.offsetMin = new Vector2(52f, 0f);
             SetField(hud, "_deliveryCountLabel", countLabel);
 
             // 가방·설정 버튼 (시계 왼쪽).
@@ -1642,6 +1660,18 @@ namespace DontLate.EditorTools
         }
 
         // ── 헬퍼 ─────────────────────────────────────────────
+
+        private static void AddBasicChipBackground(Transform parent, Texture2D texture)
+        {
+            if (texture == null) return;
+            RawImage background = new GameObject("BasicBackground", typeof(RectTransform)).AddComponent<RawImage>();
+            background.transform.SetParent(parent, false);
+            background.transform.SetAsFirstSibling();
+            background.texture = texture;
+            background.uvRect = new Rect(0.17f, 0.24f, 0.66f, 0.48f);
+            background.raycastTarget = false;
+            StretchFull(background.rectTransform);
+        }
 
         private static void StretchFull(RectTransform rect)
         {

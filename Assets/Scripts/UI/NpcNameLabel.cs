@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace DontLate
 {
@@ -17,15 +18,30 @@ namespace DontLate
         [SerializeField] private GameStateSO _gameState;
         [Tooltip("호감도 조회용 NPC id (비면 수치 생략).")]
         [SerializeField] private string _npcId;
+        [Tooltip("NPC 정보 표시용 말풍선 배경.")]
+        [SerializeField] private Sprite _backgroundSprite;
+        [Tooltip("NPC 상호작용 안내 문구용 Ramche 폰트.")]
+        [SerializeField] private TMP_FontAsset _hintFont;
 
         private GameObject _canvasGo;
-        private TMP_Text _label;
+        private RectTransform _bubbleRect;
+        private TMP_Text _nameLabel;
+        private TMP_Text _affinityLabel;
+        private TMP_Text _interactionLabel;
 
         public void Show(bool on)
         {
             if (!on)
             {
-                if (_canvasGo != null) { Destroy(_canvasGo); _canvasGo = null; _label = null; }
+                if (_canvasGo != null)
+                {
+                    Destroy(_canvasGo);
+                    _canvasGo = null;
+                    _bubbleRect = null;
+                    _nameLabel = null;
+                    _affinityLabel = null;
+                    _interactionLabel = null;
+                }
                 return;
             }
             if (_canvasGo != null || string.IsNullOrEmpty(_displayName)) return;
@@ -34,33 +50,69 @@ namespace DontLate
             Canvas canvas = _canvasGo.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = 6;
-            _label = new GameObject("Name", typeof(RectTransform)).AddComponent<TextMeshProUGUI>();
-            _label.transform.SetParent(_canvasGo.transform, false);
-            if (UiOverlayFont.Korean != null) _label.font = UiOverlayFont.Korean;
-            _label.fontSize = 24f;
-            _label.fontStyle = FontStyles.Bold;
-            _label.color = new Color(0.78f, 1f, 0.96f, 1f); // 상호작용 시안 계열 — 하이라이트와 통일
-            _label.alignment = TextAlignmentOptions.Center;
-            _label.textWrappingMode = TextWrappingModes.NoWrap;
-            _label.raycastTarget = false;
-            _label.rectTransform.sizeDelta = new Vector2(300f, 32f);
-            _label.text = _displayName + HintLine();
+
+            if (_backgroundSprite != null)
+            {
+                Image bubble = new GameObject("NpcInfo", typeof(RectTransform)).AddComponent<Image>();
+                bubble.transform.SetParent(_canvasGo.transform, false);
+                bubble.sprite = _backgroundSprite;
+                bubble.preserveAspect = true;
+                bubble.raycastTarget = false;
+                _bubbleRect = bubble.rectTransform;
+                _bubbleRect.sizeDelta = new Vector2(280f, 186.5f);
+            }
+
+            Color darkBrown = new Color(0.23f, 0.20f, 0.16f, 1f);
+
+            _nameLabel = new GameObject("Name", typeof(RectTransform)).AddComponent<TextMeshProUGUI>();
+            _nameLabel.transform.SetParent(_canvasGo.transform, false);
+            if (UiOverlayFont.Korean != null) _nameLabel.font = UiOverlayFont.Korean;
+            _nameLabel.fontSize = 24f;
+            _nameLabel.fontStyle = FontStyles.Bold;
+            _nameLabel.color = darkBrown;
+            _nameLabel.alignment = TextAlignmentOptions.Center;
+            _nameLabel.textWrappingMode = TextWrappingModes.NoWrap;
+            _nameLabel.raycastTarget = false;
+            _nameLabel.rectTransform.sizeDelta = new Vector2(220f, 34f);
+            _nameLabel.text = _displayName;
+
+            _affinityLabel = new GameObject("Affinity", typeof(RectTransform)).AddComponent<TextMeshProUGUI>();
+            _affinityLabel.transform.SetParent(_canvasGo.transform, false);
+            _affinityLabel.font = _hintFont != null ? _hintFont : UiOverlayFont.Korean;
+            _affinityLabel.fontSize = 17f;
+            _affinityLabel.fontStyle = FontStyles.Normal;
+            _affinityLabel.color = darkBrown;
+            _affinityLabel.alignment = TextAlignmentOptions.Center;
+            _affinityLabel.textWrappingMode = TextWrappingModes.NoWrap;
+            _affinityLabel.raycastTarget = false;
+            _affinityLabel.rectTransform.sizeDelta = new Vector2(220f, 28f);
+            _affinityLabel.text = AffinityLine();
+
+            _interactionLabel = new GameObject("Interaction", typeof(RectTransform)).AddComponent<TextMeshProUGUI>();
+            _interactionLabel.transform.SetParent(_canvasGo.transform, false);
+            _interactionLabel.font = _hintFont != null ? _hintFont : UiOverlayFont.Korean;
+            _interactionLabel.fontSize = 17f;
+            _interactionLabel.fontStyle = FontStyles.Bold;
+            _interactionLabel.color = new Color(0.56f, 0.89f, 0.84f, 1f);
+            _interactionLabel.alignment = TextAlignmentOptions.Center;
+            _interactionLabel.textWrappingMode = TextWrappingModes.NoWrap;
+            _interactionLabel.raycastTarget = false;
+            _interactionLabel.rectTransform.sizeDelta = new Vector2(260f, 28f);
+            _interactionLabel.text = InteractionLine();
         }
 
-        // S-124 — 조작 가시성: "되는데 모르겠다"는 안 된 것과 같다(남규님 판정).
-        // 이름 아래 한 줄로 지금 가능한 상호작용을 알린다. 가방에 꽃이 있으면 선물 안내가 우선.
-        private string HintLine()
+        private string AffinityLine()
         {
-            // 꽃 선물 분기는 PedestrianNpc.Interact에만 있다 — 할머니·사장님에 거짓 힌트를 띄우지 않게
-            // "npcId 유무"가 아니라 "선물 받을 수 있는 컴포넌트인가"로 가른다.
+            if (_gameState == null || string.IsNullOrEmpty(_npcId)) return string.Empty;
+            return "호감도 " + NpcAffinityLedger.Get(_gameState, _npcId) + "/100";
+        }
+
+        // S-124 — 말풍선 밖에서 지금 가능한 상호작용을 알린다. 꽃이 있으면 선물 안내가 우선.
+        private string InteractionLine()
+        {
             if (_giftTarget != null && _gameState != null && _gameState.bagItems.Exists(b => b.id == GIFT_ITEM_ID))
-                return "\n<size=70%><color=#ffd45e>E — 꽃 선물 (호감도 +25)</color></size>";
-            if (_gameState != null && !string.IsNullOrEmpty(_npcId))
-            {
-                int affinity = NpcAffinityLedger.Get(_gameState, _npcId);
-                return "\n<size=70%><color=#8fe3d5>E — 인사   호감도 " + affinity + "/100</color></size>";
-            }
-            return "\n<size=70%><color=#8fe3d5>E — 인사</color></size>";
+                return "E — 꽃 선물 (호감도 +25)";
+            return "E — 인사";
         }
 
         private const string GIFT_ITEM_ID = "flower";
@@ -70,11 +122,15 @@ namespace DontLate
 
         private void LateUpdate()
         {
-            if (_label == null) return;
+            if (_nameLabel == null || _affinityLabel == null || _interactionLabel == null) return;
             Camera camera = Camera.main;
             if (camera == null) return;
             Vector3 screen = camera.WorldToScreenPoint(transform.position + Vector3.up * _headHeight);
-            if (screen.z > 0f) _label.rectTransform.position = new Vector3(screen.x, screen.y, 0f);
+            if (screen.z <= 0f) return;
+            if (_bubbleRect != null) _bubbleRect.position = new Vector3(screen.x, screen.y, 0f);
+            _nameLabel.rectTransform.position = new Vector3(screen.x, screen.y + 10f, 0f);
+            _affinityLabel.rectTransform.position = new Vector3(screen.x, screen.y - 14f, 0f);
+            _interactionLabel.rectTransform.position = new Vector3(screen.x, screen.y - 58f, 0f);
         }
 
         private void OnDestroy()

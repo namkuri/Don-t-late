@@ -22,6 +22,7 @@ namespace DontLate.EditorTools
         private const string BOSS_WALK_PATH = "Assets/Art/Characters/Kimboss/kimboss_Walking (2).fbx";
         private const string BOSS_TALK_PATH = "Assets/Art/Characters/Kimboss/kim_bossTalking.fbx";
         private const string BOSS_CONTROLLER_PATH = "Assets/Art/Characters/Kimboss/AC_kim_boss.controller";
+        private const float BOSS_VISUAL_YAW = 90f;
         private const int LOAD_ZONE_COUNT = 4; // S-039 ④ — 4번째 = 아파트행 물량
 
         [MenuItem("DontLate/Build/Camp Stage", priority = 12)]
@@ -253,7 +254,7 @@ namespace DontLate.EditorTools
             GameObject bossModel = AssetDatabase.LoadAssetAtPath<GameObject>(BOSS_MODEL_PATH);
             if (bossModel != null)
             {
-                go = GreyboxStageBuilder.CreateEmpty("BossNpc", new Vector3(-7.5f, 0f, 1.6f));
+                go = GreyboxStageBuilder.CreateEmpty("BossNpc", new Vector3(9.99102402f, 0.0432802439f, 0.0104106665f));
                 GameObject visual = (GameObject)PrefabUtility.InstantiatePrefab(bossModel, go.transform);
                 visual.name = "Visual";
                 NormalizeBossVisual(visual, go.transform.position, 1.8f);
@@ -268,7 +269,7 @@ namespace DontLate.EditorTools
             }
             else
             {
-                (go, body) = NpcBuildKit.BuildFigure("BossNpc", new Vector3(-7.5f, 0f, 1.6f),
+                (go, body) = NpcBuildKit.BuildFigure("BossNpc", new Vector3(9.99102402f, 0.0432802439f, 0.0104106665f),
                     "NpcBoss", new Color(0.32f, 0.45f, 0.38f), 1.8f);
                 Debug.LogWarning("[Camp] kim_boss.fbx 미발견 — 기존 그레이박스 사장님을 사용한다.");
             }
@@ -306,6 +307,10 @@ namespace DontLate.EditorTools
 
         private static void NormalizeBossVisual(GameObject visual, Vector3 rootPosition, float targetHeight)
         {
+            visual.transform.localPosition = Vector3.zero;
+            visual.transform.localRotation = Quaternion.Euler(0f, BOSS_VISUAL_YAW, 0f);
+            visual.transform.localScale = Vector3.one;
+
             Renderer[] renderers = visual.GetComponentsInChildren<Renderer>(true);
             if (renderers.Length == 0) return;
 
@@ -321,44 +326,70 @@ namespace DontLate.EditorTools
 
         private static RuntimeAnimatorController GetOrCreateBossAnimatorController()
         {
-            AnimatorController controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(BOSS_CONTROLLER_PATH);
-            if (controller != null) return controller;
-
-            AnimationClip idleClip = LoadAnimationClip(BOSS_IDLE_PATH);
-            AnimationClip walkClip = LoadAnimationClip(BOSS_WALK_PATH);
-            AnimationClip talkClip = LoadAnimationClip(BOSS_TALK_PATH);
+            AnimationClip idleClip = GetOrCreateCleanAnimationClip(BOSS_IDLE_PATH, "kim_boss_idle_clean.anim");
+            AnimationClip walkClip = GetOrCreateCleanAnimationClip(BOSS_WALK_PATH, "kim_boss_walk_clean.anim");
+            AnimationClip talkClip = GetOrCreateCleanAnimationClip(BOSS_TALK_PATH, "kim_boss_talk_clean.anim");
             if (idleClip == null || walkClip == null || talkClip == null)
             {
                 Debug.LogWarning("[Camp] kim_boss 애니메이션 클립을 모두 찾지 못했다.");
                 return null;
             }
 
-            controller = AnimatorController.CreateAnimatorControllerAtPath(BOSS_CONTROLLER_PATH);
+            AnimatorController controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(BOSS_CONTROLLER_PATH);
+            if (controller == null)
+                controller = AnimatorController.CreateAnimatorControllerAtPath(BOSS_CONTROLLER_PATH);
             AnimatorStateMachine stateMachine = controller.layers[0].stateMachine;
-            AnimatorState idle = stateMachine.AddState("Idle");
-            AnimatorState walk = stateMachine.AddState("Walk");
-            AnimatorState talk = stateMachine.AddState("Talk");
+            AnimatorState idle = FindOrAddState(stateMachine, "Idle");
+            AnimatorState walk = FindOrAddState(stateMachine, "Walk");
+            AnimatorState talk = FindOrAddState(stateMachine, "Talk");
             idle.motion = idleClip;
             walk.motion = walkClip;
             talk.motion = talkClip;
             stateMachine.defaultState = idle;
-            AddLoopTransition(idle);
-            AddLoopTransition(walk);
-            AddLoopTransition(talk);
+            EnsureLoopTransition(idle);
+            EnsureLoopTransition(walk);
+            EnsureLoopTransition(talk);
             EditorUtility.SetDirty(controller);
             AssetDatabase.SaveAssetIfDirty(controller);
             return controller;
         }
 
-        private static AnimationClip LoadAnimationClip(string path)
+        private static AnimatorState FindOrAddState(AnimatorStateMachine stateMachine, string name)
         {
-            foreach (Object asset in AssetDatabase.LoadAllAssetsAtPath(path))
-                if (asset is AnimationClip clip && !clip.name.StartsWith("__preview__")) return clip;
-            return null;
+            foreach (ChildAnimatorState child in stateMachine.states)
+                if (child.state.name == name) return child.state;
+            return stateMachine.AddState(name);
         }
 
-        private static void AddLoopTransition(AnimatorState state)
+        private static AnimationClip GetOrCreateCleanAnimationClip(string sourcePath, string generatedName)
         {
+            string folder = System.IO.Path.GetDirectoryName(sourcePath).Replace('\\', '/');
+            string generatedPath = folder + "/" + generatedName;
+            AnimationClip generated = AssetDatabase.LoadAssetAtPath<AnimationClip>(generatedPath);
+            if (generated != null) return generated;
+
+            AnimationClip source = null;
+            foreach (Object asset in AssetDatabase.LoadAllAssetsAtPath(sourcePath))
+                if (asset is AnimationClip clip && !clip.name.StartsWith("__preview__")) { source = clip; break; }
+            if (source == null) return null;
+
+            generated = Object.Instantiate(source);
+            generated.name = System.IO.Path.GetFileNameWithoutExtension(generatedName);
+            generated.wrapMode = WrapMode.Loop;
+            foreach (EditorCurveBinding binding in AnimationUtility.GetCurveBindings(generated))
+            {
+                if (binding.path == "Armature/Root" && binding.propertyName.StartsWith("m_Local"))
+                    AnimationUtility.SetEditorCurve(generated, binding, null);
+            }
+            AssetDatabase.CreateAsset(generated, generatedPath);
+            AssetDatabase.SaveAssets();
+            return generated;
+        }
+
+        private static void EnsureLoopTransition(AnimatorState state)
+        {
+            foreach (AnimatorStateTransition existing in state.transitions)
+                if (existing.destinationState == state) return;
             AnimatorStateTransition transition = state.AddTransition(state);
             transition.hasExitTime = true;
             transition.exitTime = 1f;

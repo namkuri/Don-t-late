@@ -2586,6 +2586,8 @@ MonoBehaviour:
   _headHeight: 2
   _gameState: {fileID: 11400000, guid: 1815cf28bbfb0094f94f9990421a3543, type: 2}
   _npcId: camp_walker_b
+  _backgroundSprite: {fileID: 21300000, guid: e7284e8957d30834aa9ee73174f071ca, type: 3}
+  _hintFont: {fileID: 11400000, guid: 621fe5c9127bd18479415f4a61a261f4, type: 2}
 --- !u!114 &545382064
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4158,6 +4160,8 @@ MonoBehaviour:
   _headHeight: 2
   _gameState: {fileID: 11400000, guid: 1815cf28bbfb0094f94f9990421a3543, type: 2}
   _npcId: boss
+  _backgroundSprite: {fileID: 21300000, guid: e7284e8957d30834aa9ee73174f071ca, type: 3}
+  _hintFont: {fileID: 11400000, guid: 621fe5c9127bd18479415f4a61a261f4, type: 2}
 --- !u!136 &916999575
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -4190,7 +4194,7 @@ Transform:
   m_GameObject: {fileID: 916999572}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -7.5, y: 0, z: 1.6}
+  m_LocalPosition: {x: 9.991024, y: 0.043280244, z: 0.0104106665}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -7458,7 +7462,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4279635210
   m_fontColor: {r: 0.039, g: 0.051, b: 0.086, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -7471,7 +7475,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -7783,7 +7787,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4279635210
   m_fontColor: {r: 0.039, g: 0.051, b: 0.086, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -7796,7 +7800,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -9364,7 +9368,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a7d006f1f67a8d54880faa78738769aa, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 1
+      value: 0.7071068
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a7d006f1f67a8d54880faa78738769aa, type: 3}
       propertyPath: m_LocalRotation.x
@@ -9372,7 +9376,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a7d006f1f67a8d54880faa78738769aa, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: 0.7071068
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a7d006f1f67a8d54880faa78738769aa, type: 3}
       propertyPath: m_LocalRotation.z
@@ -9384,7 +9388,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a7d006f1f67a8d54880faa78738769aa, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
+      value: 90
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a7d006f1f67a8d54880faa78738769aa, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
@@ -10602,6 +10606,8 @@ MonoBehaviour:
   _headHeight: 2
   _gameState: {fileID: 11400000, guid: 1815cf28bbfb0094f94f9990421a3543, type: 2}
   _npcId: camp_walker_a
+  _backgroundSprite: {fileID: 21300000, guid: e7284e8957d30834aa9ee73174f071ca, type: 3}
+  _hintFont: {fileID: 11400000, guid: 621fe5c9127bd18479415f4a61a261f4, type: 2}
 --- !u!114 &1935564557
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11156,7 +11162,7 @@ Canvas:
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
   m_UseReflectionProbes: 0
-  m_AdditionalShaderChannelsFlag: 0
+  m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
   m_SortingOrder: 20

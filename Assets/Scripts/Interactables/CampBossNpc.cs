@@ -27,6 +27,7 @@ namespace DontLate
         private enum Phase { Waiting, Approaching, Talking, Returning, Idle }
         private Phase _phase = Phase.Idle;
         private Vector3 _homePosition;
+        private Quaternion _frontRotation;
         private Transform _player;
         private float _pollTimer;
         private readonly Collider[] _hits = new Collider[16];
@@ -57,6 +58,7 @@ namespace DontLate
         private void Start()
         {
             _homePosition = transform.position;
+            _frontRotation = transform.rotation;
 
             if (_gameState != null && _gameState.bossIntroPlayed)
             {
@@ -72,6 +74,7 @@ namespace DontLate
                 _phase = Phase.Waiting; // 첫 방문 — 플레이어를 기다렸다 다가간다
             }
             SetAnimation("Idle");
+            FaceFront();
         }
 
         private void Update()
@@ -108,9 +111,11 @@ namespace DontLate
             if (_player == null) { _phase = Phase.Idle; SetAnimation("Idle"); return; }
             Vector3 target = _player.position;
             target.y = transform.position.y;
+            // 접근 중에는 이동 방향과 시선을 맞춘다. 대화 종료 후에는 정면으로 복귀한다.
             FaceTowards(target);
             if (Vector3.Distance(transform.position, target) <= TALK_DISTANCE)
             {
+                FaceTowards(target);
                 if (WorldDialogueManager.Instance != null && _tutorialScenario != null)
                     WorldDialogueManager.Instance.PlayScenario(_tutorialScenario);
                 if (_gameState != null) _gameState.bossIntroPlayed = true;
@@ -124,14 +129,19 @@ namespace DontLate
 
         private void WaitTalkEnd()
         {
-            if (WorldDialogueManager.Instance != null && WorldDialogueManager.Instance.IsPlaying) return;
+            if (WorldDialogueManager.Instance != null && WorldDialogueManager.Instance.IsPlaying)
+            {
+                if (_player != null) FaceTowards(_player.position);
+                return;
+            }
             _phase = Phase.Returning;
             SetAnimation("Walk");
+            FaceFront();
         }
 
         private void ReturnHome()
         {
-            FaceTowards(_homePosition);
+            FaceFront();
             transform.position = Vector3.MoveTowards(transform.position, _homePosition, APPROACH_SPEED * Time.deltaTime);
             if (Vector3.Distance(transform.position, _homePosition) < 0.05f)
             {
@@ -145,8 +155,9 @@ namespace DontLate
             Vector3 dir = target - transform.position;
             dir.y = 0f;
             if (dir.sqrMagnitude < 0.001f) return;
+            Quaternion targetRotation = Quaternion.LookRotation(dir);
             transform.rotation = Quaternion.RotateTowards(
-                transform.rotation, Quaternion.LookRotation(dir), 360f * Time.deltaTime);
+                transform.rotation, targetRotation, 360f * Time.deltaTime);
         }
 
         public void Interact(PlayerContext ctx)
@@ -154,11 +165,17 @@ namespace DontLate
             if (_phase != Phase.Idle) return;
             if (WorldDialogueManager.Instance == null || WorldDialogueManager.Instance.IsPlaying) return;
             if (_cheerScenarios == null || _cheerScenarios.Length == 0) return;
+            _player = ctx.Transform;
             FaceTowards(ctx.Transform.position);
             NpcAffinityLedger.Meet(_gameState, "boss"); // S-079 ④ — 소셜앱 등재
             WorldDialogueManager.Instance.PlayScenario(_cheerScenarios[Random.Range(0, _cheerScenarios.Length)]);
             _phase = Phase.Talking;
             SetAnimation("Talk");
+        }
+
+        private void FaceFront()
+        {
+            transform.rotation = _frontRotation;
         }
 
         private void SetAnimation(string stateName)
