@@ -44,6 +44,7 @@ namespace DontLate
         private ParticleSystem _snow;
         private GameObject _hazeRoot; // S-044 ③ — 일렁 셰이더 쿼드 (파티클 박스룩 폐지)
         private Transform _cloudRoot;
+        private const float CLOUD_Y_OFFSET = -15f; // S-160 — 구름 높이(남규님 감각값)
         private float _snowAmount;
         private SpriteRenderer[] _clouds;
         private DayPhase _phase = DayPhase.Morning;
@@ -101,6 +102,11 @@ namespace DontLate
 #endif
 
             DriftClouds();
+            // S-149 — **매 프레임 표를 다시 읽는다.** 종전엔 날씨·시간대가 바뀔 때만 읽어서,
+            // 플레이 중 ColorGrade SO를 만져도 다음 전환이 올 때까지 화면이 그대로였다
+            // (남규님 실관찰 "인게임에서 조절하는데 변화가 없다"). 읽는 비용은 구조체 4개
+            // 합산이라 무시할 수준이고, 대신 인스펙터 값이 곧바로 화면에 반영된다.
+            RefreshGradeTarget();
             LerpGrade();
             UpdateSnowCover();
             TickThunder(); // S-088 ⑥ — 비·태풍 중 가끔 천둥번개
@@ -841,6 +847,9 @@ namespace DontLate
         {
             _cloudRoot = new GameObject("Clouds").transform;
             _cloudRoot.SetParent(transform, false);
+            // S-160 — 구름을 Y −15 내린다(남규님 지시). 매니저는 Core 상주라 여기서 한 번 내리면
+            // 전 씬에 함께 적용된다 — 씬마다 따로 손볼 곳이 없다.
+            _cloudRoot.localPosition = new Vector3(0f, CLOUD_Y_OFFSET, 0f);
 
             Sprite blob = MakeCloudSprite();
             _clouds = new SpriteRenderer[8];

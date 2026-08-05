@@ -52,7 +52,7 @@ namespace DontLate.EditorTools
             GreyboxStageBuilder.BuildWalkableVolume();
             GreyboxStageBuilder.BuildGroundMist();
             GreyboxStageBuilder.BuildStarField(); // S-033 ① — 캠프 밤하늘 별 (밤 페이드는 StarField.cs 공용)
-            GreyboxStageBuilder.BuildDeliveryCart(new Vector3(-4f, 0f, 1.2f)); // S-039 ④ — 캠프에서도 대차 운반
+            GreyboxStageBuilder.BuildDeliveryCart(new Vector3(12.88f, 0f, 0f)); // S-039 ④ · S-160 남규님 실배치
             BuildTruck(truck, box, highlight, gameState);
             System.Collections.Generic.List<PickupBox> boxes = BuildPickupBoxes(box, highlight, tuning);
             BuildOrderBoard(gameState, boxes);
@@ -65,10 +65,10 @@ namespace DontLate.EditorTools
                 DontLate.DistrictEdgeGate.Direction.Prev, gameState);             // S-062 ② 집 방향
             // S-115 — 실물 데코: 물류 배경 건물 + 야드 소품 (없으면 생략 — 소켓).
             GreyboxStageBuilder.PlaceCatalog("logi_center", new Vector3(0f, 0f, 16f)); // 원경 1채
-            GreyboxStageBuilder.PlaceCatalog("belt", new Vector3(-6.5f, 0f, 2.2f), 90f);
+            GreyboxStageBuilder.PlaceCatalog("belt", new Vector3(8.44f, 0f, 5.73f), 90f); // S-160 남규님 실배치
             // S-123 ① — 포장마차 독백. District 프랍 풀에 넣으면 결정론 배치 계약이 깨지므로
             // (풀 길이가 바뀌면 전 구역 배치가 달라진다) 캠프의 손배치 데코에 붙인다.
-            GameObject foodCart = GreyboxStageBuilder.PlaceCatalog("Food_cart_unity", new Vector3(6.5f, 0f, 2.6f), 180f);
+            GameObject foodCart = GreyboxStageBuilder.PlaceCatalog("Food_cart_unity", new Vector3(28.78f, 0f, 2.6f), 180f); // S-160 남규님 실배치
             if (foodCart != null)
             {
                 DistrictSceneBuilder.AttachRemarkSpot(foodCart, 3f, new[]
@@ -78,7 +78,7 @@ namespace DontLate.EditorTools
                 KioskBuildKit.MakeKiosk(foodCart, "포장마차", KioskBuildKit.StreetFoodItems); // S-125 ②
             }
             // S-116 ② — white_van 데코 철거: 실모델 트럭과 함께 서면 "트럭 2대"로 읽힌다 (남규님 실관찰).
-            GreyboxStageBuilder.PlaceCatalog("Trash_Bin_unity", new Vector3(-2.2f, 0f, 2.4f));
+            GreyboxStageBuilder.PlaceCatalog("Trash_Bin_unity", new Vector3(-1.72f, 0f, 2.4f)); // S-160 남규님 실배치
 
             NpcBuildKit.BuildPedestrian("Walker_A", new Vector3(-9f, 0f, 2.4f), new Color(0.45f, 0.52f, 0.62f), 5f,
                 null, 0f, "camp_walker_a", gameState);
@@ -137,6 +137,9 @@ namespace DontLate.EditorTools
                     partCollider.enabled = false;
                 bodyRenderer = visual.GetComponentInChildren<Renderer>();
                 if (bodyRenderer != null) bodyNormal = bodyRenderer.sharedMaterial;
+                // S-166 ③ — 트럭 몸통은 통과 금지(남규님: 플레이어와 겹침). 짐칸 뒤 적재 트리거는
+                // 차체 바깥(로컬 z −1.8)이라 이 블로커에 가리지 않는다.
+                GreyboxStageBuilder.AddSolidBlocker(visual, 0.2f);
             }
             else
             {
@@ -145,6 +148,7 @@ namespace DontLate.EditorTools
                 AddPart(root, "WheelF", new Vector3(2.2f, 0.35f, 0f), new Vector3(0.7f, 0.7f, 2.1f), material);
                 AddPart(root, "WheelB", new Vector3(-1.6f, 0.35f, 0f), new Vector3(0.7f, 0.7f, 2.1f), material);
                 bodyRenderer = cargo.GetComponent<Renderer>();
+                GreyboxStageBuilder.AddSolidBlocker(root, 0.2f); // S-166 ③ — 폴백도 같은 부피
             }
 
             // 적재 감지 트리거 — 짐칸 뒤편(보도 쪽) 앞 공간.
@@ -225,8 +229,14 @@ namespace DontLate.EditorTools
                 // 강체는 sleep 임계 아래라 낙하도 안 한다 (남규님 실관찰 — 건드려야 떨어짐).
                 var (boxGo, _, _) = GreyboxStageBuilder.CreateParcelBox(
                     "CampBox_" + (i + 1).ToString("00"),
-                    new Vector3(-7f + (i % 2) * 0.9f, (i / 2) * 0.705f, 1.5f), material,
+                    new Vector3(1.31f + (i % 2) * 0.9f, (i / 2) * 0.705f, -0.21f), material, // S-160 남규님 실배치
                     physical: true); // 실물 스택 (S-016 ⑥) — 아래 상자를 빼면 위가 떨어진다
+
+                // S-164 ② — 튜토리얼 "상자 집기"·"바코드" 단계에서 맥동한다.
+                var boxTarget = boxGo.AddComponent<TutorialHighlightTarget>();
+                var boxSo = new SerializedObject(boxTarget);
+                boxSo.FindProperty("_id").stringValue = "box";
+                boxSo.ApplyModifiedPropertiesWithoutUndo();
 
                 BoxDurability durability = boxGo.AddComponent<BoxDurability>(); // 취급주의 (S-019 ①)
                 GreyboxStageBuilder.SetReference(durability, "_tuning", tuning);
@@ -288,6 +298,10 @@ namespace DontLate.EditorTools
                 ("사장님", "빚은 갚으라고 있는 거야. 조급해하지 말고, 늦지만 마."));
             DialogueScenarioSO cheer3 = NpcBuildKit.GetOrCreateScenario("Scenario_Boss_Cheer3",
                 ("사장님", "비 오는 날 언덕길은 조심해. 미끄러지면 짐이 먼저 구른다?"));
+
+            // S-146 — 7단계 튜토리얼(대사 + 행동 검증). 남규님 지정 항목 순서 그대로.
+            // 한 단계 = 한 줄 대사 + 통과 조건. 조건을 채우기 전엔 다음으로 넘어가지 않는다.
+            // S-164 — 튜토리얼 단계 저술은 **CoreSceneBuilder로 이관**했다(진행부가 Core 상주).
 
             CampBossNpc boss = go.AddComponent<CampBossNpc>();
             GreyboxStageBuilder.SetReference(boss, "_gameState", gameState);
@@ -473,6 +487,11 @@ namespace DontLate.EditorTools
             if (go != null)
             {
                 go.name = "__gb_Vending";
+                // S-164 ② — 튜토리얼 "자판기" 단계에서 맥동한다.
+                var vendTarget = go.AddComponent<TutorialHighlightTarget>();
+                var vendSo = new SerializedObject(vendTarget);
+                vendSo.FindProperty("_id").stringValue = "vending";
+                vendSo.ApplyModifiedPropertiesWithoutUndo();
                 Renderer[] renderers = go.GetComponentsInChildren<Renderer>();
                 Bounds bounds = renderers[0].bounds;
                 foreach (Renderer r in renderers) bounds.Encapsulate(r.bounds);
@@ -481,6 +500,8 @@ namespace DontLate.EditorTools
                 trigger.isTrigger = true;
                 trigger.size = bounds.size + new Vector3(0.8f, 0f, 0.8f); // 앞에 서면 잡히게 여유
                 trigger.center = go.transform.InverseTransformPoint(bounds.center);
+                // S-166 ③ — 자판기는 뚫고 지나갈 물건이 아니다(남규님: 플레이어와 겹침).
+                GreyboxStageBuilder.AddSolidBlocker(go);
                 bodyRenderer = renderers[0];
             }
             else

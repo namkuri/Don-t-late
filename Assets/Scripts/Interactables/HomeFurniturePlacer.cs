@@ -497,6 +497,10 @@ namespace DontLate
             if (so != null && so.prefab != null)
             {
                 visual = Instantiate(so.prefab, position, rotation);
+                // S-173 ② — 모델 제작 스케일이 제각각이라 방 안에서 크기가 안 맞는다(침대가 작다).
+                // 프리팹 원본을 건드리지 않고 SO에서 배율만 준다 — 다른 씬의 같은 프리팹은 그대로.
+                if (!Mathf.Approximately(so.prefabScale, 1f))
+                    visual.transform.localScale *= so.prefabScale;
             }
             else
             {

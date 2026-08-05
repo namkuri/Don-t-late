@@ -105,16 +105,32 @@ namespace DontLate
             if (_expectedOrder != null && WorldDeliveryManager.Instance != null
                 && WorldDeliveryManager.Instance.IsPlacedAt(_expectedOrder.orderId, Address))
                 HideBeacon();
+
+            // S-164 — **씬 진입 시 이미 들고 있는 짐을 인식한다.**
+            // 종전엔 `PackagePickedUp` 이벤트만 들었는데, 배송지 비콘은 씬 진입 때 스폰되므로
+            // 픽업은 그 **전에** 이미 끝나 있다 — 그래서 두 번째 짐부터 목적지 표시(파랑)가
+            // 아예 안 떴다(남규님 실관찰: "2번째 짐 가져오니까 파란색 비콘이 없어").
+            // 이벤트를 놓친 게 아니라 **들을 때 이미 지나간 사건**이라 상태를 직접 조회해야 한다.
+            RefreshDestinationFromCarried();
         }
 
-        /// <summary>패드 밖으로 굴러 나가면 배치 철회 (재픽업은 PickupBox 쪽에서 철회).</summary>
-        private void OnTriggerExit(Collider other)
+        /// <summary>지금 들고 있는 짐 중에 이 패드 목적지가 있으면 목적지 표시를 켠다.</summary>
+        private void RefreshDestinationFromCarried()
         {
-            if (!other.TryGetComponent(out PickupBox box) || box.Order == null) return;
-            if (WorldDeliveryManager.Instance == null) return;
-            WorldDeliveryManager.Instance.UnplaceDelivery(box.Order.orderId);
-            Debug.Log("[배송] #" + box.Order.orderId + " 패드 이탈 — 배치 철회.");
+            if (_expectedOrder == null || WorldDeliveryManager.Instance == null) return;
+            if (!WorldDeliveryManager.Instance.IsCarried(_expectedOrder.orderId)) return;
+            _isDestination = true;
+            ApplyHighlight();
+            ApplyRiseAlpha(_focused);
         }
+
+        // S-156 — **패드 이탈 철회를 없앴다**(남규님 난이도 조절 지시).
+        // 종전엔 `OnTriggerExit`에서 배치를 철회했다. 그래서 E로 제대로 내려놨어도 상자가 살짝
+        // 굴러 나가면 정산에서 실패로 잡혔다 — 플레이어가 한 행동을 물리가 나중에 뒤집는 구조라
+        // "제대로 했는데 실패"라는 억울함이 남는다. 판정 기준은 **E를 누른 그 순간의 의사**다.
+        // 정산은 원래부터 기록만 본다(`placedDeliveries[i].beaconAddress == order.address`,
+        // 물리 검사 없음) — 즉 이 철회만 없애면 기록이 그대로 살아 성공으로 잡힌다.
+        // 재픽업 철회(`PickupBox`)는 그대로 둔다: 다시 집는 건 플레이어의 명시적 의사다.
 
         /// <summary>지금 들고 있는 상자의 목적지인가 (S-133 ①④) — 패드 색과 E키 우선순위가 이걸 본다.</summary>
         public bool IsCarriedDestination => _isDestination;
@@ -132,6 +148,7 @@ namespace DontLate
             if (_expectedOrder == null || data.OrderId != _expectedOrder.orderId) return;
             _isDestination = true;
             ApplyHighlight();
+            ApplyRiseAlpha(_focused); // S-161 — 목적지 전환 시 빛기둥 색도 함께 갱신
         }
 
         // S-133 ① — 상자를 내려놓으면 목적지 표시를 끈다. 종전엔 켜지기만 하고 꺼지지 않아
@@ -141,6 +158,7 @@ namespace DontLate
             if (_expectedOrder == null || data.OrderId != _expectedOrder.orderId) return;
             _isDestination = false;
             ApplyHighlight();
+            ApplyRiseAlpha(_focused); // S-161 — 목적지 해제 시 빛기둥 색 복귀
         }
 
         // ── S-073 ⑤⑥ — 패드 위 풀해상 오버레이: 목적지 건물이름 상시 + "배송성공" 플로팅 ──
@@ -230,6 +248,20 @@ namespace DontLate
         private void OnDeliverySettled(DeliveryData data)
         {
             if (_expectedOrder == null || data.OrderId != _expectedOrder.orderId) return;
+
+            // S-165 ② — **아직 손에 들고 있으면 패드를 남긴다.**
+            // 지각(DeliveryFailed)이 나면 여기서 패드를 통째로 꺼 버려, 짐을 들고 있는데도
+            // 목적지 표시가 사라졌다(남규님 지적). 지각은 점수 문제일 뿐 **여전히 배달해야 할
+            // 짐**이다 — 갈 곳을 감추면 플레이어는 길을 잃는다.
+            if (WorldDeliveryManager.Instance != null
+                && WorldDeliveryManager.Instance.IsCarried(_expectedOrder.orderId))
+            {
+                _isDestination = true;
+                ApplyHighlight();
+                ApplyRiseAlpha(_focused);
+                return;
+            }
+
             _isDestination = false;
             // 처리된 배송지는 패드째 완전 소멸 (S-009) — 서 있어도 다시 빛나지 않는다.
             gameObject.SetActive(false);
@@ -248,19 +280,27 @@ namespace DontLate
             if (material != null) _renderer.sharedMaterial = material;
         }
 
-        /// <summary>빛기둥 알파를 MaterialPropertyBlock으로 전환한다 — 공유 머티리얼을 오염시키지 않는다.</summary>
+        // S-161 — 들고 있는 상자의 목적지 빛기둥 색(파랑). S-160에서 **패드** 머티리얼만 바꿨는데
+        // 정작 눈에 띄는 건 빛기둥이고 그건 `BeaconRise.shader`의 `_Color`(기본 초록)로 그려져
+        // 여전히 초록이었다(남규님 지적). 알파와 같은 방식으로 MPB에 실어 보낸다 —
+        // 공유 머티리얼을 건드리지 않으므로 다른 비콘은 초록 그대로다.
+        private static readonly Color RISE_DESTINATION = new Color(0.227f, 0.627f, 1f, 1f);
+        private static readonly Color RISE_NORMAL = new Color(0.247f, 0.878f, 0.353f, 1f);
+
+        /// <summary>빛기둥 알파·색을 MaterialPropertyBlock으로 전환한다 — 공유 머티리얼을 오염시키지 않는다.</summary>
         private void ApplyRiseAlpha(bool focused)
         {
             if (_riseEffect == null) return;
             float alpha = focused ? _focusedAlpha : _idleAlpha;
+            Color color = _isDestination ? RISE_DESTINATION : RISE_NORMAL;
             _riseMpb ??= new MaterialPropertyBlock();
             foreach (Renderer r in _riseEffect.GetComponentsInChildren<Renderer>())
             {
                 r.GetPropertyBlock(_riseMpb);
                 _riseMpb.SetFloat("_Alpha", alpha);
+                _riseMpb.SetColor("_Color", color);
                 r.SetPropertyBlock(_riseMpb);
             }
-            Debug.Log($"[Beacon] rise _Alpha = {alpha} (focused={focused})");
         }
     }
 }

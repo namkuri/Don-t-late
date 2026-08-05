@@ -19,6 +19,22 @@ namespace DontLate
 
         public DeliveryOrderSO Order => _order;
 
+        /// <summary>
+        /// S-169 — 지금 이 상자에 필요한 다음 동작 안내(필요 없으면 null).
+        /// **판정을 여기 두는 이유**: 픽업을 막는 조건(`_requireScanned` + 미스캔)이 `Interact`
+        /// 안에 있다. 안내 문구를 센서 쪽에서 따로 판정하면 조건이 두 곳으로 갈라져
+        /// "안내는 뜨는데 집히거나 / 집히지도 않는데 안내가 없는" 어긋남이 생긴다.
+        /// </summary>
+        public string FocusHint
+        {
+            get
+            {
+                if (!_requireScanned || _order == null) return null;
+                if (WorldDeliveryManager.Instance == null) return null;
+                return WorldDeliveryManager.Instance.IsScanned(_order) ? null : "[상자 클릭] 바코드 스캔";
+            }
+        }
+
         private void Awake() => CacheRenderers();
 
         // S-119 ① — 정지 스폰 강체는 첫 프레임부터 잠들 수 있다(스택 위 상자 공중부양 실관찰).
@@ -132,6 +148,15 @@ namespace DontLate
 
         public void SetHighlight(bool on)
         {
+            // S-154 — 캐시가 반쪽만 남았으면 다시 잡는다.
+            // `Material[][]`(지그재그 배열)은 **Unity 직렬화 미지원 타입**이라, 플레이 중
+            // 스크립트를 고쳐 도메인 리로드가 일어나면 `_renderers`(지원 타입)만 복원되고
+            // `_originalMaterials`는 null로 돌아온다. `Awake`는 다시 돌지 않으므로 아래 가드를
+            // 통과해 `_originalMaterials[i]`에서 NRE가 났다(실측 재현: 강제 리컴파일 직후
+            // 상자 전부 `렌더러=3 · 원본=null`). 빌드엔 없는 현상이지만 에디터에선 매번 겪는다.
+            if (_renderers == null || _originalMaterials == null
+                || _originalMaterials.Length != _renderers.Length)
+                CacheRenderers();
             if (_renderers == null) return;
             for (int i = 0; i < _renderers.Length; i++)
             {

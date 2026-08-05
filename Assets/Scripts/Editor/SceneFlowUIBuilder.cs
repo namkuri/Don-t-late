@@ -283,7 +283,6 @@ namespace DontLate.EditorTools
             endRect.anchoredPosition = new Vector2(-40f, -160f);
             Button endButton = endDay.AddComponent<Button>();
             endButton.targetGraphic = endImg;
-
             // gohome.png는 1536×1024 투명 캔버스 안 실제 패널이 984×324다.
             // 패널을 380×125로 보이게 하려면 원본 Image Rect는 593×395로 둔다.
             Image endArt = CreateImage(endDay.transform, "BackgroundArt", Color.white);
@@ -297,7 +296,7 @@ namespace DontLate.EditorTools
             CreatePanelIcon(endDay.transform, "HouseIcon", "house_icon",
                 new Vector2(142f, 0f), new Vector2(178f, 118f));
 
-            TMP_Text endLabel = CreateText(endDay.transform, "Label", "하루 끝 — 집으로", font, 30f, NAVY,
+            TMP_Text endLabel = CreateText(endDay.transform, "Label", "정산하기(집)", font, 30f, NAVY, // S-161 남규님 문구
                 TextAlignmentOptions.Center, FontStyles.Bold);
             AnchorCentered(endLabel.rectTransform, Vector2.zero, new Vector2(250f, 70f));
 

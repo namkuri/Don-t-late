@@ -43,8 +43,13 @@ namespace DontLate
             // S-147 — 던지기가 이 클릭을 이미 먹었으면 물러난다. `!IsCarrying`만으로는 못 막는다:
             // PlayerStatusManager가 먼저 돌아 상자를 던지면 그 순간 IsCarrying이 false가 되고,
             // 같은 프레임의 이 검사는 "빈손"으로 읽어 송장을 띄운다(남규님 지적 — 던졌는데 송장).
+            // S-153 — 대화 중(및 대화를 끝낸 직후)엔 송장을 띄우지 않는다. 종전엔 이 검사에
+            // 대화 가드가 **아예 없어**, 대사를 넘기려고 클릭할 때마다 송장이 열렸다
+            // (남규님 지적 "바코드 찍고나서 사장님 얘기할 때 클릭하면 송장이 열려버려").
+            // 판정은 PlayerStatusManager와 같은 것을 본다 — 둘이 따로 세면 한쪽에 구멍이 남는다.
             bool throwConsumed = _hub.Status.LeftClickConsumedFrame == Time.frameCount;
             if (mouse != null && mouse.leftButton.wasPressedThisFrame && !overUI && !InvoiceView.IsOpen
+                && !_hub.Status.DialogueBlocksClick
                 && !throwConsumed && !_hub.Status.IsCarrying && !_hub.Status.IsHoldingDrink
                 && _current is PickupBox focusedBox && focusedBox.Order != null)
                 WorldEvents.RaiseInvoiceRequested(focusedBox.Order);
@@ -102,7 +107,12 @@ namespace DontLate
                 //   2 = 들고 있는 상자의 목적지 패드 (발밑 패드 우선 — 남규님 결정)
                 //   1 = 택배상자 (사장님·행인보다 우선)
                 //   0 = 나머지 (문·게이트·NPC…)
-                int rank = candidate is DeliveryPoint pad && pad.IsCarriedDestination ? 2
+                // S-156 — 상자를 들고 있으면 **목적지가 아니어도** 배송 패드를 우선한다.
+                // 종전 조건(`IsCarriedDestination`)은 정확한 목적지에만 붙어서, 다른 주소 상자를
+                // 들었을 땐 패드가 랭크 0이 되어 자판기와 동급이었다 — 범위가 겹치면 거리로 갈려
+                // 자판기가 열렸다(남규님 지적). 짐을 든 사람이 원하는 건 내려놓기다.
+                bool carryingBox = _hub.Status.CarryCount > 0;
+                int rank = candidate is DeliveryPoint pad && (pad.IsCarriedDestination || carryingBox) ? 2
                     : candidate is PickupBox ? 1 : 0;
                 if (rank < nearestRank) continue;
 
@@ -114,7 +124,11 @@ namespace DontLate
                 nearestRank = rank;
             }
 
-            if (ReferenceEquals(nearest, _current)) return;
+            if (ReferenceEquals(nearest, _current))
+            {
+                RefreshHint(); // 대상은 그대로여도 상태는 변한다 — 스캔을 마치면 안내가 사라져야 한다
+                return;
+            }
 
             _current?.SetHighlight(false);
             _current = nearest;
@@ -123,6 +137,19 @@ namespace DontLate
             WorldEvents.RaiseInteractionFocusChanged(_current != null);
             // 배송지 포커스면 주소를 HUD로 (S-021 ② — 월드 텍스트는 픽셀화에 뭉개짐).
             WorldEvents.RaiseFocusAddressChanged(_current is DeliveryPoint point ? point.Address : null);
+            RefreshHint();
+        }
+
+        // S-169 — 포커스 대상의 보조 안내. 매 프레임 계산하되 **바뀔 때만** 발행한다
+        // (프레임 데이터를 이벤트로 흘리지 않는다 — CODE_RULES §3.3).
+        private string _hint;
+
+        private void RefreshHint()
+        {
+            string next = _current is PickupBox box ? box.FocusHint : null;
+            if (next == _hint) return;
+            _hint = next;
+            WorldEvents.RaiseFocusHintChanged(next);
         }
 
         private void OnDrawGizmosSelected()

@@ -42,17 +42,25 @@ namespace DontLate
 
         // S-063 상단 바 — 캐릭터 진행·당일 배송수량.
         [SerializeField] private TMP_Text _levelLabel;
-        [SerializeField] private Image _masteryFill;
+        [Tooltip("경험치 5칸 (S-166 ⑤) — 배송 1건당 1칸. HP와 같은 낱개 표기.")]
+        [SerializeField] private Image[] _masteryPips;
+        [Tooltip("경험치 칸들이 올라앉은 바 배경 — 호버 툴팁 판정용.")]
+        [SerializeField] private Image _masteryBar;
         [Tooltip("체력 5칸 (S-134 ④) — 차에 치이면 2칸 꺼진다. 0칸이면 강제 귀가+정산.")]
         [SerializeField] private Image[] _healthPips;
 
         private const float MASTERY_CELLS = 5f; // S-134 ① — 경험치 5칸
         private static readonly Color HEALTH_ON = new Color(0.90f, 0.35f, 0.32f, 1f);
         private static readonly Color HEALTH_OFF = new Color(0.20f, 0.16f, 0.18f, 1f);
+        // S-166 ⑤ — 앰버 채움/꺼짐. HP와 색만 다르고 규칙은 같다.
+        private static readonly Color MASTERY_ON = new Color(1f, 0.72f, 0.25f, 1f);
+        private static readonly Color MASTERY_OFF = new Color(0.16f, 0.14f, 0.10f, 1f);
         [SerializeField] private TMP_Text _deliveryCountLabel;
 
         [Header("상호작용 안내 (하단 중앙)")]
         [SerializeField] private GameObject _ePrompt;
+        [Tooltip("E 프롬프트 아래 보조 안내 (S-169 — 예: 바코드 스캔). 문구는 센서가 정한다.")]
+        [SerializeField] private TMP_Text _focusHintLabel;
 
         private static readonly Color CardNormal = new Color(0.10f, 0.12f, 0.16f, 0.85f);
         private static readonly Color CardWarn = new Color(1f, 0.624f, 0.271f, 0.92f); // #ff9f45
@@ -86,6 +94,7 @@ namespace DontLate
             WorldEvents.StaminaPenaltyChanged += OnStaminaPenaltyChanged; // S-088 ④
             WorldEvents.InteractionFocusChanged += OnInteractionFocusChanged;
             WorldEvents.FocusAddressChanged += OnFocusAddressChanged;
+            WorldEvents.FocusHintChanged += OnFocusHintChanged; // S-169
             WorldEvents.SceneTransitionCompleted += OnSceneTransitionCompleted;
         }
 
@@ -105,6 +114,7 @@ namespace DontLate
             WorldEvents.StaminaPenaltyChanged -= OnStaminaPenaltyChanged;
             WorldEvents.InteractionFocusChanged -= OnInteractionFocusChanged;
             WorldEvents.FocusAddressChanged -= OnFocusAddressChanged;
+            WorldEvents.FocusHintChanged -= OnFocusHintChanged;
             WorldEvents.SceneTransitionCompleted -= OnSceneTransitionCompleted;
         }
 
@@ -371,7 +381,8 @@ namespace DontLate
             else if (IsHovering(_penaltyStormFill, pointer)) { hovered = _penaltyStormFill; reason = "강풍"; }
             // S-098 ③ — 세그먼트에 안 걸렸으면 바 전체: 스태미나·경험치 이름표.
             else if (IsHovering(_staminaFill, pointer)) { hovered = _staminaFill; reason = "스태미나"; }
-            else if (IsHovering(_masteryFill, pointer)) { hovered = _masteryFill; reason = "경험치"; }
+            // S-166 ⑤ — 칸이 낱개로 쪼개져 채움 이미지가 사라졌다. 호버 판정은 바 배경으로 옮긴다.
+            else if (IsHovering(_masteryBar, pointer)) { hovered = _masteryBar; reason = "경험치"; }
 
             if (hovered == null)
             {
@@ -407,6 +418,17 @@ namespace DontLate
         private void OnInteractionFocusChanged(bool focused)
         {
             if (_ePrompt != null) _ePrompt.SetActive(focused);
+            // 포커스가 풀리면 보조 안내도 같이 내린다 — 힌트 이벤트가 뒤늦게 와도 한 프레임 남지 않게.
+            if (!focused && _focusHintLabel != null) _focusHintLabel.gameObject.SetActive(false);
+        }
+
+        // S-169 — E 프롬프트 아래 한 줄. 뷰는 문구를 만들지 않고 받아 쓴다(판정은 PickupBox 몫).
+        private void OnFocusHintChanged(string hint)
+        {
+            if (_focusHintLabel == null) return;
+            bool show = !string.IsNullOrEmpty(hint);
+            if (show) _focusHintLabel.text = hint;
+            _focusHintLabel.gameObject.SetActive(show);
         }
 
         // 배송지 포커스면 주소를 [E] 안내에 병기 — 풀해상 오버레이라 픽셀화에 안 뭉개진다 (S-021 ②).
@@ -424,6 +446,13 @@ namespace DontLate
         private void OnSceneTransitionCompleted(GameScene scene)
         {
             if (_content != null) _content.SetActive(scene != GameScene.Main);
+
+            // S-173 ① — 씬을 넘으면 상호작용 안내를 내린다. HUD는 Core 상주라 살아남는데
+            // 포커스를 잡던 오브젝트는 이전 씬과 함께 사라진다. 새 씬의 센서는 **바뀔 때만**
+            // 발행하므로 아무것도 안 잡히면 영영 안 쏜다 — 이전 씬의 "[E] 상호작용"이 그대로
+            // 남는다(남규님: 정산하고 Home 들어왔는데 EPrompt가 쓸데없이 떠 있음).
+            if (_ePrompt != null) _ePrompt.SetActive(false);
+            if (_focusHintLabel != null) _focusHintLabel.gameObject.SetActive(false);
         }
 
         // ── 헬퍼 ─────────────────────────────────────────────
@@ -454,10 +483,15 @@ namespace DontLate
                 _levelLabel.text = $"Lv.{_gameState.playerLevel}  {_gameState.nickname}";
             }
             // S-134 ① — 경험치를 **5칸**으로 간략화(정수님 QA). 연속 게이지는 진행이 안 읽혔다.
-            if (_masteryFill != null)
+            // S-166 ⑤ — 칸 나눔을 fillAmount 계단이 아니라 **낱개 이미지**로 바꾼다(HP와 동일 표기).
+            // 계단 fill은 잘린 지점에 경계선이 없어 "다섯 칸"이 눈에 안 들어왔다(남규님 지적).
+            if (_masteryPips != null)
             {
                 float ratio = Mathf.Clamp01(_gameState.mastery / MasteryProgress.MaxFor(_gameState.playerLevel));
-                _masteryFill.fillAmount = Mathf.Floor(ratio * MASTERY_CELLS) / MASTERY_CELLS;
+                int lit = Mathf.FloorToInt(ratio * MASTERY_CELLS);
+                for (int i = 0; i < _masteryPips.Length; i++)
+                    if (_masteryPips[i] != null)
+                        _masteryPips[i].color = i < lit ? MASTERY_ON : MASTERY_OFF;
             }
             // S-134 ④ — 체력 5칸.
             if (_healthPips != null)

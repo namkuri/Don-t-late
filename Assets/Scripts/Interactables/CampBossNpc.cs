@@ -16,9 +16,12 @@ namespace DontLate
 
         [SerializeField] private GameStateSO _gameState;
         [SerializeField] private DialogueScenarioSO _tutorialScenario;
+        // S-164 — 진행부가 **Core 상주**로 옮겨져 씬 참조로는 못 잡는다(씬이 다르다).
+        // World 싱글톤 규약대로 `Instance`로 부른다 — 명령 호출용이라 규칙에 맞는다.
+        private CampTutorialDirector _tutorial => CampTutorialDirector.Instance;
         [SerializeField] private DialogueScenarioSO[] _cheerScenarios;
-        [Tooltip("재방문 때 자리를 비울 확률 (간혹 안 나온다).")]
-        [SerializeField] private float _absentChance = 0.25f;
+        // S-171 — 부재 확률 필드는 제거했다(미사용 필드는 워닝 = 납품 불가). 되살릴 땐 Start의
+        // 재방문 분기에 확률 조건을 다시 끼우면 된다.
         [SerializeField] private Renderer _highlightRenderer;
         [SerializeField] private Material _normalMaterial;
         [SerializeField] private Material _highlightMaterial;
@@ -62,11 +65,9 @@ namespace DontLate
 
             if (_gameState != null && _gameState.bossIntroPlayed)
             {
-                if (Random.value < _absentChance)
-                {
-                    gameObject.SetActive(false); // 오늘은 자리 비움
-                    return;
-                }
+                // S-171 — **부재 추첨 폐지**(남규님: 항상 있도록). 사장님은 캠프의 길잡이다 —
+                // 게시판·상차·정산이 다 여기서 시작하는데 25%로 사라지면 그날은 물어볼 데가 없다.
+                // 확률 필드는 남긴다: 되살릴 때 이 자리에 조건만 다시 끼우면 된다.
                 _phase = Phase.Idle;
             }
             else
@@ -115,9 +116,16 @@ namespace DontLate
             FaceTowards(target);
             if (Vector3.Distance(transform.position, target) <= TALK_DISTANCE)
             {
-                FaceTowards(target);
-                if (WorldDialogueManager.Instance != null && _tutorialScenario != null)
+                // S-146 — 진행부가 붙어 있으면 **7단계 튜토리얼**을 넘긴다(대사+행동 검증).
+                // 없으면 종전대로 한 편짜리 시나리오만 재생한다(폴백 — 다른 씬 재사용 대비).
+                if (_tutorial != null)
+                {
+                    _tutorial.Begin(_player);
+                }
+                else if (WorldDialogueManager.Instance != null && _tutorialScenario != null)
+                {
                     WorldDialogueManager.Instance.PlayScenario(_tutorialScenario);
+                }
                 if (_gameState != null) _gameState.bossIntroPlayed = true;
                 _phase = Phase.Talking;
                 SetAnimation("Talk");
@@ -130,6 +138,13 @@ namespace DontLate
         private void WaitTalkEnd()
         {
             if (WorldDialogueManager.Instance != null && WorldDialogueManager.Instance.IsPlaying)
+            {
+                if (_player != null) FaceTowards(_player.position);
+                return;
+            }
+            // S-146 — 튜토리얼은 대사 사이에 **행동 대기 구간**이 있어 그때마다 대화가 멈춘다.
+            // 대화 중단만 보고 복귀하면 1단계 만에 사장님이 돌아가 버린다 — 진행부가 끝나야 간다.
+            if (_tutorial != null && _tutorial.Running)
             {
                 if (_player != null) FaceTowards(_player.position);
                 return;
@@ -163,6 +178,15 @@ namespace DontLate
 
         public void Interact(PlayerContext ctx)
         {
+            // S-155 — 튜토리얼 중 E는 **직전 안내를 다시 듣기**다(남규님 지시: 실수로 넘겨도
+            // 되찾을 수 있게). 종전엔 `_phase != Phase.Idle`이라 그냥 무시돼, 놓치면 끝이었다.
+            if (_tutorial != null && _tutorial.Running)
+            {
+                FaceTowards(ctx.Transform.position);
+                _tutorial.TryRepeatCurrentLine();
+                return;
+            }
+
             if (_phase != Phase.Idle) return;
             if (WorldDialogueManager.Instance == null || WorldDialogueManager.Instance.IsPlaying) return;
             if (_cheerScenarios == null || _cheerScenarios.Length == 0) return;

@@ -83,6 +83,8 @@ namespace DontLate.EditorTools
             BuildInvoiceCanvas(gameState);                      // S-071 ②
             BuildKioskCanvas(gameState);                        // S-125 ② 노점 구매창
             BuildHUDCanvas(gameState, bagView, settingsView);
+            BuildTutorialCardCanvas();   // S-162 — 튜토리얼 미션 카드
+            BuildTutorialDirector(gameState); // S-164 — 튜토리얼 진행부(씬 넘나듦)
             BuildDialogueCanvas();
             BuildMinigameCanvas();
             BuildPhoneCanvas();
@@ -121,6 +123,13 @@ namespace DontLate.EditorTools
             ApartmentStageBuilder.BuildApartmentStage(); // S-038
             HillsideStageBuilder.BuildHillsideStage();   // S-049
             SceneFlowUIBuilder.BuildSceneFlowUI();  // 씬별 전환 UI + 정산 패널 (무대 뒤에 얹는다)
+            // S-144 — 타이틀 무대(District 동일 배치 + 러너 + 카메라 강하). **UI 뒤에 온다**:
+            // SceneFlowUIBuilder가 Main의 UI 캔버스를 다시 만들므로 그보다 먼저 세우면 순서상
+            // 문제는 없지만, 무대가 UI를 참조하지 않으므로 뒤에 두어 "무대 → UI → 무대연출" 대신
+            // "무대 → UI" 한 방향을 유지한다.
+            // ⚠ 여기 등록을 빠뜨리면 다른 PC에서 Build All을 돌려도 **타이틀이 로고만 뜬다**
+            //   (민지님 실제 사례 2026-08-04 — 빌더만 만들고 일괄 조립에 안 넣은 관제 누락).
+            MainTitleStageBuilder.BuildMainTitleStage();
             RegisterBuildSettings();
             EditorSceneManager.OpenScene(CORE_PATH); // Play 시작점으로 복귀
             Debug.Log("[Build All] 전 씬 재조립 완료 — Core에서 Play.");
@@ -146,6 +155,10 @@ namespace DontLate.EditorTools
             WorldDayNightManager dayNight = managers.AddComponent<WorldDayNightManager>();
             SetField(dayNight, "_gameState", gameState);
             SetField(dayNight, "_tuning", tuning);
+            // S-160 — 거리 안개 **끔 고정**(남규님 지시 "Fog Enabled는 계속 true로 바뀌는데 false로").
+            // 코드 기본값에만 의존하면, 이미 true로 직렬화된 씬이 그 값을 이겨 계속 켜진다.
+            // 빌더가 정본이므로 여기서 명시적으로 박는다 — 재조립하면 항상 false가 된다.
+            SetField(dayNight, "_fogEnabled", false);
 
             WorldDialogueManager dialogue = managers.AddComponent<WorldDialogueManager>();
             EnsureTestScenario(); // 박말순 인트로 SO 확보(멱등)
@@ -205,6 +218,7 @@ namespace DontLate.EditorTools
             SetField(audio, "_sfxThrow", LoadSfx("sfx_throw"));
             SetField(audio, "_sfxCoin", LoadSfx("sfx_coin"));
             SetField(audio, "_sfxPhone", LoadSfx("sfx_phone"));
+            SetField(audio, "_sfxTutorialStep", LoadSfx("sfx_tutorial_step")); // AU-025 — 없으면 무음 폴백
             SetField(audio, "_sfxDeadlineWarn", LoadSfx("sfx_deadline_warn"));  // AU-009 잔여 배선 8종
             SetField(audio, "_sfxPhoneRing", LoadSfx("sfx_phone_ring"));
             SetField(audio, "_sfxRhythmHit", LoadSfx("sfx_rhythm_hit"));
@@ -427,6 +441,226 @@ namespace DontLate.EditorTools
 
         // ── HUD 캔버스 (Core 상주) ───────────────────────────
 
+        /// <summary>
+        /// S-161 — 대사 한 덩어리를 줄바꿈 기준으로 여러 대화 라인으로 쪼갠다.
+        /// 대화창은 고정 높이라 긴 문단을 한 라인에 담으면 밖으로 넘친다.
+        /// </summary>
+        private static (string speaker, string text)[] SplitLines(string body)
+        {
+            if (string.IsNullOrEmpty(body)) return new[] { ("사장님", string.Empty) };
+            string[] chunks = body.Split('\n');
+            var lines = new System.Collections.Generic.List<(string, string)>();
+            foreach (string chunk in chunks)
+            {
+                string trimmed = chunk.Trim();
+                if (trimmed.Length > 0) lines.Add(("사장님", trimmed));
+            }
+            return lines.Count > 0 ? lines.ToArray() : new[] { ("사장님", body) };
+        }
+
+        /// <summary>S-164 ② — 튜토리얼 하이라이트 대상 등록(대상이 자기 id를 듣고 반응).</summary>
+        private static void AttachHighlightTarget(GameObject go, string id)
+        {
+            if (go == null) return;
+            var target = go.GetComponent<TutorialHighlightTarget>() ?? go.AddComponent<TutorialHighlightTarget>();
+            SetField(target, "_id", id);
+        }
+
+        /// <summary>
+        /// S-164 ② — 게이트별 하이라이트 대상 id. 대상이 없는 단계(이동·설명·도착)는 빈 문자열이다 —
+        /// 화면 어디를 봐야 할지가 없는 단계까지 뭔가를 흔들면 오히려 헷갈린다.
+        /// </summary>
+        private static string HighlightIdFor(CampTutorialDirector.Gate gate) => gate switch
+        {
+            CampTutorialDirector.Gate.BagOpen => "bag",
+            CampTutorialDirector.Gate.DrinkUse => "bag",   // 드링크도 가방에서 꺼낸다
+            CampTutorialDirector.Gate.BoxPickup => "box",
+            CampTutorialDirector.Gate.Barcode => "box",
+            CampTutorialDirector.Gate.KioskOpen => "vending",
+            _ => string.Empty,
+        };
+
+        /// <summary>
+        /// S-164 — 튜토리얼 진행부(Core 상주). 단계 저술이 여기 있는 이유: 진행부가
+        /// **씬을 넘나들어야** 하기 때문이다(배송지역 이동·NPC 대화 미션). Camp 씬
+        /// 오브젝트였을 땐 씬을 떠나는 순간 파괴돼 그 뒤 행동을 못 받았다.
+        /// </summary>
+        private static void BuildTutorialDirector(GameStateSO gameState)
+        {
+            // S-151 — 말투를 따뜻하게 다시 썼다(남규님 "사장이 따뜻한 말투로 해야하는데 너무 딱딱함").
+            // 사장님은 감독관이 아니라 **먼저 이 일을 해본 사람**이다. 지시문 대신 권유·염려로 쓰고,
+            // 단계마다 칭찬을 붙여 플레이어가 잘 따라오고 있다는 신호를 준다.
+            var steps = new (string title, string line, CampTutorialDirector.Gate gate, string hint, string praise, string card)[]
+            {
+                ("Move",   "어어, 왔구나! 기다렸어. 오늘부터 같이 일하는 거지?\n"
+                         + "긴장 풀고, WASD로 천천히 좀 걸어봐. 몸부터 풀어야 안 다쳐.",
+                    CampTutorialDirector.Gate.Move,      "WASD로 이동해 보세요",
+                    "그래 그래, 자연스럽네. 발놀림이 좋은데?", "걸어보기"),
+
+                // S-152 — 남규님 지적: I키만 알려주면 화면 위 [가방] 버튼을 못 찾는다. 둘 다 안내한다.
+                ("Bag",    "가방 한번 열어볼래? I키를 누르거나, 화면 위쪽 [가방] 버튼을 눌러도 열려.\n"
+                         + "드링크나 길에서 주운 것들이 여기 들어가. 급할 때 요긴하다고.",
+                    CampTutorialDirector.Gate.BagOpen,   "I키 또는 화면 위 [가방] 버튼",
+                    "옳지. 뭐 들었나 가끔 확인해 보면 좋아.", "가방 열기"),
+
+                ("Phone",  "이제 폰이야. Tab 눌러봐.\n"
+                         + "주문도 지도도 은행도 전부 여기 있어. 하루 종일 들여다볼 물건이지.",
+                    CampTutorialDirector.Gate.PhoneOpen, "Tab키로 휴대폰을 열어 보세요",
+                    "잘했어. 길 잃으면 지도부터 켜는 거, 잊지 말고.", "휴대폰 켜기"),
+
+                // S-152 — 종전 설명이 틀렸다(남규님 정정). 폰을 먼저 켜는 게 아니라,
+                // 바코드에 마우스를 올리면 **폰이 알아서 올라오고** 카메라 중앙에 맞춰야 찍힌다.
+                ("Barcode","자, 이제 진짜 일이다. 짐은 바코드를 찍어야 실을 수 있어.\n"
+                         + "상자 가까이 가서 마우스로 상자를 클릭해봐. 송장이 뜰 거야.\n"
+                         + "거기 바코드에 마우스를 갖다 대면 폰이 저절로 올라와. 그 상태로\n"
+                         + "카메라 한가운데에 바코드를 맞추고 잠깐 있으면 — 찰칵, 알아서 찍힌다.",
+                    CampTutorialDirector.Gate.Barcode,   "상자에 가까이 가서 클릭 → 송장 바코드에 마우스 → 카메라 중앙",
+                    "찰칵! 바로 그거야. 처음엔 손이 떨리는데 금방 익숙해져.", "바코드 스캔"),
+
+                // S-155 — 남규님: 픽업 때 목적지를 알려주면 좋겠다.
+                ("Pickup", "스캔했으면 이제 들면 돼. 상자 앞에서 E를 눌러봐.\n"
+                         + "이 건은 빌라촌이야. 골목 모퉁이 돌아서 양옥집 쪽으로 가면\n"
+                         + "바닥이 은은하게 빛나는 자리가 있을 거야 — 거기가 내려놓는 데다.\n"
+                         + "무거우면 무리하지 말고, 천천히 가도 괜찮아.",
+                    CampTutorialDirector.Gate.BoxPickup, "E키로 상자를 집어 보세요",
+                    // S-158 — 짐을 든 직후가 "어디로 가지?"가 생기는 순간이다. 방향을 여기서 준다(남규님).
+                    "좋아 좋아, 허리 조심하고!\n"
+                  + "여기서 오른쪽으로 쭉 걸어가면 빌라촌이 나와. 오늘 갈 데가 거기야.\n"
+                  + "거기서 더 가면 다른 동네들도 이어져 있고 — 차차 알게 될 거야.", "상자 집기"),
+
+                // S-155 — 시작 가방에 드링크 1개를 넣어뒀다(CoreBootstrap). 여기서 써 보게 한다.
+                // S-156 — 조작까지 적는다(남규님: 우클릭 → 사용 버튼). 물건만 주고 쓰는 법을 안 알려주면
+                // 가방을 열어놓고도 못 쓴다.
+                ("Drink",  "아 참, 가방에 에너지드링크 하나 넣어놨어. 내가 주는 거야.\n"
+                         // ⚠ 마크다운(**)은 TMP에서 별표 그대로 보인다 — 강조는 리치텍스트 태그로.
+                         + "가방(I) 열고 그 드링크를 <b>우클릭</b>하면 [사용] 버튼이 뜰 거야.\n"
+                         + "그거 눌러서 한번 마셔봐. 지쳤을 때 이만한 게 없거든.",
+                    CampTutorialDirector.Gate.DrinkUse,  "가방(I) → 드링크 우클릭 → [사용]",
+                    "그렇지! 힘들 때 미루지 말고 바로 마셔. 쓰러지고 나면 늦어.", "드링크 마시기"),
+
+                // S-156 — 넷인데 셋이라고 했다(남규님 정정). 먹자골목이 빠져 있었다.
+                ("Area",   "구역은 넷이야. 빌라촌, 먹자골목, 아파트단지, 언덕주택가.\n"
+                         + "먹자골목은 사람도 많고 노점도 많아 — 배 고프면 거기서 뭐 사 먹어도 되고.\n"
+                         + "언덕은 비 오면 미끄러우니까 그런 날은 특히 조심하고. 아파트는 엘리베이터랑\n"
+                         + "현관 비밀번호가 있어. 헷갈리면 폰 지도 보면 돼, 다 나와 있으니까.",
+                    CampTutorialDirector.Gate.ReadOnly,  "",
+                    "뭐, 다니다 보면 몸이 먼저 기억할 거야.", "지역 익히기"),
+
+                // S-164 ⑤ — NPC 대화 전에 **배송지역까지 가는** 미션(남규님 지시).
+                // 짐만 들려 보내면 어디로 가야 할지 모른 채 캠프에서 서성인다.
+                ("Travel", "자 이제 나가볼까. 오른쪽 끝까지 걸어가면 빌라촌이야.\n"
+                         + "가는 길 조심하고, 도착하면 다시 알려줄게.",
+                    CampTutorialDirector.Gate.ReachDistrict, "오른쪽 끝으로 걸어 빌라촌까지 가세요",
+                    "왔구나! 여기가 빌라촌이야. 이제 진짜 배달이다.", "배송지역 가기"),
+
+                ("Npc",    "길에서 사람 마주치면 E로 말 한번 걸어봐.\n"
+                         + "이 동네 사람들 은근히 정 많아. 얼굴 트면 팁도 챙겨주고 그래.",
+                    CampTutorialDirector.Gate.NpcTalk,   "NPC에게 E로 말을 걸어 보세요",
+                    "거봐, 나쁘지 않지? 인사만 잘해도 하루가 편해.", "NPC와 대화"),
+
+                ("Kiosk",  "마지막이야. 자판기랑 편의점, 포장마차는 E로 열어서 사면 돼.\n"
+                         + "힘들면 꼭 뭐라도 챙겨 먹어. 굶고 뛰다 쓰러지는 애들 여럿 봤다.",
+                    CampTutorialDirector.Gate.KioskOpen, "자판기·편의점·포장마차를 E로 열어 보세요",
+                    "그래, 이제 다 알려준 것 같네. 무리하지 말고 다녀와. 늦으면... 뭐, 나한테 혼나는 거지!", "자판기 이용"),
+            };
+
+            GameObject tutorialGo = new GameObject("__gb_CampTutorial");
+            CampTutorialDirector director = tutorialGo.AddComponent<CampTutorialDirector>();
+            GreyboxStageBuilder.SetReference(director, "_gameState", gameState);
+            SerializedObject dirSo = new SerializedObject(director);
+            SerializedProperty stepList = dirSo.FindProperty("_steps");
+            stepList.arraySize = steps.Length;
+            for (int i = 0; i < steps.Length; i++)
+            {
+                // S-161 — 한 덩어리로 넣으면 대화창 밖으로 흘러넘친다(남규님 캡처).
+                // 위 대사에 이미 의미 단위로 줄바꿈을 넣어뒀으므로 **그 경계로 라인을 쪼갠다** —
+                // 각 조각이 한 번의 클릭으로 넘어가고 창 안에 들어온다.
+                DialogueScenarioSO line = NpcBuildKit.GetOrCreateScenario(
+                    "Scenario_Tutorial_" + steps[i].title, SplitLines(steps[i].line));
+                DialogueScenarioSO praise = NpcBuildKit.GetOrCreateScenario(
+                    "Scenario_Tutorial_" + steps[i].title + "_Praise", SplitLines(steps[i].praise));
+                SerializedProperty element = stepList.GetArrayElementAtIndex(i);
+                element.FindPropertyRelative("scenario").objectReferenceValue = line;
+                element.FindPropertyRelative("gate").enumValueIndex = (int)steps[i].gate;
+                element.FindPropertyRelative("hint").stringValue = steps[i].hint;
+                element.FindPropertyRelative("praise").objectReferenceValue = praise;
+                element.FindPropertyRelative("title").stringValue = steps[i].card; // S-162 미션 카드 제목
+                // S-164 ② — 하이라이트 대상은 게이트에서 파생한다. 단계 표에 열을 하나 더 만들면
+                // 대상이 없는 단계까지 빈 칸을 적어야 해 표가 길어진다 — 규칙 하나로 정한다.
+                element.FindPropertyRelative("highlightId").stringValue = HighlightIdFor(steps[i].gate);
+            }
+            dirSo.ApplyModifiedPropertiesWithoutUndo();
+
+        }
+
+        /// <summary>
+        /// S-162 — 튜토리얼 미션 카드. 화면 **오른쪽, 세로 아래 1/3** 지점에서 슬라이드 인 한다.
+        /// HUD(sortOrder 10)보다 위, 페이드(100)보다 아래에 둔다 — HUD를 덮되 전환 연출은 못 덮게.
+        /// </summary>
+        private static void BuildTutorialCardCanvas()
+        {
+            TMP_FontAsset font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FONT_PATH);
+
+            GameObject canvasGo = new GameObject("TutorialCardCanvas");
+            Canvas canvas = canvasGo.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 30;
+            CanvasScaler scaler = canvasGo.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = 0.5f;
+
+            // 카드 본체 — 우측 정렬, 아래에서 1/3 높이(1080 × 1/3 = 360).
+            GameObject cardGo = new GameObject("MissionCard", typeof(RectTransform));
+            cardGo.transform.SetParent(canvasGo.transform, false);
+            Image background = cardGo.AddComponent<Image>();
+            background.color = new Color(0.09f, 0.11f, 0.16f, 0.94f);
+            RectTransform card = (RectTransform)cardGo.transform;
+            card.anchorMin = card.anchorMax = card.pivot = new Vector2(1f, 0f);
+            card.sizeDelta = new Vector2(420f, 118f);
+            // S-163 — x=0: 피벗이 우하단이라 **우측 모서리가 화면 우측에 밀착**한다(종전 −40은 떠 있었다).
+            // y=180: 종전 360에서 아래 여백을 절반으로 내렸다(남규님 지시).
+            card.anchoredPosition = new Vector2(0f, 180f);
+
+            TMP_Text title = MakeCardLabel(cardGo.transform, "Title", font, 30f, FontStyles.Bold,
+                new Vector2(0f, -14f), new Vector2(-32f, 40f));
+            TMP_Text detail = MakeCardLabel(cardGo.transform, "Detail", font, 24f, FontStyles.Normal,
+                new Vector2(0f, -58f), new Vector2(-32f, 52f));
+            detail.color = new Color(0.78f, 0.83f, 0.92f, 1f);
+
+            var view = canvasGo.AddComponent<TutorialMissionCardView>();
+            SetField(view, "_card", card);
+            SetField(view, "_background", background);
+            SetField(view, "_titleLabel", title);
+            SetField(view, "_detailLabel", detail);
+        }
+
+        private static TMP_Text MakeCardLabel(Transform parent, string name, TMP_FontAsset font,
+            float size, FontStyles style, Vector2 offset, Vector2 rect)
+        {
+            GameObject go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+            TextMeshProUGUI label = go.AddComponent<TextMeshProUGUI>();
+            if (font != null) label.font = font;
+            label.fontSize = size;
+            label.fontStyle = style;
+            label.alignment = TextAlignmentOptions.TopLeft;
+            label.textWrappingMode = TextWrappingModes.Normal;
+            label.raycastTarget = false;
+            // S-163 — **가로 스트레치**로 잡는다. 종전엔 앵커를 고정(min==max)해 두고
+            // `sizeDelta.x`에 −32를 넣었는데, 고정 앵커에서 sizeDelta는 **절대 크기**라
+            // 폭이 음수가 됐다 → 한 글자마다 줄바꿈 → 세로 글씨(남규님 캡처).
+            // 스트레치일 때만 sizeDelta.x가 "좌우 여백"으로 동작한다.
+            RectTransform rt = label.rectTransform;
+            rt.anchorMin = new Vector2(0f, 1f);
+            rt.anchorMax = new Vector2(1f, 1f);
+            rt.pivot = new Vector2(0.5f, 1f);
+            rt.sizeDelta = rect;          // x = 좌우 여백(음수), y = 높이
+            rt.anchoredPosition = offset;
+            return label;
+        }
+
         private static void BuildHUDCanvas(GameStateSO gameState, BagView bagView, SettingsView settingsView)
         {
             TMP_FontAsset font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FONT_PATH);
@@ -484,21 +718,41 @@ namespace DontLate.EditorTools
             SetField(hud, "_levelLabel", level);
 
             // S-134 ④ — 체력 5칸. 레벨 라벨 오른쪽 빈자리에 붙인다(카드 높이 불변).
+            // S-168 — 칸 치수는 여기가 단일 소유다. 경험치 칸도 같은 상수를 쓴다(남규님: 크기 동일).
+            const float PIP_SIZE = 22f;
+            const float PIP_STRIDE = 28f;   // 칸 폭 + 6px 틈
             var healthPips = new Image[GameStateSO.HEALTH_MAX];
             for (int i = 0; i < healthPips.Length; i++)
             {
                 healthPips[i] = CreateImage(charCard.transform, "HealthPip" + i, new Color(0.90f, 0.35f, 0.32f, 1f));
                 AnchorCorner(healthPips[i].rectTransform, new Vector2(0f, 1f),
-                    new Vector2(248f + i * 28f, -18f), new Vector2(22f, 22f));
+                    new Vector2(248f + i * PIP_STRIDE, -18f), new Vector2(PIP_SIZE, PIP_SIZE));
             }
             SetField(hud, "_healthPips", healthPips);
 
-            Image masteryBg = CreateImage(charCard.transform, "MasteryBg", new Color(0.06f, 0.07f, 0.10f, 1f));
-            AnchorCorner(masteryBg.rectTransform, new Vector2(0f, 0f), new Vector2(20f, 44f), new Vector2(360f, 16f));
-            Image masteryFill = CreateImage(masteryBg.transform, "MasteryFill", AMBER);
-            StretchFull(masteryFill.rectTransform);
-            ConfigureGaugeFill(masteryFill, 0f); // S-070 ② — 순백 직사각 스프라이트·왼쪽부터 참
-            SetField(hud, "_masteryFill", masteryFill);
+            // S-166 ⑤ — 경험치도 HP처럼 **낱개 5칸**.
+            // S-168 — 칸 치수를 HP와 동일하게(22×22 · 간격 28). 종전엔 스태미나 바 폭(360)을 다섯으로
+            // 쪼갠 69×12라 같은 "5칸"인데도 HP와 다른 물건처럼 보였다. 배경 바도 칸에 맞춰 줄인다.
+            const int MASTERY_CELLS = 5;
+            float masteryRowWidth = PIP_STRIDE * (MASTERY_CELLS - 1) + PIP_SIZE;
+            // 바는 **투명한 판정면**이다. 색을 채우면 칸 사이 틈까지 메워져 꺼진 두 칸이 한 덩어리로
+            // 읽힌다 — HP엔 배경 바가 없어 틈이 트여 있다(같은 크기여도 다른 물건으로 보이는 원인).
+            // 호버 판정은 `RectangleContainsScreenPoint` 기하 검사라 알파 0이어도 그대로 걸린다.
+            Image masteryBg = CreateImage(charCard.transform, "MasteryBg", new Color(0f, 0f, 0f, 0f));
+            AnchorCorner(masteryBg.rectTransform, new Vector2(0f, 0f),
+                // 윗변(y 60)은 종전과 같게 두고 아래로만 키운다 — 레벨 라벨과 안 부딪힌다.
+                new Vector2(20f, 38f), new Vector2(masteryRowWidth, PIP_SIZE));
+            SetField(hud, "_masteryBar", masteryBg); // 호버 툴팁 판정 대상
+
+            var masteryPips = new Image[MASTERY_CELLS];
+            for (int i = 0; i < MASTERY_CELLS; i++)
+            {
+                masteryPips[i] = CreateImage(masteryBg.transform, "MasteryPip" + i, AMBER);
+                // 피벗=앵커=(0,0.5) → anchoredPosition.x는 칸의 **왼쪽 모서리** 위치다.
+                AnchorCorner(masteryPips[i].rectTransform, new Vector2(0f, 0.5f),
+                    new Vector2(i * PIP_STRIDE, 0f), new Vector2(PIP_SIZE, PIP_SIZE));
+            }
+            SetField(hud, "_masteryPips", masteryPips);
 
             Image staminaBg = CreateImage(charCard.transform, "StaminaBg", new Color(0.06f, 0.07f, 0.10f, 1f));
             AnchorCorner(staminaBg.rectTransform, new Vector2(0f, 0f), new Vector2(20f, 16f), new Vector2(360f, 16f));
@@ -565,8 +819,10 @@ namespace DontLate.EditorTools
             SetField(hud, "_deliveryCountLabel", countLabel);
 
             // 가방·설정 버튼 (시계 왼쪽).
-            BuildTopBarButton(content.transform, "BagButton", "bag_icon", new Vector2(-650f, -20f),
+            GameObject bagButton = BuildTopBarButton(content.transform, "BagButton", "bag_icon", new Vector2(-650f, -20f),
                 bagView != null ? new UnityEngine.Events.UnityAction(bagView.Toggle) : null);
+            // S-164 ② — 튜토리얼이 "가방" 단계일 때 이 버튼이 맥동한다(대상이 스스로 반응 — Find 불요).
+            AttachHighlightTarget(bagButton, "bag");
             BuildTopBarButton(content.transform, "SettingsButton", "setting_button", new Vector2(-560f, -20f),
                 settingsView != null ? new UnityEngine.Events.UnityAction(settingsView.Toggle) : null);
 
@@ -599,11 +855,20 @@ namespace DontLate.EditorTools
                 38f, CYAN, TextAlignmentOptions.Center);
             AnchorMiddleBottom(ePrompt.rectTransform, new Vector2(0f, 120f), new Vector2(640f, 60f));
             SetField(hud, "_ePrompt", ePrompt.gameObject);
+
+            // S-169 — 보조 안내 한 줄. E 프롬프트(y 120, 높이 60) **바로 밑**에 눕힌다.
+            // 형제로 두는 이유: E 프롬프트는 포커스에 따라 통째로 꺼지는데, 보조 안내는 조건이
+            // 달라 따로 켜고 꺼야 한다(자식이면 부모가 꺼질 때 같이 죽어 제어가 겹친다).
+            TMP_Text focusHint = CreateText(content.transform, "FocusHint", "", font,
+                28f, new Color(1f, 0.72f, 0.25f, 1f), TextAlignmentOptions.Center);
+            AnchorMiddleBottom(focusHint.rectTransform, new Vector2(0f, 84f), new Vector2(640f, 40f));
+            focusHint.gameObject.SetActive(false);
+            SetField(hud, "_focusHintLabel", focusHint);
         }
 
         // ── 상단 바 이미지 버튼 (S-063) ──────────────────────
 
-        private static void BuildTopBarButton(Transform parent, string name, string spriteName,
+        private static GameObject BuildTopBarButton(Transform parent, string name, string spriteName,
             Vector2 anchoredPos, UnityEngine.Events.UnityAction onClick)
         {
             GameObject go = new GameObject(name, typeof(RectTransform));
@@ -629,6 +894,7 @@ namespace DontLate.EditorTools
             Button button = go.AddComponent<Button>();
             button.targetGraphic = art; // 호버·클릭 색 변화는 실아트에 적용.
             if (onClick != null) UnityEditor.Events.UnityEventTools.AddPersistentListener(button.onClick, onClick);
+            return go; // S-164 ② — 호출부가 하이라이트 대상으로 등록할 수 있게 돌려준다
         }
 
         // ── 가방 캔버스 (S-064) ──────────────────────────────

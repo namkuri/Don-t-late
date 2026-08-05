@@ -238,6 +238,22 @@ namespace DontLate
             if (existing >= 0) _scanned[existing] = data;
             else _scanned.Add(data);
             _status.Remove(data.OrderId); // 재스캔 = 재도전 — 사고 실패 표기를 진행으로 되돌린다
+            // S-164 ④ — 방금 찍은 항목을 잠깐 초록으로 물들인다(남규님 지시).
+            // 목록이 길어지면 "내가 방금 찍은 게 어느 줄인지" 못 찾는다 — 시선을 그 줄로 데려간다.
+            _justScannedId = data.OrderId;
+            if (_scanFlash != null) StopCoroutine(_scanFlash);
+            _scanFlash = StartCoroutine(ClearScanFlash());
+            RefreshCurrent();
+        }
+
+        private int _justScannedId = -1;
+        private Coroutine _scanFlash;
+
+        private IEnumerator ClearScanFlash()
+        {
+            yield return new WaitForSecondsRealtime(1.4f); // 정산창 timeScale=0에서도 흐른다
+            _justScannedId = -1;
+            _scanFlash = null;
             RefreshCurrent();
         }
         private void OnDeliveryCompleted(DeliveryData data) { _status[data.OrderId] = 1; RefreshCurrent(); }
@@ -272,6 +288,16 @@ namespace DontLate
         }
 
         // 실제 개폐 — 내부 자동 오픈/수납(Travel 진입·이탈 등)은 계층 내비를 거치지 않고 이걸 부른다.
+        /// <summary>
+        /// S-153 — 밖에서 폰을 닫는다(튜토리얼이 "확인했으면 닫자"를 대신 해주는 용도).
+        /// 이미 닫혀 있으면 아무 것도 하지 않는다 — 토글이 아니라 **닫기**여야 오작동이 없다.
+        /// </summary>
+        public void ClosePanel()
+        {
+            if (!_open) return;
+            TogglePanel();
+        }
+
         private void TogglePanel()
         {
             _open = !_open;
@@ -279,7 +305,11 @@ namespace DontLate
             WorldAudioManager.Instance?.PlayPhoneToggleSfx(); // AU-008 — 개폐 공용
             if (_slide != null) StopCoroutine(_slide);
             _slide = StartCoroutine(Slide(_open ? _shownY : HiddenY));
-            if (_open) { ShowScreen(_inTravel ? Screen.Map : Screen.Home); } // S-036 — Travel 기본 앱 = 지도
+            if (_open)
+            {
+                ShowScreen(_inTravel ? Screen.Map : Screen.Home); // S-036 — Travel 기본 앱 = 지도
+                WorldEvents.RaisePhoneOpened();                   // S-146 — 튜토리얼 진행 판정용
+            }
         }
 
         private IEnumerator Slide(float targetY)
@@ -730,8 +760,11 @@ namespace DontLate
             // 상태바 — 시계·통신사·배터리 (실사 폰 감각).
             _statusClock = MakeText(screenBg, "StatusClock", "--:--", 22f, Color.white, TextAlignmentOptions.TopLeft);
             Anchor(_statusClock.rectTransform, new Vector2(0f, 1f), new Vector2(0.5f, 1f), new Vector2(18f, -8f), 28f);
-            TMP_Text carrier = MakeText(screenBg, "StatusRight", "LateTel LTE 100%", 20f, new Color(1f, 1f, 1f, 0.85f), TextAlignmentOptions.TopRight);
-            Anchor(carrier.rectTransform, new Vector2(0.5f, 1f), new Vector2(1f, 1f), new Vector2(-18f, -8f), 28f);
+            // S-164 ⑦ — 개구 폭(298)에서 "LateTel LTE 100%"가 **줄바꿈돼 내려와** 홈 버튼과 겹쳤다
+            // (남규님 캡처). 문구를 줄이고 줄바꿈을 막는다 — 상태바는 한 줄이어야 상태바다.
+            TMP_Text carrier = MakeText(screenBg, "StatusRight", "LTE 100%", 18f, new Color(1f, 1f, 1f, 0.85f), TextAlignmentOptions.TopRight);
+            carrier.textWrappingMode = TextWrappingModes.NoWrap;
+            Anchor(carrier.rectTransform, new Vector2(0.42f, 1f), new Vector2(1f, 1f), new Vector2(-14f, -8f), 26f);
 
             _titleLabel = MakeText(screenBg, "Title", "홈", 34f, Color.white, TextAlignmentOptions.Top);
             Anchor(_titleLabel.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -38f), 44f);
@@ -741,7 +774,8 @@ namespace DontLate
             homeRect.anchorMin = homeRect.anchorMax = homeRect.pivot = new Vector2(1f, 1f);
             homeRect.sizeDelta = new Vector2(54f, 40f);
             // S-117 — 새 프레임 개구(폭 298)에선 -38이 상태바 "100%"를 가린다(캡처 게이트 적발) — 한 줄 아래로.
-            homeRect.anchoredPosition = new Vector2(-10f, -46f);
+            // S-164 ⑦ — 상태바가 한 줄로 고정됐으므로 홈 버튼도 그 아래 고정 위치로 내린다.
+            homeRect.anchoredPosition = new Vector2(-10f, -40f);
 
             _screenRoot = new GameObject("Screens", typeof(RectTransform)).transform;
             _screenRoot.SetParent(screenBg, false);
@@ -880,8 +914,14 @@ namespace DontLate
             GameObject screen = NewScreen(Screen.Delivery);
             _deliveryHover = MakeText(screen.transform, "Hover", "-", 28f, new Color(0.208f, 0.878f, 0.784f), TextAlignmentOptions.Top);
             Anchor(_deliveryHover.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 0f), 38f);
-            _deliveryWarn = MakeText(screen.transform, "Warn", "", 22f, new Color(1f, 0.45f, 0.35f), TextAlignmentOptions.Top);
-            Anchor(_deliveryWarn.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -40f), 30f);
+            // S-164 ⑦ — 경고문이 길어 줄바꿈되면 아래 목록을 덮었다(남규님 캡처).
+            // 폰트를 줄이고 **오토사이징**으로 한 줄에 욱여넣는다 — 경고는 한 줄이어야 목록을 안 가린다.
+            _deliveryWarn = MakeText(screen.transform, "Warn", "", 19f, new Color(1f, 0.45f, 0.35f), TextAlignmentOptions.Top);
+            _deliveryWarn.textWrappingMode = TextWrappingModes.NoWrap;
+            _deliveryWarn.enableAutoSizing = true;
+            _deliveryWarn.fontSizeMin = 13f;
+            _deliveryWarn.fontSizeMax = 19f;
+            Anchor(_deliveryWarn.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -40f), 26f);
             // S-034 ③: 리스트가 폰을 뚫고 내려가던 것 — 스크롤 영역으로 격리.
             GameObject viewport = new GameObject("ListViewport", typeof(RectTransform));
             viewport.transform.SetParent(screen.transform, false);
@@ -921,6 +961,7 @@ namespace DontLate
         private RectTransform _aimBarcode;
         private Image _aimGuide;
         private TMP_Text _aimHint;
+        private TMP_Text _aimIdle;   // S-170 — 비호버 대기 안내
         private bool _aimCentered;
         private const float AIM_CENTER_THRESHOLD = 0.35f;
 
@@ -935,7 +976,9 @@ namespace DontLate
             panelRect.offsetMin = new Vector2(6f, -170f);
             panelRect.offsetMax = new Vector2(-6f, -6f);
             Image bg = _aimPanel.AddComponent<Image>(); // 카메라 파인더 — 검은 유리
-            bg.color = new Color(0.03f, 0.04f, 0.06f, 0.97f);
+            // S-170 — **불투명**. 0.97이면 뒤 배송앱 본문 글씨가 3%만큼 비쳐 파인더 위에 겹쳐 보인다.
+            // 호버 순간에만 뜰 땐 눈에 안 띄었는데, 송장 내내 떠 있게 되니 바로 드러났다.
+            bg.color = new Color(0.03f, 0.04f, 0.06f, 1f);
             _aimPanel.AddComponent<RectMask2D>();       // 흐르는 바코드가 파인더 밖으로 안 샌다
 
             // 중앙 조준 가이드 (색 = 조준 판정 피드백).
@@ -958,7 +1001,37 @@ namespace DontLate
             Anchor(_aimHint.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(0f, 6f), 28f);
             ((RectTransform)_aimHint.transform).anchoredPosition = new Vector2(0f, 6f);
 
+            // S-170 — 대기(비호버) 안내. 파인더가 송장 내내 켜져 있으므로 "지금 뭘 하라는 건지"를
+            // 빈 화면 대신 여기에 적는다. 조준이 시작되면 이 줄이 내려가고 바코드·가이드가 올라온다.
+            _aimIdle = MakeText(_aimPanel.transform, "AimIdle",
+                "[스캔중] 송장 바코드 중앙에\n마우스를 올려주세요.", 20f,
+                new Color(1f, 0.624f, 0.271f), TextAlignmentOptions.Center);
+            // Anchor 헬퍼는 피벗을 위쪽(0.5,1)으로 고정한다 — 그대로 쓰면 글이 중앙에서 아래로
+            // 늘어져 걸린다(실측). 진짜 중앙 정렬이 필요하므로 여기선 직접 세운다.
+            RectTransform idleRect = _aimIdle.rectTransform;
+            idleRect.anchorMin = new Vector2(0f, 0.5f);
+            idleRect.anchorMax = new Vector2(1f, 0.5f);
+            idleRect.pivot = new Vector2(0.5f, 0.5f);
+            idleRect.sizeDelta = new Vector2(-12f, 64f); // 가로 스트레치 → x는 좌우 여백 6씩
+            idleRect.anchoredPosition = Vector2.zero;
+
             _aimPanel.SetActive(false);
+        }
+
+        /// <summary>
+        /// S-170 — 조준(호버) / 대기 전환. 파인더 자체는 송장이 열려 있는 동안 계속 떠 있고,
+        /// 마우스가 바코드 위에 있느냐만 여기서 갈린다.
+        /// ⚠ 대기로 내려갈 땐 `_aimCentered`를 **반드시 끈다**: 켠 채로 두면 송장을 열어 둔
+        ///   것만으로 자동 촬영(0.3초 유지)이 돌아 스캔이 공짜가 된다.
+        /// </summary>
+        public void SetBarcodeAiming(bool aiming)
+        {
+            if (_aimPanel == null || !_aimPanel.activeSelf) return;
+            if (!aiming) _aimCentered = false;
+            if (_aimIdle != null) _aimIdle.gameObject.SetActive(!aiming);
+            if (_aimBarcode != null) _aimBarcode.gameObject.SetActive(aiming);
+            if (_aimGuide != null) _aimGuide.gameObject.SetActive(aiming);
+            if (_aimHint != null) _aimHint.gameObject.SetActive(aiming);
         }
 
         public void OpenBarcodeAim(DeliveryOrderSO order)
@@ -967,8 +1040,10 @@ namespace DontLate
             if (!_open && !_inTitle) TogglePanel();     // 폰 자동 오픈
             if (_screen != Screen.Delivery) ShowScreen(Screen.Delivery);
             _aimPanel.SetActive(true);
+            _aimPanel.transform.SetAsLastSibling(); // 파인더는 배송앱 본문 위에 덮인다
             _aimCentered = false;
             RebuildAimBarcode(order.orderId);
+            SetBarcodeAiming(false); // S-170 — 파인더는 켜지되 시작은 대기 상태
         }
 
         public void CloseBarcodeAim()
@@ -1006,7 +1081,7 @@ namespace DontLate
             }
             if (WorldDeliveryManager.Instance == null) return false;
             if (!WorldDeliveryManager.Instance.RegisterBarcode(order))
-                ShowWarn("⚠ " + Invoice(order.orderId) + " — 이미 등록된 운송장");
+                ShowWarn("⚠ " + Invoice(order.orderId) + " 이미 등록됨"); // S-164 ⑦ 축약
             CloseBarcodeAim();
             return true; // 중복이어도 촬영은 성립 — 송장을 접는다
         }
@@ -1396,6 +1471,19 @@ namespace DontLate
                     break;
                 }
 
+            // S-161 — 스캔한 건이 없으면 **여기서 스캔 방법을 알려준다**(남규님 지시).
+            // 빈 목록만 띄우면 "아직 아무것도 없다"만 알 뿐 무엇을 해야 하는지 모른다.
+            if (_scanned.Count == 0)
+            {
+                sb.Append("<color=#8a93a8>아직 스캔한 짐이 없다.</color>\n\n")
+                  .Append("<color=#ff9f45><b>스캔하는 법</b></color>\n")
+                  .Append("<size=88%>1. 상자 가까이 가서 <b>상자를 클릭</b>\n")
+                  .Append("2. 뜬 <b>송장의 바코드에 마우스</b>를 갖다 댄다\n")
+                  .Append("3. 폰이 올라오면 <b>카메라 한가운데</b>에 맞춰 잠깐 유지</size>\n");
+                _deliveryList.text = sb.ToString();
+                return;
+            }
+
             sb.Append("<color=#8a93a8>No 운송장     순번 목적지</color>\n");
             var byDeadline = new List<DeliveryData>(_scanned);
             byDeadline.Sort((a, b) => a.DeadlineMinuteOfDay.CompareTo(b.DeadlineMinuteOfDay));
@@ -1408,6 +1496,12 @@ namespace DontLate
                     ? d.Address.Substring(0, 6) + "…" : d.Address;
                 string row = (i + 1) + " " + Invoice(d.OrderId) + "  " + rank + "  " + shortAddress;
                 int status = _status.TryGetValue(d.OrderId, out int s) ? s : 0;
+                // S-164 ④ — 방금 스캔한 줄은 다른 상태 표기보다 **먼저** 초록으로 잡는다.
+                if (d.OrderId == _justScannedId)
+                {
+                    sb.Append("<color=#3ddc84><b>").Append(row).Append("  스캔완료</b></color>\n");
+                    continue;
+                }
                 if (status == 1) sb.Append("<color=#8a93a8>").Append(row).Append(" ✓</color>\n");
                 // S-075 ⑤ — 파손 상태: HP 소진으로 깨진 건은 배송앱에도 '파손'으로.
                 else if (_gameState.destroyedOrderIds.Contains(d.OrderId))
@@ -1533,10 +1627,10 @@ namespace DontLate
                 ShowScreen(Screen.Home);
                 WorldMinigameManager.Instance?.AcceptCall(); // 미니게임 패널이 폰 위로 뜬다
             });
-            RectTransform acceptRect = (RectTransform)accept.transform;
-            acceptRect.anchorMin = acceptRect.anchorMax = acceptRect.pivot = new Vector2(0.5f, 0f);
-            acceptRect.sizeDelta = new Vector2(170f, 70f);
-            acceptRect.anchoredPosition = new Vector2(-95f, 60f);
+            // S-172 — 화면 폭에 **따라가게** 한다. 종전엔 170px 고정 둘을 ±95에 놓아 좌우로
+            // 180씩, 폭 266짜리 폰 화면 밖으로 삐져나갔다(남규님 캡처). 가로 스트레치라
+            // sizeDelta.x = 0 이 곧 "앵커 구간을 꽉 채움"이다 — 폰 크기가 바뀌어도 안 넘친다.
+            LayoutCallButton((RectTransform)accept.transform, 0.05f, 0.48f);
             accept.GetComponentInChildren<TMP_Text>().color = new Color(0.3f, 0.95f, 0.5f);
 
             Button decline = MakeButton(screen.transform, "Decline", "거절", () =>
@@ -1544,11 +1638,18 @@ namespace DontLate
                 if (_open) TogglePanel();
                 WorldMinigameManager.Instance?.DeclineCall();
             });
-            RectTransform declineRect = (RectTransform)decline.transform;
-            declineRect.anchorMin = declineRect.anchorMax = declineRect.pivot = new Vector2(0.5f, 0f);
-            declineRect.sizeDelta = new Vector2(170f, 70f);
-            declineRect.anchoredPosition = new Vector2(95f, 60f);
+            LayoutCallButton((RectTransform)decline.transform, 0.52f, 0.95f);
             decline.GetComponentInChildren<TMP_Text>().color = new Color(1f, 0.45f, 0.35f);
+        }
+
+        /// <summary>S-172 — 통화 버튼 배치: 가로는 화면 비율, 세로는 바닥에서 60px 위 고정 높이.</summary>
+        private static void LayoutCallButton(RectTransform rect, float leftFraction, float rightFraction)
+        {
+            rect.anchorMin = new Vector2(leftFraction, 0f);
+            rect.anchorMax = new Vector2(rightFraction, 0f);
+            rect.pivot = new Vector2(0.5f, 0f);
+            rect.sizeDelta = new Vector2(0f, 64f); // x=0 → 앵커 구간 그대로 / y는 절대 높이
+            rect.anchoredPosition = new Vector2(0f, 60f);
         }
 
         private void RefreshCall()
@@ -1834,10 +1935,12 @@ namespace DontLate
             if (_deliveryHover != null)
                 _deliveryHover.text = box != null && box.Order != null ? "송장 " + Invoice(box.Order.orderId) : "-";
 
+            // S-165 ① — **여기서는 등록하지 않는다.** 이 경로는 폰이 열린 채 상자를 좌클릭하면
+            // 조준·유지 없이 곧바로 등록해 버렸다(남규님 지적: "바코드 안찍고 클릭만해도 등록됨").
+            // 튜토리얼이 가르치는 절차(송장 → 바코드 조준 → 중앙 유지)와도 어긋난다.
+            // 등록은 **조준 완료 경로 하나**로만 일어난다 — 여기는 어느 상자를 겨눴는지 표시만 한다.
             if (box == null || box.Order == null || !mouse.leftButton.wasPressedThisFrame) return;
-            if (WorldDeliveryManager.Instance == null) return;
-            if (!WorldDeliveryManager.Instance.RegisterBarcode(box.Order))
-                ShowWarn("⚠ " + Invoice(box.Order.orderId) + " — 이미 등록된 운송장");
+            ShowWarn("상자를 클릭해 송장을 열고, 바코드를 카메라 중앙에 맞춰라");
         }
 
         private Coroutine _warnFade;

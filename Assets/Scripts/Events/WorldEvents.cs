@@ -100,7 +100,13 @@ namespace DontLate
         /// InteractionFocusChanged와 같은 빈도로 같이 발행되므로 별도 로그는 달지 않는다.</summary>
         public static event Action<string> FocusAddressChanged;
 
+        /// <summary>S-169 — 포커스 대상의 보조 조작 안내(없으면 null). E 프롬프트 아래 한 줄.
+        /// FocusAddressChanged와 같은 성격이라 로그는 달지 않는다(포커스 통지와 동반 발행).</summary>
+        public static event Action<string> FocusHintChanged;
+
         public static void RaiseFocusAddressChanged(string address) => FocusAddressChanged?.Invoke(address);
+
+        public static void RaiseFocusHintChanged(string hint) => FocusHintChanged?.Invoke(hint);
 
         public static void RaiseCarryStateChanged(bool isCarrying)
         {
@@ -122,6 +128,51 @@ namespace DontLate
         {
             Log("KioskRequested → " + offer.Title);
             KioskRequested?.Invoke(offer);
+        }
+
+        /// <summary>
+        /// S-146 — 가방/휴대폰을 **열었다**(닫기는 알리지 않는다). 튜토리얼이 "해봤는지"를
+        /// 판정하려면 뷰가 상태를 경계 밖으로 알려야 한다(폴링 금지·Find 금지 규약).
+        /// 개폐는 사람 조작이라 저빈도 — §9.5 로그 대상이다.
+        /// </summary>
+        /// <summary>
+        /// S-162 — 튜토리얼 단계 시작(제목·설명). 미션 카드 UI가 구독해 표시한다.
+        /// 판정은 진행부가 하고 뷰는 **표시만** 한다(UI에 게임 로직 금지 규약).
+        /// 단계 전환은 저빈도라 §9.5 로그 대상이다.
+        /// </summary>
+        // S-164 ② — 세 번째 인자는 **하이라이트 대상 id**다. 대상이 스스로 등록해 자기 id를
+        // 들으면 반응한다(`TutorialHighlightTarget`) — 진행부가 대상을 찾아다니지 않는다(Find 금지).
+        public static event Action<string, string, string> TutorialStepStarted;
+
+        public static void RaiseTutorialStepStarted(string title, string detail, string targetId)
+        {
+            Log("TutorialStepStarted " + title + (string.IsNullOrEmpty(targetId) ? "" : " → " + targetId));
+            TutorialStepStarted?.Invoke(title, detail, targetId);
+        }
+
+        /// <summary>S-162 — 튜토리얼 단계 완료. 카드가 "완료"로 바뀌고 퇴장한다.</summary>
+        public static event Action TutorialStepCleared;
+
+        public static void RaiseTutorialStepCleared()
+        {
+            Log("TutorialStepCleared");
+            TutorialStepCleared?.Invoke();
+        }
+
+        public static event Action BagOpened;
+
+        public static void RaiseBagOpened()
+        {
+            Log("BagOpened");
+            BagOpened?.Invoke();
+        }
+
+        public static event Action PhoneOpened;
+
+        public static void RaisePhoneOpened()
+        {
+            Log("PhoneOpened");
+            PhoneOpened?.Invoke();
         }
 
         public static event Action<DeliveryOrderSO> InvoiceRequested;

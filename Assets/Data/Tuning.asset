@@ -20,11 +20,19 @@ MonoBehaviour:
   gravity: -22
   turnSpeed: 720
   staminaMax: 100
-  staminaDrainPerSecond: 2.5
+  staminaDrainPerSecond: 0
   staminaDrainRunPerSecond: 6
   staminaDrainPerKg: 0.35
   staminaDrainCarryMultiplier: 2
   staminaRecoverPerSecond: 6
+  staminaPenaltyHeat: 15
+  staminaPenaltyCold: 15
+  staminaPenaltyCarryPerBox: 10
+  staminaPenaltyStorm: 15
+  staminaPenaltyReliefSeconds: 90
+  stormHeadwindMultiplier: 0.72
+  stormTailwindMultiplier: 1.25
+  stormIdlePush: 0.9
   energyDrinkRecover: 40
   boxMaxHp: 100
   boxSafeImpactSpeed: 5

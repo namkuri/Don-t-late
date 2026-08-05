@@ -14,6 +14,8 @@ namespace DontLate
         public Color color = Color.white;
         [Tooltip("실모델 프리팹 — 비면 색 박스 폴백 (스왑 계약).")]
         public GameObject prefab;
+        [Tooltip("실프리팹 배율 (S-173 ② — 모델마다 제작 스케일이 달라 방 안에서 크기가 안 맞는다). 1 = 원본.")]
+        public float prefabScale = 1f;
         [Tooltip("벽 설치 허용 (S-031 ⑤ — TV).")]
         public bool wallMountable;
     }

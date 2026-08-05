@@ -70,6 +70,12 @@ namespace DontLate
         {
             _current = scene;
             _hasCurrent = true;
+            // S-159 — **상태도 함께 맞춘다.** 종전엔 `_current`만 세팅해서, 콘텐츠 씬에서 바로
+            // Play하면 `_current`=Camp인데 `currentScene`=Main(부트스트랩 초기값)으로 갈라졌다.
+            // `DistrictEdgeGate.FindTargetIndex()`는 `currentScene`을 보므로 int.MinValue를 돌려
+            // **양쪽 엣지워크가 통째로 무반응**이 됐다 — Deny 메시지조차 없어 고장으로 읽힌다
+            // (남규님 실관찰). 두 값이 갈라질 이유가 없다.
+            if (_gameState != null) _gameState.currentScene = scene;
         }
 
         public bool CanGoTo(GameScene next)

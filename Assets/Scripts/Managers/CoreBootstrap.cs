@@ -58,6 +58,10 @@ namespace DontLate
             _gameState.money = _gameState.startMoney;
             _gameState.debt = _gameState.startDebt;
             _gameState.bossIntroPlayed = false; // S-052 — 사장님 튜토리얼 리셋
+            // S-158 — 튜토리얼 상태도 함께 초기화한다. 특히 `tutorialExitLocked`는 남아 있으면
+            // **다음 세션에서 귀가가 영구히 막힌다**(SO는 세션 간 값이 남는다).
+            _gameState.tutorialDone = false;
+            _gameState.tutorialExitLocked = false;
             _gameState.unlockedDistricts.Clear(); // S-054 — 빌라촌부터 걸어서 개척
             _gameState.unlockedDistricts.Add(DeliveryOrderSO.DISTRICT_VILLATOWN);
             _gameState.hasTruck = false;
@@ -65,6 +69,10 @@ namespace DontLate
             _gameState.health = GameStateSO.HEALTH_MAX; // S-134 ④ — 세션 시작은 만체력
             _gameState.mastery = 0f;
             _gameState.bagItems.Clear();  // S-064
+            // S-155 — 시작 지급: 에너지드링크 1개. 튜토리얼에서 사장님이 "써보라"고 시키므로
+            // 가방이 비어 있으면 그 단계를 진행할 수 없다. id·라벨은 `EnergyDrinkPickup`과 같은
+            // 값을 쓴다 — 다르면 같은 물건이 가방에서 두 칸으로 갈라진다.
+            BagStorage.TryAdd(_gameState, "drink", "에너지드링크", stackable: true, holdable: true);
             _gameState.ownsCart = false;  // S-056
             _gameState.catFriend = false;  // S-059
             _gameState.catRanAway = false;

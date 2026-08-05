@@ -37,6 +37,7 @@ namespace DontLate.EditorTools
             // 멱등: 이전 조립물 정리.
             GreyboxStageBuilder.Clear();
             DestroyRoot(SLOTS_ROOT);
+            DestroyLegacyCenterLines(); // S-150 — 접두어 없이 저장돼 Clear()가 못 지우던 구버전 잔재
 
             EnsureCamera();
             // Directional Light는 만들지 않는다 — 태양은 Core 소유(D-021). 이중 광원 방지.
@@ -82,7 +83,9 @@ namespace DontLate.EditorTools
             Material road = GreyboxStageBuilder.GetOrCreateMaterial("CrossRoad", new Color(0.16f, 0.17f, 0.19f), false);
             GameObject crossRoad = GreyboxStageBuilder.CreatePrimitive(PrimitiveType.Cube, "CrossRoad", new Vector3(ROAD_X, 0.01f, 0f));
             Object.DestroyImmediate(crossRoad.GetComponent<Collider>());
-            crossRoad.transform.localScale = new Vector3(4.2f, 0.02f, 20f);
+            // S-150 — 지면 Z 전폭까지 깐다. 종전 20u는 지면(80u)의 1/4이라 z ±10에서 도로가
+            // 끊기고 흙바닥이 드러났다(남규님 지적). 지면 치수에서 역산해 하드코딩을 피한다.
+            crossRoad.transform.localScale = new Vector3(4.2f, 0.02f, GroundDepth());
             crossRoad.GetComponent<Renderer>().sharedMaterial = road;
 
             // 횡단보도 — S-079 ②: 줄을 z(도로 진행) 방향 길쭉·x 나열로 90도 회전(남규님 판정),
@@ -112,16 +115,10 @@ namespace DontLate.EditorTools
             });
 
             // S-076 ③ — 중앙선(황색): 방향별 1차선 시각 표지. 횡단보도 구간은 비운다.
-            Material centerLine = GreyboxStageBuilder.GetOrCreateMaterial("RoadCenterLine", new Color(0.94f, 0.78f, 0.22f), false);
-            foreach (float zHalf in new[] { -6.75f, 6.75f })
-            {
-                GameObject line = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                line.name = "CenterLine";
-                line.transform.position = new Vector3(ROAD_X, 0.025f, zHalf);
-                line.transform.localScale = new Vector3(0.14f, 0.012f, 6.5f);
-                Object.DestroyImmediate(line.GetComponent<Collider>());
-                line.GetComponent<Renderer>().sharedMaterial = centerLine;
-            }
+            // S-150 — 도로가 지면 전폭으로 길어졌으므로 통짜 2개 → **전 구간 점선**으로 바꾼다.
+            // ⚠ 루트를 `__gb_` 아래 둔다: 종전엔 접두어 없는 최상위 오브젝트라
+            // `GreyboxStageBuilder.Clear()`(=`__gb_*` 루트만 파기)가 못 지워 재조립마다 쌓였다.
+            BuildCenterLine(ROAD_X, GroundDepth());
 
             TrafficLight signal = BuildTrafficLight(new Vector3(ROAD_X + 2.6f, 0f, -3.4f));
 
@@ -231,6 +228,66 @@ namespace DontLate.EditorTools
         }
 
         // ── 카메라·조명 (빈 씬 보강) ─────────────────────────
+
+        /// <summary>
+        /// S-150 — 구버전 중앙선 정리. 종전엔 최상위에 `CenterLine`이라는 이름으로 저장돼
+        /// `GreyboxStageBuilder.Clear()`(=`__gb_*`만 파기)를 빠져나갔다. 이미 저장된 씬에
+        /// 남아 있는 것들을 여기서 걷어낸다 — 안 하면 새 점선과 겹쳐 두 겹으로 보인다.
+        /// </summary>
+        private static void DestroyLegacyCenterLines()
+        {
+            foreach (GameObject go in Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include))
+            {
+                if (go == null || go.name != "CenterLine") continue;
+                if (go.transform.parent != null) continue; // 최상위 잔재만
+                Object.DestroyImmediate(go);
+            }
+        }
+
+        /// <summary>
+        /// 지면(`__gb_Ground`)의 Z 전폭(u). 도로·중앙선 길이를 여기서 역산해 지면과 항상 맞춘다 —
+        /// 값을 손으로 적어두면 지면 치수가 바뀔 때 조용히 어긋난다(S-147 차선 40u 사고와 같은 부류).
+        /// 지면을 못 찾으면 현 규격(Plane 스케일 8 × 기본 10u)을 폴백으로 쓴다.
+        /// </summary>
+        private static float GroundDepth()
+        {
+            GameObject ground = GameObject.Find("__gb_Ground");
+            Renderer renderer = ground != null ? ground.GetComponent<Renderer>() : null;
+            return renderer != null ? renderer.bounds.size.z : 80f;
+        }
+
+        /// <summary>
+        /// 중앙선 점선. 도로 전 구간에 일정 간격으로 깔되 횡단보도 구간(중앙)은 비운다.
+        /// </summary>
+        private static void BuildCenterLine(float roadX, float depth)
+        {
+            const float DASH_LENGTH = 2.4f;   // 한 칸 길이
+            const float DASH_GAP = 1.8f;      // 칸 사이
+            const float CROSSWALK_HALF = 3.6f; // 이 안쪽은 비운다 (횡단보도 줄이 z ±2.8까지)
+
+            Material material = GreyboxStageBuilder.GetOrCreateMaterial(
+                "RoadCenterLine", new Color(0.94f, 0.78f, 0.22f), false);
+            GameObject root = GreyboxStageBuilder.CreateEmpty("CenterLines", new Vector3(roadX, 0f, 0f));
+
+            float pitch = DASH_LENGTH + DASH_GAP;
+            int perSide = Mathf.FloorToInt((depth * 0.5f - CROSSWALK_HALF) / pitch);
+            int index = 0;
+            for (int side = -1; side <= 1; side += 2)
+            {
+                for (int i = 0; i < perSide; i++)
+                {
+                    float z = side * (CROSSWALK_HALF + DASH_LENGTH * 0.5f + i * pitch);
+                    GameObject dash = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    dash.name = "Dash_" + index.ToString("00");
+                    dash.transform.SetParent(root.transform, false);
+                    dash.transform.localPosition = new Vector3(0f, 0.025f, z);
+                    dash.transform.localScale = new Vector3(0.14f, 0.012f, DASH_LENGTH);
+                    Object.DestroyImmediate(dash.GetComponent<Collider>());
+                    dash.GetComponent<Renderer>().sharedMaterial = material;
+                    index++;
+                }
+            }
+        }
 
         private static void EnsureCamera()
         {
@@ -363,6 +420,7 @@ namespace DontLate.EditorTools
             trigger.isTrigger = true;
             trigger.size = bounds.size + new Vector3(0.8f, 0f, 0.8f); // 앞에 서면 잡히게 여유
             trigger.center = vend.transform.InverseTransformPoint(bounds.center);
+            GreyboxStageBuilder.AddSolidBlocker(vend); // S-166 ③ — 통과 금지
 
             VendingMachine vending = vend.AddComponent<VendingMachine>(); // E → 구매창 (S-125 ②)
             GreyboxStageBuilder.SetReference(vending, "_tuning", tuning);

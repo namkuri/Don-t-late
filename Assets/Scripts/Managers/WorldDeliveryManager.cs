@@ -15,6 +15,8 @@ namespace DontLate
         public string UnlockedDistrict;
         /// <summary>이번 정산으로 회사 트럭 수령 (S-084 ①).</summary>
         public bool TruckAwarded;
+        /// <summary>S-165 ④ — 이번 정산 중 레벨업으로 새로 얻은 능력 이름 (없으면 null).</summary>
+        public string UnlockedPerk;
     }
 
     /// <summary>정산 한 줄 (S-075 ⑥) — 주소·금액·성패·사유. 표시 전용 데이터.</summary>
@@ -49,7 +51,7 @@ namespace DontLate
             if (Instance == this) Instance = null;
         }
 
-        private const int HOSPITAL_FEE = 3000; // S-057 — 병원비 (밸런스 추후)
+        private const int HOSPITAL_FEE = 1500; // S-166 ⑧ — 3000에서 인하(남규님 난이도 조절)
         private const int HIT_DAMAGE = 2;      // S-134 ④ — 차에 치이면 체력 2칸
 
         private void OnEnable()
@@ -127,6 +129,13 @@ namespace DontLate
 
         public bool IsPlaced(int orderId) => _gameState.placedDeliveries.Exists(p => p.orderId == orderId);
 
+        /// <summary>
+        /// S-164 — 지금 손에 들고 있는 건인가. 씬 진입 시 스폰되는 비콘이 "이미 들고 있는 짐"을
+        /// 알아야 목적지 표시를 켤 수 있다 — 픽업 이벤트는 스폰 **전에** 이미 지나갔기 때문이다.
+        /// </summary>
+        public bool IsCarried(int orderId) =>
+            _gameState.carriedOrders.Exists(o => o != null && o.orderId == orderId);
+
         /// <summary>이 주소 패드에 배치돼 있는가 (S-097 ① — 재방문 비콘·연출 억제 판정).</summary>
         public bool IsPlacedAt(int orderId, string address)
             => _gameState.placedDeliveries.Exists(p => p.orderId == orderId && p.beaconAddress == address);
@@ -139,7 +148,11 @@ namespace DontLate
         {
             var summary = new DeliveryDaySummary();
             summary.Lines = new System.Collections.Generic.List<SettleLine>(); // S-075 ⑥
+            // S-165 ④ — 이번 정산 **중에** 레벨업으로 새 능력을 얻었는지 잡으려면 시작 레벨을 기억해야 한다.
+            // 배송 성공/실패가 숙련도를 움직이므로 레벨은 이 메서드 안에서 바뀐다.
+            int levelBefore = _gameState.playerLevel;
             _settledDistricts.Clear(); // S-054 — 이번 정산에서 성공한 구역
+            _accidentBilled = false;   // S-166 ⑧ — 하루가 끝나면 병원비 청구권이 되살아난다
             int penalty = _tuning != null ? _tuning.latePenalty : 500;
 
             // S-074 ③ — 파손 건 선청산: 실패로 벌금. cargo에서 미리 빼서 아래 미배치 경로와
@@ -219,28 +232,48 @@ namespace DontLate
             // S-134 ⑤ — 손에 든 짐도 청산한다. 안 비우면 DistrictCargoSpawner가 그 주문을
             // "이미 들고 있음"으로 보고 다음 날 상자를 안 깔아 유령 배송이 남는다(정찰 실측).
             _gameState.carriedOrders.Clear();
+            // S-165 ④ — 이번 정산 중 레벨업으로 **새로 얻은 능력**이 있으면 정산 화면에 알린다.
+            // 레벨만 올려두면 플레이어는 뭐가 좋아졌는지 모른다 — 능력 이름을 말해줘야 보상이 된다.
+            summary.UnlockedPerk = LevelPerks.PerkGainedBetween(levelBefore, _gameState.playerLevel);
+
             Debug.Log("[배송] 일괄 정산 — 성공 " + summary.SuccessCount + " · 실패 " + summary.FailCount
-                    + " · 보상 " + summary.RewardTotal + " · 벌금 " + summary.PenaltyTotal);
+                    + " · 보상 " + summary.RewardTotal + " · 벌금 " + summary.PenaltyTotal
+                    + (summary.UnlockedPerk != null ? " · 해금 " + summary.UnlockedPerk : ""));
             return summary;
         }
+
+        // S-166 ⑧ — 병원비는 **하루 한 번만** 청구된다. 종전엔 치일 때마다 물렸는데,
+        // 사고 직후 넉백으로 도로 위에 널브러진 사이 뒤차가 연달아 받으면 빚이 무한히 불었다
+        // (남규님 관찰 "영수증 떠있을 때 한번 더 치이면 계속 빚이 늘어남").
+        // **체력은 매번 깎인다** — 연타의 대가는 돈이 아니라 하루가 끝나는 것으로 받는다.
+        private bool _accidentBilled;
 
         // S-057 — 교통사고: 병원비 청구 + 아직 배치 못 한 짐 전량 실패 정산 + 집으로 후송.
         private void OnPlayerHitByCar()
         {
-            _gameState.money -= HOSPITAL_FEE;
-            if (_gameState.money < 0) { _gameState.debt += -_gameState.money; _gameState.money = 0; }
-            WorldEvents.RaiseMoneySpent(HOSPITAL_FEE);
-
             // S-134 ④ — 패널티 완화(정수님 QA). 종전엔 **적재 전량 실패**라 한 번 치이면 하루가 끝났다.
             // 이제 체력 2칸만 깎고 짐은 그대로 — 0칸이 돼야 하루가 끝난다(강제 귀가 + 정산).
             _gameState.health = Mathf.Max(0, _gameState.health - HIT_DAMAGE);
             bool hospitalized = _gameState.health <= 0;
 
-            Debug.Log("[교통사고] 병원비 -₩" + HOSPITAL_FEE.ToString("N0")
+            // 병원비는 **후송될 때** 청구한다. 처음엔 충돌마다 청구했는데, 영수증은 후송(체력 0)에만
+            // 뜨므로 그 시점엔 이미 1회차에서 청구가 끝나 영수증에 늘 "−0"이 찍혔다(남규님 관찰).
+            // 스쳐 지나간 사고는 체력과 떨어뜨린 짐으로 갚고, 실려 갈 때만 돈이 나간다 — 이름값도 맞다.
+            int fee = hospitalized && !_accidentBilled ? HOSPITAL_FEE : 0;
+            if (fee > 0)
+            {
+                _accidentBilled = true;
+                _gameState.money -= fee;
+                if (_gameState.money < 0) { _gameState.debt += -_gameState.money; _gameState.money = 0; }
+                WorldEvents.RaiseMoneySpent(fee);
+            }
+
+            Debug.Log("[교통사고] 병원비 -₩" + fee.ToString("N0")
+                + (fee == 0 ? (hospitalized ? "(오늘 청구 완료)" : "(후송 아님 — 무상)") : "")
                 + " · 체력 " + _gameState.health + "/" + GameStateSO.HEALTH_MAX
                 + (hospitalized ? " → 후송(강제 귀가)" : ""));
             // 정산 오케스트레이션은 View 층(AccidentView) 몫 — 매니저끼리 직접 부르지 않는다(§3).
-            WorldEvents.RaiseCarAccident(HOSPITAL_FEE, hospitalized);
+            WorldEvents.RaiseCarAccident(fee, hospitalized);
         }
 
         private readonly System.Collections.Generic.HashSet<string> _settledDistricts =

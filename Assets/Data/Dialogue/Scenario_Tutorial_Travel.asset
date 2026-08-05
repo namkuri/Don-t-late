@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a5e3ef5ec1efc4b4397e1c503ec59084, type: 3}
+  m_Name: Scenario_Tutorial_Travel
+  m_EditorClassIdentifier: Assembly-CSharp::DontLate.DialogueScenarioSO
+  lines:
+  - speaker: "\uC0AC\uC7A5\uB2D8"
+    text: "\uC790 \uC774\uC81C \uB098\uAC00\uBCFC\uAE4C. \uC624\uB978\uCABD \uB05D\uAE4C\uC9C0
+      \uAC78\uC5B4\uAC00\uBA74 \uBE4C\uB77C\uCD0C\uC774\uC57C."
+    portrait: {fileID: 0}
+  - speaker: "\uC0AC\uC7A5\uB2D8"
+    text: "\uAC00\uB294 \uAE38 \uC870\uC2EC\uD558\uACE0, \uB3C4\uCC29\uD558\uBA74
+      \uB2E4\uC2DC \uC54C\uB824\uC904\uAC8C."
+    portrait: {fileID: 0}

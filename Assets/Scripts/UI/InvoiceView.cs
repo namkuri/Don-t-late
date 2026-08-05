@@ -59,6 +59,7 @@ namespace DontLate
         {
             if (_root == null || !_root.activeSelf)
             {
+                // 다른 경로(폰 닫기 등)로 송장이 꺼졌을 때도 파인더를 남기지 않는다.
                 if (_aiming) EndAim();
                 return;
             }
@@ -93,8 +94,7 @@ namespace DontLate
                     _aimHoldTime += Time.unscaledDeltaTime;
                     if (_aimHoldTime >= AUTO_SHOOT_HOLD_SECONDS && PhoneView.Instance.TryShootBarcode(_order))
                     {
-                        EndAim();
-                        _root.SetActive(false);
+                        CloseInvoice();
                         _justOpened = false;
                         return;
                     }
@@ -107,17 +107,13 @@ namespace DontLate
             if (_aiming && click)
             {
                 if (PhoneView.Instance != null && PhoneView.Instance.TryShootBarcode(_order))
-                {
-                    EndAim();
-                    _root.SetActive(false); // 스캔 성립 = 송장 접기
-                }
+                    CloseInvoice(); // 스캔 성립 = 송장 접기
             }
             else if ((keyboard != null && keyboard.escapeKey.wasPressedThisFrame) || click)
             {
                 if (keyboard != null && keyboard.escapeKey.wasPressedThisFrame)
                     LastEscCloseFrame = Time.frameCount; // S-101 — 이 프레임 ESC는 송장 닫기가 소비
-                if (_aiming) EndAim();
-                _root.SetActive(false);
+                CloseInvoice();
             }
             _justOpened = false;
         }
@@ -129,6 +125,8 @@ namespace DontLate
         private DeliveryOrderSO _order;
         private Image _barcodeBackground; // 호버 하이라이트 대상 (바코드 밴드 배경)
 
+        // S-170 — Begin/End는 이제 **조준 상태만** 토글한다. 파인더를 여닫는 건 송장 열림/닫힘 몫
+        // (종전엔 여기서 Open/Close를 불러 파인더 수명이 호버에 묶여 있었다).
         private void BeginAim()
         {
             _aiming = true;
@@ -137,19 +135,26 @@ namespace DontLate
                 _barcodeBackground = _barcodeRoot.GetComponent<Image>();
             if (_barcodeBackground != null)
                 _barcodeBackground.color = new Color(0.78f, 1f, 0.96f, 1f); // 시안 틴트 — 조준 중
-            PhoneView.Instance?.OpenBarcodeAim(_order);
+            PhoneView.Instance?.SetBarcodeAiming(true);
         }
 
         private void EndAim()
         {
             _aiming = false;
             if (_barcodeBackground != null) _barcodeBackground.color = Color.white;
-            PhoneView.Instance?.CloseBarcodeAim();
+            PhoneView.Instance?.SetBarcodeAiming(false);
         }
 
-        private void OnSceneLeaving(GameScene _)
+        private void OnSceneLeaving(GameScene _) => CloseInvoice();
+
+        /// <summary>
+        /// S-170 — 송장을 접는 유일한 문. 파인더 수명이 송장에 묶였으므로 닫는 경로가 넷(자동 촬영·
+        /// 클릭 촬영·ESC/클릭 닫기·씬 이탈)으로 흩어져 있으면 어느 하나에서 파인더가 남는다.
+        /// </summary>
+        private void CloseInvoice()
         {
             if (_aiming) EndAim();
+            PhoneView.Instance?.CloseBarcodeAim();
             if (_root != null) _root.SetActive(false);
         }
 
@@ -190,6 +195,10 @@ namespace DontLate
             if (_barcodeNumberLabel != null)
                 _barcodeNumberLabel.text = "NO. " + order.orderId.ToString("D6");
             RebuildBarcode(order.orderId);
+
+            // S-170 — 파인더는 **송장이 열려 있는 내내** 떠 있다. 종전엔 바코드 호버에 붙어 있어
+            // 마우스를 정확히 올리기 전까진 폰이 비어 있었다(남규님: 무조건 표시).
+            PhoneView.Instance?.OpenBarcodeAim(order);
         }
 
         // orderId 유래 결정적 줄무늬 — 이미지 바 재사용(풀), 폰트 무관.

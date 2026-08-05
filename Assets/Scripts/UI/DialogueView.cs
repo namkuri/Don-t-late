@@ -135,14 +135,28 @@ namespace DontLate
             if (_typeRoutine != null) StopCoroutine(_typeRoutine);
             _typeRoutine = StartCoroutine(TypeRoutine());
 
-            // S-028 ①: 주인공이 아닌 화자(박말순)의 라인은 타이핑 내내 셰이크.
+            // S-028 ① → S-152 축소: 셰이크는 **Home의 박말순 윽박** 전용이다.
+            // 종전 조건은 `speaker != "주인공"`이라 사장님·할머니 등 **모든 NPC**가 흔들렸다.
+            // 튜토리얼처럼 차분한 장면까지 흔들려 "화면이 고장난 것"으로 읽혔다(남규님 지적).
+            // 셰이크는 위협의 신호이므로 그 장면에만 남긴다 — 아무 데나 쓰면 신호가 죽는다.
             StopShake();
-            if (_box != null && line.speaker != "주인공")
+            if (_box != null && IsAngryCallerLine(line.speaker))
                 _shakeRoutine = StartCoroutine(ShakeWhileTyping());
         }
 
         private Coroutine _shakeRoutine;
         private Vector2 _boxOrigin;
+
+        // S-152 — 셰이크 대상. 화자와 씬을 **둘 다** 만족해야 한다: 같은 인물이라도 다른 씬의
+        // 평범한 대사까지 흔들면 다시 신호가 흐려진다(남규님 지시 "Home 씬에서 윽박지를 때만").
+        private const string ANGRY_CALLER = "박말순";
+        private const string ANGRY_SCENE = "Home";
+
+        private static bool IsAngryCallerLine(string speaker)
+        {
+            if (string.IsNullOrEmpty(speaker) || !speaker.Contains(ANGRY_CALLER)) return false;
+            return UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == ANGRY_SCENE;
+        }
 
         private void StopShake()
         {
