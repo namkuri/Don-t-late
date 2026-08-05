@@ -248,6 +248,20 @@ namespace DontLate
         private void OnDeliverySettled(DeliveryData data)
         {
             if (_expectedOrder == null || data.OrderId != _expectedOrder.orderId) return;
+
+            // S-165 ② — **아직 손에 들고 있으면 패드를 남긴다.**
+            // 지각(DeliveryFailed)이 나면 여기서 패드를 통째로 꺼 버려, 짐을 들고 있는데도
+            // 목적지 표시가 사라졌다(남규님 지적). 지각은 점수 문제일 뿐 **여전히 배달해야 할
+            // 짐**이다 — 갈 곳을 감추면 플레이어는 길을 잃는다.
+            if (WorldDeliveryManager.Instance != null
+                && WorldDeliveryManager.Instance.IsCarried(_expectedOrder.orderId))
+            {
+                _isDestination = true;
+                ApplyHighlight();
+                ApplyRiseAlpha(_focused);
+                return;
+            }
+
             _isDestination = false;
             // 처리된 배송지는 패드째 완전 소멸 (S-009) — 서 있어도 다시 빛나지 않는다.
             gameObject.SetActive(false);

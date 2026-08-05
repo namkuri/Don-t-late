@@ -35,6 +35,16 @@ namespace DontLate
 
         private void OnCarAccident(int hospitalFee, bool hospitalized)
         {
+            // S-165 ③ — **후송일 때만 영수증을 띄운다**(남규님 난이도 조절).
+            // 종전엔 hospitalized와 무관하게 패널을 열어, 체력이 남아 있어도 정산창이 떠
+            // 한 번 치일 때마다 하루가 끊기는 느낌이었다. 체력이 남으면 붉은 깜빡임만 주고
+            // 넉백·짐 낙하(TrafficCar 몫)로 끝낸다 — 아프지만 계속 뛸 수 있다.
+            if (!hospitalized)
+            {
+                StartCoroutine(RedFlashRoutine());
+                return;
+            }
+
             if (_bodyLabel != null)
             {
                 var sb = new System.Text.StringBuilder();

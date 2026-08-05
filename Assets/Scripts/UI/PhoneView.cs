@@ -1871,10 +1871,12 @@ namespace DontLate
             if (_deliveryHover != null)
                 _deliveryHover.text = box != null && box.Order != null ? "송장 " + Invoice(box.Order.orderId) : "-";
 
+            // S-165 ① — **여기서는 등록하지 않는다.** 이 경로는 폰이 열린 채 상자를 좌클릭하면
+            // 조준·유지 없이 곧바로 등록해 버렸다(남규님 지적: "바코드 안찍고 클릭만해도 등록됨").
+            // 튜토리얼이 가르치는 절차(송장 → 바코드 조준 → 중앙 유지)와도 어긋난다.
+            // 등록은 **조준 완료 경로 하나**로만 일어난다 — 여기는 어느 상자를 겨눴는지 표시만 한다.
             if (box == null || box.Order == null || !mouse.leftButton.wasPressedThisFrame) return;
-            if (WorldDeliveryManager.Instance == null) return;
-            if (!WorldDeliveryManager.Instance.RegisterBarcode(box.Order))
-                ShowWarn("⚠ " + Invoice(box.Order.orderId) + " 이미 등록됨"); // S-164 ⑦ 축약
+            ShowWarn("상자를 클릭해 송장을 열고, 바코드를 카메라 중앙에 맞춰라");
         }
 
         private Coroutine _warnFade;
