@@ -39,6 +39,8 @@ namespace DontLate
             public string hint;
             [Tooltip("S-151 — 해냈을 때 사장님이 건네는 칭찬. 비면 건너뛴다.")]
             public DialogueScenarioSO praise;
+            [Tooltip("S-162 — 미션 카드 제목. 비면 힌트 첫 줄을 쓴다.")]
+            public string title;
         }
 
         [SerializeField] private GameStateSO _gameState;
@@ -145,6 +147,15 @@ namespace DontLate
             else
                 _waitingDialogue = false;
 
+            // S-162 — 미션 카드에 알린다. 힌트가 빈 단계(읽기 전용)는 카드를 띄우지 않는다 —
+            // 할 일이 없는데 "미션"이 뜨면 무엇을 기다리는지 헷갈린다.
+            if (!string.IsNullOrEmpty(step.hint))
+            {
+                string title = string.IsNullOrEmpty(step.title)
+                    ? $"튜토리얼 {_index + 1}/{_steps.Length}" : step.title;
+                WorldEvents.RaiseTutorialStepStarted(title, step.hint);
+            }
+
             Debug.Log($"[튜토리얼] {_index + 1}/{_steps.Length} — {step.gate}");
         }
 
@@ -224,6 +235,9 @@ namespace DontLate
 
         private void PlayPraise()
         {
+            // S-162 — 카드를 "완료"로 전환한다(칭찬 대사와 같은 타이밍).
+            if (!string.IsNullOrEmpty(_steps[_index].hint)) WorldEvents.RaiseTutorialStepCleared();
+
             // S-153 — 폰 단계는 확인이 끝나면 폰을 닫아준다(남규님 지시). 열어둔 채로 칭찬이
             // 나오면 폰이 대화창을 덮어 다음 안내가 안 보인다. 가방은 화면 일부만 가려 그대로 둔다.
             if (_steps[_index].gate == Gate.PhoneOpen && PhoneView.Instance != null)

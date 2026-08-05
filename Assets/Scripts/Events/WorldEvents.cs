@@ -129,6 +129,28 @@ namespace DontLate
         /// 판정하려면 뷰가 상태를 경계 밖으로 알려야 한다(폴링 금지·Find 금지 규약).
         /// 개폐는 사람 조작이라 저빈도 — §9.5 로그 대상이다.
         /// </summary>
+        /// <summary>
+        /// S-162 — 튜토리얼 단계 시작(제목·설명). 미션 카드 UI가 구독해 표시한다.
+        /// 판정은 진행부가 하고 뷰는 **표시만** 한다(UI에 게임 로직 금지 규약).
+        /// 단계 전환은 저빈도라 §9.5 로그 대상이다.
+        /// </summary>
+        public static event Action<string, string> TutorialStepStarted;
+
+        public static void RaiseTutorialStepStarted(string title, string detail)
+        {
+            Log("TutorialStepStarted " + title);
+            TutorialStepStarted?.Invoke(title, detail);
+        }
+
+        /// <summary>S-162 — 튜토리얼 단계 완료. 카드가 "완료"로 바뀌고 퇴장한다.</summary>
+        public static event Action TutorialStepCleared;
+
+        public static void RaiseTutorialStepCleared()
+        {
+            Log("TutorialStepCleared");
+            TutorialStepCleared?.Invoke();
+        }
+
         public static event Action BagOpened;
 
         public static void RaiseBagOpened()

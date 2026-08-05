@@ -73,6 +73,7 @@ namespace DontLate.EditorTools
             BuildInvoiceCanvas(gameState);                      // S-071 ②
             BuildKioskCanvas(gameState);                        // S-125 ② 노점 구매창
             BuildHUDCanvas(gameState, bagView, settingsView);
+            BuildTutorialCardCanvas();   // S-162 — 튜토리얼 미션 카드
             BuildDialogueCanvas();
             BuildMinigameCanvas();
             BuildPhoneCanvas();
@@ -200,6 +201,7 @@ namespace DontLate.EditorTools
             SetField(audio, "_sfxThrow", LoadSfx("sfx_throw"));
             SetField(audio, "_sfxCoin", LoadSfx("sfx_coin"));
             SetField(audio, "_sfxPhone", LoadSfx("sfx_phone"));
+            SetField(audio, "_sfxTutorialStep", LoadSfx("sfx_tutorial_step")); // AU-025 — 없으면 무음 폴백
             SetField(audio, "_sfxDeadlineWarn", LoadSfx("sfx_deadline_warn"));  // AU-009 잔여 배선 8종
             SetField(audio, "_sfxPhoneRing", LoadSfx("sfx_phone_ring"));
             SetField(audio, "_sfxRhythmHit", LoadSfx("sfx_rhythm_hit"));
@@ -420,6 +422,66 @@ namespace DontLate.EditorTools
         }
 
         // ── HUD 캔버스 (Core 상주) ───────────────────────────
+
+        /// <summary>
+        /// S-162 — 튜토리얼 미션 카드. 화면 **오른쪽, 세로 아래 1/3** 지점에서 슬라이드 인 한다.
+        /// HUD(sortOrder 10)보다 위, 페이드(100)보다 아래에 둔다 — HUD를 덮되 전환 연출은 못 덮게.
+        /// </summary>
+        private static void BuildTutorialCardCanvas()
+        {
+            TMP_FontAsset font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FONT_PATH);
+
+            GameObject canvasGo = new GameObject("TutorialCardCanvas");
+            Canvas canvas = canvasGo.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 30;
+            CanvasScaler scaler = canvasGo.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = 0.5f;
+
+            // 카드 본체 — 우측 정렬, 아래에서 1/3 높이(1080 × 1/3 = 360).
+            GameObject cardGo = new GameObject("MissionCard", typeof(RectTransform));
+            cardGo.transform.SetParent(canvasGo.transform, false);
+            Image background = cardGo.AddComponent<Image>();
+            background.color = new Color(0.09f, 0.11f, 0.16f, 0.94f);
+            RectTransform card = (RectTransform)cardGo.transform;
+            card.anchorMin = card.anchorMax = card.pivot = new Vector2(1f, 0f);
+            card.sizeDelta = new Vector2(420f, 118f);
+            card.anchoredPosition = new Vector2(-40f, 360f);
+
+            TMP_Text title = MakeCardLabel(cardGo.transform, "Title", font, 30f, FontStyles.Bold,
+                new Vector2(0f, -14f), new Vector2(-32f, 40f));
+            TMP_Text detail = MakeCardLabel(cardGo.transform, "Detail", font, 24f, FontStyles.Normal,
+                new Vector2(0f, -58f), new Vector2(-32f, 52f));
+            detail.color = new Color(0.78f, 0.83f, 0.92f, 1f);
+
+            var view = canvasGo.AddComponent<TutorialMissionCardView>();
+            SetField(view, "_card", card);
+            SetField(view, "_background", background);
+            SetField(view, "_titleLabel", title);
+            SetField(view, "_detailLabel", detail);
+        }
+
+        private static TMP_Text MakeCardLabel(Transform parent, string name, TMP_FontAsset font,
+            float size, FontStyles style, Vector2 offset, Vector2 rect)
+        {
+            GameObject go = new GameObject(name, typeof(RectTransform));
+            go.transform.SetParent(parent, false);
+            TextMeshProUGUI label = go.AddComponent<TextMeshProUGUI>();
+            if (font != null) label.font = font;
+            label.fontSize = size;
+            label.fontStyle = style;
+            label.alignment = TextAlignmentOptions.TopLeft;
+            label.textWrappingMode = TextWrappingModes.Normal;
+            label.raycastTarget = false;
+            RectTransform rt = label.rectTransform;
+            rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 1f);
+            rt.sizeDelta = rect;
+            rt.anchoredPosition = offset;
+            return label;
+        }
 
         private static void BuildHUDCanvas(GameStateSO gameState, BagView bagView, SettingsView settingsView)
         {
