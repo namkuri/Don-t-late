@@ -105,6 +105,7 @@ namespace DontLate
             UnplaceDelivery(order.orderId);
             _gameState.placedDeliveries.Add(new PlacedDelivery { orderId = order.orderId, beaconAddress = beaconAddress });
             Debug.Log("[배송] #" + order.orderId + " 을 '" + beaconAddress + "' 비콘에 내려놓음 — 판정은 정산 때.");
+            WorldEvents.RaiseDeliveryPlaced(beaconAddress); // S-178 — 튜토리얼이 듣는다
         }
 
         /// <summary>패드에서 상자가 이탈(재픽업·굴러 나감) — 배치 기록 철회.</summary>

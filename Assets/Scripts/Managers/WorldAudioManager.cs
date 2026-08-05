@@ -34,7 +34,7 @@ namespace DontLate
         [SerializeField] private AudioClip _sfxPhone;
         // AU-025 (S-162) — 튜토리얼 한 단계 성공. 9단계 내내 반복되므로 짧고 절제된 톤.
         [SerializeField] private AudioClip _sfxTutorialStep;
-        [Tooltip("AU-026 — 레벨업. 비면 무음 폴백(파일 도착 전에도 안전).")]
+        [Tooltip("AU-027 — 레벨업. 비면 무음 폴백(파일 도착 전에도 안전).")]
         [SerializeField] private AudioClip _sfxLevelUp;
 
         [Header("SFX — 잔여 배선 8종 (AU-009)")]
@@ -226,7 +226,7 @@ namespace DontLate
             WorldEvents.SnowCoverChanged += OnSnowCoverChanged; // AU-018 ③
             WorldEvents.WeatherChanged += OnWeatherChanged;     // AU-018 ①
             WorldEvents.EndingStarted += OnEndingStarted;       // S-107 ①
-            WorldEvents.PlayerLeveledUp += OnPlayerLeveledUp;   // AU-026
+            WorldEvents.PlayerLeveledUp += OnPlayerLeveledUp;   // AU-027
         }
 
         private void OnDisable()
@@ -247,7 +247,7 @@ namespace DontLate
             WorldEvents.SceneTransitionStarted -= OnSceneTransitionStarted;
             WorldEvents.SnowCoverChanged -= OnSnowCoverChanged; // AU-018 ③
             WorldEvents.WeatherChanged -= OnWeatherChanged;     // AU-018 ①
-            WorldEvents.PlayerLeveledUp -= OnPlayerLeveledUp;   // AU-026
+            WorldEvents.PlayerLeveledUp -= OnPlayerLeveledUp;   // AU-027
         }
 
         private void OnDestroy()
@@ -420,7 +420,7 @@ namespace DontLate
         /// <summary>AU-025 — 튜토리얼 단계 성공. 클립이 없으면 무음(소켓 — 파일 도착 전에도 안전).</summary>
         public void PlayTutorialStepSfx() => PlaySfx(_sfxTutorialStep);
 
-        // AU-026 — 레벨업. 이벤트 구독으로 자동 재생(호출부가 오디오를 몰라도 된다).
+        // AU-027 — 레벨업. 이벤트 구독으로 자동 재생(호출부가 오디오를 몰라도 된다).
         private void OnPlayerLeveledUp(int _) => PlaySfx(_sfxLevelUp);
 
         // AU-009 — 리듬 판정(노트당 1회)·드링크·발소리(고빈도라 이벤트 금지, PlayThrowSfx 선례).

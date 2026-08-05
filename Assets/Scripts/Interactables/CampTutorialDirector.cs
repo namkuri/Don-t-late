@@ -44,6 +44,7 @@ namespace DontLate
             DrinkUse,    // 에너지드링크 마시기 (S-155 — 시작 지급분을 써 보게 한다)
             ReadOnly,    // 설명만 — 대사가 끝나면 통과 (지역 설명)
             ReachDistrict, // S-164 ⑤ — 배송지역(빌라촌) 도착
+            PlaceDelivery, // S-178 — 비콘 패드에 짐 내려놓기 (코어루프의 결말)
             NpcTalk,     // NPC와 대화
             KioskOpen,   // 자판기·편의점·포장마차 구매창 열기
         }
@@ -98,6 +99,7 @@ namespace DontLate
             WorldEvents.PhoneOpened += OnPhoneOpened;
             WorldEvents.PackagePickedUp += OnPackagePickedUp;
             WorldEvents.BarcodeScanned += OnBarcodeScanned;
+            WorldEvents.DeliveryPlaced += OnDeliveryPlaced; // S-178
             WorldEvents.NpcMet += OnNpcMet;
             WorldEvents.KioskRequested += OnKioskRequested;
             WorldEvents.BagItemConsumed += OnBagItemConsumed;
@@ -110,6 +112,7 @@ namespace DontLate
             WorldEvents.PhoneOpened -= OnPhoneOpened;
             WorldEvents.PackagePickedUp -= OnPackagePickedUp;
             WorldEvents.BarcodeScanned -= OnBarcodeScanned;
+            WorldEvents.DeliveryPlaced -= OnDeliveryPlaced;
             WorldEvents.NpcMet -= OnNpcMet;
             WorldEvents.KioskRequested -= OnKioskRequested;
             WorldEvents.BagItemConsumed -= OnBagItemConsumed;
@@ -293,6 +296,7 @@ namespace DontLate
             Clear(Gate.BoxPickup);
         }
         private void OnBarcodeScanned(DeliveryData _) => Clear(Gate.Barcode);
+        private void OnDeliveryPlaced(string _) => Clear(Gate.PlaceDelivery); // S-178
         private void OnNpcMet(string _) => Clear(Gate.NpcTalk);
         private void OnKioskRequested(KioskOffer _) => Clear(Gate.KioskOpen);
         private void OnBagItemConsumed(BagItem _) => Clear(Gate.DrinkUse);
