@@ -553,7 +553,7 @@ namespace DontLate.EditorTools
                 boxIcon.sprite = boxArt;
                 boxIcon.preserveAspect = true;
                 boxIcon.raycastTarget = false;
-                AnchorCorner(boxIcon.rectTransform, new Vector2(0f, 1f), new Vector2(10f, -8f), new Vector2(48f, 48f));
+                AnchorCorner(boxIcon.rectTransform, new Vector2(0f, 1f), new Vector2(10f, -4f), new Vector2(48f, 48f));
                 Vector3 boxIconPosition = boxIcon.rectTransform.localPosition;
                 boxIconPosition.z = 2f;
                 boxIcon.rectTransform.localPosition = boxIconPosition;

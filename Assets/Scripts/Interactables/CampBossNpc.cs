@@ -136,15 +136,16 @@ namespace DontLate
             }
             _phase = Phase.Returning;
             SetAnimation("Walk");
-            FaceFront();
+            FaceTowards(_homePosition);
         }
 
         private void ReturnHome()
         {
-            FaceFront();
+            FaceTowards(_homePosition);
             transform.position = Vector3.MoveTowards(transform.position, _homePosition, APPROACH_SPEED * Time.deltaTime);
             if (Vector3.Distance(transform.position, _homePosition) < 0.05f)
             {
+                FaceFront();
                 _phase = Phase.Idle;
                 SetAnimation("Idle");
             }

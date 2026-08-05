@@ -94,7 +94,7 @@ namespace DontLate
             _interactionLabel.fontSize = 17f;
             _interactionLabel.fontStyle = FontStyles.Bold;
             _interactionLabel.color = new Color(0.56f, 0.89f, 0.84f, 1f);
-            _interactionLabel.alignment = TextAlignmentOptions.Center;
+            _interactionLabel.alignment = TextAlignmentOptions.Right;
             _interactionLabel.textWrappingMode = TextWrappingModes.NoWrap;
             _interactionLabel.raycastTarget = false;
             _interactionLabel.rectTransform.sizeDelta = new Vector2(260f, 28f);
@@ -128,8 +128,8 @@ namespace DontLate
             Vector3 screen = camera.WorldToScreenPoint(transform.position + Vector3.up * _headHeight);
             if (screen.z <= 0f) return;
             if (_bubbleRect != null) _bubbleRect.position = new Vector3(screen.x, screen.y, 0f);
-            _nameLabel.rectTransform.position = new Vector3(screen.x, screen.y + 10f, 0f);
-            _affinityLabel.rectTransform.position = new Vector3(screen.x, screen.y - 14f, 0f);
+            _nameLabel.rectTransform.position = new Vector3(screen.x, screen.y + 12f, 0f);
+            _affinityLabel.rectTransform.position = new Vector3(screen.x, screen.y - 12f, 0f);
             _interactionLabel.rectTransform.position = new Vector3(screen.x, screen.y - 58f, 0f);
         }
 
