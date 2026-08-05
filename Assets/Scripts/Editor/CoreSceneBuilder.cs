@@ -449,7 +449,9 @@ namespace DontLate.EditorTools
             RectTransform card = (RectTransform)cardGo.transform;
             card.anchorMin = card.anchorMax = card.pivot = new Vector2(1f, 0f);
             card.sizeDelta = new Vector2(420f, 118f);
-            card.anchoredPosition = new Vector2(-40f, 360f);
+            // S-163 — x=0: 피벗이 우하단이라 **우측 모서리가 화면 우측에 밀착**한다(종전 −40은 떠 있었다).
+            // y=180: 종전 360에서 아래 여백을 절반으로 내렸다(남규님 지시).
+            card.anchoredPosition = new Vector2(0f, 180f);
 
             TMP_Text title = MakeCardLabel(cardGo.transform, "Title", font, 30f, FontStyles.Bold,
                 new Vector2(0f, -14f), new Vector2(-32f, 40f));
@@ -476,9 +478,15 @@ namespace DontLate.EditorTools
             label.alignment = TextAlignmentOptions.TopLeft;
             label.textWrappingMode = TextWrappingModes.Normal;
             label.raycastTarget = false;
+            // S-163 — **가로 스트레치**로 잡는다. 종전엔 앵커를 고정(min==max)해 두고
+            // `sizeDelta.x`에 −32를 넣었는데, 고정 앵커에서 sizeDelta는 **절대 크기**라
+            // 폭이 음수가 됐다 → 한 글자마다 줄바꿈 → 세로 글씨(남규님 캡처).
+            // 스트레치일 때만 sizeDelta.x가 "좌우 여백"으로 동작한다.
             RectTransform rt = label.rectTransform;
-            rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 1f);
-            rt.sizeDelta = rect;
+            rt.anchorMin = new Vector2(0f, 1f);
+            rt.anchorMax = new Vector2(1f, 1f);
+            rt.pivot = new Vector2(0.5f, 1f);
+            rt.sizeDelta = rect;          // x = 좌우 여백(음수), y = 높이
             rt.anchoredPosition = offset;
             return label;
         }
