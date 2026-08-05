@@ -452,3 +452,12 @@
 |---|---|---|
 | blue_house_Image_0.png | 건물 텍스처 (blue_house) | `_intake/art/Trellis2/Buildings/T/` |
 | old_blue_roof_Image_0.png | 건물 텍스처 (old_blue_roof) | `_intake/art/Trellis2/Buildings/T/` |
+
+### S-185 스왑 반영 (2026-08-06)
+
+| 파일 | dest | 출처 | 라이선스 | 반입일 |
+|---|---|---|---|---|
+| chr_courier_base.jpg | `Assets/Art/Characters/Textures/` (원본 `_intake/art/Tripo/Characters/Texture/late_man.jpg` 스왑) | Tripo 생성(민지) | 위 「Tripo INTAKE」 조건과 동일 | 2026-08-06 |
+
+> 플레이어 머티리얼(`tripo_material_327854b4-…mat`)의 `_BaseMap`이 비어 있어 흰색으로
+> 렌더되던 것을 이 텍스처로 채웠다(S-185).
