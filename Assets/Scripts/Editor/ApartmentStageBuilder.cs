@@ -97,8 +97,11 @@ namespace DontLate.EditorTools
                 new Vector3(-4f, 0f, 1.8f), gameState, 1200);
 
             // S-054b 엣지 워크 — 마당 왼쪽 끝, z로 분리(앞=이전 먹자골목, 뒤=다음 언덕주택가).
+            // S-174 ① — 아파트 마당은 왼쪽만 트여 있어 두 게이트가 같은 x에 서고, 이 카메라 각도에선
+            // 화살표 둘이 겹쳐 "화살표가 두 개"로 보인다(남규님 지적). 게이트는 둘 다 살린다 —
+            // Next를 지우면 아파트→언덕주택가 도보가 끊긴다. **표식만 하나**로 줄인다.
             EdgeGateBuildKit.BuildGate("EdgeGate_Prev", new Vector3(-19.5f, 0f, -1.7f), DontLate.DistrictEdgeGate.Direction.Prev, gameState, 2.6f);
-            EdgeGateBuildKit.BuildGate("EdgeGate_Next", new Vector3(-19.5f, 0f, 1.7f), DontLate.DistrictEdgeGate.Direction.Next, gameState, 2.6f);
+            EdgeGateBuildKit.BuildGate("EdgeGate_Next", new Vector3(-19.5f, 0f, 1.7f), DontLate.DistrictEdgeGate.Direction.Next, gameState, 2.6f, showArrow: false);
 
             GreyboxStageBuilder.BuildPlayer(gameState, tuning);
             GameObject player = GameObject.Find("__gb_Player");

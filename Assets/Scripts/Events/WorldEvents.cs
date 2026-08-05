@@ -316,6 +316,24 @@ namespace DontLate
             DistrictUnlocked?.Invoke(district);
         }
 
+        /// <summary>S-174 ④ — 숙련도 변동(정산 건별). 주행 경험치가 꺼져 있어 저빈도다.</summary>
+        public static event Action<float, int> MasteryChanged;
+
+        public static void RaiseMasteryChanged(float mastery, int level)
+        {
+            Log("MasteryChanged → " + mastery + " (Lv." + level + ")");
+            MasteryChanged?.Invoke(mastery, level);
+        }
+
+        /// <summary>S-174 ③ — 레벨업. 오디오·연출이 듣는다.</summary>
+        public static event Action<int> PlayerLeveledUp;
+
+        public static void RaisePlayerLeveledUp(int level)
+        {
+            Log("PlayerLeveledUp → Lv." + level);
+            PlayerLeveledUp?.Invoke(level);
+        }
+
         /// <summary>회사 트럭 수령 (S-054) — 전 구역 개척 완료 보상. 세션당 1회.</summary>
         public static event Action TruckAwarded;
 

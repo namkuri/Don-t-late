@@ -168,13 +168,24 @@ namespace DontLate
         private IEnumerator TypeRoutine()
         {
             _isTyping = true;
-            if (_bodyLabel != null) _bodyLabel.text = string.Empty;
-
-            for (int i = 0; i < _fullLine.Length; i++)
+            // S-175 — 타자기를 **문자열 자르기에서 `maxVisibleCharacters`로** 바꿨다.
+            // Substring은 `<b>` 같은 리치텍스트 태그를 한 글자씩 그대로 드러낸다 — 태그가
+            // 완성되기 전까진 TMP가 마크업으로 인식하지 못해 "<", "<b", "<b>"가 화면에 찍힌다
+            // (남규님 관찰 "사장이 이야기할 때 <b> 같은 게 잠깐 보임").
+            // maxVisibleCharacters는 **태그를 뺀 글자 수**를 세므로 태그가 새지 않는다.
+            if (_bodyLabel != null)
             {
-                char c = _fullLine[i];
-                if (_bodyLabel != null) _bodyLabel.text = _fullLine.Substring(0, i + 1);
+                _bodyLabel.text = _fullLine;
+                _bodyLabel.maxVisibleCharacters = 0;
+                _bodyLabel.ForceMeshUpdate(); // characterCount는 메시를 갱신해야 확정된다
+            }
 
+            int total = _bodyLabel != null ? _bodyLabel.textInfo.characterCount : 0;
+            for (int i = 0; i < total; i++)
+            {
+                if (_bodyLabel != null) _bodyLabel.maxVisibleCharacters = i + 1;
+
+                char c = _bodyLabel.textInfo.characterInfo[i].character;
                 if (c != ' ' && c != '\n' && (i % _blipEveryNChars) == 0)
                     PlayBlip();
 
@@ -186,7 +197,11 @@ namespace DontLate
 
         private void FinishTyping()
         {
-            if (_bodyLabel != null) _bodyLabel.text = _fullLine;
+            if (_bodyLabel != null)
+            {
+                _bodyLabel.text = _fullLine;
+                _bodyLabel.maxVisibleCharacters = int.MaxValue; // 전량 노출로 복귀
+            }
             _isTyping = false;
             _typeRoutine = null;
             if (_arrow != null) _arrow.SetActive(true);

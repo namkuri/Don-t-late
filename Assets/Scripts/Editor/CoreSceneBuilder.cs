@@ -28,6 +28,8 @@ namespace DontLate.EditorTools
         private const string BGM_FOLDER = "Assets/Audio/BGM";
         private const string BGM_LIBRARY_PATH = DATA_ROOT + "/BgmLibrary.asset";
         private static readonly Color AMBER = new Color(1f, 0.624f, 0.271f, 1f); // #ff9f45
+        // 경험치 전용 노랑 (S-174 후속) — 앰버(주황기)와 구분되게 더 밝고 노랗다.
+        private static readonly Color MASTERY_YELLOW = new Color(1f, 0.85f, 0.2f, 1f); // #ffd933
         private static readonly Color CYAN = new Color(0.208f, 0.878f, 0.784f, 1f); // #35e0c8
         private static readonly Color NAVY = new Color(0.039f, 0.051f, 0.086f, 0.9f); // #0a0d16 반투명
 
@@ -730,27 +732,28 @@ namespace DontLate.EditorTools
             }
             SetField(hud, "_healthPips", healthPips);
 
-            // S-166 ⑤ — 경험치도 HP처럼 **낱개 5칸**.
-            // S-168 — 칸 치수를 HP와 동일하게(22×22 · 간격 28). 종전엔 스태미나 바 폭(360)을 다섯으로
-            // 쪼갠 69×12라 같은 "5칸"인데도 HP와 다른 물건처럼 보였다. 배경 바도 칸에 맞춰 줄인다.
+            // S-174 후속 — 경험치는 **바 형태·노란색**(남규님 지시). S-168에서 HP 칸과 같은
+            // 22×22 낱개로 맞췄다가, 스태미나와 나란한 게이지 줄로 되돌린다.
+            // 5칸 구분은 유지한다 — 칸 단위 순차 펀치(S-174 ④)가 여기에 걸려 있고,
+            // "몇 건 더 하면 오르는지"를 세는 감각도 칸에서 나온다. 낱개가 아니라 **이어진 바**를
+            // 다섯으로 나눈 모양이다: 스태미나 바(360×16)와 같은 자리·같은 두께.
             const int MASTERY_CELLS = 5;
-            float masteryRowWidth = PIP_STRIDE * (MASTERY_CELLS - 1) + PIP_SIZE;
-            // 바는 **투명한 판정면**이다. 색을 채우면 칸 사이 틈까지 메워져 꺼진 두 칸이 한 덩어리로
-            // 읽힌다 — HP엔 배경 바가 없어 틈이 트여 있다(같은 크기여도 다른 물건으로 보이는 원인).
-            // 호버 판정은 `RectangleContainsScreenPoint` 기하 검사라 알파 0이어도 그대로 걸린다.
-            Image masteryBg = CreateImage(charCard.transform, "MasteryBg", new Color(0f, 0f, 0f, 0f));
+            const float MASTERY_BAR_W = 360f;
+            const float MASTERY_BAR_H = 16f;
+            const float MASTERY_GAP = 3f; // 칸 경계선 — 0이면 한 덩어리로 읽힌다
+            Image masteryBg = CreateImage(charCard.transform, "MasteryBg", new Color(0.06f, 0.07f, 0.10f, 1f));
             AnchorCorner(masteryBg.rectTransform, new Vector2(0f, 0f),
-                // 윗변(y 60)은 종전과 같게 두고 아래로만 키운다 — 레벨 라벨과 안 부딪힌다.
-                new Vector2(20f, 38f), new Vector2(masteryRowWidth, PIP_SIZE));
+                new Vector2(20f, 44f), new Vector2(MASTERY_BAR_W, MASTERY_BAR_H));
             SetField(hud, "_masteryBar", masteryBg); // 호버 툴팁 판정 대상
 
+            float cellWidth = (MASTERY_BAR_W - MASTERY_GAP * (MASTERY_CELLS - 1)) / MASTERY_CELLS;
             var masteryPips = new Image[MASTERY_CELLS];
             for (int i = 0; i < MASTERY_CELLS; i++)
             {
-                masteryPips[i] = CreateImage(masteryBg.transform, "MasteryPip" + i, AMBER);
+                masteryPips[i] = CreateImage(masteryBg.transform, "MasteryPip" + i, MASTERY_YELLOW);
                 // 피벗=앵커=(0,0.5) → anchoredPosition.x는 칸의 **왼쪽 모서리** 위치다.
                 AnchorCorner(masteryPips[i].rectTransform, new Vector2(0f, 0.5f),
-                    new Vector2(i * PIP_STRIDE, 0f), new Vector2(PIP_SIZE, PIP_SIZE));
+                    new Vector2(i * (cellWidth + MASTERY_GAP), 0f), new Vector2(cellWidth, MASTERY_BAR_H));
             }
             SetField(hud, "_masteryPips", masteryPips);
 
