@@ -59,6 +59,8 @@ namespace DontLate
             public DialogueScenarioSO praise;
             [Tooltip("S-162 — 미션 카드 제목. 비면 힌트 첫 줄을 쓴다.")]
             public string title;
+            [Tooltip("S-164 ② — 이 단계에서 맥동시킬 대상 id(TutorialHighlightTarget과 맞춘다). 비면 없음.")]
+            public string highlightId;
         }
 
         [SerializeField] private GameStateSO _gameState;
@@ -259,7 +261,7 @@ namespace DontLate
             if (string.IsNullOrEmpty(step.hint)) return;
             string title = string.IsNullOrEmpty(step.title)
                 ? $"튜토리얼 {_index + 1}/{_steps.Length}" : step.title;
-            WorldEvents.RaiseTutorialStepStarted(title, step.hint);
+            WorldEvents.RaiseTutorialStepStarted(title, step.hint, step.highlightId);
         }
 
         private void PlayPraise()

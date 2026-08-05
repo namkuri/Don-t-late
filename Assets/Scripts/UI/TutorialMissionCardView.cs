@@ -57,7 +57,7 @@ namespace DontLate
             WorldEvents.TutorialStepCleared -= OnStepCleared;
         }
 
-        private void OnStepStarted(string title, string detail)
+        private void OnStepStarted(string title, string detail, string _)
         {
             if (_card == null) return;
             _title = title;

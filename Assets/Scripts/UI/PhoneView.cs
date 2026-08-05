@@ -238,6 +238,22 @@ namespace DontLate
             if (existing >= 0) _scanned[existing] = data;
             else _scanned.Add(data);
             _status.Remove(data.OrderId); // 재스캔 = 재도전 — 사고 실패 표기를 진행으로 되돌린다
+            // S-164 ④ — 방금 찍은 항목을 잠깐 초록으로 물들인다(남규님 지시).
+            // 목록이 길어지면 "내가 방금 찍은 게 어느 줄인지" 못 찾는다 — 시선을 그 줄로 데려간다.
+            _justScannedId = data.OrderId;
+            if (_scanFlash != null) StopCoroutine(_scanFlash);
+            _scanFlash = StartCoroutine(ClearScanFlash());
+            RefreshCurrent();
+        }
+
+        private int _justScannedId = -1;
+        private Coroutine _scanFlash;
+
+        private IEnumerator ClearScanFlash()
+        {
+            yield return new WaitForSecondsRealtime(1.4f); // 정산창 timeScale=0에서도 흐른다
+            _justScannedId = -1;
+            _scanFlash = null;
             RefreshCurrent();
         }
         private void OnDeliveryCompleted(DeliveryData data) { _status[data.OrderId] = 1; RefreshCurrent(); }
@@ -1445,6 +1461,12 @@ namespace DontLate
                     ? d.Address.Substring(0, 6) + "…" : d.Address;
                 string row = (i + 1) + " " + Invoice(d.OrderId) + "  " + rank + "  " + shortAddress;
                 int status = _status.TryGetValue(d.OrderId, out int s) ? s : 0;
+                // S-164 ④ — 방금 스캔한 줄은 다른 상태 표기보다 **먼저** 초록으로 잡는다.
+                if (d.OrderId == _justScannedId)
+                {
+                    sb.Append("<color=#3ddc84><b>").Append(row).Append("  스캔완료</b></color>\n");
+                    continue;
+                }
                 if (status == 1) sb.Append("<color=#8a93a8>").Append(row).Append(" ✓</color>\n");
                 // S-075 ⑤ — 파손 상태: HP 소진으로 깨진 건은 배송앱에도 '파손'으로.
                 else if (_gameState.destroyedOrderIds.Contains(d.OrderId))

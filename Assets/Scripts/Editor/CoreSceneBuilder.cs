@@ -441,6 +441,28 @@ namespace DontLate.EditorTools
             return lines.Count > 0 ? lines.ToArray() : new[] { ("사장님", body) };
         }
 
+        /// <summary>S-164 ② — 튜토리얼 하이라이트 대상 등록(대상이 자기 id를 듣고 반응).</summary>
+        private static void AttachHighlightTarget(GameObject go, string id)
+        {
+            if (go == null) return;
+            var target = go.GetComponent<TutorialHighlightTarget>() ?? go.AddComponent<TutorialHighlightTarget>();
+            SetField(target, "_id", id);
+        }
+
+        /// <summary>
+        /// S-164 ② — 게이트별 하이라이트 대상 id. 대상이 없는 단계(이동·설명·도착)는 빈 문자열이다 —
+        /// 화면 어디를 봐야 할지가 없는 단계까지 뭔가를 흔들면 오히려 헷갈린다.
+        /// </summary>
+        private static string HighlightIdFor(CampTutorialDirector.Gate gate) => gate switch
+        {
+            CampTutorialDirector.Gate.BagOpen => "bag",
+            CampTutorialDirector.Gate.DrinkUse => "bag",   // 드링크도 가방에서 꺼낸다
+            CampTutorialDirector.Gate.BoxPickup => "box",
+            CampTutorialDirector.Gate.Barcode => "box",
+            CampTutorialDirector.Gate.KioskOpen => "vending",
+            _ => string.Empty,
+        };
+
         /// <summary>
         /// S-164 — 튜토리얼 진행부(Core 상주). 단계 저술이 여기 있는 이유: 진행부가
         /// **씬을 넘나들어야** 하기 때문이다(배송지역 이동·NPC 대화 미션). Camp 씬
@@ -546,6 +568,9 @@ namespace DontLate.EditorTools
                 element.FindPropertyRelative("hint").stringValue = steps[i].hint;
                 element.FindPropertyRelative("praise").objectReferenceValue = praise;
                 element.FindPropertyRelative("title").stringValue = steps[i].card; // S-162 미션 카드 제목
+                // S-164 ② — 하이라이트 대상은 게이트에서 파생한다. 단계 표에 열을 하나 더 만들면
+                // 대상이 없는 단계까지 빈 칸을 적어야 해 표가 길어진다 — 규칙 하나로 정한다.
+                element.FindPropertyRelative("highlightId").stringValue = HighlightIdFor(steps[i].gate);
             }
             dirSo.ApplyModifiedPropertiesWithoutUndo();
 
@@ -739,8 +764,10 @@ namespace DontLate.EditorTools
             SetField(hud, "_deliveryCountLabel", countLabel);
 
             // 가방·설정 버튼 (시계 왼쪽).
-            BuildTopBarButton(content.transform, "BagButton", "가방", font, new Vector2(-700f, -20f),
+            GameObject bagButton = BuildTopBarButton(content.transform, "BagButton", "가방", font, new Vector2(-700f, -20f),
                 bagView != null ? new UnityEngine.Events.UnityAction(bagView.Toggle) : null);
+            // S-164 ② — 튜토리얼이 "가방" 단계일 때 이 버튼이 맥동한다(대상이 스스로 반응 — Find 불요).
+            AttachHighlightTarget(bagButton, "bag");
             BuildTopBarButton(content.transform, "SettingsButton", "설정", font, new Vector2(-560f, -20f),
                 settingsView != null ? new UnityEngine.Events.UnityAction(settingsView.Toggle) : null);
 
@@ -777,7 +804,7 @@ namespace DontLate.EditorTools
 
         // ── 상단 바 버튼 (S-063) ─────────────────────────────
 
-        private static void BuildTopBarButton(Transform parent, string name, string label,
+        private static GameObject BuildTopBarButton(Transform parent, string name, string label,
             TMP_FontAsset font, Vector2 anchoredPos, UnityEngine.Events.UnityAction onClick)
         {
             GameObject go = new GameObject(name, typeof(RectTransform));
@@ -794,6 +821,7 @@ namespace DontLate.EditorTools
             TMP_Text text = CreateText(go.transform, "Label", label, font, 28f, Color.white,
                 TextAlignmentOptions.Center);
             StretchFull(text.rectTransform);
+            return go; // S-164 ② — 호출부가 하이라이트 대상으로 등록할 수 있게 돌려준다
         }
 
         // ── 가방 캔버스 (S-064) ──────────────────────────────

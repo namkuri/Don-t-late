@@ -195,6 +195,12 @@ namespace DontLate.EditorTools
                     new Vector3(1.31f + (i % 2) * 0.9f, (i / 2) * 0.705f, -0.21f), material, // S-160 남규님 실배치
                     physical: true); // 실물 스택 (S-016 ⑥) — 아래 상자를 빼면 위가 떨어진다
 
+                // S-164 ② — 튜토리얼 "상자 집기"·"바코드" 단계에서 맥동한다.
+                var boxTarget = boxGo.AddComponent<TutorialHighlightTarget>();
+                var boxSo = new SerializedObject(boxTarget);
+                boxSo.FindProperty("_id").stringValue = "box";
+                boxSo.ApplyModifiedPropertiesWithoutUndo();
+
                 BoxDurability durability = boxGo.AddComponent<BoxDurability>(); // 취급주의 (S-019 ①)
                 GreyboxStageBuilder.SetReference(durability, "_tuning", tuning);
 
@@ -327,6 +333,11 @@ namespace DontLate.EditorTools
             if (go != null)
             {
                 go.name = "__gb_Vending";
+                // S-164 ② — 튜토리얼 "자판기" 단계에서 맥동한다.
+                var vendTarget = go.AddComponent<TutorialHighlightTarget>();
+                var vendSo = new SerializedObject(vendTarget);
+                vendSo.FindProperty("_id").stringValue = "vending";
+                vendSo.ApplyModifiedPropertiesWithoutUndo();
                 Renderer[] renderers = go.GetComponentsInChildren<Renderer>();
                 Bounds bounds = renderers[0].bounds;
                 foreach (Renderer r in renderers) bounds.Encapsulate(r.bounds);

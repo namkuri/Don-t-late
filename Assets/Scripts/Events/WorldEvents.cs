@@ -134,12 +134,14 @@ namespace DontLate
         /// 판정은 진행부가 하고 뷰는 **표시만** 한다(UI에 게임 로직 금지 규약).
         /// 단계 전환은 저빈도라 §9.5 로그 대상이다.
         /// </summary>
-        public static event Action<string, string> TutorialStepStarted;
+        // S-164 ② — 세 번째 인자는 **하이라이트 대상 id**다. 대상이 스스로 등록해 자기 id를
+        // 들으면 반응한다(`TutorialHighlightTarget`) — 진행부가 대상을 찾아다니지 않는다(Find 금지).
+        public static event Action<string, string, string> TutorialStepStarted;
 
-        public static void RaiseTutorialStepStarted(string title, string detail)
+        public static void RaiseTutorialStepStarted(string title, string detail, string targetId)
         {
-            Log("TutorialStepStarted " + title);
-            TutorialStepStarted?.Invoke(title, detail);
+            Log("TutorialStepStarted " + title + (string.IsNullOrEmpty(targetId) ? "" : " → " + targetId));
+            TutorialStepStarted?.Invoke(title, detail, targetId);
         }
 
         /// <summary>S-162 — 튜토리얼 단계 완료. 카드가 "완료"로 바뀌고 퇴장한다.</summary>
