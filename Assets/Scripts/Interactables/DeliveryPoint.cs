@@ -131,6 +131,7 @@ namespace DontLate
             if (_expectedOrder == null || data.OrderId != _expectedOrder.orderId) return;
             _isDestination = true;
             ApplyHighlight();
+            ApplyRiseAlpha(_focused); // S-161 — 목적지 전환 시 빛기둥 색도 함께 갱신
         }
 
         // S-133 ① — 상자를 내려놓으면 목적지 표시를 끈다. 종전엔 켜지기만 하고 꺼지지 않아
@@ -140,6 +141,7 @@ namespace DontLate
             if (_expectedOrder == null || data.OrderId != _expectedOrder.orderId) return;
             _isDestination = false;
             ApplyHighlight();
+            ApplyRiseAlpha(_focused); // S-161 — 목적지 해제 시 빛기둥 색 복귀
         }
 
         // ── S-073 ⑤⑥ — 패드 위 풀해상 오버레이: 목적지 건물이름 상시 + "배송성공" 플로팅 ──
@@ -247,19 +249,27 @@ namespace DontLate
             if (material != null) _renderer.sharedMaterial = material;
         }
 
-        /// <summary>빛기둥 알파를 MaterialPropertyBlock으로 전환한다 — 공유 머티리얼을 오염시키지 않는다.</summary>
+        // S-161 — 들고 있는 상자의 목적지 빛기둥 색(파랑). S-160에서 **패드** 머티리얼만 바꿨는데
+        // 정작 눈에 띄는 건 빛기둥이고 그건 `BeaconRise.shader`의 `_Color`(기본 초록)로 그려져
+        // 여전히 초록이었다(남규님 지적). 알파와 같은 방식으로 MPB에 실어 보낸다 —
+        // 공유 머티리얼을 건드리지 않으므로 다른 비콘은 초록 그대로다.
+        private static readonly Color RISE_DESTINATION = new Color(0.227f, 0.627f, 1f, 1f);
+        private static readonly Color RISE_NORMAL = new Color(0.247f, 0.878f, 0.353f, 1f);
+
+        /// <summary>빛기둥 알파·색을 MaterialPropertyBlock으로 전환한다 — 공유 머티리얼을 오염시키지 않는다.</summary>
         private void ApplyRiseAlpha(bool focused)
         {
             if (_riseEffect == null) return;
             float alpha = focused ? _focusedAlpha : _idleAlpha;
+            Color color = _isDestination ? RISE_DESTINATION : RISE_NORMAL;
             _riseMpb ??= new MaterialPropertyBlock();
             foreach (Renderer r in _riseEffect.GetComponentsInChildren<Renderer>())
             {
                 r.GetPropertyBlock(_riseMpb);
                 _riseMpb.SetFloat("_Alpha", alpha);
+                _riseMpb.SetColor("_Color", color);
                 r.SetPropertyBlock(_riseMpb);
             }
-            Debug.Log($"[Beacon] rise _Alpha = {alpha} (focused={focused})");
         }
     }
 }

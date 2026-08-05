@@ -282,7 +282,7 @@ namespace DontLate.EditorTools
             endRect.anchoredPosition = new Vector2(-40f, -220f);
             Button endButton = endDay.AddComponent<Button>();
             endButton.targetGraphic = endImg;
-            TMP_Text endLabel = CreateText(endDay.transform, "Label", "하루 끝 — 집으로", font, 30f, NAVY,
+            TMP_Text endLabel = CreateText(endDay.transform, "Label", "정산하기(집)", font, 30f, NAVY, // S-161 남규님 문구
                 TextAlignmentOptions.Center, FontStyles.Bold);
             StretchFull(endLabel.rectTransform);
 

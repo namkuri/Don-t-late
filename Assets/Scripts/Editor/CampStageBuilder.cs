@@ -83,6 +83,23 @@ namespace DontLate.EditorTools
                     + "개를 E로 들어 트럭 짐칸 뒤에서 E로 싣는다 (S-009).");
         }
 
+        /// <summary>
+        /// S-161 — 대사 한 덩어리를 줄바꿈 기준으로 여러 대화 라인으로 쪼갠다.
+        /// 대화창은 고정 높이라 긴 문단을 한 라인에 담으면 밖으로 넘친다.
+        /// </summary>
+        private static (string speaker, string text)[] SplitLines(string body)
+        {
+            if (string.IsNullOrEmpty(body)) return new[] { ("사장님", string.Empty) };
+            string[] chunks = body.Split('\n');
+            var lines = new System.Collections.Generic.List<(string, string)>();
+            foreach (string chunk in chunks)
+            {
+                string trimmed = chunk.Trim();
+                if (trimmed.Length > 0) lines.Add(("사장님", trimmed));
+            }
+            return lines.Count > 0 ? lines.ToArray() : new[] { ("사장님", body) };
+        }
+
         // 트럭 = 소품 + 적재존(S-009). 짐칸 뒤에서 박스를 든 채 E → LoadingZone이 짐칸에 쌓는다.
         private static void BuildTruck(Material material, Material boxMaterial, Material highlight, GameStateSO gameState)
         {
@@ -313,10 +330,13 @@ namespace DontLate.EditorTools
             stepList.arraySize = steps.Length;
             for (int i = 0; i < steps.Length; i++)
             {
+                // S-161 — 한 덩어리로 넣으면 대화창 밖으로 흘러넘친다(남규님 캡처).
+                // 위 대사에 이미 의미 단위로 줄바꿈을 넣어뒀으므로 **그 경계로 라인을 쪼갠다** —
+                // 각 조각이 한 번의 클릭으로 넘어가고 창 안에 들어온다.
                 DialogueScenarioSO line = NpcBuildKit.GetOrCreateScenario(
-                    "Scenario_Tutorial_" + steps[i].title, ("사장님", steps[i].line));
+                    "Scenario_Tutorial_" + steps[i].title, SplitLines(steps[i].line));
                 DialogueScenarioSO praise = NpcBuildKit.GetOrCreateScenario(
-                    "Scenario_Tutorial_" + steps[i].title + "_Praise", ("사장님", steps[i].praise));
+                    "Scenario_Tutorial_" + steps[i].title + "_Praise", SplitLines(steps[i].praise));
                 SerializedProperty element = stepList.GetArrayElementAtIndex(i);
                 element.FindPropertyRelative("scenario").objectReferenceValue = line;
                 element.FindPropertyRelative("gate").enumValueIndex = (int)steps[i].gate;

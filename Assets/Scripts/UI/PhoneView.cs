@@ -1410,6 +1410,19 @@ namespace DontLate
                     break;
                 }
 
+            // S-161 — 스캔한 건이 없으면 **여기서 스캔 방법을 알려준다**(남규님 지시).
+            // 빈 목록만 띄우면 "아직 아무것도 없다"만 알 뿐 무엇을 해야 하는지 모른다.
+            if (_scanned.Count == 0)
+            {
+                sb.Append("<color=#8a93a8>아직 스캔한 짐이 없다.</color>\n\n")
+                  .Append("<color=#ff9f45><b>스캔하는 법</b></color>\n")
+                  .Append("<size=88%>1. 상자 가까이 가서 <b>상자를 클릭</b>\n")
+                  .Append("2. 뜬 <b>송장의 바코드에 마우스</b>를 갖다 댄다\n")
+                  .Append("3. 폰이 올라오면 <b>카메라 한가운데</b>에 맞춰 잠깐 유지</size>\n");
+                _deliveryList.text = sb.ToString();
+                return;
+            }
+
             sb.Append("<color=#8a93a8>No 운송장     순번 목적지</color>\n");
             var byDeadline = new List<DeliveryData>(_scanned);
             byDeadline.Sort((a, b) => a.DeadlineMinuteOfDay.CompareTo(b.DeadlineMinuteOfDay));
