@@ -58,8 +58,9 @@ namespace DontLate
                 bubble.sprite = _backgroundSprite;
                 bubble.preserveAspect = true;
                 bubble.raycastTarget = false;
+                bubble.color = new Color(1f, 1f, 1f, 0.5f);
                 _bubbleRect = bubble.rectTransform;
-                _bubbleRect.sizeDelta = new Vector2(280f, 186.5f);
+                _bubbleRect.sizeDelta = new Vector2(220f, 146.5f);
             }
 
             Color darkBrown = new Color(0.23f, 0.20f, 0.16f, 1f);
@@ -67,7 +68,7 @@ namespace DontLate
             _nameLabel = new GameObject("Name", typeof(RectTransform)).AddComponent<TextMeshProUGUI>();
             _nameLabel.transform.SetParent(_canvasGo.transform, false);
             if (UiOverlayFont.Korean != null) _nameLabel.font = UiOverlayFont.Korean;
-            _nameLabel.fontSize = 24f;
+            _nameLabel.fontSize = 19.2f;
             _nameLabel.fontStyle = FontStyles.Bold;
             _nameLabel.color = darkBrown;
             _nameLabel.alignment = TextAlignmentOptions.Center;
@@ -79,7 +80,7 @@ namespace DontLate
             _affinityLabel = new GameObject("Affinity", typeof(RectTransform)).AddComponent<TextMeshProUGUI>();
             _affinityLabel.transform.SetParent(_canvasGo.transform, false);
             _affinityLabel.font = _hintFont != null ? _hintFont : UiOverlayFont.Korean;
-            _affinityLabel.fontSize = 17f;
+            _affinityLabel.fontSize = 14.4f;
             _affinityLabel.fontStyle = FontStyles.Normal;
             _affinityLabel.color = darkBrown;
             _affinityLabel.alignment = TextAlignmentOptions.Center;
@@ -91,13 +92,13 @@ namespace DontLate
             _interactionLabel = new GameObject("Interaction", typeof(RectTransform)).AddComponent<TextMeshProUGUI>();
             _interactionLabel.transform.SetParent(_canvasGo.transform, false);
             _interactionLabel.font = _hintFont != null ? _hintFont : UiOverlayFont.Korean;
-            _interactionLabel.fontSize = 17f;
+            _interactionLabel.fontSize = 19f;
             _interactionLabel.fontStyle = FontStyles.Bold;
             _interactionLabel.color = new Color(0.56f, 0.89f, 0.84f, 1f);
-            _interactionLabel.alignment = TextAlignmentOptions.Right;
+            _interactionLabel.alignment = TextAlignmentOptions.Center;
             _interactionLabel.textWrappingMode = TextWrappingModes.NoWrap;
             _interactionLabel.raycastTarget = false;
-            _interactionLabel.rectTransform.sizeDelta = new Vector2(260f, 28f);
+            _interactionLabel.rectTransform.sizeDelta = new Vector2(140f, 30f);
             _interactionLabel.text = InteractionLine();
         }
 
@@ -128,9 +129,9 @@ namespace DontLate
             Vector3 screen = camera.WorldToScreenPoint(transform.position + Vector3.up * _headHeight);
             if (screen.z <= 0f) return;
             if (_bubbleRect != null) _bubbleRect.position = new Vector3(screen.x, screen.y, 0f);
-            _nameLabel.rectTransform.position = new Vector3(screen.x, screen.y + 12f, 0f);
-            _affinityLabel.rectTransform.position = new Vector3(screen.x, screen.y - 12f, 0f);
-            _interactionLabel.rectTransform.position = new Vector3(screen.x, screen.y - 50f, 0f);
+            _nameLabel.rectTransform.position = new Vector3(screen.x, screen.y + 15f, 0f);
+            _affinityLabel.rectTransform.position = new Vector3(screen.x, screen.y - 7f, 0f);
+            _interactionLabel.rectTransform.position = new Vector3(screen.x + 110f, screen.y - 67f, 0f);
         }
 
         private void OnDestroy()

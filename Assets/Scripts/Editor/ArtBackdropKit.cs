@@ -46,6 +46,9 @@ namespace DontLate.EditorTools
         public static readonly SetPlacement Camp =
             new SetPlacement("Assets/Prefabs/Hand/set_camp_1.prefab", Vector3.zero);
 
+        public static readonly SetPlacement Hillside =
+            new SetPlacement("Assets/Prefabs/Hand/set_hillside.prefab", Vector3.zero);
+
         /// <summary>
         /// 세트를 씬에 세운다. 멱등 — 기존 `__gb_ArtBackdrop` 루트를 지우고 새로 만든다.
         /// **프리팹 링크를 유지**한다: 민지님이 프리팹을 고치면 재조립 없이도 씬에 전파된다.
@@ -59,7 +62,7 @@ namespace DontLate.EditorTools
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(set.PrefabPath);
             if (prefab == null)
             {
-                Debug.LogWarning($"[아트배경] 세트 프리팹 없음 — {set.PrefabPath}. 배경 없이 진행한다.");
+                Debug.Log($"[아트배경] 세트 미배치 — {set.PrefabPath} (담으면 자동으로 꽂힌다).");
                 return null;
             }
 
