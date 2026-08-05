@@ -110,6 +110,11 @@ namespace DontLate
                 _lines.Add("<align=center><color=#2b9e8e><b>새 구역 개척 — " + d.UnlockedDistrict + " 해금!</b></color></align>");
             if (d.TruckAwarded)
                 _lines.Add("<align=center><color=#2b9e8e><b>전 구역 완주 — 회사 트럭 지급!</b></color></align>");
+            // S-165 ④ — 이번 라운드에 레벨업으로 능력을 얻었으면 알린다(남규님 지시).
+            // "해금!"이 들어가면 아래 PrintLines가 팡파레+콘페티를 자동으로 태운다 — 같은 규칙을 재사용한다.
+            if (!string.IsNullOrEmpty(d.UnlockedPerk))
+                _lines.Add("<align=center><color=#2b9e8e><b>Lv." + (_gameState != null ? _gameState.playerLevel : 0)
+                         + " 달성 — " + d.UnlockedPerk + " 해금!</b></color></align>");
 
             _lines.Add(RULE_STARS);
             _lines.Add("<align=center><color=#4a5568>Don't Late Inc.</color></align>");

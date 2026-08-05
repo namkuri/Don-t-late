@@ -205,11 +205,18 @@ namespace DontLate
             }
 
             float moved = PlanarVelocity.magnitude * Time.deltaTime;
-            _masteryAccum += moved; // S-063 — 주행 50m당 숙련도 +1 (밸런스 추후)
-            if (_masteryAccum >= MasteryProgress.RUN_METERS_PER_POINT)
+            // S-165 ④ — 주행 경험치는 꺼 뒀다(`RUN_METERS_PER_POINT = 0`). 상한이 15로 낮아져
+            // 종전 비율이면 걷기만 해도 레벨이 오른다 — "상자 1건에 3"이라는 기준이 무의미해진다.
+            // ⚠ 0으로 나누는 꼴이 되지 않게 **여기서 막는다**. 값만 0으로 두고 이 가드가 없으면
+            //   매 프레임 조건이 참이 되어 경험치가 폭주한다.
+            if (MasteryProgress.RUN_METERS_PER_POINT > 0.01f)
             {
-                _masteryAccum -= MasteryProgress.RUN_METERS_PER_POINT;
-                MasteryProgress.Add(_hub.GameState, 1f);
+                _masteryAccum += moved;
+                if (_masteryAccum >= MasteryProgress.RUN_METERS_PER_POINT)
+                {
+                    _masteryAccum -= MasteryProgress.RUN_METERS_PER_POINT;
+                    MasteryProgress.Add(_hub.GameState, 1f);
+                }
             }
 
             _strideAccum += moved;

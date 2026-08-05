@@ -3,7 +3,9 @@ using UnityEngine;
 
 namespace DontLate.Tests
 {
-    /// <summary>숙련도 레벨링 수식 (S-063 · 회고 3차 백로그 ③). 순수 로직 — 씬 불요.</summary>
+    /// <summary>숙련도 레벨링 수식 (S-063 · 회고 3차 백로그 ③). 순수 로직 — 씬 불요.
+    /// S-165 ④ — 규격 변경 반영: 상한이 **레벨 무관 고정 15**(5칸 × 3)이고 배송 1건 = 3점.
+    /// 종전(100 + (lv-1)*25)을 전제하던 기대값을 새 규격으로 갱신했다.</summary>
     public class MasteryProgressTests
     {
         private GameStateSO _gameState;
@@ -17,15 +19,15 @@ namespace DontLate.Tests
         [Test]
         public void 만충_시_레벨업하고_초과분은_이월된다()
         {
-            MasteryProgress.Add(_gameState, 130f); // Lv1 상한 100 → Lv2 + 이월 30
+            MasteryProgress.Add(_gameState, 18f); // 상한 15 → Lv2 + 이월 3
             Assert.AreEqual(2, _gameState.playerLevel);
-            Assert.AreEqual(30f, _gameState.mastery, 0.01f);
+            Assert.AreEqual(3f, _gameState.mastery, 0.01f);
         }
 
         [Test]
         public void 감점은_0_아래로_내려가지_않는다()
         {
-            MasteryProgress.Add(_gameState, 20f);
+            MasteryProgress.Add(_gameState, 6f);   // 2칸 — 아직 레벨업 전
             MasteryProgress.Add(_gameState, -100f);
             Assert.AreEqual(0f, _gameState.mastery, 0.01f);
             Assert.AreEqual(1, _gameState.playerLevel); // 레벨은 감점으로 내려가지 않는다
@@ -34,9 +36,27 @@ namespace DontLate.Tests
         [Test]
         public void 대량_가산은_다중_레벨업을_연쇄한다()
         {
-            MasteryProgress.Add(_gameState, 100f + 125f + 10f); // Lv1(100)+Lv2(125) 관통 → Lv3 + 10
+            MasteryProgress.Add(_gameState, 15f + 15f + 6f); // 상한 15를 두 번 관통 → Lv3 + 이월 6
             Assert.AreEqual(3, _gameState.playerLevel);
-            Assert.AreEqual(10f, _gameState.mastery, 0.01f);
+            Assert.AreEqual(6f, _gameState.mastery, 0.01f);
+        }
+
+        [Test]
+        public void 배송_5건이면_정확히_한_레벨_오른다()
+        {
+            // S-165 ④ — 남규님 규격: 5칸 게이지 · 1건 = 1칸. 이 관계가 깨지면 "몇 건 남았는지"를
+            // 화면만 보고 셀 수 없게 된다 — 수치 튜닝이 이 불변식을 넘지 않도록 못을 박는다.
+            for (int i = 0; i < MasteryProgress.SEGMENTS; i++)
+                MasteryProgress.Add(_gameState, MasteryProgress.SUCCESS_GAIN);
+            Assert.AreEqual(2, _gameState.playerLevel);
+            Assert.AreEqual(0f, _gameState.mastery, 0.01f);
+        }
+
+        [Test]
+        public void 레벨2_달성은_상자2개_해금으로_보고된다()
+        {
+            Assert.AreEqual("택배 상자 2개 들기", LevelPerks.PerkGainedBetween(1, 2));
+            Assert.IsNull(LevelPerks.PerkGainedBetween(2, 2)); // 안 올랐으면 알리지 않는다
         }
     }
 }

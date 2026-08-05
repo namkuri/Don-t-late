@@ -15,6 +15,8 @@ namespace DontLate
         public string UnlockedDistrict;
         /// <summary>이번 정산으로 회사 트럭 수령 (S-084 ①).</summary>
         public bool TruckAwarded;
+        /// <summary>S-165 ④ — 이번 정산 중 레벨업으로 새로 얻은 능력 이름 (없으면 null).</summary>
+        public string UnlockedPerk;
     }
 
     /// <summary>정산 한 줄 (S-075 ⑥) — 주소·금액·성패·사유. 표시 전용 데이터.</summary>
@@ -146,6 +148,9 @@ namespace DontLate
         {
             var summary = new DeliveryDaySummary();
             summary.Lines = new System.Collections.Generic.List<SettleLine>(); // S-075 ⑥
+            // S-165 ④ — 이번 정산 **중에** 레벨업으로 새 능력을 얻었는지 잡으려면 시작 레벨을 기억해야 한다.
+            // 배송 성공/실패가 숙련도를 움직이므로 레벨은 이 메서드 안에서 바뀐다.
+            int levelBefore = _gameState.playerLevel;
             _settledDistricts.Clear(); // S-054 — 이번 정산에서 성공한 구역
             int penalty = _tuning != null ? _tuning.latePenalty : 500;
 
@@ -226,8 +231,13 @@ namespace DontLate
             // S-134 ⑤ — 손에 든 짐도 청산한다. 안 비우면 DistrictCargoSpawner가 그 주문을
             // "이미 들고 있음"으로 보고 다음 날 상자를 안 깔아 유령 배송이 남는다(정찰 실측).
             _gameState.carriedOrders.Clear();
+            // S-165 ④ — 이번 정산 중 레벨업으로 **새로 얻은 능력**이 있으면 정산 화면에 알린다.
+            // 레벨만 올려두면 플레이어는 뭐가 좋아졌는지 모른다 — 능력 이름을 말해줘야 보상이 된다.
+            summary.UnlockedPerk = LevelPerks.PerkGainedBetween(levelBefore, _gameState.playerLevel);
+
             Debug.Log("[배송] 일괄 정산 — 성공 " + summary.SuccessCount + " · 실패 " + summary.FailCount
-                    + " · 보상 " + summary.RewardTotal + " · 벌금 " + summary.PenaltyTotal);
+                    + " · 보상 " + summary.RewardTotal + " · 벌금 " + summary.PenaltyTotal
+                    + (summary.UnlockedPerk != null ? " · 해금 " + summary.UnlockedPerk : ""));
             return summary;
         }
 

@@ -26,6 +26,28 @@ namespace DontLate
         private const float STAMINA_BONUS = 0.20f;      // Lv6
 
         /// <summary>동시에 들 수 있는 상자 수 (1~3).</summary>
+        /// <summary>
+        /// S-165 ④ — 두 레벨 사이에 **새로 열린 능력** 이름(없으면 null).
+        /// 정산 화면이 "무엇이 좋아졌는지"를 말해주기 위한 표시용 — 레벨 숫자만으론 보상이 안 된다.
+        /// 한 정산에서 여러 단계가 올라도 가장 **먼저 열린 것** 하나만 알린다(줄이 길어지면 묻힌다).
+        /// </summary>
+        public static string PerkGainedBetween(int before, int after)
+        {
+            if (after <= before) return null;
+            for (int level = before + 1; level <= after; level++)
+            {
+                switch (level)
+                {
+                    case CARRY_2:     return "택배 상자 2개 들기";
+                    case CARRY_3:     return "택배 상자 3개 들기";
+                    case TRUCK:       return "회사 트럭 자격";
+                    case MOVE_SPEED:  return "이동 속도 상승";
+                    case STAMINA:     return "체력 상한 상승";
+                }
+            }
+            return null;
+        }
+
         public static int CarryCapacity(int level)
         {
             if (level >= CARRY_3) return 3;
