@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -59,9 +59,14 @@ namespace DontLate.EditorTools
         // S-116 ⑤ — 촬영용 District 1도 같은 조립을 재사용한다 (District1SceneBuilder가 호출).
         // S-186 ③ — 구역마다 다른 거리를 만들려면 **건물 풀**이 달라야 한다.
         // 화이트리스트를 넘기면 그 이름들만 쓰고, null이면 종전대로 Art/Buildings 전량을 쓴다.
-        internal static void BuildStage(string scenePath, string[] buildingWhitelist = null)
+        // S-192 — 구역별 배경 세트. null이면 District 공용 세트(빌라촌·Main 촬영용).
+        private static ArtBackdropKit.SetPlacement? _backdrop;
+
+        internal static void BuildStage(string scenePath, string[] buildingWhitelist = null,
+            ArtBackdropKit.SetPlacement? backdrop = null)
         {
             _buildingWhitelist = buildingWhitelist;
+            _backdrop = backdrop;
             Scene scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
 
             // 멱등: 이전 조립물 정리.
@@ -96,7 +101,9 @@ namespace DontLate.EditorTools
             // 절차적 슬롯을 대체하지 않는다: 슬롯은 Z=2.6 근경에서 구역별로 채워지고,
             // 이건 Z=4~36 원경에 고정으로 깔리는 배경층이다. 프리팹 링크를 유지하므로
             // 민지님이 프리팹을 고치면 코드 수정 없이 반영된다.
-            ArtBackdropKit.Build(ArtBackdropKit.District);
+            // S-192 — 구역마다 제 세트를 꽂는다(호출자가 지정). 종전엔 District 하나를 공유해
+            // 먹자골목에서 담으면 빌라촌까지 바뀌었다.
+            ArtBackdropKit.Build(_backdrop ?? ArtBackdropKit.District);
 
             // S-015: 정적 짐·비콘 제거 — 도착 시 cargo 실데이터로 스폰(DistrictCargoSpawner)한다.
             DestroyRoot("__gb_Box");
@@ -249,7 +256,7 @@ namespace DontLate.EditorTools
                 AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Auto/prop_box_parcel.prefab");
             serialized.FindProperty("_beaconPrefab").objectReferenceValue = GreyboxStageBuilder.GetOrCreateBeaconPrefab();
             serialized.FindProperty("_boxHighlight").objectReferenceValue =
-                GreyboxStageBuilder.GetOrCreateMaterial("Highlight", GreyboxStageBuilder.ParseColor("#35e0c8"), true);
+                GreyboxStageBuilder.GetOrCreateHighlightMaterial();
             serialized.FindProperty("_boxFallback").objectReferenceValue =
                 GreyboxStageBuilder.GetOrCreateMaterial("Box", GreyboxStageBuilder.ParseColor("#ff9f45"), false);
             serialized.FindProperty("_tuning").objectReferenceValue =
@@ -459,7 +466,7 @@ namespace DontLate.EditorTools
             GreyboxStageBuilder.SetReference(vending, "_drinkMaterial",
                 GreyboxStageBuilder.GetOrCreateMaterial("Drink", GreyboxStageBuilder.ParseColor("#e04a35"), false));
             GreyboxStageBuilder.SetReference(vending, "_highlightMaterial",
-                GreyboxStageBuilder.GetOrCreateMaterial("Highlight", GreyboxStageBuilder.ParseColor("#35e0c8"), true));
+                GreyboxStageBuilder.GetOrCreateHighlightMaterial());
             GreyboxStageBuilder.SetReference(vending, "_renderer", renderers[0]);
 
             // 편의점 — 거리 상점 데코에 구매창을 붙인다 (남규님: 편의점도 구매 UI).

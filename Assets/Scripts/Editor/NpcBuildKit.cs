@@ -1,4 +1,4 @@
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
 
 namespace DontLate.EditorTools
@@ -106,7 +106,7 @@ namespace DontLate.EditorTools
             DialogueScenarioSO thanks = GetOrCreateScenario("Scenario_" + key + "_Thanks",
                 (speaker, "아이고, 고마워라! 젊은 사람이 참 착하네. 이거 얼마 안 되지만 받아 가게."));
 
-            Material highlight = GreyboxStageBuilder.GetOrCreateMaterial("Highlight", GreyboxStageBuilder.ParseColor("#35e0c8"), true);
+            Material highlight = GreyboxStageBuilder.GetOrCreateHighlightMaterial();
             Material boxMat = GreyboxStageBuilder.GetOrCreateMaterial("Box", GreyboxStageBuilder.ParseColor("#ff9f45"), false);
 
             ErrandNpc npc = go.AddComponent<ErrandNpc>();
@@ -154,7 +154,7 @@ namespace DontLate.EditorTools
             if (gameState != null) serialized.FindProperty("_gameState").objectReferenceValue = gameState;
             serialized.FindProperty("_bodyRenderer").objectReferenceValue = bodyRenderer;
             serialized.FindProperty("_highlightMaterial").objectReferenceValue =
-                GreyboxStageBuilder.GetOrCreateMaterial("Highlight", GreyboxStageBuilder.ParseColor("#35e0c8"), true);
+                GreyboxStageBuilder.GetOrCreateHighlightMaterial();
             serialized.ApplyModifiedPropertiesWithoutUndo();
 
             AttachNameLabel(go, npcId, name); // S-120 — 근접 이름표

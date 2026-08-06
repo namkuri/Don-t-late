@@ -22,6 +22,10 @@ Shader "DontLate/GreyboxSnow"
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
             #pragma multi_compile _ _SHADOWS_SOFT
             #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
+            // S-192 — **Forward+(클러스터) 배리언트.** 이게 없으면 아래 LIGHT_LOOP가 구식
+            // 인덱스 루프로 컴파일되고, Forward+에선 그 인덱스가 유효하지 않아 추가광원이
+            // 통째로 사라진다. 지면만 가로등을 못 받고 나무(URP Lit)는 받던 이유가 이것.
+            #pragma multi_compile _ _CLUSTER_LIGHT_LOOP
             #pragma multi_compile_fog
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
@@ -71,14 +75,20 @@ Shader "DontLate/GreyboxSnow"
                     * (saturate(dot(normalWS, mainLight.direction)) * mainLight.shadowAttenuation);
 
                 // 추가 라이트 (가로등 앰버·간판 시안 — 밤 무드의 주역).
+                // LIGHT_LOOP 매크로를 쓰는 이유: Forward+는 화면을 클러스터로 쪼개 픽셀마다
+                // 다른 광원 목록을 넘긴다. 그 순회는 매크로 안에 숨어 있고, 매크로가
+                // `inputData`라는 **이름 그대로** 화면 UV·월드 좌표를 참조한다(URP 규약).
                 #if defined(_ADDITIONAL_LIGHTS)
+                InputData inputData = (InputData)0;
+                inputData.positionWS = input.positionWS;
+                inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(input.positionCS);
+
                 uint lightCount = GetAdditionalLightsCount();
-                for (uint li = 0u; li < lightCount; li++)
-                {
-                    Light light = GetAdditionalLight(li, input.positionWS);
+                LIGHT_LOOP_BEGIN(lightCount)
+                    Light light = GetAdditionalLight(lightIndex, input.positionWS);
                     lighting += light.color
                         * (saturate(dot(normalWS, light.direction)) * light.distanceAttenuation * light.shadowAttenuation);
-                }
+                LIGHT_LOOP_END
                 #endif
 
                 half3 ambient = SampleSH(normalWS);

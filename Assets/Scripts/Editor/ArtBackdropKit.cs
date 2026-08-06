@@ -60,6 +60,15 @@ namespace DontLate.EditorTools
             new SetPlacement("Assets/Prefabs/Hand/set_apartment.prefab", Vector3.zero);
 
         /// <summary>
+        /// S-192 — **먹자골목 전용 소켓.** 종전엔 빌라촌과 `set_district_2`를 함께 썼다
+        /// (S-186에서 씬만 갈랐고 배경은 공유 상태로 남겨 뒀다). 그래서 먹자골목에서 배치를
+        /// 담으면 빌라촌까지 같이 바뀌어, 두 구역을 가른 의미가 사라진다.
+        /// 오프셋은 District와 같다 — 같은 무대 빌더를 쓰므로 좌표계가 동일하다.
+        /// </summary>
+        public static readonly SetPlacement FoodStreet =
+            new SetPlacement("Assets/Prefabs/Hand/set_foodstreet.prefab", new Vector3(-3.05f, 0f, 20.17f));
+
+        /// <summary>
         /// 세트를 씬에 세운다. 멱등 — 기존 `__gb_ArtBackdrop` 루트를 지우고 새로 만든다.
         /// **프리팹 링크를 유지**한다: 민지님이 프리팹을 고치면 재조립 없이도 씬에 전파된다.
         /// 배경층이라 콜라이더는 끈다(통행 판정은 WalkableVolume 소관 — 배경에 걸리면 안 된다).

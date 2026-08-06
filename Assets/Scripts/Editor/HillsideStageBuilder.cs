@@ -1,4 +1,4 @@
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -227,7 +227,7 @@ namespace DontLate.EditorTools
         {
             GameObject root = GreyboxStageBuilder.CreateEmpty("Cat", position);
             Material fur = GreyboxStageBuilder.GetOrCreateMaterial("CatFur", new Color(0.85f, 0.55f, 0.25f), false);
-            Material highlight = GreyboxStageBuilder.GetOrCreateMaterial("Highlight", GreyboxStageBuilder.ParseColor("#35e0c8"), true);
+            Material highlight = GreyboxStageBuilder.GetOrCreateHighlightMaterial();
 
             GameObject body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
             Object.DestroyImmediate(body.GetComponent<Collider>());
@@ -290,7 +290,7 @@ namespace DontLate.EditorTools
                 AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Auto/prop_box_parcel.prefab");
             serialized.FindProperty("_beaconPrefab").objectReferenceValue = GreyboxStageBuilder.GetOrCreateBeaconPrefab();
             serialized.FindProperty("_boxHighlight").objectReferenceValue =
-                GreyboxStageBuilder.GetOrCreateMaterial("Highlight", GreyboxStageBuilder.ParseColor("#35e0c8"), true);
+                GreyboxStageBuilder.GetOrCreateHighlightMaterial();
             serialized.FindProperty("_boxFallback").objectReferenceValue =
                 GreyboxStageBuilder.GetOrCreateMaterial("Box", GreyboxStageBuilder.ParseColor("#ff9f45"), false);
             serialized.FindProperty("_tuning").objectReferenceValue =

@@ -40,8 +40,33 @@ namespace DontLate.EditorTools
         public static void BuildFoodStreetStage()
         {
             EnsureSceneFile();
-            DistrictSceneBuilder.BuildStage(FOODSTREET_PATH, FoodBuildings);
+            EnsureSetSeed();
+            DistrictSceneBuilder.BuildStage(FOODSTREET_PATH, FoodBuildings, ArtBackdropKit.FoodStreet);
             Debug.Log("[FoodStreet] 먹자골목 무대 조립 완료 — 음식점 풀 " + FoodBuildings.Length + "종.");
+        }
+
+        /// <summary>
+        /// S-192 — 먹자골목 전용 세트를 **빌라촌 세트의 사본으로 시작**한다.
+        ///
+        /// 빈 소켓으로 두면 소켓을 판 그 순간부터 거리가 통째로 비어 버린다(실측 — 배경이 사라졌다).
+        /// 지금 보이는 거리를 그대로 물려받고, 아트가 여기서부터 먹자골목답게 고쳐 나가는 편이
+        /// 안전하다. 한 번만 만든다 — 이후 재조립은 아트가 담은 내용을 건드리지 않는다.
+        /// </summary>
+        private static void EnsureSetSeed()
+        {
+            const string seed = "Assets/Prefabs/Hand/set_district_2.prefab";
+            string target = ArtBackdropKit.FoodStreet.PrefabPath;
+            if (System.IO.File.Exists(target)) return;
+            if (!System.IO.File.Exists(seed))
+            {
+                Debug.Log("[FoodStreet] 씨앗 세트 없음 — 빈 소켓으로 시작한다: " + seed);
+                return;
+            }
+
+            AssetDatabase.CopyAsset(seed, target);
+            AssetDatabase.ImportAsset(target);
+            Debug.Log("[FoodStreet] 전용 세트 생성(빌라촌 사본) — " + target
+                + " · 이제 먹자골목에서 담아도 빌라촌은 안 바뀐다.");
         }
 
         /// <summary>

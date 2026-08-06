@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -88,7 +88,7 @@ namespace DontLate.EditorTools
             ruler.transform.position = new Vector3(-3f, 0.9f, 0f);
             ruler.transform.localScale = new Vector3(0.7f, 0.9f, 0.7f);
             ruler.GetComponent<Renderer>().sharedMaterial =
-                GreyboxStageBuilder.GetOrCreateMaterial("Highlight", GreyboxStageBuilder.ParseColor("#35e0c8"), true);
+                GreyboxStageBuilder.GetOrCreateHighlightMaterial();
 
             GreyboxStageBuilder.ConfigureCamera();
             Camera camera = Camera.main;

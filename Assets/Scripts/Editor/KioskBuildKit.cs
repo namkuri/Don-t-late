@@ -1,4 +1,4 @@
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
 
 namespace DontLate.EditorTools
@@ -62,7 +62,7 @@ namespace DontLate.EditorTools
             // 에셋 참조는 리플렉션 직접 주입 (SerializedObject 경유는 SaveScene 시 유실 — 2026-07-20 실측).
             GreyboxStageBuilder.SetReference(shop, "_renderer", renderers[0]);
             GreyboxStageBuilder.SetReference(shop, "_highlightMaterial",
-                GreyboxStageBuilder.GetOrCreateMaterial("Highlight", GreyboxStageBuilder.ParseColor("#35e0c8"), true));
+                GreyboxStageBuilder.GetOrCreateHighlightMaterial());
         }
 
         private static void SetStringArray(SerializedObject serialized, string field, string[] values)
