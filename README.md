@@ -48,6 +48,10 @@
   <sub>빠르기만 해서는 부족합니다. 정확하게, 안전하게, 그리고 늦지 않게!</sub>
 </p>
 
+<p align="center">
+  <img src="./Assets/readme/4shot.png" alt="늦지마 주요 플레이 장면" width="100%" />
+</p>
+
 ## 🏘️ 주요 지역
 
 | 지역 | 특징 |
