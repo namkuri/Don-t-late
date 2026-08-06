@@ -1,4 +1,4 @@
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -33,7 +33,7 @@ namespace DontLate.EditorTools
             Material panelMat = GreyboxStageBuilder.GetOrCreateMaterial("AptPanel", new Color(0.16f, 0.20f, 0.30f), false);
             Material doorMat = GreyboxStageBuilder.GetOrCreateMaterial("AptDoor", new Color(0.35f, 0.62f, 0.58f), false);
             Material cabinMat = GreyboxStageBuilder.GetOrCreateMaterial("AptCabin", new Color(0.55f, 0.50f, 0.35f), false);
-            Material highlight = GreyboxStageBuilder.GetOrCreateMaterial("Highlight", GreyboxStageBuilder.ParseColor("#35e0c8"), true);
+            Material highlight = GreyboxStageBuilder.GetOrCreateHighlightMaterial();
             Material dockMat = GreyboxStageBuilder.GetOrCreateMaterial("AptDock", GreyboxStageBuilder.ParseColor("#ff9f45"), true);
 
             // ── 지면·층 슬래브 ───────────────────────────────
@@ -250,7 +250,7 @@ namespace DontLate.EditorTools
                 AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Auto/prop_box_parcel.prefab");
             serialized.FindProperty("_beaconPrefab").objectReferenceValue = GreyboxStageBuilder.GetOrCreateBeaconPrefab();
             serialized.FindProperty("_boxHighlight").objectReferenceValue =
-                GreyboxStageBuilder.GetOrCreateMaterial("Highlight", GreyboxStageBuilder.ParseColor("#35e0c8"), true);
+                GreyboxStageBuilder.GetOrCreateHighlightMaterial();
             serialized.FindProperty("_boxFallback").objectReferenceValue =
                 GreyboxStageBuilder.GetOrCreateMaterial("Box", GreyboxStageBuilder.ParseColor("#ff9f45"), false);
             serialized.FindProperty("_tuning").objectReferenceValue =

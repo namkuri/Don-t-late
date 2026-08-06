@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -60,7 +60,7 @@ namespace DontLate.EditorTools
             Material lane = GetOrCreateMaterial("Lane", new Color(0.34f, 0.33f, 0.30f), false);
             Material box = GetOrCreateMaterial("Box", ParseColor("#ff9f45"), false);
             Material door = GetOrCreateMaterial("Door", new Color(0.45f, 0.38f, 0.32f), false);
-            Material highlight = GetOrCreateMaterial("Highlight", ParseColor("#35e0c8"), true);
+            Material highlight = GetOrCreateHighlightMaterial();
             Material beacon = GetOrCreateMaterial("Beacon", new Color(0.13f, 0.55f, 0.49f), false);
 
             BuildGround(ground, lane);
@@ -239,10 +239,22 @@ namespace DontLate.EditorTools
             return prefab;
         }
 
+        // S-192 — 남규님 지시로 Outer(60)와 같게. 안쪽 각이 바깥과 같으면 가장자리 감쇠가 사라져
+        // 광추 전체가 같은 밝기로 지면을 친다 — 좁은 심지 대신 꽉 찬 풀이 된다.
+        private const float LAMP_INNER_ANGLE = 60f;
+
         private static GameObject GetOrCreateLampLightPrefab()
         {
             GameObject existing = AssetDatabase.LoadAssetAtPath<GameObject>(LAMP_LIGHT_PREFAB_PATH);
-            if (existing != null) return existing;
+            if (existing != null)
+            {
+                // S-192 — 이미 만들어진 프리팹은 그대로 재사용하되, **조사각만은 매 조립에서
+                // 다시 맞춘다.** 프리팹이 있으면 통째로 건너뛰던 탓에 코드에서 각도를 바꿔도
+                // 반영되지 않았다(남규님 "Inner 60으로 바꿔줘"가 재조립 후에도 22로 남던 이유).
+                // 위치·색·세기는 사람이 인스펙터로 만지는 값이라 건드리지 않는다.
+                // 조사각 갱신은 EnsureLampCone이 맡는다 — 그쪽은 매 조립마다 돈다(S-192).
+                return existing;
+            }
 
             EnsureFolder("Assets/Prefabs");
             EnsureFolder("Assets/Prefabs/Hand");
@@ -253,6 +265,7 @@ namespace DontLate.EditorTools
             light.type = LightType.Spot;
             light.range = 8f;
             light.spotAngle = 60f;
+            light.innerSpotAngle = LAMP_INNER_ANGLE;
             light.color = ParseColor("#ff9f45");
             light.intensity = 22f; // 4u 높이·range 8에서 지면에 앰버 풀이 또렷하게 보이는 값 (사람 튜닝 대상)
             light.shadows = LightShadows.None; // S-069 — 가로등 8개 × 그림자 패스가 WebGL District 저하의 주범
@@ -272,6 +285,12 @@ namespace DontLate.EditorTools
             GameObject root = PrefabUtility.LoadPrefabContents(LAMP_LIGHT_PREFAB_PATH);
             try
             {
+                // S-192 — 조사각은 여기서 보장한다. 생성 함수(GetOrCreateLampLightPrefab)는
+                // 프리팹이 이미 있으면 통째로 건너뛰므로 코드에서 각도를 바꿔도 반영되지 않는다
+                // (남규님 "Inner 60"이 재조립 후에도 22로 남던 이유). 이 함수는 매 조립마다 돈다.
+                Light spot = root.GetComponent<Light>();
+                if (spot != null) spot.innerSpotAngle = LAMP_INNER_ANGLE;
+
                 Transform coneT = root.transform.Find("Cone");
                 GameObject cone;
                 if (coneT == null)
@@ -501,7 +520,7 @@ namespace DontLate.EditorTools
         internal static void BuildDeliveryCart(Vector3 position, bool requiresTruck = false)
         {
             Material cartMat = GetOrCreateMaterial("Cart", new Color(0.30f, 0.55f, 0.42f), false);
-            Material highlight = GetOrCreateMaterial("Highlight", ParseColor("#35e0c8"), true);
+            Material highlight = GetOrCreateHighlightMaterial();
 
             GameObject root = CreateEmpty("DeliveryCart", position);
             BoxCollider focus = root.AddComponent<BoxCollider>();
@@ -955,7 +974,7 @@ namespace DontLate.EditorTools
             EnsureFolder("Assets/Prefabs/Hand");
 
             Material normal = GetOrCreateMaterial("Beacon", new Color(0.13f, 0.55f, 0.49f), false);
-            Material highlight = GetOrCreateMaterial("Highlight", ParseColor("#35e0c8"), true);
+            Material highlight = GetOrCreateHighlightMaterial();
             Material rise = GetOrCreateBeaconRiseMaterial();
             Vector2 padSize = new Vector2(1f, 1f);
 
@@ -1296,13 +1315,33 @@ namespace DontLate.EditorTools
             return asset;
         }
 
-        internal static Material GetOrCreateMaterial(string name, Color color, bool emissive)
+        /// <summary>
+        /// S-192 — 상호작용 하이라이트(시안 #35e0c8). **한 곳에서만 정의한다** — 공유 에셋이라
+        /// 호출부마다 다른 세기를 주면 먼저 부른 쪽이 이기는 경합이 된다.
+        ///
+        /// 세기가 1.8이 아닌 이유: S-190에서 이미시브 키워드 유실을 고치자 이 머티리얼이
+        /// 처음으로 실제 발광하기 시작했고, 1.8배 시안이 블룸 문턱(0.9)을 크게 넘겨 밤에
+        /// 눈을 찔렀다(남규님 보고 — 자판기 접근 시). 문턱 아래로 낮춰 **번지지 않되
+        /// 어둠 속에서 형태는 보이는** 세기로 잡는다.
+        /// </summary>
+        internal static Material GetOrCreateHighlightMaterial()
+            => GetOrCreateMaterial("Highlight", ParseColor("#35e0c8"), true, HIGHLIGHT_EMISSION);
+
+        private const float HIGHLIGHT_EMISSION = 0.45f;
+
+        /// <param name="emissionStrength">
+        /// 이미시브 배수. 기본 1.8은 블룸 문턱(0.9)을 넘겨 **빛나 보이라고** 잡은 값이다.
+        /// 하이라이트처럼 밤에 눈을 찌르면 안 되는 것은 낮춰 부른다(S-192).
+        /// </param>
+        internal static Material GetOrCreateMaterial(string name, Color color, bool emissive,
+            float emissionStrength = 1.8f)
         {
             string path = GREYBOX_ROOT + "/GB_" + name + ".mat";
             Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (material != null)
             {
                 MigrateToSnowShader(material, emissive); // S-053 ⑤ — 기존 에셋도 스노 셰이더로 이식(멱등)
+                if (emissive) EnableEmission(material, color, emissionStrength); // S-190 — 기존 에셋도 고친다
                 return material;
             }
 
@@ -1319,8 +1358,27 @@ namespace DontLate.EditorTools
                 material.SetColor("_EmissionColor", color * 1.8f);
             }
             AssetDatabase.CreateAsset(material, path);
+            // S-190 — 이미시브 설정은 **CreateAsset 뒤에** 한다. URP 머티리얼 초기화가 키워드를
+            // 리셋해서, 앞에서 켜면 저장된 에셋에는 꺼진 채로 남는다(같은 함정을 GB_Sign에서
+            // 이미 겪고 668행에 기록해 뒀는데 이 경로엔 적용이 안 돼 있었다 — 그 결과
+            // GB_SignalLamp·GB_EdgeGate가 "색은 있는데 발광 안 함" 상태였다, 실측 2026-08-06).
+            if (emissive) EnableEmission(material, color, emissionStrength);
             AssetDatabase.SaveAssets();
             return material;
+        }
+
+        /// <summary>이미시브를 실제로 켠다 — 키워드·GI 플래그까지(하나라도 빠지면 조용히 안 빛난다).</summary>
+        private static void EnableEmission(Material material, Color color, float strength)
+        {
+            Color target = color * strength;
+            bool ok = material.IsKeywordEnabled("_EMISSION")
+                && material.GetColor("_EmissionColor") == target;
+            if (ok) return;
+
+            material.EnableKeyword("_EMISSION");
+            material.SetColor("_EmissionColor", target);
+            material.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
+            EditorUtility.SetDirty(material);
         }
 
         // 기존 GB_ 머티리얼을 스노 셰이더로 이식 — 색만 승계 (S-053 ⑤).

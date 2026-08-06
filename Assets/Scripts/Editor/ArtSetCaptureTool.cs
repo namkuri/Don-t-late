@@ -26,8 +26,12 @@ namespace DontLate.EditorTools
         private static readonly Dictionary<string, string> SetForScene = new Dictionary<string, string>
         {
             { "Camp",      HAND_DIR + "/set_camp_1.prefab" },
-            { "District",  HAND_DIR + "/set_district_2.prefab" },
-            { "Main",      HAND_DIR + "/set_district_2.prefab" }, // Main은 District 무대를 재사용한다
+            // S-192 — S-186에서 District가 Village·FoodStreet로 갈렸는데 이 표만 옛 이름으로
+            // 남아 있었다. 그래서 두 구역 어디서도 담기가 안 됐다(남규님 보고).
+            // 빌라촌은 기존 세트를 그대로 이어받고(민지님 배치 보존), 먹자골목만 새 세트를 판다.
+            { "Village",    HAND_DIR + "/set_district_2.prefab" },
+            { "FoodStreet", HAND_DIR + "/set_foodstreet.prefab" },
+            { "Main",      HAND_DIR + "/set_district_2.prefab" }, // Main은 빌라촌 무대를 재사용한다
             { "Home",      HAND_DIR + "/set_home.prefab" },
             { "Hillside",  HAND_DIR + "/set_hillside.prefab" },
             { "Apartment", HAND_DIR + "/set_apartment.prefab" },
