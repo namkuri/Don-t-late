@@ -1079,12 +1079,13 @@ namespace DontLate
             if (_aimPanel == null || !_aimPanel.activeSelf) return false; // 조준 중이 아니면 촬영 없음
             if (!_aimCentered)
             {
-                ShowWarn("⚠ 흔들렸다 — 바코드를 중앙에 맞춰라");
+                // S-193 — 경고 기호(U+26A0)도 폰트에 없어 두부였다. 문구가 이미 경고라 뺀다.
+                ShowWarn("흔들렸다 — 바코드를 중앙에 맞춰라");
                 return false;
             }
             if (WorldDeliveryManager.Instance == null) return false;
             if (!WorldDeliveryManager.Instance.RegisterBarcode(order))
-                ShowWarn("⚠ " + Invoice(order.orderId) + " 이미 등록됨"); // S-164 ⑦ 축약
+                ShowWarn(Invoice(order.orderId) + " 이미 등록됨"); // S-164 ⑦ 축약 · S-193 두부 기호 제거
             CloseBarcodeAim();
             return true; // 중복이어도 촬영은 성립 — 송장을 접는다
         }
@@ -1540,7 +1541,9 @@ namespace DontLate
             if (_scanned.Count == 0) sb.Append("<color=#8a93a8>박스를 클릭해 송장을 찍어라</color>\n");
 
             // 히스토리·수익 (S-019 ⑥)
-            sb.Append("\n<color=#8a93a8>── 히스토리 (최근 4) ──</color>\n");
+            // S-193 — 괘선 문자(U+2500 `─`)는 세 폰트·폴백 어디에도 없어 네모(두부)로 떴다.
+            // 장식용 구분선에 굳이 특수문자를 쓸 이유가 없다 — ASCII 하이픈이면 전부 커버된다.
+            sb.Append("\n<color=#8a93a8>-- 히스토리 (최근 4) --</color>\n");
             int from = Mathf.Max(0, _gameState.deliveryHistory.Count - 4);
             for (int i = _gameState.deliveryHistory.Count - 1; i >= from; i--)
             {

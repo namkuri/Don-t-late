@@ -421,7 +421,8 @@ namespace DontLate.EditorTools
             CreatePanelIcon(go.transform, "SunIcon", "sun",
                 new Vector2(-160f, 0f), new Vector2(270f, 180f));
 
-            TMP_Text label = CreateText(go.transform, "Label", "하루 시작 → 물류캠프", font, 30f, NAVY,
+            // S-193 — 화살표(U+2192)는 본문 폰트(Pretendard)에 없어 두부다. 꺾쇠로 대체.
+            TMP_Text label = CreateText(go.transform, "Label", "하루 시작 > 물류캠프", font, 30f, NAVY,
                 TextAlignmentOptions.Center, FontStyles.Bold);
             AnchorCentered(label.rectTransform, new Vector2(45f, 0f), new Vector2(380f, 72f));
         }

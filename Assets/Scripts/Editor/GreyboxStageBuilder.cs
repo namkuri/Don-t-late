@@ -260,9 +260,12 @@ namespace DontLate.EditorTools
             EnsureFolder("Assets/Prefabs/Hand");
 
             GameObject temp = new GameObject("StreetLampLight");
-            temp.transform.localRotation = Quaternion.Euler(45f, 0f, 0f); // 아래 45° 조사
+            temp.transform.localRotation = Quaternion.Euler(45f, 0f, 0f); // 광추 메시 기준각(코드가 상쇄해 수직)
             Light light = temp.AddComponent<Light>();
-            light.type = LightType.Spot;
+            // S-193 — 남규님이 Spot → **Point**로 바꿨다. 스팟은 원뿔 밖이 딱 끊겨 가로등 밑동과
+            // 보도 옆면이 검게 남는데, 포인트는 사방으로 퍼져 등 주변이 자연스럽게 젖는다.
+            // 코드도 같은 기준으로 만들어 둔다 — 안 그러면 프리팹을 지운 사람에게만 스팟이 부활한다.
+            light.type = LightType.Point;
             light.range = 8f;
             light.spotAngle = 60f;
             light.innerSpotAngle = LAMP_INNER_ANGLE;
@@ -288,8 +291,10 @@ namespace DontLate.EditorTools
                 // S-192 — 조사각은 여기서 보장한다. 생성 함수(GetOrCreateLampLightPrefab)는
                 // 프리팹이 이미 있으면 통째로 건너뛰므로 코드에서 각도를 바꿔도 반영되지 않는다
                 // (남규님 "Inner 60"이 재조립 후에도 22로 남던 이유). 이 함수는 매 조립마다 돈다.
+                // S-193 — 단 **광원 종류는 손대지 않는다.** 남규님이 Point로 바꿨고, 각도는
+                // Point에선 의미가 없다. 스팟일 때만 각을 맞춘다.
                 Light spot = root.GetComponent<Light>();
-                if (spot != null) spot.innerSpotAngle = LAMP_INNER_ANGLE;
+                if (spot != null && spot.type == LightType.Spot) spot.innerSpotAngle = LAMP_INNER_ANGLE;
 
                 Transform coneT = root.transform.Find("Cone");
                 GameObject cone;
