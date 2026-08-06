@@ -10,9 +10,6 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Engine-Unity-222222?style=flat-square&logo=unity&logoColor=white" alt="Unity" />
-  <a href="https://namkuri.github.io/Don-t-late/">
-    <img src="https://img.shields.io/badge/Platform-PC%20%7C%20WebGL-5C8DFF?style=flat-square" alt="WebGL로 플레이" />
-  </a>
   <img src="https://img.shields.io/badge/Status-In%20Development-F2B84B?style=flat-square" alt="Development Status" />
 </p>
 
