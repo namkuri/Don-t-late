@@ -1,4 +1,4 @@
-# orders/system.md — 시스템·로직 발주 대장 (append-only)
+﻿# orders/system.md — 시스템·로직 발주 대장 (append-only)
 
 > 형식: [[guides/distributed-workflow]] §3 v3. 발주·결과 시각은 파일 안에 명시 — 리드타임 자기완결.
 > 봉투 전문이 곧 서브에이전트 투입 프롬프트다.
@@ -5318,7 +5318,7 @@ MDA 판정 (D-070): **강화** — 구역마다 시간대가 갈리면 개척이
 
 MDA 판정 (D-070): **강화** — S-189로 밤을 고정한 이유가 네온인데 그 네온이 안 살면 고정이 헛돈다.
 
-## S-191 · 발주 2026-08-06 23:02 → 관제 (빌라촌·먹자골목 흐름 UI 누락 — S-186 잔재)
+## S-191 · 발주 2026-08-06 22:52 → 관제 (빌라촌·먹자골목 흐름 UI 누락 — S-186 잔재)
 
 요구 (관제 자기발주 · S-190 조사 중 발견): `SceneFlowUIBuilder.BuildDistrict`가 은퇴한
 `District.unity`를 대상으로 남아 있어, S-186에서 갈라낸 **Village·FoodStreet 두 씬에
