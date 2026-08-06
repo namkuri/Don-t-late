@@ -14,6 +14,8 @@ namespace DontLate.EditorTools
     public static class GreyboxStageBuilder
     {
         private const string PREFIX = "__gb_";
+
+
         private const string DATA_ROOT = "Assets/Data";
         private const string GREYBOX_ROOT = "Assets/Data/Greybox";
         private const string LAMP_PREFAB_PATH = "Assets/Prefabs/Hand/StreetLamp.prefab";
