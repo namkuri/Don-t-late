@@ -5,13 +5,16 @@ using UnityEngine;
 namespace DontLate.EditorTools
 {
     /// <summary>
-    /// S-187 — 세트 프리팹에 섞여 들어간 **빌더 생성물**을 걷어낸다.
+    /// S-187 → **S-188에서 뒤집힘.** 세트 프리팹에서 걷어낼 것은 `__gb_*` 전부가 아니라
+    /// **기능물뿐**이다.
     ///
-    /// 왜 필요했나: 담기 도구(S-180)가 선택한 것을 그대로 담았고, 씬에는 빌더가 만든
-    /// `__gb_*`가 함께 있었다. 그래서 `set_apartment`에 40개, `set_hillside`에 25개의
-    /// 빌더 생성물이 들어갔다 — 재조립하면 빌더가 한 벌, 세트가 또 한 벌을 꽂아
-    /// **같은 자리에 두 벌**이 선다. 이것이 남규님이 본 "겹침"의 원인이다.
-    /// (담기 도구 자체는 `IsBuilderOwned` 필터로 막았으므로 재발하지 않는다.)
+    /// S-187의 오판: 씬에 같은 것이 두 벌 서는 겹침만 보고 "세트의 `__gb_*`를 전부 걷어낸다"로
+    /// 갔다. 그런데 그 안에는 민지님이 아파트 벽·창에 입힌 `wall.mat`·`window.mat`·
+    /// `qwen_image_*`가 물려 있었다 — **아트 작업물을 지운 것**이다(남규님 적발).
+    ///
+    /// 바로잡은 규칙: 겹침의 해법은 "세트를 비우기"가 아니라 **누가 이기는지 정하기**다.
+    /// 시각물은 아트가 이기고(빌더의 사본을 재조립 때 지운다 — <see cref="ArtBackdropKit"/>),
+    /// 기능물은 빌더가 이긴다(프리팹에 얼면 씬 참조가 끊긴다). 판정은 <see cref="ArtSetRules"/> 한 곳.
     ///
     /// 되돌리기: 이 도구는 프리팹을 **덮어쓴다**. git이 안전망이므로 실행 전 커밋 상태를 확인한다.
     /// </summary>
@@ -19,7 +22,7 @@ namespace DontLate.EditorTools
     {
         private const string HAND_DIR = "Assets/Prefabs/Hand";
 
-        [MenuItem("DontLate/Art/④ 세트 프리팹에서 빌더 생성물 걷어내기", priority = 103)]
+        [MenuItem("DontLate/Art/④ 세트 프리팹에서 기능물 걷어내기", priority = 103)]
         private static void SanitizeAll()
         {
             string[] guids = AssetDatabase.FindAssets("t:Prefab", new[] { HAND_DIR });
@@ -38,15 +41,16 @@ namespace DontLate.EditorTools
 
             AssetDatabase.SaveAssets();
             string message = touched == 0
-                ? "걷어낼 빌더 생성물이 없습니다 — 세트 프리팹이 전부 순수 아트입니다."
-                : $"{touched}개 프리팹에서 빌더 생성물 {removedTotal}개를 걷어냈습니다.\n\n"
-                  + "이제 재조립해도 두 벌이 겹치지 않습니다.\n프리팹 변경분을 커밋해 주세요.";
+                ? "걷어낼 기능물이 없습니다 — 세트 프리팹에 시각물만 들어 있습니다."
+                : $"{touched}개 프리팹에서 기능물 {removedTotal}개를 걷어냈습니다.\n\n"
+                  + "머티리얼을 입힌 시각물은 그대로 남습니다(아트가 이깁니다).\n"
+                  + "프리팹 변경분을 커밋해 주세요.";
             EditorUtility.DisplayDialog("세트 정리", message, "확인");
             Debug.Log("[세트정리] " + message.Replace("\n", " "));
         }
 
         /// <summary>
-        /// 프리팹 하나를 열어 빌더 생성물 **최상위 자식**만 지운다.
+        /// 프리팹 하나를 열어 기능물 **최상위 자식**만 지운다.
         /// 최상위만 보는 이유: 빌더 산출물은 루트째로 담기므로, 그 루트를 지우면 하위도 함께 간다.
         /// 아트 모델 내부에 우연히 같은 이름의 노드가 있어도 건드리지 않는다.
         /// </summary>
@@ -57,7 +61,7 @@ namespace DontLate.EditorTools
 
             var doomed = new List<GameObject>();
             foreach (Transform child in root.transform)
-                if (IsBuilderOwned(child.gameObject.name)) doomed.Add(child.gameObject);
+                if (ArtSetRules.IsBuilderOwned(child.gameObject)) doomed.Add(child.gameObject);
 
             if (doomed.Count == 0)
             {
@@ -70,18 +74,9 @@ namespace DontLate.EditorTools
             PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
             PrefabUtility.UnloadPrefabContents(root);
 
-            Debug.Log($"[세트정리] {System.IO.Path.GetFileName(prefabPath)} — 빌더 생성물 {doomed.Count}개 제거: "
+            Debug.Log($"[세트정리] {System.IO.Path.GetFileName(prefabPath)} — 기능물 {doomed.Count}개 제거: "
                 + string.Join(", ", doomed.ConvertAll(g => g.name).ToArray()));
             return doomed.Count;
-        }
-
-        /// <summary>담기 도구(ArtSetCaptureTool)와 **같은 기준**을 쓴다 — 둘이 갈리면 또 섞인다.</summary>
-        private static bool IsBuilderOwned(string n)
-        {
-            if (n.StartsWith("__gb_") || n.StartsWith("__ui_")) return true;
-            if (n == "Main Camera" || n.StartsWith("SceneLabel_")) return true;
-            if (n == "Slots" || n == "CenterLine") return true;
-            return false;
         }
     }
 }

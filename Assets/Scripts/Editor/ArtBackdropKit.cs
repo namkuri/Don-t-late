@@ -82,11 +82,57 @@ namespace DontLate.EditorTools
             root.name = BACKDROP_ROOT;
             root.transform.position = set.RootPosition;
 
-            foreach (Collider c in root.GetComponentsInChildren<Collider>(true)) c.enabled = false;
+            int replaced = TakeOverBuilderVisuals(root);
 
             Debug.Log($"[아트배경] {System.IO.Path.GetFileNameWithoutExtension(set.PrefabPath)} "
-                + $"배치 — 자식 {root.transform.childCount}개 @ {set.RootPosition}");
+                + $"배치 — 자식 {root.transform.childCount}개 @ {set.RootPosition}"
+                + (replaced > 0 ? $" · 빌더 시각물 {replaced}개를 아트판으로 교체" : ""));
             return root;
+        }
+
+        /// <summary>
+        /// S-188 — **아트가 설정해 보낸 빌더 시각물이 빌더 원본을 이긴다.**
+        ///
+        /// 아트는 씬에서 빌더가 세운 벽·바닥에 머티리얼을 입혀 보낸다(아파트 벽의 `wall.mat`,
+        /// 창의 `window.mat` 등). 그 결과가 세트에 담기는데, 재조립하면 빌더가 민무늬 원본을
+        /// 다시 세워 같은 자리에 두 벌이 선다 — 남규님이 본 겹침이자, 앞에서 보이는 쪽이
+        /// 빌더 것이면 "머티리얼이 빠졌다"로 나타난다.
+        ///
+        /// 해법은 세트를 비우는 게 아니라(그러면 아트 작업이 사라진다 — S-187의 오판)
+        /// **빌더 사본을 지우는 것**이다. 이름이 곧 대응 관계다.
+        ///
+        /// 콜라이더 처리가 갈리는 이유: 배경 아트는 통행 판정에 끼면 안 되므로 끄는 것이 규약이다
+        /// (S-119 ①). 그러나 빌더 시각물을 대체하는 것들은 바닥·슬래브처럼 **플레이어가 밟는 면**을
+        /// 겸한다 — 여기서 콜라이더를 끄면 바닥이 뚫린다. 그래서 대체품만 콜라이더를 살린다.
+        /// </summary>
+        private static int TakeOverBuilderVisuals(GameObject root)
+        {
+            var overrides = new System.Collections.Generic.HashSet<string>();
+            foreach (Transform child in root.transform)
+                if (ArtSetRules.ArtOverridesBuilder(child.gameObject)) overrides.Add(child.name);
+
+            // 배경층 콜라이더는 끈다 — 단 빌더 대체품은 밟는 면을 겸하므로 살려 둔다.
+            foreach (Transform child in root.transform)
+            {
+                if (overrides.Contains(child.name)) continue;
+                foreach (Collider c in child.GetComponentsInChildren<Collider>(true)) c.enabled = false;
+            }
+
+            if (overrides.Count == 0) return 0;
+
+            int removed = 0;
+            foreach (GameObject sceneRoot in root.scene.GetRootGameObjects())
+            {
+                if (sceneRoot == root) continue;
+                if (!overrides.Contains(sceneRoot.name)) continue;
+                Object.DestroyImmediate(sceneRoot);
+                removed++;
+            }
+
+            if (removed > 0)
+                Debug.Log("[아트배경] 빌더 사본 " + removed + "개 제거(아트판이 대신 선다): "
+                    + string.Join(", ", new System.Collections.Generic.List<string>(overrides).ToArray()));
+            return removed;
         }
     }
 }

@@ -56,18 +56,17 @@ namespace DontLate.EditorTools
                 if (go == null || go == root) continue;
                 // 이미 세트 안에 있는 건 건드리지 않는다 — 부모를 바꾸면 좌표만 흔들린다.
                 if (go.transform.IsChildOf(root.transform)) continue;
-                // S-187 — **빌더 생성물은 담지 않는다.** 담기면 재조립 때 빌더가 한 벌,
-                // 세트가 또 한 벌을 꽂아 같은 자리에 두 벌이 선다(남규님이 본 "겹침"의 진범 —
-                // set_apartment에 40개, set_hillside에 25개가 섞여 있었다).
-                // 아트만 담는 것이 이 도구의 계약이다.
-                if (IsBuilderOwned(go)) { skipped.Add(go.name); continue; }
+                // S-188 — **기능물만 거른다.** 빌더가 만든 벽·바닥이라도 머티리얼을 입혔다면
+                // 그건 아트 작업물이므로 담아야 한다(재조립 때 빌더 사본이 대신 지워진다).
+                // 반면 엘베·자동문·걷기볼륨처럼 로직을 든 것은 프리팹에 얼면 씬 참조가 끊긴다.
+                if (ArtSetRules.IsBuilderOwned(go)) { skipped.Add(go.name); continue; }
                 // 월드 좌표를 지킨 채 부모만 바꾼다(worldPositionStays: true).
                 Undo.SetTransformParent(go.transform, root.transform, "세트에 담기");
                 moved++;
             }
 
             if (skipped.Count > 0)
-                Debug.Log("[아트세트] 빌더 생성물 " + skipped.Count + "개는 담지 않았다(재조립이 다시 만든다): "
+                Debug.Log("[아트세트] 기능물 " + skipped.Count + "개는 담지 않았다(재조립이 다시 만든다): "
                     + string.Join(", ", skipped.ToArray()));
 
             if (moved == 0)
@@ -110,21 +109,6 @@ namespace DontLate.EditorTools
         }
 
         // ── 내부 ────────────────────────────────────────────────
-
-        /// <summary>
-        /// S-187 — 씬 빌더가 만드는 것인가. 이런 건 재조립이 다시 만들므로 세트에 담으면 중복이 된다.
-        /// 판별 기준을 이름에 두는 이유: 빌더가 산출물에 `__gb_`/`__ui_` 접두어를 붙이는 것이
-        /// 이 프로젝트의 규약이라(GreyboxStageBuilder), 그 규약을 그대로 신뢰하는 것이 가장 단순하다.
-        /// 카메라·씬 이름표는 접두어가 없어 이름으로 따로 잡는다.
-        /// </summary>
-        private static bool IsBuilderOwned(GameObject go)
-        {
-            string n = go.name;
-            if (n.StartsWith("__gb_") || n.StartsWith("__ui_")) return true;
-            if (n == "Main Camera" || n.StartsWith("SceneLabel_")) return true;
-            if (n == "Slots" || n == "CenterLine") return true;
-            return false;
-        }
 
         private static bool TryResolveSet(out string setPath, out string sceneName)
         {
