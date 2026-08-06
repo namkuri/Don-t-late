@@ -1134,6 +1134,10 @@ namespace DontLate.EditorTools
             carryAnchor.transform.localPosition = new Vector3(0f, 1.05f, 0.45f);
             SetReference(player.GetComponent<PlayerStatusManager>(), "_carryAnchor", carryAnchor.transform);
 
+            // S-195 — 캐리 중 양손을 상자에 붙인다. **Animator와 같은 게임오브젝트**에 얹어야
+            // OnAnimatorIK가 불린다(플레이어 루트가 아니라 비주얼 자식이다).
+            if (animator != null) AttachCarryHandIK(animator.gameObject, carryAnchor.transform);
+
             // S-070 ③ — 씬 전이 복원 상자가 캠프 박스와 동일 룩을 갖도록 비주얼 프리팹 주입.
             GameObject parcelPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Auto/prop_box_parcel.prefab");
             if (parcelPrefab != null)
@@ -1188,7 +1192,52 @@ namespace DontLate.EditorTools
             foreach (Object asset in AssetDatabase.LoadAllAssetsAtPath(COURIER_FBX_PATH))
                 if (asset is Avatar avatar) { animator.avatar = avatar; break; }
 
+            EnsureIkPass(); // S-195 — 이게 꺼져 있으면 OnAnimatorIK가 아예 안 불린다
             return animator;
+        }
+
+        /// <summary>
+        /// S-195 — 캐리 손 IK를 얹는다(멱등). 플레이어·타이틀 러너 공용이라 여기 둔다.
+        /// </summary>
+        internal static void AttachCarryHandIK(GameObject animatorHost, Transform carryAnchor)
+        {
+            if (animatorHost == null || carryAnchor == null) return;
+
+            CarryHandIK ik = animatorHost.GetComponent<CarryHandIK>();
+            if (ik == null) ik = animatorHost.AddComponent<CarryHandIK>();
+            // 앵커는 씬 오브젝트 참조라 SerializedObject로 넣는다(CODE_RULES §6 — 리플렉션 대입은
+            // 저장 시 {fileID: 0}으로 유실된 이력이 있다).
+            var so = new SerializedObject(ik);
+            so.FindProperty("_carryAnchor").objectReferenceValue = carryAnchor;
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        /// <summary>
+        /// S-195 — 배달원 컨트롤러의 IK Pass를 켠다(멱등).
+        ///
+        /// 이 체크 하나가 꺼져 있으면 `OnAnimatorIK`가 **호출조차 되지 않는다** — 코드도 배선도
+        /// 멀쩡한데 손이 안 붙는, 원인이 안 보이는 부류의 실패다. 사람이 인스펙터에서 켜 두는
+        /// 것에 기대면 재조립·클론 때마다 되돌아가므로 빌더가 매번 보장한다.
+        /// </summary>
+        internal static void EnsureIkPass()
+        {
+            var ac = AssetDatabase.LoadAssetAtPath<UnityEditor.Animations.AnimatorController>(COURIER_AC_PATH);
+            if (ac == null) return;
+
+            UnityEditor.Animations.AnimatorControllerLayer[] layers = ac.layers;
+            bool changed = false;
+            for (int i = 0; i < layers.Length; i++)
+            {
+                if (layers[i].iKPass) continue;
+                layers[i].iKPass = true;
+                changed = true;
+            }
+            if (!changed) return;
+
+            ac.layers = layers; // 배열을 되대입해야 반영된다 — 요소만 고치면 사본이라 버려진다
+            EditorUtility.SetDirty(ac);
+            AssetDatabase.SaveAssets();
+            Debug.Log("[애니] AC_chr_courier — IK Pass 활성화(캐리 양손 IK 전제).");
         }
 
         private static Bounds ComputeRenderBounds(GameObject root)
