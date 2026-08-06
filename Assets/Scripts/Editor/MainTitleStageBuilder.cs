@@ -44,6 +44,13 @@ namespace DontLate.EditorTools
             "__gb_Door",           // 배송지 문·간판 — 타이틀엔 상호작용 대상이 없다
             "__gb_Sign",
             "SceneLabel_District", // District 조립이 남기는 씬 이름표
+
+            // S-194 — 씬에 굴러다니던 유니티 기본 프리미티브. 언젠가 손으로 얹은 것이 Main.unity에
+            // 저장돼 남았고, `GreyboxStageBuilder.Clear()`는 `__gb_` 접두어만 지우므로 재조립을
+            // 해도 계속 살아났다(타이틀 화면의 회색 원기둥·바닥판 — 남규님 지적).
+            // 다른 씬엔 없다(전 씬 조회 확인) — 여기서만 걷어낸다.
+            "Plane",
+            "Capsule",
         };
 
         [MenuItem("DontLate/Build/Main Title Stage (타이틀 배경)", priority = 16)]
