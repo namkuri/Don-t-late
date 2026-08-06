@@ -71,6 +71,14 @@
 
 동네에는 플레이어의 배송을 도와주거나, 잔소리하거나, 새로운 정보를 알려주는 주민들이 등장합니다.
 
+<p align="center">
+  <img src="./Assets/readme/npc/npc1.png" alt="늦지마 등장인물 1" width="19%" />
+  <img src="./Assets/readme/npc/npc2.png" alt="늦지마 등장인물 2" width="19%" />
+  <img src="./Assets/readme/npc/npc3.png" alt="늦지마 등장인물 3" width="19%" />
+  <img src="./Assets/readme/npc/npc4.png" alt="늦지마 등장인물 4" width="19%" />
+  <img src="./Assets/readme/npc/npc5.png" alt="늦지마 등장인물 5" width="19%" />
+</p>
+
 - 베테랑 기사와 배송 동료
 - 꽃집 주인과 편의점 직원
 - 동네 사정을 훤히 아는 주민들
