@@ -1303,6 +1303,7 @@ namespace DontLate.EditorTools
             if (material != null)
             {
                 MigrateToSnowShader(material, emissive); // S-053 ⑤ — 기존 에셋도 스노 셰이더로 이식(멱등)
+                if (emissive) EnableEmission(material, color); // S-190 — 이미 만들어진 에셋도 고친다
                 return material;
             }
 
@@ -1313,14 +1314,26 @@ namespace DontLate.EditorTools
             Shader shader = emissive ? Shader.Find("Universal Render Pipeline/Lit") : Shader.Find("DontLate/GreyboxSnow");
             material = new Material(shader);
             material.color = color;
-            if (emissive)
-            {
-                material.EnableKeyword("_EMISSION");
-                material.SetColor("_EmissionColor", color * 1.8f);
-            }
             AssetDatabase.CreateAsset(material, path);
+            // S-190 — 이미시브 설정은 **CreateAsset 뒤에** 한다. URP 머티리얼 초기화가 키워드를
+            // 리셋해서, 앞에서 켜면 저장된 에셋에는 꺼진 채로 남는다(같은 함정을 GB_Sign에서
+            // 이미 겪고 668행에 기록해 뒀는데 이 경로엔 적용이 안 돼 있었다 — 그 결과
+            // GB_SignalLamp·GB_EdgeGate가 "색은 있는데 발광 안 함" 상태였다, 실측 2026-08-06).
+            if (emissive) EnableEmission(material, color);
             AssetDatabase.SaveAssets();
             return material;
+        }
+
+        /// <summary>이미시브를 실제로 켠다 — 키워드·GI 플래그까지(하나라도 빠지면 조용히 안 빛난다).</summary>
+        private static void EnableEmission(Material material, Color color)
+        {
+            if (material.IsKeywordEnabled("_EMISSION")
+                && material.GetColor("_EmissionColor").maxColorComponent > 0.01f) return;
+
+            material.EnableKeyword("_EMISSION");
+            material.SetColor("_EmissionColor", color * 1.8f);
+            material.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
+            EditorUtility.SetDirty(material);
         }
 
         // 기존 GB_ 머티리얼을 스노 셰이더로 이식 — 색만 승계 (S-053 ⑤).
