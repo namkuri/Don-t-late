@@ -10,8 +10,16 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Engine-Unity-222222?style=flat-square&logo=unity&logoColor=white" alt="Unity" />
-  <img src="https://img.shields.io/badge/Platform-PC%20%7C%20WebGL-5C8DFF?style=flat-square" alt="Platform" />
+  <a href="https://namkuri.github.io/Don-t-late/">
+    <img src="https://img.shields.io/badge/Platform-PC%20%7C%20WebGL-5C8DFF?style=flat-square" alt="WebGL로 플레이" />
+  </a>
   <img src="https://img.shields.io/badge/Status-In%20Development-F2B84B?style=flat-square" alt="Development Status" />
+</p>
+
+<p align="center">
+  <a href="https://namkuri.github.io/Don-t-late/">
+    <img src="https://img.shields.io/badge/WEBGL로%20플레이-2F80ED?style=for-the-badge&logo=unity&logoColor=white" alt="WebGL로 플레이" />
+  </a>
 </p>
 
 ## 📦 게임 소개
@@ -72,22 +80,18 @@
 
 ## 🕹️ 조작법
 
-| 입력 | 동작 |
-| --- | --- |
-| `WASD` / 방향키 | 이동 |
-| `E` | 상호작용 |
-| `Tab` | 휴대폰 및 배송 정보 |
-| `Shift` | 달리기 |
-| `Esc` | 메뉴 |
-
-> 실제 키 설정은 빌드 버전에 따라 변경될 수 있습니다.
+<p align="center">
+  <img src="./Assets/readme/control.png" alt="늦지마 조작법 안내" width="100%" />
+</p>
 
 ## 🌐 WebGL 플레이
 
 브라우저에서 별도 설치 없이 플레이할 수 있습니다.
 
+**플레이:** [https://namkuri.github.io/Don-t-late/](https://namkuri.github.io/Don-t-late/)
+
 <p align="center">
-  <a href="https://namkuri.github.io/Don-t-late/" target="_blank">
+  <a href="https://namkuri.github.io/Don-t-late/">
     <img src="https://img.shields.io/badge/WEBGL로%20플레이-2F80ED?style=for-the-badge&logo=unity&logoColor=white" alt="WebGL로 플레이" />
   </a>
 </p>
