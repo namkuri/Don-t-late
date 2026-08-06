@@ -69,14 +69,16 @@ namespace DontLate.EditorTools
                 return 0;
             }
 
+            // 이름은 **지우기 전에** 챙긴다 — 파괴된 오브젝트의 name 접근은 예외다.
+            string[] names = doomed.ConvertAll(g => g.name).ToArray();
             foreach (GameObject go in doomed) Object.DestroyImmediate(go);
             // SaveAsPrefabAsset은 **같은 경로면 GUID를 유지**한다 — 씬·빌더의 참조가 안 끊긴다.
             PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
             PrefabUtility.UnloadPrefabContents(root);
 
-            Debug.Log($"[세트정리] {System.IO.Path.GetFileName(prefabPath)} — 기능물 {doomed.Count}개 제거: "
-                + string.Join(", ", doomed.ConvertAll(g => g.name).ToArray()));
-            return doomed.Count;
+            Debug.Log($"[세트정리] {System.IO.Path.GetFileName(prefabPath)} — 기능물 {names.Length}개 제거: "
+                + string.Join(", ", names));
+            return names.Length;
         }
     }
 }
