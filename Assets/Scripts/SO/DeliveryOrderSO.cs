@@ -15,7 +15,10 @@ namespace DontLate
 
         /// <summary>개척(해금) 순서 정본 (S-054 · D-064 순서) — 앞 구역에서 배송 성공해야 다음이 열린다.</summary>
         public static readonly string[] DISTRICT_PROGRESSION =
-            { DISTRICT_VILLATOWN, DISTRICT_FOODALLEY, DISTRICT_APARTMENT, DISTRICT_HILLSIDE };
+            // S-186 ② — 아파트를 **종점**으로 옮겼다. 아파트 마당은 왼쪽만 트여 있어(건물이 오른쪽을
+            // 막는다) 오른쪽에 Next 게이트를 세울 자리가 없다. 종전 순서에선 아파트에서 다음 구역으로
+            // 걸어갈 길이 없어 개척 루프가 거기서 끊겼다(남규님 지적).
+            { DISTRICT_VILLATOWN, DISTRICT_FOODALLEY, DISTRICT_HILLSIDE, DISTRICT_APARTMENT };
 
         public int orderId;
         public string address;

@@ -37,7 +37,8 @@ namespace DontLate.EditorTools
         private const string DIALOGUE_DATA_ROOT = "Assets/Data/Dialogue";
         private const string PARK_SCENARIO_PATH = DIALOGUE_DATA_ROOT + "/Scenario_ParkMalsoon_Intro.asset";
 
-        private static readonly string[] ContentSceneNames = { "Home", "Camp", "Travel", "District", "Apartment", "Hillside" };
+        // S-186 ③ — District 은퇴, Village·FoodStreet 신설 (구역 : 씬 1:1).
+        private static readonly string[] ContentSceneNames = { "Home", "Camp", "Travel", "Village", "FoodStreet", "Apartment", "Hillside" };
 
         // 빌드 세팅 등록 순서 — Core(0) → Main → 콘텐츠 5종. SampleScene·Greybox 제외.
         private static readonly string[] BuildOrder =
@@ -47,7 +48,8 @@ namespace DontLate.EditorTools
             SCENES_ROOT + "/Home.unity",
             SCENES_ROOT + "/Camp.unity",
             SCENES_ROOT + "/Travel.unity",
-            SCENES_ROOT + "/District.unity",
+            SCENES_ROOT + "/Village.unity",    // S-186 ③ — 빌라촌 (구 District)
+            SCENES_ROOT + "/FoodStreet.unity", // S-186 ③ — 먹자골목 (신설)
             SCENES_ROOT + "/Apartment.unity", // S-038
             SCENES_ROOT + "/Hillside.unity",  // S-049
         };
@@ -121,7 +123,8 @@ namespace DontLate.EditorTools
             BuildCoreScene();               // 매니저·HUD·대화·미니게임·폰 캔버스
             CampStageBuilder.BuildCampStage();
             HomeStageBuilder.BuildHomeStage();
-            DistrictSceneBuilder.BuildDistrictStage();
+            DistrictSceneBuilder.BuildDistrictStage();     // S-186 ③ — 빌라촌
+            FoodStreetSceneBuilder.BuildFoodStreetStage(); // S-186 ③ — 먹자골목
             ApartmentStageBuilder.BuildApartmentStage(); // S-038
             HillsideStageBuilder.BuildHillsideStage();   // S-049
             SceneFlowUIBuilder.BuildSceneFlowUI();  // 씬별 전환 UI + 정산 패널 (무대 뒤에 얹는다)

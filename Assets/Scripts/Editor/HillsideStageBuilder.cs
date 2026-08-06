@@ -92,9 +92,13 @@ namespace DontLate.EditorTools
             NpcBuildKit.BuildErrandNpc("ErrandGranny", "할머니", OnGround(-9f, 1.8f),
                 OnGround(31f, 0.6f), gameState, 2500);
 
-            // S-054b 엣지 워크 — 왼쪽 끝 = 이전 동네(아파트단지). 오른쪽은 개척 종점(게이트 없음).
+            // S-054b 엣지 워크 — 왼쪽 끝 = 이전 동네(먹자골목).
+            // S-186 ② — 언덕주택가가 3번째가 되면서 **오른쪽에 Next(아파트단지)가 생겼다**.
+            // 종전엔 종점이라 게이트가 하나뿐이었다. 산 능선은 x 66~84가 평지라 날머리에 세운다.
             EdgeGateBuildKit.BuildGate("EdgeGate_Prev", OnGround(-19.5f, 0f),
                 DontLate.DistrictEdgeGate.Direction.Prev, gameState);
+            EdgeGateBuildKit.BuildGate("EdgeGate_Next", OnGround(76f, 0f),
+                DontLate.DistrictEdgeGate.Direction.Next, gameState);
 
             // S-059 — 달동네 고양이 (정상 마당 · 데려오면 집에 정착).
             BuildCat(gameState, OnGround(34f, -1.2f));

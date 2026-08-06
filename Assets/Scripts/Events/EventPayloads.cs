@@ -7,9 +7,13 @@ namespace DontLate
         Home,
         Camp,
         Travel,
-        District,
-        Apartment, // S-038 (D-067) — 아파트단지 별도 씬 (대차·비번·엘베)
-        Hillside   // S-049 (D-064) — 언덕주택가 (테라스·미끄럼)
+        // S-186 ③ — 빌라촌·먹자골목이 한 씬(District)을 공유해 "배치가 똑같다"는 지적이 나왔다.
+        // 구역 : 씬을 **1:1**로 갈라 넷 다 다른 곳이 되게 한다. District는 은퇴 —
+        // 씬 이름 = enum 이름이라(WorldSceneFlowManager) 이름이 곧 파일이다.
+        Village,    // 빌라촌 — District 무대를 그대로 승계
+        FoodStreet, // 먹자골목 — 음식점·노점 위주 신규 무대
+        Apartment,  // S-038 (D-067) — 아파트단지 별도 씬 (대차·비번·엘베)
+        Hillside    // S-049 (D-064) — 언덕주택가 (테라스·미끄럼)
     }
 
     /// <summary>하루의 날씨 (S-042) — 아침 추첨, 시각·연출·안개가 구독.</summary>

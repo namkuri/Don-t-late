@@ -201,7 +201,10 @@ namespace DontLate
             if (_inTravel)
             {
                 // S-036: 출발지 = 직전 위치 자동 라벨 (District에서 오면 마지막 구역, 그 외 물류캠프).
-                _travelOrigin = _prevScene == GameScene.District && _gameState != null
+                // S-186 ③ — 배송 구역이 넷 다 별도 씬이 됐다. 어느 구역에서 왔든 그 이름을 쓴다.
+                bool fromDistrict = _prevScene == GameScene.Village || _prevScene == GameScene.FoodStreet
+                                 || _prevScene == GameScene.Hillside || _prevScene == GameScene.Apartment;
+                _travelOrigin = fromDistrict && _gameState != null
                     && !string.IsNullOrEmpty(_gameState.currentDistrict)
                     ? _gameState.currentDistrict : "물류캠프";
                 _selectedPin = -1;
@@ -912,7 +915,7 @@ namespace DontLate
         private void BuildDeliveryScreen()
         {
             GameObject screen = NewScreen(Screen.Delivery);
-            _deliveryHover = MakeText(screen.transform, "Hover", "-", 28f, new Color(0.208f, 0.878f, 0.784f), TextAlignmentOptions.Top);
+            _deliveryHover = MakeText(screen.transform, "Hover", "", 28f, new Color(0.208f, 0.878f, 0.784f), TextAlignmentOptions.Top);
             Anchor(_deliveryHover.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, 0f), 38f);
             // S-164 ⑦ — 경고문이 길어 줄바꿈되면 아래 목록을 덮었다(남규님 캡처).
             // 폰트를 줄이고 **오토사이징**으로 한 줄에 욱여넣는다 — 경고는 한 줄이어야 목록을 안 가린다.
@@ -1874,10 +1877,11 @@ namespace DontLate
             WorldAudioManager.Instance?.PlayMapDepartSfx(); // AU-011
             WorldDayNightManager.Instance.AdvanceMinutes(pin.far ? _tuning.travelFarMinutes : _tuning.travelNearMinutes);
             WorldDeliveryManager.Instance.SetDestination(pin.district);
-            // S-038·S-049: 아파트·언덕은 별도 씬(D-067) — 나머지는 공용 District.
+            // S-186 ③ — 구역마다 씬이 하나씩 (District 공용 폐지).
             GameScene target = pin.district == DeliveryOrderSO.DISTRICT_APARTMENT ? GameScene.Apartment
                              : pin.district == DeliveryOrderSO.DISTRICT_HILLSIDE ? GameScene.Hillside
-                             : GameScene.District;
+                             : pin.district == DeliveryOrderSO.DISTRICT_FOODALLEY ? GameScene.FoodStreet
+                             : GameScene.Village;
             WorldSceneFlowManager.Instance.Request(target);
         }
 
@@ -1933,7 +1937,10 @@ namespace DontLate
             }
 
             if (_deliveryHover != null)
-                _deliveryHover.text = box != null && box.Order != null ? "송장 " + Invoice(box.Order.orderId) : "-";
+                // S-186 ① — 짚은 게 없으면 **빈칸**이다. 종전 자리표시 "-"는 픽셀 폰트(DNFBitBit)에서
+                // 넓은 막대로 그려져 "글자가 깨졌다"로 읽혔다(남규님 지적). 문자를 바꿔도 같다 —
+                // 애초에 짚은 상자가 없을 때 뭔가 떠 있을 이유가 없는 자리다.
+                _deliveryHover.text = box != null && box.Order != null ? "송장 " + Invoice(box.Order.orderId) : "";
 
             // S-165 ① — **여기서는 등록하지 않는다.** 이 경로는 폰이 열린 채 상자를 좌클릭하면
             // 조준·유지 없이 곧바로 등록해 버렸다(남규님 지적: "바코드 안찍고 클릭만해도 등록됨").

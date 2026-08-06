@@ -17,13 +17,17 @@ namespace DontLate
             {
                 { GameScene.Main, new[] { GameScene.Home } },
                 { GameScene.Home, new[] { GameScene.Camp, GameScene.Main } },
-                { GameScene.Camp, new[] { GameScene.Travel, GameScene.Home, GameScene.District, GameScene.Main } }, // S-054b·S-065
+                { GameScene.Camp, new[] { GameScene.Travel, GameScene.Home, GameScene.Village, GameScene.Main } }, // S-054b·S-065
                 // S-134 ⑤ — Home 추가. 다른 씬은 전부 Home을 갖는데 Travel만 빠져 있어
                 // 이동맵에서 귀가가 막혀 있었다(엣지워크 정산 누락의 한 겹).
-                { GameScene.Travel, new[] { GameScene.District, GameScene.Camp, GameScene.Apartment, GameScene.Hillside, GameScene.Home, GameScene.Main } },
-                { GameScene.District, new[] { GameScene.Travel, GameScene.Home, GameScene.Camp, GameScene.District, GameScene.Apartment, GameScene.Main } }, // S-053 ④·S-054b·S-065
-                { GameScene.Apartment, new[] { GameScene.Travel, GameScene.Home, GameScene.Camp, GameScene.District, GameScene.Hillside, GameScene.Main } }, // S-038·S-054b·S-065
-                { GameScene.Hillside, new[] { GameScene.Travel, GameScene.Home, GameScene.Camp, GameScene.Apartment, GameScene.Main } },  // S-049·S-054b·S-065
+                // S-186 ③ — 구역 4개가 각자 씬을 갖게 되어 이동맵은 넷 다 갈 수 있어야 한다.
+                { GameScene.Travel, new[] { GameScene.Village, GameScene.FoodStreet, GameScene.Camp, GameScene.Apartment, GameScene.Hillside, GameScene.Home, GameScene.Main } },
+                // 개척 순서(S-186 ②): 빌라촌 → 먹자골목 → 언덕주택가 → 아파트.
+                // 도보 이웃만 열어 둔다 — 건너뛰기는 이동맵(Travel) 몫이다.
+                { GameScene.Village, new[] { GameScene.Travel, GameScene.Home, GameScene.Camp, GameScene.FoodStreet, GameScene.Main } },
+                { GameScene.FoodStreet, new[] { GameScene.Travel, GameScene.Home, GameScene.Camp, GameScene.Village, GameScene.Hillside, GameScene.Main } },
+                { GameScene.Hillside, new[] { GameScene.Travel, GameScene.Home, GameScene.Camp, GameScene.FoodStreet, GameScene.Apartment, GameScene.Main } },  // S-049·S-054b·S-065
+                { GameScene.Apartment, new[] { GameScene.Travel, GameScene.Home, GameScene.Camp, GameScene.Hillside, GameScene.Main } }, // S-038·S-054b·S-065
             };
 
         [SerializeField] private GameStateSO _gameState;

@@ -338,12 +338,13 @@ namespace DontLate
         {
             _titleScene = scene == GameScene.Main;
             if (_titleScene) _endingActive = false; // 타이틀 복귀 = 엔딩 종료
-            _inDistrict = scene == GameScene.District; // AU-011
+            _inDistrict = scene == GameScene.Village || scene == GameScene.FoodStreet; // AU-011 · S-186 ③
             ApplySlot();
             UpdateAmbient();
 
             // AU-018 ④ — 배송지(District·아파트·언덕) 진입 시 도착 차임. whoosh(떠남)와 짝.
-            if (scene == GameScene.District || scene == GameScene.Apartment || scene == GameScene.Hillside)
+            if (scene == GameScene.Village || scene == GameScene.FoodStreet
+                || scene == GameScene.Apartment || scene == GameScene.Hillside)
                 PlaySfx(_sfxArrive);
         }
 

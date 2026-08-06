@@ -41,7 +41,7 @@ namespace DontLate
         {
             if (_pending != null) { StopCoroutine(_pending); _pending = null; }
             CancelRingTimeout(); // 수신 방치 중 씬 이탈 — 타이머도 소멸
-            if (scene != GameScene.District) return;
+            if (scene != GameScene.Village && scene != GameScene.FoodStreet) return; // S-186 ③
             _pending = StartCoroutine(RingAfterDelay());
         }
 

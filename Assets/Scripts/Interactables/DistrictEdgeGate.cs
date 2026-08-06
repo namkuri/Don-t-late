@@ -103,11 +103,30 @@ namespace DontLate
             string[] progression = DeliveryOrderSO.DISTRICT_PROGRESSION;
             GameScene currentScene = _gameState.currentScene;
             if (currentScene == GameScene.Camp) return -1;
-            if (currentScene == GameScene.Apartment) return System.Array.IndexOf(progression, DeliveryOrderSO.DISTRICT_APARTMENT);
-            if (currentScene == GameScene.Hillside) return System.Array.IndexOf(progression, DeliveryOrderSO.DISTRICT_HILLSIDE);
-            if (currentScene == GameScene.District) return Mathf.Max(0, System.Array.IndexOf(progression, _gameState.currentDistrict));
-            return int.MinValue;
+            // S-186 ③ — 구역 : 씬이 1:1이 되어 **씬만 보면 위치가 정해진다**.
+            // 종전엔 빌라촌·먹자골목이 District 하나를 공유해 `currentDistrict`를 폴백으로 봤는데,
+            // 그 값이 어긋나면 엉뚱한 이웃으로 걸어가는 구멍이었다.
+            string district = DistrictOf(currentScene);
+            if (district == null) return int.MinValue;
+            return System.Array.IndexOf(progression, district);
         }
+
+        // S-186 ③ — 구역 ↔ 씬 1:1 표. 두 방향 변환이 필요한 곳이 둘(위치 판정·목적지 이동)이라
+        // 한 곳에 모은다. 여기가 어긋나면 "걸어갔는데 다른 동네"가 되므로 표를 쪼개지 않는다.
+        private static string DistrictOf(GameScene scene) => scene switch
+        {
+            GameScene.Village => DeliveryOrderSO.DISTRICT_VILLATOWN,
+            GameScene.FoodStreet => DeliveryOrderSO.DISTRICT_FOODALLEY,
+            GameScene.Hillside => DeliveryOrderSO.DISTRICT_HILLSIDE,
+            GameScene.Apartment => DeliveryOrderSO.DISTRICT_APARTMENT,
+            _ => null,
+        };
+
+        private static GameScene SceneOf(string district) =>
+            district == DeliveryOrderSO.DISTRICT_VILLATOWN ? GameScene.Village
+          : district == DeliveryOrderSO.DISTRICT_FOODALLEY ? GameScene.FoodStreet
+          : district == DeliveryOrderSO.DISTRICT_HILLSIDE ? GameScene.Hillside
+          : GameScene.Apartment;
 
         /// <summary>이 게이트가 향하는 목표 구역 — 미해금이면 잠김 (S-062 ④ 벽 판정).</summary>
         private bool IsLocked()
@@ -188,9 +207,7 @@ namespace DontLate
                 return;
             }
 
-            GameScene targetScene = targetDistrict == DeliveryOrderSO.DISTRICT_APARTMENT ? GameScene.Apartment
-                                  : targetDistrict == DeliveryOrderSO.DISTRICT_HILLSIDE ? GameScene.Hillside
-                                  : GameScene.District;
+            GameScene targetScene = SceneOf(targetDistrict);
 
             // Next로 걸어가면 도착지 왼쪽(Prev 게이트) 앞에서, Prev로 걸어가면 오른쪽(Next 게이트) 앞에서 시작.
             _pendingArrival = _direction == Direction.Next ? Direction.Prev : Direction.Next;

@@ -304,7 +304,8 @@ namespace DontLate
         // S-164 ⑤ — 배송지역 도착. 캠프·집이 아닌 배송 씬에 들어서면 통과다.
         private void OnSceneArrived(GameScene scene)
         {
-            if (scene == GameScene.District || scene == GameScene.Apartment || scene == GameScene.Hillside)
+            if (scene == GameScene.Village || scene == GameScene.FoodStreet
+                || scene == GameScene.Apartment || scene == GameScene.Hillside)
                 Clear(Gate.ReachDistrict);
         }
 

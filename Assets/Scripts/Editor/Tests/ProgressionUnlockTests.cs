@@ -58,6 +58,11 @@ namespace DontLate.Tests
             Assert.IsFalse(_gameState.unlockedDistricts.Contains(DeliveryOrderSO.DISTRICT_APARTMENT));
         }
 
+        // S-186 ② — 개척 순서가 바뀌면(빌라촌→먹자골목→언덕→아파트) 마지막 구역도 바뀐다.
+        // 구역 이름을 박아 두면 순서를 손볼 때마다 테스트가 깨진다 — **배열에서 읽는다**.
+        private static string LastDistrict =>
+            DeliveryOrderSO.DISTRICT_PROGRESSION[DeliveryOrderSO.DISTRICT_PROGRESSION.Length - 1];
+
         [Test]
         public void 마지막_구역_성공_정산이_트럭을_지급한다()
         {
@@ -65,7 +70,7 @@ namespace DontLate.Tests
             foreach (string district in DeliveryOrderSO.DISTRICT_PROGRESSION)
                 _gameState.unlockedDistricts.Add(district);
             _gameState.playerLevel = LevelPerks.TRUCK; // S-134 ② — 트럭은 Lv4부터
-            SettleSuccessIn(DeliveryOrderSO.DISTRICT_HILLSIDE, 9003);
+            SettleSuccessIn(LastDistrict, 9003);
             Assert.IsTrue(_gameState.hasTruck);
         }
 
@@ -77,7 +82,7 @@ namespace DontLate.Tests
             foreach (string district in DeliveryOrderSO.DISTRICT_PROGRESSION)
                 _gameState.unlockedDistricts.Add(district);
             _gameState.playerLevel = LevelPerks.TRUCK - 1;
-            SettleSuccessIn(DeliveryOrderSO.DISTRICT_HILLSIDE, 9004);
+            SettleSuccessIn(LastDistrict, 9004);
             Assert.IsFalse(_gameState.hasTruck);
         }
     }

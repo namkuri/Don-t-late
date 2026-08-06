@@ -14,7 +14,8 @@ namespace DontLate.EditorTools
     /// </summary>
     public static class DistrictSceneBuilder
     {
-        private const string DISTRICT_PATH = "Assets/Scenes/District.unity";
+        private const string DISTRICT_PATH = "Assets/Scenes/Village.unity"; // S-186 ③ — District 은퇴, 빌라촌이 승계
+        private static string[] _buildingWhitelist;
         private const string SLOTS_ROOT = "Slots";
 
         // 슬롯 규약(발주): 건물 16칸 X간격 6u·길 안쪽 Z=2.6 / 소품 10칸 보도변 Z=-2.6.
@@ -26,12 +27,41 @@ namespace DontLate.EditorTools
         private const float BUILDING_Z = 2.6f;
         private const float PROP_Z = -2.6f;
 
-        [MenuItem("DontLate/Build/District Stage", priority = 14)]
-        public static void BuildDistrictStage() => BuildStage(DISTRICT_PATH);
+        /// <summary>
+        /// S-186 ③ — 빌라촌 건물 풀. 주거 위주(빌라·주택·아파트)로 좁혀 먹자골목과 갈라놓는다.
+        /// 종전엔 풀 전량을 써서 두 구역이 같은 재료로 지어졌다.
+        /// </summary>
+        private static readonly string[] VillaBuildings =
+        {
+            "blue_house", "blue_narroow_house", "mint_house", "white_brown_house",
+            "white_korea_house", "pink_korea_house", "pink_korea_house_2",
+            "old_korea_house", "retro_korean_house", "red_korean_house",
+            "Cream_home_unity", "Laundry_Home_unity", "residence",
+            "black_modern_house", "black_modern_residence", "old_apartment",
+        };
+
+        [MenuItem("DontLate/Build/Village Stage (빌라촌)", priority = 14)]
+        public static void BuildDistrictStage()
+        {
+            EnsureSceneFile(DISTRICT_PATH);
+            BuildStage(DISTRICT_PATH, VillaBuildings);
+        }
+
+        /// <summary>씬 파일이 없으면 만든다 — `BuildStage`는 OpenScene으로 시작한다.</summary>
+        internal static void EnsureSceneFile(string path)
+        {
+            if (System.IO.File.Exists(path)) return;
+            Scene fresh = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
+            EditorSceneManager.SaveScene(fresh, path);
+            Debug.Log("[씬] 신규 생성 — " + path);
+        }
 
         // S-116 ⑤ — 촬영용 District 1도 같은 조립을 재사용한다 (District1SceneBuilder가 호출).
-        internal static void BuildStage(string scenePath)
+        // S-186 ③ — 구역마다 다른 거리를 만들려면 **건물 풀**이 달라야 한다.
+        // 화이트리스트를 넘기면 그 이름들만 쓰고, null이면 종전대로 Art/Buildings 전량을 쓴다.
+        internal static void BuildStage(string scenePath, string[] buildingWhitelist = null)
         {
+            _buildingWhitelist = buildingWhitelist;
             Scene scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
 
             // 멱등: 이전 조립물 정리.
@@ -356,6 +386,8 @@ namespace DontLate.EditorTools
                 string name = System.IO.Path.GetFileNameWithoutExtension(path);
                 if (name == "door" || name == "old_stair") continue;
                 if (AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/Buildings/" + name + ".fbx") == null) continue;
+                // S-186 ③ — 구역 전용 풀. 화이트리스트가 있으면 그 안에 든 것만 쓴다.
+                if (_buildingWhitelist != null && System.Array.IndexOf(_buildingWhitelist, name) < 0) continue;
                 GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
                 Renderer[] renderers = prefab.GetComponentsInChildren<Renderer>(true);
                 if (renderers.Length == 0) continue;
