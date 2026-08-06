@@ -25,7 +25,7 @@ namespace DontLate.EditorTools
             Material door = GreyboxStageBuilder.GetOrCreateMaterial("Door", new Color(0.45f, 0.38f, 0.32f), false);
 
             BuildRoom(floor, wall, door);
-            // 침대는 S-031 ③부터 가구(fur_bed 시드) — 무대 고정물로 만들지 않는다.
+            BuildBed(); // S-189 — 무대 고정물로 복귀 (아래 주석 참조)
             ArtBackdropKit.Build(ArtBackdropKit.Home); // S-180 ② — 아트 세트 소켓(프리팹 없으면 무시)
             BuildSky();
             BuildFurniturePlacer();
@@ -41,6 +41,44 @@ namespace DontLate.EditorTools
             EditorSceneManager.SaveScene(scene, HOME_PATH);
             Debug.Log("[Home] 방 무대 조립 완료 — 연출 전용(조작 없음), 진행은 하단 버튼.");
         }
+
+        /// <summary>
+        /// S-189 — 침대를 **무대 고정물**로 세운다.
+        ///
+        /// 종전엔 HomeFurniturePlacer가 플레이 시작에 시드로 만들었다(S-031 ③). 그래서 에디터에서
+        /// Home을 열면 방이 비어 있었고, 아트가 배치를 맞추려면 플레이를 돌려 생긴 `fur_bed(Clone)`을
+        /// 붙잡는 수밖에 없었다 — 민지님이 그 클론을 세트에 담아 온 이유다. 씬을 열면 그냥 거기
+        /// 있어야 맞춰볼 수 있다(남규님 "플레이중에 생성하지말고 그냥 첨부터 배치되게 하자").
+        ///
+        /// 모델 자식의 로컬 오프셋은 남규님이 씬에서 직접 맞춘 값이다 — 프리팹 원본을 고치면
+        /// 다른 곳의 같은 침대까지 밀리므로, 여기 씬 인스턴스에만 준다.
+        /// </summary>
+        private static void BuildBed()
+        {
+            var so = AssetDatabase.LoadAssetAtPath<FurnitureSO>("Assets/Data/Furniture/fur_bed.asset");
+            if (so == null || so.prefab == null)
+            {
+                Debug.Log("[Home] 침대 프리팹 미배선 — fur_bed.asset 확인 (무대는 그대로 조립).");
+                return;
+            }
+
+            var bed = (GameObject)PrefabUtility.InstantiatePrefab(so.prefab);
+            bed.name = "__gb_Bed";
+            bed.transform.SetPositionAndRotation(BED_POSITION, Quaternion.Euler(0f, BED_YAW, 0f));
+            if (!Mathf.Approximately(so.prefabScale, 1f))
+                bed.transform.localScale *= so.prefabScale;
+
+            // 모델 노드는 프리팹 루트 밑에 한 겹 더 있다(팩토리 산출물 구조).
+            if (bed.transform.childCount > 0)
+                bed.transform.GetChild(0).localPosition = BED_MODEL_OFFSET;
+
+            Debug.Log("[Home] 침대 무대 배치 — " + BED_POSITION + " · 모델 오프셋 " + BED_MODEL_OFFSET);
+        }
+
+        private static readonly Vector3 BED_POSITION = new Vector3(-2.5f, 0f, 0.75f);
+        private const float BED_YAW = 90f;
+        // 남규님 지정값(2026-08-06) — 모델이 프레임 안에서 앉는 자리.
+        private static readonly Vector3 BED_MODEL_OFFSET = new Vector3(0f, 0.00148209929f, 0.354f);
 
         private static void BuildRoom(Material floor, Material wall, Material door)
         {

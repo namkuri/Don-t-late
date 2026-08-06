@@ -126,10 +126,18 @@ namespace DontLate
         }
 
         // S-176 — 새 씬의 라이팅 설정이 원본 스카이박스를 다시 걸어 놓는다. 도착할 때마다 되잡는다.
-        private void OnSceneArrivedSky(GameScene _)
+        private void OnSceneArrivedSky(GameScene scene)
         {
+            _skyScene = scene;       // S-189 — 구역별 하늘 고정 판정에 쓴다
             InitSky();
             ApplyVisuals(SkyMinute); // 새 복제본에 현재 시각 색을 즉시 반영
+
+            // S-189 — 고정 구역을 드나들면 하늘 시각이 건너뛴다. 페이즈(밤 조명·블룸·간판 발광)를
+            // 다음 틱까지 기다리지 않고 즉시 맞춘다 — 안 그러면 도착 첫 순간이 낮으로 보인다.
+            DayPhase phase = ResolvePhase(SkyMinute);
+            if (phase == _phase) return;
+            _phase = phase;
+            WorldEvents.RaiseDayPhaseChanged(phase);
         }
 
         private void OnWeatherChanged(WeatherType weather)
@@ -396,8 +404,26 @@ namespace DontLate
         // 게임의 심장(마감 압박)이 멈추므로, 흐르는 시계와 보이는 하늘을 갈라놓는다.
         private const float INTRO_SKY_MINUTE = 12f * 60f; // 정오
 
-        private float SkyMinute => _gameState != null && _gameState.introGraceActive
-            ? INTRO_SKY_MINUTE : _gameState.minuteOfDay;
+        // S-189 — **먹자골목은 언제 가도 밤**. 네온이 사는 시간대가 그 구역의 성격이라
+        // 낮에 들어가면 간판이 죽는다. 여기서도 시계는 그대로 흐른다(마감 압박 불변) —
+        // 고정하는 건 보이는 하늘·조명뿐, S-184의 첫 인상 고정과 같은 수법이다.
+        private const float NEON_SKY_MINUTE = 21f * 60f; // 밤 9시
+        private GameScene _skyScene = GameScene.Main;
+
+        private static bool PinsNight(GameScene scene) => scene == GameScene.FoodStreet;
+
+        private float SkyMinute
+        {
+            get
+            {
+                if (_gameState == null) return INTRO_SKY_MINUTE;
+                if (PinsNight(_skyScene)) return NEON_SKY_MINUTE;   // 구역 고정이 첫 인상보다 우선
+                return _gameState.introGraceActive ? INTRO_SKY_MINUTE : _gameState.minuteOfDay;
+            }
+        }
+
+        /// <summary>하늘 그림을 고르는 쪽(WorldWeatherManager)이 같은 시각을 쓰도록 여는 창구.</summary>
+        public float SkyMinuteForVisuals => SkyMinute;
 
         private DayPhase ResolvePhase(float minuteOfDay)
         {

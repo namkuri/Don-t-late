@@ -46,7 +46,8 @@ namespace DontLate
         private ParticleSystem _snow;
         private GameObject _hazeRoot; // S-044 ③ — 일렁 셰이더 쿼드 (파티클 박스룩 폐지)
         private Sprite _runtimeSkySprite;
-        private SpriteRenderer _skyBackground;
+        private SpriteRenderer _skyBackground;  // 아래 층 — 항상 불투명
+        private SpriteRenderer _skyBlend;       // S-189 위 층 — 알파로 다음 시간대를 겹쳐 넘긴다
         private Camera _skyCamera;
         private Transform _cloudRoot;
         private Sprite[] _runtimeCloudSprites;
@@ -71,7 +72,11 @@ namespace DontLate
         private void OnDestroy()
         {
             if (_skyBackground != null) Destroy(_skyBackground.gameObject);
+            if (_skyBlend != null) Destroy(_skyBlend.gameObject);
             if (_runtimeSkySprite != null) Destroy(_runtimeSkySprite);
+            if (_runtimeGradientSprites != null)
+                foreach (Sprite s in _runtimeGradientSprites)
+                    if (s != null) { Destroy(s.texture); Destroy(s); }
             if (_runtimeCloudSprites != null)
                 for (int i = 0; i < _runtimeCloudSprites.Length; i++)
                     if (_runtimeCloudSprites[i] != null) Destroy(_runtimeCloudSprites[i]);
@@ -153,9 +158,20 @@ namespace DontLate
         /// <summary>S-184 — 첫 인상 고정이 풀린 직후 자연 날씨로 복귀시키는 외부 창구.</summary>
         public void RerollNow() => Reroll();
 
+        private bool _pinnedClearScene;
+
         private void Reroll()
         {
             _lastRolledDay = _gameState != null ? _gameState.day : 0;
+
+            // S-189 — 고정 구역 안에서는 날짜가 넘어가도 맑음을 깨지 않는다. 예보는 그대로 굴려
+            // 두어(S-058 승계) 구역을 나가면 정상 날씨로 이어진다.
+            if (_pinnedClearScene)
+            {
+                if (!_hasForecast) { TomorrowWeather = Draw(); _hasForecast = true; }
+                SetWeather(WeatherType.Clear);
+                return;
+            }
 
             // S-184 — 첫 배송 후 귀가 전까지는 무조건 맑음. 예보(TomorrowWeather)는 그대로
             // 굴려 둔다 — 고정이 풀린 뒤 예보 승계(S-058)가 끊기지 않게 하기 위해서다.
@@ -277,8 +293,15 @@ namespace DontLate
             RefreshGradeTarget();
         }
 
+        // S-189 — 먹자골목은 "네온이 사는 밤"으로 고정된 구역이다(하늘·조명은 WorldDayNightManager).
+        // 날씨까지 맑음으로 묶는 이유: 비·안개가 끼면 간판 발광이 뭉개져 고정한 의미가 없어진다.
+        private static bool PinsClear(GameScene scene) => scene == GameScene.FoodStreet;
+
         private void OnSceneChanged(GameScene scene)
         {
+            _pinnedClearScene = PinsClear(scene);
+            if (_pinnedClearScene && Weather != WeatherType.Clear) SetWeather(WeatherType.Clear);
+
             _sceneZOffset = scene == GameScene.Home ? 10f : 0f; // S-044 ① — 방 뒷벽(z3) 너머 창밖
             _indoorScene = scene == GameScene.Apartment || scene == GameScene.Home; // S-050 ④·S-053 ② — 실내엔 눈 안 쌓임
             // S-124 — Home은 창이 있는 실내: 강수를 끄지 않고 창밖으로만 보낸다.
@@ -426,32 +449,147 @@ namespace DontLate
             BuildClouds();
         }
 
+        // ── 하늘 시간표 (S-189) ──────────────────────────────
+        //
+        // 종전엔 하늘이 낮 텍스처 한 장이었고 아침·낮에만 켜졌다 — 저녁·밤엔 그냥 사라졌다.
+        // 남규님 요구: 반입 레퍼런스 3종(황혼 남보라→분홍 · 노을 보라→주황 · 심야 남색)과
+        // 현재 낮 텍스처까지 **시간에 따라 끊김 없이** 이어질 것.
+        //
+        // 구현이 두 층인 이유: 그라디언트끼리라면 색을 섞으면 되지만, 낮은 반입 **이미지**라
+        // 색 두 개로 환원되지 않는다(게다가 Read/Write가 꺼져 있어 픽셀을 읽을 수도 없다).
+        // 그래서 색이 아니라 **알파로 겹쳐 넘긴다** — 아래 층에 현재 시간대, 위 층에 다음
+        // 시간대를 깔고 위 층 알파를 0→1로 올린다. 어떤 그림이든 섞이는 방식이다.
+        private struct SkyStop
+        {
+            public float Minute;    // 이 하늘이 완전히 서는 시각
+            public Sprite Sprite;
+            public bool Stretch;    // 세로 그라디언트는 가로 정보가 없어 늘려도 무손실 → 화면에 꽉 채운다
+        }
+
+        private SkyStop[] _skyStops;
+        private Sprite[] _runtimeGradientSprites;
+
         private void BuildSkyBackground()
         {
-            if (_skyBackgroundTexture == null) return;
+            // 레퍼런스 3종을 코드 그라디언트로 재현한다. 밴딩(12단)은 의도 — 첨부 레퍼런스가
+            // 계단 그라디언트였고, 저해상 픽셀 렌더와도 결이 맞는다.
+            Sprite night = MakeGradientSprite("sky_night",                       // 심야
+                new Color32(0x08, 0x11, 0x2B, 0xFF), new Color32(0x2B, 0x4E, 0x9C, 0xFF));
+            Sprite twilight = MakeGradientSprite("sky_twilight",                 // 황혼(새벽·땅거미 겸용)
+                new Color32(0x25, 0x3B, 0x7B, 0xFF), new Color32(0xFC, 0xE2, 0xE2, 0xFF));
+            Sprite sunset = MakeGradientSprite("sky_sunset",                     // 노을
+                new Color32(0x4E, 0x5F, 0xC6, 0xFF), new Color32(0xFC, 0xC0, 0x6C, 0xFF));
+            _runtimeGradientSprites = new[] { night, twilight, sunset };
 
-            _runtimeSkySprite = Sprite.Create(
-                _skyBackgroundTexture,
-                new Rect(0f, 0f, _skyBackgroundTexture.width, _skyBackgroundTexture.height),
-                new Vector2(0.5f, 0.5f), 100f);
+            // 낮은 종전 반입 텍스처를 그대로 쓴다(남규님 "현재 있는거까지").
+            Sprite day = twilight;
+            if (_skyBackgroundTexture != null)
+            {
+                _runtimeSkySprite = Sprite.Create(
+                    _skyBackgroundTexture,
+                    new Rect(0f, 0f, _skyBackgroundTexture.width, _skyBackgroundTexture.height),
+                    new Vector2(0.5f, 0.5f), 100f);
+                day = _runtimeSkySprite;
+            }
+            bool dayStretch = _runtimeSkySprite == null;
+
+            // 하루 한 바퀴. 낮 구간에 같은 하늘을 두 번(07:30·17:00) 두어 그 사이엔 변화가 없다.
+            _skyStops = new[]
+            {
+                new SkyStop { Minute =  0f * 60f,        Sprite = night,    Stretch = true },
+                new SkyStop { Minute =  4f * 60f + 30f,  Sprite = twilight, Stretch = true },
+                new SkyStop { Minute =  7f * 60f + 30f,  Sprite = day,      Stretch = dayStretch },
+                new SkyStop { Minute = 17f * 60f,        Sprite = day,      Stretch = dayStretch },
+                new SkyStop { Minute = 19f * 60f,        Sprite = sunset,   Stretch = true },
+                new SkyStop { Minute = 20f * 60f + 30f,  Sprite = twilight, Stretch = true },
+                new SkyStop { Minute = 22f * 60f,        Sprite = night,    Stretch = true },
+            };
 
             CreateSkyRenderer();
         }
 
+        /// <summary>세로 그라디언트 한 장. 폭 1px — 가로로 늘려 쓴다.</summary>
+        private static Sprite MakeGradientSprite(string name, Color top, Color bottom)
+        {
+            const int BANDS = 12;
+            var tex = new Texture2D(1, BANDS, TextureFormat.RGBA32, false)
+            {
+                name = name,
+                filterMode = FilterMode.Point,      // 단이 살아야 레퍼런스의 계단 느낌이 난다
+                wrapMode = TextureWrapMode.Clamp,   // 가장자리 늘림에서 반대편 색이 새지 않게
+            };
+            for (int y = 0; y < BANDS; y++)
+                tex.SetPixel(0, y, Color.Lerp(bottom, top, y / (float)(BANDS - 1)));
+            tex.Apply();
+            return Sprite.Create(tex, new Rect(0f, 0f, 1f, BANDS), new Vector2(0.5f, 0.5f), 1f);
+        }
+
         private void CreateSkyRenderer()
         {
-            GameObject sky = new GameObject("SkyBackground");
-            _skyBackground = sky.AddComponent<SpriteRenderer>();
-            _skyBackground.sprite = _runtimeSkySprite;
-            _skyBackground.sortingOrder = -1000;
+            _skyBackground = NewSkyLayer("SkyBackground", -1000);
+            _skyBlend = NewSkyLayer("SkyBackgroundNext", -999);
+        }
+
+        private SpriteRenderer NewSkyLayer(string name, int order)
+        {
+            var sr = new GameObject(name).AddComponent<SpriteRenderer>();
+            sr.sortingOrder = order;
+            return sr;
         }
 
         private void UpdateSkyBackground(Camera camera)
         {
-            if (_runtimeSkySprite == null) return;
-            if (_skyBackground == null) CreateSkyRenderer();
+            if (_skyStops == null || _skyStops.Length == 0) return;
+            if (_skyBackground == null || _skyBlend == null) CreateSkyRenderer();
 
-            Transform sky = _skyBackground.transform;
+            float minute = WorldDayNightManager.Instance != null
+                ? WorldDayNightManager.Instance.SkyMinuteForVisuals
+                : (_gameState != null ? _gameState.minuteOfDay : 0f);
+
+            ResolveSkyStops(minute, out SkyStop from, out SkyStop to, out float t);
+
+            _skyBackground.sprite = from.Sprite;
+            _skyBackground.color = Color.white;
+            _skyBlend.sprite = to.Sprite;
+            _skyBlend.color = new Color(1f, 1f, 1f, t);
+            _skyBlend.enabled = t > 0.001f && to.Sprite != from.Sprite;
+
+            FitSkyLayer(_skyBackground, camera, from.Stretch);
+            if (_skyBlend.enabled) FitSkyLayer(_skyBlend, camera, to.Stretch);
+        }
+
+        /// <summary>지금 시각을 감싸는 두 시간대와 그 사이 진행도를 찾는다(자정을 넘어 이어진다).</summary>
+        private void ResolveSkyStops(float minute, out SkyStop from, out SkyStop to, out float t)
+        {
+            const float DAY_MINUTES = 24f * 60f;
+            minute = Mathf.Repeat(minute, DAY_MINUTES);
+
+            int last = _skyStops.Length - 1;
+            for (int i = 0; i < _skyStops.Length; i++)
+            {
+                bool isLast = i == last;
+                float start = _skyStops[i].Minute;
+                // 마지막 구간은 자정을 넘어 첫 구간으로 이어진다(밤 22:00 → 다음날 00:00).
+                float end = isLast ? _skyStops[0].Minute + DAY_MINUTES : _skyStops[i + 1].Minute;
+                float m = minute < start && isLast ? minute + DAY_MINUTES : minute;
+                if (m < start || m >= end) continue;
+
+                from = _skyStops[i];
+                to = _skyStops[isLast ? 0 : i + 1];
+                t = Mathf.InverseLerp(start, end, m);
+                return;
+            }
+
+            // 첫 시간대(00:00) 이전은 마지막 구간의 연장이다 — 위 루프의 isLast 분기가 잡지만,
+            // 부동소수 경계에서 새면 밤으로 떨어뜨린다.
+            from = _skyStops[last];
+            to = _skyStops[0];
+            t = 1f;
+        }
+
+        private void FitSkyLayer(SpriteRenderer sr, Camera camera, bool stretch)
+        {
+            Transform sky = sr.transform;
             if (_skyCamera != camera || sky.parent != camera.transform)
             {
                 _skyCamera = camera;
@@ -467,13 +605,19 @@ namespace DontLate
                 ? camera.orthographicSize * 2f
                 : 2f * distance * Mathf.Tan(camera.fieldOfView * 0.5f * Mathf.Deg2Rad);
             float width = height * camera.aspect;
-            Vector2 spriteSize = _runtimeSkySprite.bounds.size;
+            Vector2 spriteSize = sr.sprite.bounds.size;
+
+            if (stretch)
+            {
+                // 세로 그라디언트 — 위아래 끝색이 화면 끝에 정확히 오도록 축별로 맞춘다.
+                sky.localScale = new Vector3(width / spriteSize.x * 1.02f,
+                                             height / spriteSize.y * 1.02f, 1f);
+                return;
+            }
+
+            // 그림 텍스처 — 비율을 지키며 화면을 덮는다(잘릴지언정 늘어나지 않게).
             float scale = Mathf.Max(width / spriteSize.x, height / spriteSize.y) * 1.02f;
             sky.localScale = new Vector3(scale, scale, 1f);
-
-            DayPhase phase = WorldDayNightManager.Instance != null
-                ? WorldDayNightManager.Instance.Phase : _phase;
-            _skyBackground.enabled = phase == DayPhase.Morning || phase == DayPhase.Day;
         }
 
         private ParticleSystem BuildFallSystem(string name, Color color, float startSpeed,

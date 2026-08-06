@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace DontLate
@@ -109,7 +109,6 @@ namespace DontLate
             _gameState.totalEarned = 0;
             _gameState.ownedFurnitureIds.Clear();
             _gameState.placedFurniture.Clear();
-            _gameState.bedSeeded = false;
             _gameState.apartmentGatePassword = Random.Range(0, 10000).ToString("0000"); // S-038 세션 비번
             _gameState.wallpaperIndex = 0;
             _gameState.floorIndex = 0;

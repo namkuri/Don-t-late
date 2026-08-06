@@ -35,19 +35,10 @@ namespace DontLate
 
         private void Start()
         {
-            // S-031 ③: 침대 시드 — 세션 최초 1회만 (이후엔 플레이어가 옮긴 위치가 정본).
-            if (!_gameState.bedSeeded)
-            {
-                _gameState.bedSeeded = true;
-                _gameState.placedFurniture.Add(new PlacedFurniture
-                {
-                    furnitureId = "fur_bed",
-                    // S-132 — 남규님이 씬에서 직접 맞춘 기본 배치. 벽에 붙여 머리맡이 보이는 각도.
-                    position = new Vector3(-2.5f, 0f, 0.75f),
-                    rotationY = 90f,
-                });
-            }
-
+            // S-189 — 침대 시드 폐지. 종전엔 여기서 플레이 시작에 침대를 만들었는데, 그러면
+            // 에디터에서 씬을 열었을 때 방이 비어 아트가 배치를 맞출 수 없었다(민지님이 플레이
+            // 중 생긴 `fur_bed(Clone)`을 세트에 담아 온 이유). 침대는 이제 HomeStageBuilder가
+            // 무대 고정물로 세운다 — 씬을 열면 바로 거기 있다.
             foreach (PlacedFurniture placed in _gameState.placedFurniture)
                 SpawnVisual(placed.furnitureId, placed.position, placed.rotationY);
         }
