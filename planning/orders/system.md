@@ -5821,3 +5821,30 @@ main에는 관제판 수정이 이미 들어가 있어(커밋 `S-200`) 내용 �
 프리팹 크기 (0.50, 0.90, 0.59) · 회전 보정 (90,0,0) 유지 · 컴파일 0에러 0워닝 · EditMode 46/46.
 
 가구 폴리 현황: **의자 33,000 · 나머지 7종 16,000 · 침대 7,999**(지시대로 유지).
+
+### PR 검수 기록 2026-08-07 23:51 (관제)
+
+**#48 `fix/art-textures-only`(민지님) — 머지 완료** (`2035223a`).
+main 최신 기준(뒤처짐 0) · 22파일 **전부 신규 추가**(삭제·수정 0) · 코드·씬·ProjectSettings 0.
+지금까지 중 가장 깨끗한 형태다 — 텍스처만 떼어 올리셨다.
+- 텍스처 7종 임포트 확인: `fire` 1024×2048 · `gop-chang` 2048×1024 · `hope` 1024×1024 ·
+  `intro` 2048×256 · `orange_chicken`·`pink`·`ramen` 각 2048×1024
+- 머티리얼 4종 배선 유지: `fire→gop-chang` · `orange→orange_chicken` · `pink→pink` · `ramen→ramen`
+- 아직 어떤 프리팹/씬도 참조하지 않는다(= 기존 룩에 영향 0). 먹자골목 간판용으로 보인다.
+- 아트 +8.9MB · 콘솔 에러 0 · EditMode 46/46
+
+**#47 `fix/foodstreet-prefab-only` — 받지 않았다(되돌림).**
+형식은 안내대로(main 최신 기준·프리팹 1파일)지만 **내용이 배치 이전 상태**다.
+프리팹이 참조하는 에셋으로 판정:
+- 현재 main: `brown_hall`·`police`·`chicken_house`·`Laundry_Home_unity`·`korean_church`·
+  `Pub_unity`·`orange_market`·`korean_cafe`·`market`·`cafe`·`Food_cart_unity`·`blossom_tree`·
+  `bycle`·`Bench_unity` **15종(먹자골목 상점가)**
+- PR#47: `set_district_2.prefab` **뿐(22회)** — 이건 S-192에서 관제가 깔아 둔 **빌라촌 세트 씨앗**이다.
+`#46`의 프리팹과 **바이트 단위로 동일**(2,413줄·중첩 105·`rew`~`rew (3)`까지 일치) — 같은 옛 로컬에서
+두 번 나온 것으로 보인다. 받으면 민지님 본인 배치가 지워진다.
+
+→ 민지님 로컬 정렬 필요: `git fetch origin && git reset --hard origin/main` 후
+   `DontLate/Build/Food Street Stage` 1회 → 상점가 확인 → 그 상태에서 새로 배치.
+   (로컬이 main보다 오래된 상태라 리셋으로 잃을 것이 없다.)
+
+**LFS 메모**: 아트 파일이 오간 뒤 push는 `git lfs push --all origin main` 선행이 필요할 수 있다(GH008).
