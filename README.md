@@ -155,14 +155,6 @@ Assets/
 - [ ] WebGL 최적화
 - [ ] 데모 빌드 공개
 
-## 📸 스크린샷
-
-플레이 화면과 배송 UI 스크린샷을 준비하고 있습니다.
-
-<!-- 이미지 추가 후 주석을 해제하세요.
-![게임 화면](./docs/images/screenshot-01.png)
-![배송 UI](./docs/images/screenshot-02.png)
--->
 
 ## 🤝 기여
 
