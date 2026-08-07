@@ -1,4 +1,4 @@
-# 반입 에셋 매니페스트 (INTAKE 기록)
+﻿# 반입 에셋 매니페스트 (INTAKE 기록)
 
 외부 반입 에셋의 출처·버전·라이선스·용도를 기록한다. 재현 정보는 여기가 단일 소유 —
 `_intake/` 원본은 기록 후 삭제한다(원본 보관 아님, 이 표가 재현을 보장).
@@ -40,11 +40,13 @@
 |---|---|---|---|---|---|---|
 | chr_courier | late_man.fbx | `Assets/Art/Characters/chr_courier.fbx` (덮어쓰기·GUID 보존, 구 coupang.fbx 대체) | 2 | Tripo(민지) | ⚠ 과금제=산출물 소유권 (D-029) — 플랜 확인 후 커밋 | 2026-07-21 |
 | A_chr_courier_walk | A_late_man_walking.fbx | `Assets/Art/Characters/A_chr_courier_walk.fbx` | 1 | **Mixamo**(Adobe·민지 매개) | Adobe 무료 라이선스(Mixamo) | 2026-07-21 |
+| A_chr_courier_idle | Idle.fbx | `Assets/Art/Characters/A_chr_courier_idle.fbx` | 1 | **Mixamo**(Adobe) — `_intake/art/Mixamo/Animations/A_Late_Man/` | Adobe 무료 라이선스(Mixamo) | 2026-08-07 |
 
 ### 검역 수치 (교체 INTAKE 2026-07-21)
 - **chr_courier(late_man)**: fbx tris=**5432 (Characters 상한 5000 초과 432 → 경고**, 차단 아님·데시메이트 권고), verts=8809. **animType=Human 셋업 성공** — 아바타 isValid=True·isHuman=True (Mixamo 리그 mixamorig: 접두 32본, 계층 chr_courier/Armature/Root/mixamorig:Hips). 원임포트 높이 **1.07u**(앵커 1.8u ±30% 미달·경고) → 빌더가 렌더바운즈 기준 ×1.686 스케일로 **1.800u 정규화**·발끝 y=0 정렬. **텍스처 없음**(임베디드 0·버텍스컬러 없음·FBX 텍스처참조 경로 무효 `E:\dontlate`) → 회색 렌더. **쿠팡 로고: 텍스처 미포함으로 확인 불가**(후속 텍스처 반입 시 자동추출 규칙 처리 예정).
 - **A_chr_courier_walk**: Mixamo 걷기, clip "mixamo.com" **0.967s**, animType=Human(아바타 CopyFromOther=chr_courier)·loop=True·isHumanMotion=True. 리타깃 경고(수치 아님)만.
 - **A_chr_courier_run**(기존): Human 재셋업, clip 0.533s·loop=True·human=True.
+- **A_chr_courier_idle**(S-197): Mixamo Idle, clip "Idle" **1.97s**·loop=True·isHumanMotion=True. animType=Human, 아바타는 **CreateFromThisModel**(CopyFromOther로 넣으면 테이크 0개로 잎힌 — 실측). 휴머노이드라 아바타가 달라도 배달원 리그로 리타깃된다.
 - **AC_chr_courier.controller**: 파라미터 3종(Speed float·IsCarrying bool·IsGrounded bool — PlayerAnimationManager 계약) + 기본 스테이트 **Locomotion = Speed 1D 블렌드트리**(Walk@0·Walk@2.5·Run@4.5 — idle 클립 미납품이라 0 구간은 Walk 대체).
 
 ## ElevenLabs BGM INTAKE — 2026-07-21
