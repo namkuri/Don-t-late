@@ -96,6 +96,7 @@ namespace DontLate
                 hiddenCanvases.Add(canvas);
             }
             Debug.Log("[엔딩] UI 소등 " + hiddenCanvases.Count + "개 (대화창·페이드 유지)");
+            _keepUiHidden = true;
             StartCoroutine(KeepUiHidden(hiddenCanvases)); // 뒤늦게 켜지는 것까지 잡는다(아래 참조)
             Transform player = FindPlayer();
             if (player == null) { _sequenceRunning = false; yield break; }
@@ -156,6 +157,7 @@ namespace DontLate
             if (controller != null) controller.enabled = false;
             yield return StartCoroutine(WalkTo(player, player.position + Vector3.left * 14f, faceLeft: true));
             player.gameObject.SetActive(false);
+            _keepUiHidden = false; // S-204 — 감시 종료: 이 뒤로 크레딧 캔버스가 생긴다
             Debug.Log("[엔딩] 퇴장 완료 t=" + Time.time.ToString("0.0"));
 
             // 4단 — 카메라 상승(하늘) + 크레딧 (늦지마 → 잊지마).
@@ -294,18 +296,24 @@ namespace DontLate
         /// </summary>
         private IEnumerator KeepUiHidden(List<Canvas> hidden)
         {
-            while (_sequenceRunning)
+            // S-204 — 감시는 **퇴장까지만**. 그 뒤엔 크레딧이 자기 캔버스(`EndingCreditsCanvas`)를
+            // 새로 만드는데, 계속 훑으면 그것까지 매 프레임 꺼 버려 **크레딧과 로고 전환이 아예
+            // 안 보인다**(S-203에서 내가 넣은 감시가 만든 회귀 — 남규님 보고).
+            while (_keepUiHidden)
             {
                 foreach (Canvas canvas in FindObjectsByType<Canvas>())
                 {
                     if (canvas == null || !canvas.enabled) continue;
                     if (canvas.name == "DialogueCanvas" || canvas.name == "FadeCanvas") continue;
+                    if (canvas.name == "EndingCreditsCanvas") continue; // 안전망 — 순서가 어긋나도 크레딧은 산다
                     canvas.enabled = false;
                     if (!hidden.Contains(canvas)) hidden.Add(canvas);
                 }
                 yield return null;
             }
         }
+
+        private bool _keepUiHidden;
 
         private static readonly int SpeedHash = Animator.StringToHash("Speed");
         private static readonly int GroundedHash = Animator.StringToHash("IsGrounded");

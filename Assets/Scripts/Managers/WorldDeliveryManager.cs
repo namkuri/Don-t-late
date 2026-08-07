@@ -233,6 +233,18 @@ namespace DontLate
             // S-134 ⑤ — 손에 든 짐도 청산한다. 안 비우면 DistrictCargoSpawner가 그 주문을
             // "이미 들고 있음"으로 보고 다음 날 상자를 안 깔아 유령 배송이 남는다(정찰 실측).
             _gameState.carriedOrders.Clear();
+
+            // S-204 — **하루를 마치면 체력(HP)이 찬다.** 종전엔 세션 시작(CoreBootstrap)에서만
+            // 만체력이라, 차에 치여 깎인 칸이 다음 날에도 그대로 남았다(남규님 보고).
+            // 정산이 곧 "집에 가서 자고 하루가 넘어간다"이므로 여기가 회복 지점이다.
+            // 스태미나와 달리 HP는 GameState가 단일 소유라(플레이어 쪽 사본이 없다) 여기서 끝난다.
+            if (_gameState.health < GameStateSO.HEALTH_MAX)
+            {
+                Debug.Log("[배송] 체력 회복 " + _gameState.health + " → " + GameStateSO.HEALTH_MAX + " (하루 마감)");
+                _gameState.health = GameStateSO.HEALTH_MAX;
+                // HUD는 `_gameState.health`를 매 갱신마다 직접 읽으므로 통지 이벤트가 필요 없다.
+            }
+
             // S-165 ④ — 이번 정산 중 레벨업으로 **새로 얻은 능력**이 있으면 정산 화면에 알린다.
             // 레벨만 올려두면 플레이어는 뭐가 좋아졌는지 모른다 — 능력 이름을 말해줘야 보상이 된다.
             summary.UnlockedPerk = LevelPerks.PerkGainedBetween(levelBefore, _gameState.playerLevel);
