@@ -19,10 +19,23 @@ namespace DontLate
         /// <summary>S-116 ⑤ — 촬영 데모: 실주문 없이 운반 자세를 강제한다 (DistrictCaptureDemo).</summary>
         public bool DemoCarrying { get; set; }
 
+        /// <summary>
+        /// S-203 ② — 스크립트가 트랜스폼을 직접 옮기는 구간(엔딩 퇴장)의 걷기 속도.
+        /// Locomotion을 끄면 PlanarVelocity가 멈춰 Speed 0 = Idle로 미끄러진다. 0이면 실제 이동속도를 쓴다.
+        /// </summary>
+        public float ScriptedSpeed { get; set; }
+
         private void Awake() => _hub = GetComponent<PlayerManager>();
 
         private void Update()
         {
+            if (ScriptedSpeed > 0f)
+            {
+                // 회전은 이동을 지시한 쪽이 소유한다 — 멈춘 PlanarVelocity로 방향을 되돌리지 않는다.
+                if (_animator != null) _animator.SetFloat(SpeedHash, ScriptedSpeed);
+                return;
+            }
+
             Vector3 velocity = _hub.Locomotion.PlanarVelocity;
             UpdateFacing(velocity);
 

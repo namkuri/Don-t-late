@@ -5971,3 +5971,43 @@ MDA 판정 (D-070): **강화** — 엔딩은 코어루프의 종착이자 심사
 
 MDA 판정 (D-070): **강화** — 엔딩은 심사에서 마지막으로 보는 화면이다. UI 잔재와 미끄러지는
 캐릭터는 연출을 통째로 깎는다.
+
+### S-203 결과 2026-08-08 02:15 (정수 공장 · 리드 ~50분 · feature/jjs-s203-ending-ui, base=main)
+
+수정 2파일. 두 증상은 원인이 서로 달랐다.
+
+**① UI 잔재** — 캔버스 소등이 **4단(크레딧)에서야** 돌고 있었다. 2~3단(감사 인사·퇴장) 내내
+HUD·폰·상단바·정산 버튼이 그대로 떠 있는 게 정상 동작이었던 셈이다. 소등을 **시퀀스 진입 직후**로
+올리고 예외를 `FadeCanvas`(씬 전환용) + `DialogueCanvas` 둘로 좁혔다. 크레딧 단계에서 대화창까지
+마저 끄고, 5단 복구는 같은 리스트에 누적해 그대로 되살린다.
+
+부수 발견(실측): **캔버스만 끄면 NPC 이름표가 다시 살아난다.** `NpcNameLabel`은 캔버스를
+`Show(true)` 때 **새로 생성**하고, 그 호출자는 `InteractionSensor`의 포커스(`SetHighlight`)다 —
+1차 캡처에서 "사장님 호감도 0/100"과 "E — 인사"가 대열 위에 남아 적발됐다. 포커스를 풀고
+센서를 멈추는 2줄을 추가했다(엔딩 중 상호작용도 없어야 하므로 의미도 맞다).
+
+**② 퇴장 슬라이딩** — 퇴장 직전 `Locomotion.enabled = false`로 `PlanarVelocity`가 멈추는데,
+`PlayerAnimationManager`가 매 프레임 그 값을 `Speed`에 쓴다 → 블렌드트리 0.00 = Idle(S-197에서
+물린 클립) 고정. 트랜스폼만 움직이니 미끄러진다. `ScriptedSpeed` 프로퍼티를 추가해(기존
+`DemoCarrying` 선례와 동형) 스크립트 이동 구간에만 걷기 속도를 물리고, 그동안 **facing 갱신은
+건너뛴다** — 멈춘 속도 벡터가 좌향 회전을 되돌리는 것을 막는다. 퇴장 종료 시 0으로 복원.
+
+관찰 (Play 실측 · Core/Camp 재조립 후 · Main→Home→Camp 정규 경로):
+- **① 감사 인사 구간 — 켜진 캔버스 2개뿐: `DialogueCanvas` · `FadeCanvas`** (나머지 13개
+  HUD·Phone·Bag·Invoice·Kiosk·Juice·Toast·Settings·Accident·Minigame·TutorialCard·Version·FlowCanvas 전부 False) ·
+  `sensor=False` · 캡처 `Screenshots/s203_ending_ui.png`(이름표·E힌트 소멸)
+- **② 퇴장 중 — `mixamo.com`(walk) w0.96 + `Idle` w0.04 · `Speed=2.40` · `ScriptedSpeed=2.4` ·
+  yaw 270(좌향) · x가 -12.1 → -15.3으로 연속 감소**(6회 연속 샘플) · 캡처 `Screenshots/s203_exit_walk.png`
+- 퇴장 종료 후 `ScriptedSpeed=0` · `Speed=0.00` 복원 확인 (상태 잔류 없음)
+- 5단 복구: 크레딧 종료·타이틀 복귀 시점에 **캔버스 15개 전부 True**
+- 컴파일 0에러 0워닝 · 콘솔 에러/워닝 0 · EditMode **46/46 통과**
+
+범위 밖 판정 1건: 캡처 좌상단 초록 글씨(`[BGM Ending 1/1] Fading Into Dawn`)는 `WorldAudioManager.OnGUI`의
+F1 토글 개발 오버레이(`#if` 가드 + `DebugOverlays.Visible`)라 납품 UI가 아니다 — 끄지 않았다.
+
+작업 메모(재발 방지 2건):
+1. **로컬 Core 씬이 S-202 이전 빌드라 `WorldEndingManager`가 아예 없었다** — 엔딩이 무반응이라
+   코드를 의심할 뻔했다. 타 세션(관제) 납품 뒤 첫 검증은 **빌더 재조립부터** 하고 시작한다.
+2. **퇴장 구간(5.8초)이 exec 왕복 지연보다 짧아** 관측을 3회 놓쳤다. 감지와 캡처를 **한 exec 안에서**
+   처리하는 조건부 프로브(`ScriptedSpeed>0이면 그 자리에서 CaptureScreenshot+가중치 반환`)로 잡았다.
+   짧은 연출 구간은 "폴링 후 캡처"가 아니라 "폴링이 곧 캡처"여야 한다.

@@ -84,6 +84,27 @@ namespace DontLate
             Transform player = FindPlayer();
             if (player == null) { _sequenceRunning = false; yield break; }
 
+            PlayerManager hub = player.GetComponent<PlayerManager>();
+
+            // S-203 ① — NPC 이름표·"E" 힌트도 UI다. 이건 캔버스를 끄는 것으로 안 없어진다 —
+            // 포커스가 살아 있으면 SetHighlight가 이름표 캔버스를 **다시 만든다**(실측). 포커스를 풀고 센서를 멈춘다.
+            if (hub != null && hub.Sensor != null)
+            {
+                hub.Sensor.Current?.SetHighlight(false);
+                hub.Sensor.enabled = false;
+            }
+
+            // 진입 즉시 대화창만 남기고 UI 소등. HUD·폰·상단바·정산 버튼이 감사 인사와 퇴장 위에
+            // 그대로 떠 있으면 연출이 통째로 깎인다. FadeCanvas는 씬 전환용이라 유지.
+            var dimmedCanvases = new List<Canvas>();
+            foreach (Canvas canvas in FindObjectsByType<Canvas>())
+            {
+                if (canvas == null || !canvas.enabled) continue;
+                if (canvas.name == "FadeCanvas" || canvas.name == "DialogueCanvas") continue;
+                canvas.enabled = false;
+                dimmedCanvases.Add(canvas);
+            }
+
             yield return WaitClamped(1.2f); // 도착 한 박자
 
             // S-107 ③ 보강 — 씬의 배회 행인도 멈춰서 플레이어를 바라본다: "다같이 모여 격려"의 일부이자,
@@ -130,21 +151,22 @@ namespace DontLate
             Debug.Log("[엔딩] 작별 대화 종료 t=" + Time.time.ToString("0.0"));
 
             // 3단 — 늦지마맨 퇴장: 왼쪽으로 걸어가 사라진다 (조작 잠금).
-            PlayerManager hub = player.GetComponent<PlayerManager>();
             if (hub != null)
             {
                 if (hub.Input != null) hub.Input.enabled = false;
                 if (hub.Locomotion != null) hub.Locomotion.enabled = false;
+                // S-203 ② — Locomotion이 꺼지면 PlanarVelocity가 멈춰 Idle로 미끄러진다. 퇴장 동안 걷기 속도를 직접 물린다.
+                if (hub.Animation != null) hub.Animation.ScriptedSpeed = WALK_SPEED;
             }
             CharacterController controller = player.GetComponent<CharacterController>();
             if (controller != null) controller.enabled = false;
             yield return StartCoroutine(WalkTo(player, player.position + Vector3.left * 14f, faceLeft: true));
+            if (hub != null && hub.Animation != null) hub.Animation.ScriptedSpeed = 0f;
             player.gameObject.SetActive(false);
             Debug.Log("[엔딩] 퇴장 완료 t=" + Time.time.ToString("0.0"));
 
             // 4단 — 카메라 상승(하늘) + 크레딧 (늦지마 → 잊지마).
-            // HUD·씬 버튼 등 오버레이 일괄 소등 — 하늘과 크레딧만 남긴다 (페이드 캔버스는 전환용으로 유지).
-            var dimmedCanvases = new List<Canvas>();
+            // 여기서는 남겨뒀던 대화창까지 소등 — 하늘과 크레딧만 남긴다 (페이드 캔버스는 전환용으로 유지).
             foreach (Canvas canvas in FindObjectsByType<Canvas>())
             {
                 if (canvas == null || !canvas.enabled || canvas.name == "FadeCanvas") continue;
