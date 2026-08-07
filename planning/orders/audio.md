@@ -1013,3 +1013,41 @@ Vorbis 모노, `BGM_QUALITY=0.26` / `SFX_QUALITY=0.40`, BGM은 Compressed In Mem
 MDA 판정 (D-070): **무관** — 재미 3축 무기여. 다만 심사 동선이 웹 링크 1개라 로딩이 곧 첫 인상이고,
 현재 배포본은 **S-136 이후 70커밋(S-137~S-205) 미반영 구본**이다. 재배포가 언젠가 필요하므로
 그 전에 예산을 줄여 두는 순서다.
+
+### 결과 (AU-029) · 2026-08-08 03:24 (정수 공장 · 리드 ~4분 · feature/jjs-s206-au029-au030, base=main)
+
+수정 1파일 (`planning/BOM.md`). 코드·에셋 변경 0.
+
+**① 5종 등재** — `§15.2 오디오 클립 5종 등재` 신설. bom_id·트리거 실코드 위치·소리·발주번호·상태 5열.
+트리거는 문서를 믿지 않고 코드에서 직접 확인했다:
+
+| bom_id | 실측 트리거 |
+|---|---|
+| sfx_car_crash | `TrafficCar.cs:48·81` → `PlayCarCrashSfx()` |
+| sfx_thunder | `WorldWeatherManager.cs:992` → `PlayThunderSfx()` |
+| sfx_fanfare | `SettlementView.cs:147` → `PlayFanfareSfx()` (클립 null이면 `sfx_settle_ok` 폴백) |
+| sfx_level_up | `WorldEvents.PlayerLeveledUp` 구독 → `OnPlayerLeveledUp` (`WorldAudioManager.cs:231·436`) |
+| sfx_tutorial_step | `TutorialMissionCardView.cs:79` → `PlayTutorialStepSfx()` |
+
+소켓 주입은 5종 모두 `CoreSceneBuilder.cs`의 `LoadSfx(...)` 라인(221·222·228·251·252행)에 실재.
+**§15.1은 트리거를 적지 않았는데 이번엔 적었다** — AU-027에서 "파일만 넣으면 울린다"가 거짓으로
+드러난 이유가 정확히 이 빌더 주입 라인 누락이었고, 문서에 없으면 다음에도 같은 데서 막힌다.
+
+**② stale 소멸** — §15 표 `sfx_fanfare / sfx_thunder` 행의 `🔶 소켓만` → `✅ 클립 도착·배선 완료 — 상세 §15.2`.
+동결 문서 기존 행 수정이라 남규님 승인("①②③ 다 진행해줘", 2026-08-08)을 게이트로 삼았고,
+그 근거를 §15.2 머리글에 남겼다. 훅 검사 결과 `BOM.md`는 헤더에 `frozen: true`가 없어
+freeze-guard 자동 차단 대상은 아니다(규칙상 동결은 유효 — 그래서 승인을 근거로 적었다).
+
+**발주 사양 이탈 1건 (의도적)** — 발주서 수용기준은 "5행이 **§8** 표에 존재"였으나 **§15 부록에 넣었다.**
+§8 SFX 표는 v0.4 동결 대상이고, §15.1(2026-07-29)이 미등재 23종을 §8에 넣지 않고 부록에 모으며
+"개별 행 분해는 불요"라는 선례를 세웠다. 동결 규칙과 선례가 내가 쓴 수용기준보다 우선한다고 판단했다.
+
+**관찰 (실측 검증)**
+- 3자 정합: 5종 전부 `Assets/Audio/SFX/<bom_id>.wav` 실파일 · `git ls-files` 등재 1건씩 ·
+  `Assets/Audio/CREDITS.md` 기재 · `assets_manifest.md` LICENSE 표 기재 — **결손 0**.
+- 파일 수 대조: §15.1 감사 시점 36종 → 현재 **41종**. 차이 5 = 이번 등재분과 정확히 일치
+  (누락·유령 항목 없음).
+- `.cs` 변경 0이라 pre-commit 컴파일 게이트 비대상. Unity 불요 작업.
+
+**이 등재로 풀리는 것**: 파이프라인 `intake`/`promote` 게이트가 bom_id를 찾는다 —
+AU-020·021·022·027·028이 5회 연속 수동 후공정으로 우회한 원인이 미등재였다.
