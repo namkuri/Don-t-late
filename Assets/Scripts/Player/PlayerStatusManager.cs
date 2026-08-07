@@ -456,7 +456,7 @@ namespace DontLate
             // S-073 ④ — 마감 라벨은 '들고 있을 때'만: 손을 떠나면 라벨째 제거.
             if (visual.TryGetComponent(out CarryDeadlineLabel label)) Destroy(label);
 
-            visual.SetParent(null, worldPositionStays: true);
+            DetachKeepingWorldPose(visual);
 
             if (visual.TryGetComponent(out Collider collider))
             {
@@ -466,6 +466,22 @@ namespace DontLate
 
             if (visual.TryGetComponent(out Rigidbody body)) body.isKinematic = false;
             else visual.gameObject.AddComponent<Rigidbody>();
+        }
+
+        /// <summary>
+        /// S-200 — 손에서 뗄 때 <b>월드 포즈만</b> 유지하고 로컬 스케일은 손대지 않는다.
+        ///
+        /// 종전의 `SetParent(null, worldPositionStays: true)`는 월드 스케일을 지키려고
+        /// 앵커 스케일(GreyboxStageBuilder.CarryAnchorScale = 0.5/0.6/0.6)을
+        /// 로컬 스케일에 눌러 담았다. 그 상자를 다시 잡으면 앵커 스케일이 한 번 더 곱해지므로
+        /// 던지고 잡기를 반복할수록 계속 작아졌다(2회 = 0.25/0.36/0.36배).
+        /// 로컬 스케일을 그대로 두면 바닥 상자는 언제나 원래 크기, 든 상자는 언제나 앵커 배율이다.
+        /// </summary>
+        private static void DetachKeepingWorldPose(Transform visual)
+        {
+            visual.GetPositionAndRotation(out Vector3 position, out Quaternion rotation);
+            visual.SetParent(null, worldPositionStays: false);
+            visual.SetPositionAndRotation(position, rotation);
         }
 
         /// <summary>든 상자를 마우스가 가리키는 방향으로 던진다 (S-016 ⑦ — 물리 드롭 + 초기 속도).</summary>
@@ -612,7 +628,7 @@ namespace DontLate
 
             Transform drink = _heldDrink;
             _heldDrink = null;
-            drink.SetParent(null, worldPositionStays: true);
+            DetachKeepingWorldPose(drink); // S-200 — 드링크도 같은 결함(던지고 줍기를 반복하면 작아졌다)
 
             if (drink.TryGetComponent(out Collider collider)) collider.enabled = true;
             if (!drink.TryGetComponent(out Rigidbody body)) body = drink.gameObject.AddComponent<Rigidbody>();
