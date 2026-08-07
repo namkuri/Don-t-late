@@ -143,23 +143,5 @@ namespace DontLate.EditorTools
                     + string.Join(", ", new System.Collections.Generic.List<string>(overrides).ToArray()));
             return removed;
         }
-
-        /// <summary>
-        /// S-199 — **조립이 다 끝난 뒤 한 번 더 훑는다.**
-        ///
-        /// `Build`는 빌더 중간에서 도는데, 그 뒤에 만들어지는 빌더물이 있다(교차도로·중앙선 등).
-        /// 그것들은 교체 시점에 아직 존재하지 않아 사냥을 빠져나가고, 세트에 같은 이름이 있으면
-        /// **같은 자리에 두 벌**이 선다(민지님 `set_foodstreet` 반입에서 실제 발생).
-        ///
-        /// Build 호출을 뒤로 옮기지 않는 이유: 배경은 다른 조립물보다 **먼저 서야** 하이어라키
-        /// 순서와 이후 코드의 탐색 전제가 유지된다. 순서를 건드리는 대신 마지막에 한 번 더 훑는다.
-        /// 멱등이라 몇 번 불러도 안전하다.
-        /// </summary>
-        public static void SweepBuilderDuplicates()
-        {
-            GameObject root = GameObject.Find(BACKDROP_ROOT);
-            if (root == null) return;
-            TakeOverBuilderVisuals(root);
-        }
     }
 }

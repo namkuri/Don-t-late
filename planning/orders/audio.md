@@ -891,34 +891,6 @@ MDA 판정 (D-070): 강화 — AU-025와 동형, 날씨 몰입을 시간대 축�
 수용기준: 파일 존재 · 길이 1초 이내 · 팡파레와 구분되는 절제된 톤 · 라이선스/출처 기록.
 연계: 배선은 관제가 S-162에서 처리(파일이 없으면 무음 폴백 — 소켓).
 
-### 결과 (AU-028) · 2026-08-07 03:50 (정수 공장 · 리드 ~55분 실작업 · feature/jjs-au028-tutorial-sfx, base=main)
-
-- **채택 태그**: `two-note ascending confirm chime, soft wooden marimba, crisp and short, bright and light`
-  + SFX 토이톤 앵커(마림바·둥근 신스 플럭) · 요청 길이 0.5s.
-- **10 take · Director 청취 2라운드**. 1차 3계열 6 take(A 마림바 확인음 / B 글로켄슈필 딩 / C 칩튠 블립)
-  발신 → **A 계열 지목** → A 프롬프트를 고정하고 태그 변주 없이 4 take 추가 → **A6 채택**.
-  AU-027과 같은 결론 — 계열이 정해지면 태그를 흔들기보다 같은 프롬프트로 take를 더 뽑는 쪽이 이긴다.
-  (C 계열은 0.10~0.26s로 짧게 나와 사실상 클릭음이었다. 마림바가 2음 모티프에 가장 잘 붙는다.)
-- **후공정**: 트림(≤-40dBFS) → 단일게인 min(RMS→-14dB, peak→-1dB) = **+4.0dB** → 8ms 페이드아웃 → 모노.
-  **peak가 한계**(rms -16.1로 -14 미달) — 트랜지언트라 정상. 밀집음이 한계인 AU-027과 반대 사례.
-- **임포트 실측**: len 0.259s · ch 1(forceMono) · 44100 · Vorbis · q0.40 · DecompressOnLoad — SFX 계약 정합.
-- **소켓 4겹 사전 검증(AU-027 교훈 적용)**: 착수 전 전수 grep — ① `WorldAudioManager._sfxTutorialStep`
-  ② `PlayTutorialStepSfx()` ③ `TutorialMissionCardView.OnStepCleared` 발화(초록 전환 직후 1회)
-  ④ `CoreSceneBuilder.cs:228` `LoadSfx("sfx_tutorial_step")` 주입. **전부 실재** → 코드 변경 0줄, 파일만 반입.
-- **셀프검증 3종**: ① 컴파일 완료 ② 콘솔 에러/워닝 0(리컴파일·Core 재빌드·Play 전 구간)
-  ③ Play 실측 exec — `RaiseTutorialStepStarted` → `RaiseTutorialStepCleared` 발화 시
-  `_sfxSource.isPlaying` **False→True**, 클립 `sfx_tutorial_step` 0.259s. 콘솔 `[EVENT] TutorialStepCleared` 확인.
-  Core 재빌드 후 `Core.unity:1479`에 `_sfxTutorialStep: {fileID: 8300000, guid: ba60dcb4d286c8642bf5966cce1f95ce}` 실재.
-  EditMode **46/46 통과**.
-- **발주 사양 이탈 1건**: **길이 0.3~0.6초 미달** — 채택본 0.259s. 사양 정합 후보는 A2(0.37s)·A3(0.48s)였으나
-  Director 청취에서 A6이 채택됐다. AU-027과 동일하게 발주 의도("짧고 가볍게, 축하보다 확인에 가깝게")가
-  수치 사양보다 우선한 판정으로 기록한다. 수용기준의 "1초 이내"·"팡파레와 구분되는 절제된 톤"은 충족.
-- ⚠ SFX는 API가 seed를 받지 않는다(`elevenlabs_client` SFX 경로 body = `{text, duration_seconds}`).
-  gen.json의 seed는 클라이언트 기록일 뿐 복원 불가 — **로컬 wav가 정본**.
-- 라이선스: `Assets/Audio/CREDITS.md` + `planning/assets_manifest.md` LICENSE 표 등재(2026-08-07).
-- **잔여(관제)**: BOM §8 SFX 행 `sfx_tutorial_step` 추가 — 정수는 CREDITS+manifest만(AU-011 선례).
-  미등재라 파이프라인 `intake`/`promote` 게이트가 막혀 수동 후공정 경로로 진행했다. AU-027 `sfx_level_up` 행도 여전히 미등재.
-
 ## AU-027 · 발주 2026-08-05 17:18 → 정수 공장 (레벨업 SFX — S-174 ③ 소켓 충전)
 
 > ⚠ **번호 정정 (2026-08-05 18:40)**: 최초 AU-026으로 채번했으나 정수님이 PR#31에서

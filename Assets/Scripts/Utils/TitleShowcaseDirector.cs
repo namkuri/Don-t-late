@@ -20,9 +20,8 @@ namespace DontLate
         [SerializeField] private Transform _runner;
         [SerializeField] private Animator _runnerAnimator;
         [Tooltip("왕복 구간 X 좌우 끝")]
-        // S-195 — 왕복 폭 ±13 → ±15 (남규님 지정). 거리 양끝까지 더 나가 화면이 덜 좁아 보인다.
-        [SerializeField] private float _leftX = -15f;
-        [SerializeField] private float _rightX = 15f;
+        [SerializeField] private float _leftX = -13f;
+        [SerializeField] private float _rightX = 13f;
         [SerializeField] private float _runSpeed = 4.2f;
         [Tooltip("끝에서 돌아설 때 멈칫하는 시간(초)")]
         [SerializeField] private float _turnPause = 0.35f;
@@ -46,7 +45,6 @@ namespace DontLate
 
         private static readonly int SpeedHash = Animator.StringToHash("Speed");
         private static readonly int GroundedHash = Animator.StringToHash("IsGrounded");
-        private static readonly int CarryingHash = Animator.StringToHash("IsCarrying");
 
         private bool _initialApplied;
         private int _direction = 1;      // +1 = 오른쪽
@@ -59,12 +57,7 @@ namespace DontLate
 
         private void Start()
         {
-            if (_runnerAnimator == null) return;
-            _runnerAnimator.SetBool(GroundedHash, true);
-            // S-195 — 러너는 상자를 든 채 달린다(빌더가 손에 상자를 얹어 뒀다). 캐리 자세를
-            // 여기서 세우는 이유: 애니메이터 파라미터는 에디터 값이 플레이 시작에 초기화된다.
-            // 이 값이 CarryHandIK의 스위치도 겸한다 — 손이 상자에 붙는다.
-            _runnerAnimator.SetBool(CarryingHash, true);
+            if (_runnerAnimator != null) _runnerAnimator.SetBool(GroundedHash, true);
         }
 
         private void Update()

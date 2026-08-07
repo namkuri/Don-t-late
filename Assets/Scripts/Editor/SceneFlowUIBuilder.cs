@@ -49,12 +49,11 @@ namespace DontLate.EditorTools
             BuildHome(font);
             BuildLabeledAction("Camp", "물류캠프 — 패드에서 E로 적재", "짐 다 실었다 — 출발", GameScene.Travel, font);
             BuildTravel(font);
-            BuildDistricts(font);
+            BuildDistrict(font);
             BuildDeliveryEndUI("Apartment", "아파트단지 — 대차에 싣고 비번·엘베로", font); // S-038
             BuildDeliveryEndUI("Hillside", "언덕주택가 — 오르막 조심, 비 오면 미끄럽다", font); // S-049
 
-            Debug.Log("[SceneFlowUIBuilder] 씬 흐름 UI 조립 완료 — Main·Home·Camp·Travel·"
-                + string.Join("·", DistrictScenes) + "·Apartment·Hillside.");
+            Debug.Log("[SceneFlowUIBuilder] 씬 흐름 UI 조립 완료 — Main·Home·Camp·Travel·District·Apartment 6씬.");
         }
 
         // ── 씬별 조립 ────────────────────────────────────────
@@ -239,38 +238,21 @@ namespace DontLate.EditorTools
         }
 
         // District = 우상 작은 "하루 끝" 버튼만. 무대는 기존 DistrictSceneBuilder 산출물 유지.
-        // S-191 — S-186에서 District가 Village·FoodStreet 두 씬으로 갈렸는데 이 빌더만 옛 씬을
-        // 보고 있었다. 그래서 두 구역엔 '집으로'도, 단독 Play용 Core 로더도 없었다 —
-        // 구역을 늘려 놓고 그 구역에서만 이탈 수단이 없는 상태였다(관제 누락).
-        private static readonly string[] DistrictScenes = { "Village", "FoodStreet" };
-
-        private static void BuildDistricts(TMP_FontAsset font)
+        private static void BuildDistrict(TMP_FontAsset font)
         {
-            foreach (string sceneName in DistrictScenes) BuildDistrict(sceneName, font);
-        }
-
-        private static void BuildDistrict(string sceneName, TMP_FontAsset font)
-        {
-            string path = SCENES_ROOT + "/" + sceneName + ".unity";
-            if (!System.IO.File.Exists(path))
-            {
-                Debug.LogWarning("[SceneFlowUIBuilder] 씬 없음 — " + path + " (무대 빌더를 먼저 실행하라)");
-                return;
-            }
-
-            Scene scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Single);
+            Scene scene = EditorSceneManager.OpenScene(SCENES_ROOT + "/District.unity", OpenSceneMode.Single);
 
             bool hasStage = false;
             foreach (GameObject go in Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include))
                 if (go != null && go.name.StartsWith("__gb_")) { hasStage = true; break; }
             if (!hasStage)
-                Debug.LogWarning("[SceneFlowUIBuilder] " + sceneName + " 무대 없음 — 무대 빌더를 먼저 실행하라. UI만 얹는다.");
+                Debug.LogWarning("[SceneFlowUIBuilder] District 무대 없음 — 'DontLate/Build District Stage'를 먼저 실행하라. UI만 얹는다.");
 
             Transform root = CreateFlowCanvas().transform;
             // S-134 ⑥ — 캔버스를 켠다(종전 SetActive(false)). '집으로'가 배송지에서도 필요하다.
             // 구 내비 버튼('다른 구역으로')은 계속 끈다 — 이동은 엣지 워크·지도 체제(S-062 ⑥).
             BuildDeliveryEndCanvas(root, font, navButtons: false);
-            EditorSceneManager.SaveScene(scene, path);
+            EditorSceneManager.SaveScene(scene, SCENES_ROOT + "/District.unity");
         }
 
         // S-038: 아파트 등 배송 씬 공용 — 라벨 + 정산 UI. District와 같은 마감 UI를 얹는다.
@@ -421,8 +403,7 @@ namespace DontLate.EditorTools
             CreatePanelIcon(go.transform, "SunIcon", "sun",
                 new Vector2(-160f, 0f), new Vector2(270f, 180f));
 
-            // S-193 — 화살표(U+2192)는 본문 폰트(Pretendard)에 없어 두부다. 꺾쇠로 대체.
-            TMP_Text label = CreateText(go.transform, "Label", "하루 시작 > 물류캠프", font, 30f, NAVY,
+            TMP_Text label = CreateText(go.transform, "Label", "하루 시작 → 물류캠프", font, 30f, NAVY,
                 TextAlignmentOptions.Center, FontStyles.Bold);
             AnchorCentered(label.rectTransform, new Vector2(45f, 0f), new Vector2(380f, 72f));
         }

@@ -820,9 +820,7 @@ namespace DontLate
             {
                 ("택", "택배", Screen.Delivery, new Color(0.95f, 0.62f, 0.25f)),
                 ("음", "음악", Screen.Music, new Color(0.62f, 0.45f, 0.95f)),
-                // S-201 — 금융앱(늦코인) 은퇴(남규님: 안 쓴다). 홈 화면에서 빼면 진입 경로가 사라진다.
-                // Screen.Invest 화면 자체는 남겨 둔다 — 지우면 열거형·전환 코드가 줄줄이 딸려 나오고,
-                // 안 열리는 화면은 비용이 0이다. 되살릴 땐 이 줄만 되돌리면 된다.
+                ("금", "금융", Screen.Invest, new Color(0.30f, 0.78f, 0.50f)),
                 ("은", "은행", Screen.Bank, new Color(0.32f, 0.56f, 0.92f)),
                 ("가", "가구", Screen.Furniture, new Color(0.75f, 0.52f, 0.35f)),
                 ("지", "지도", Screen.Map, new Color(0.30f, 0.62f, 0.85f)),      // S-062 ⑦
@@ -1081,13 +1079,12 @@ namespace DontLate
             if (_aimPanel == null || !_aimPanel.activeSelf) return false; // 조준 중이 아니면 촬영 없음
             if (!_aimCentered)
             {
-                // S-193 — 경고 기호(U+26A0)도 폰트에 없어 두부였다. 문구가 이미 경고라 뺀다.
-                ShowWarn("흔들렸다 — 바코드를 중앙에 맞춰라");
+                ShowWarn("⚠ 흔들렸다 — 바코드를 중앙에 맞춰라");
                 return false;
             }
             if (WorldDeliveryManager.Instance == null) return false;
             if (!WorldDeliveryManager.Instance.RegisterBarcode(order))
-                ShowWarn(Invoice(order.orderId) + " 이미 등록됨"); // S-164 ⑦ 축약 · S-193 두부 기호 제거
+                ShowWarn("⚠ " + Invoice(order.orderId) + " 이미 등록됨"); // S-164 ⑦ 축약
             CloseBarcodeAim();
             return true; // 중복이어도 촬영은 성립 — 송장을 접는다
         }
@@ -1543,9 +1540,7 @@ namespace DontLate
             if (_scanned.Count == 0) sb.Append("<color=#8a93a8>박스를 클릭해 송장을 찍어라</color>\n");
 
             // 히스토리·수익 (S-019 ⑥)
-            // S-193 — 괘선 문자(U+2500 `─`)는 세 폰트·폴백 어디에도 없어 네모(두부)로 떴다.
-            // 장식용 구분선에 굳이 특수문자를 쓸 이유가 없다 — ASCII 하이픈이면 전부 커버된다.
-            sb.Append("\n<color=#8a93a8>-- 히스토리 (최근 4) --</color>\n");
+            sb.Append("\n<color=#8a93a8>── 히스토리 (최근 4) ──</color>\n");
             int from = Mathf.Max(0, _gameState.deliveryHistory.Count - 4);
             for (int i = _gameState.deliveryHistory.Count - 1; i >= from; i--)
             {

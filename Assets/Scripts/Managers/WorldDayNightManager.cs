@@ -300,7 +300,7 @@ namespace DontLate
                 _sun.transform.rotation = Quaternion.Euler(t * 360f - 90f, _sunYaw, 0f);
             }
 
-            RenderSettings.ambientLight = ApplyNeonFill(_ambientColor.Evaluate(t));
+            RenderSettings.ambientLight = _ambientColor.Evaluate(t);
 
             // S-145 — Linear 안개: 낮밤 커브와 날씨 배수를 버리지 않고 **끝 거리**를 조이는 데 쓴다.
             // 짙을수록(=값이 클수록) 끝이 가까워져 원경이 빨리 묻힌다. 시작 거리는 고정이라
@@ -411,28 +411,6 @@ namespace DontLate
         private GameScene _skyScene = GameScene.Main;
 
         private static bool PinsNight(GameScene scene) => scene == GameScene.FoodStreet;
-
-        // S-190 — 밤 고정 구역의 **채움광 바닥**.
-        //
-        // 실측(2026-08-06): 21시의 태양 0.02 · 앰비언트 #10131D. 20시 이후 곡선이 사실상 0으로
-        // 눕는다 — 원래 밤은 "지나가는 시간대"라 이 어둠이 문제된 적이 없었다. 그런데 먹자골목은
-        // **언제 가도 밤**이라 그 바닥에 계속 머문다. 가로등 8개는 전부 켜져 있지만(실측) 광추
-        // 바깥이 전부 검어서 "조명이 안 들어온다"로 보인다.
-        //
-        // 밤 곡선 자체를 올리지 않는 이유: 다른 구역의 밤 룩(S-043 튜닝)까지 같이 밝아진다.
-        // 고정 구역에만 바닥을 깔아, 어둠은 유지하되 형태는 읽히게 한다.
-        private static readonly Color NEON_AMBIENT_FLOOR = new Color(0.22f, 0.20f, 0.28f); // 차가운 보랏빛
-
-        private Color ApplyNeonFill(Color ambient)
-        {
-            if (!PinsNight(_skyScene)) return ambient;
-            // 곡선값과 바닥 중 **밝은 쪽**을 쓴다 — 낮에 들어와도(곡선이 더 밝음) 바닥이 깎지 않는다.
-            return new Color(
-                Mathf.Max(ambient.r, NEON_AMBIENT_FLOOR.r),
-                Mathf.Max(ambient.g, NEON_AMBIENT_FLOOR.g),
-                Mathf.Max(ambient.b, NEON_AMBIENT_FLOOR.b),
-                ambient.a);
-        }
 
         private float SkyMinute
         {

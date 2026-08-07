@@ -21,8 +21,11 @@ EditorBuildSettings:
     path: Assets/Scenes/Travel.unity
     guid: a216157539526b540883c69ce5ec3cbb
   - enabled: 1
-    path: Assets/Scenes/District.unity
-    guid: e7835f065009b7f49b29c56becff932b
+    path: Assets/Scenes/Village.unity
+    guid: 478e724860a440746adefb1c7b80d39f
+  - enabled: 1
+    path: Assets/Scenes/FoodStreet.unity
+    guid: 4fc68158be433c244aeb8c19727f6aeb
   - enabled: 1
     path: Assets/Scenes/Apartment.unity
     guid: 5826ae2f5d500fd428e688d71275db10

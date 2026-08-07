@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -524,7 +524,7 @@ namespace DontLate.EditorTools
                          + "상자 가까이 가서 마우스로 상자를 클릭해봐. 송장이 뜰 거야.\n"
                          + "거기 바코드에 마우스를 갖다 대면 폰이 저절로 올라와. 그 상태로\n"
                          + "카메라 한가운데에 바코드를 맞추고 잠깐 있으면 — 찰칵, 알아서 찍힌다.",
-                    CampTutorialDirector.Gate.Barcode,   "상자에 가까이 가서 클릭 > 송장 바코드에 마우스 > 카메라 중앙",
+                    CampTutorialDirector.Gate.Barcode,   "상자에 가까이 가서 클릭 → 송장 바코드에 마우스 → 카메라 중앙",
                     "찰칵! 바로 그거야. 처음엔 손이 떨리는데 금방 익숙해져.", "바코드 스캔"),
 
                 // S-155 — 남규님: 픽업 때 목적지를 알려주면 좋겠다.
@@ -545,7 +545,7 @@ namespace DontLate.EditorTools
                          // ⚠ 마크다운(**)은 TMP에서 별표 그대로 보인다 — 강조는 리치텍스트 태그로.
                          + "가방(I) 열고 그 드링크를 <b>우클릭</b>하면 [사용] 버튼이 뜰 거야.\n"
                          + "그거 눌러서 한번 마셔봐. 지쳤을 때 이만한 게 없거든.",
-                    CampTutorialDirector.Gate.DrinkUse,  "가방(I) > 드링크 우클릭 > [사용]",
+                    CampTutorialDirector.Gate.DrinkUse,  "가방(I) → 드링크 우클릭 → [사용]",
                     "그렇지! 힘들 때 미루지 말고 바로 마셔. 쓰러지고 나면 늦어.", "드링크 마시기"),
 
                 // S-156 — 넷인데 셋이라고 했다(남규님 정정). 먹자골목이 빠져 있었다.
@@ -1792,10 +1792,6 @@ namespace DontLate.EditorTools
                 so.wallMountable = items[i].wall;
                 // S-109 — 실아트 스왑 계약: Art/Props/<id>.fbx → 팩토리 프리팹이 있으면 배선 (없으면 색박스 폴백).
                 so.prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Auto/" + items[i].id + ".prefab");
-                // S-201 — 모델 회전 보정. 의자 원본이 누운 채로 나와 배치하면 뒤집혀 있었다(남규님 지적).
-                // 표에 새 열을 붙이지 않고 여기서 예외만 잡는다 — 지금 보정이 필요한 모델이 하나뿐이라
-                // 열을 늘리면 나머지 9줄이 전부 0으로 채워진 잡음이 된다. 늘어나면 그때 표로 옮긴다.
-                so.prefabRotation = items[i].id == "chair" ? new Vector3(90f, 0f, 0f) : Vector3.zero;
                 EditorUtility.SetDirty(so);
                 catalog[i] = so;
             }

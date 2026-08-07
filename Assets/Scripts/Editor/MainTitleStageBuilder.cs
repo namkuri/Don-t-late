@@ -27,8 +27,6 @@ namespace DontLate.EditorTools
         private const string STAGE_ROOT = "__gb_TitleStage";
         private const string COURIER_FBX = "Assets/Art/Characters/chr_courier.fbx";
         private const string COURIER_AC = "Assets/Art/Characters/AC_chr_courier.controller";
-        // S-195 — 러너가 드는 상자. 플레이어가 드는 것과 같은 프리팹이라 룩이 어긋나지 않는다.
-        private const string PARCEL_PREFAB = "Assets/Prefabs/Auto/prop_box_parcel.prefab";
         private const string CLOUD_A = "Assets/Art/Backgrounds/fx_cloud_a.png";
         private const string CLOUD_B = "Assets/Art/Backgrounds/fx_cloud_b.png";
 
@@ -46,13 +44,6 @@ namespace DontLate.EditorTools
             "__gb_Door",           // 배송지 문·간판 — 타이틀엔 상호작용 대상이 없다
             "__gb_Sign",
             "SceneLabel_District", // District 조립이 남기는 씬 이름표
-
-            // S-194 — 씬에 굴러다니던 유니티 기본 프리미티브. 언젠가 손으로 얹은 것이 Main.unity에
-            // 저장돼 남았고, `GreyboxStageBuilder.Clear()`는 `__gb_` 접두어만 지우므로 재조립을
-            // 해도 계속 살아났다(타이틀 화면의 회색 원기둥·바닥판 — 남규님 지적).
-            // 다른 씬엔 없다(전 씬 조회 확인) — 여기서만 걷어낸다.
-            "Plane",
-            "Capsule",
         };
 
         [MenuItem("DontLate/Build/Main Title Stage (타이틀 배경)", priority = 16)]
@@ -114,66 +105,7 @@ namespace DontLate.EditorTools
             foreach (Object asset in AssetDatabase.LoadAllAssetsAtPath(COURIER_FBX))
                 if (asset is Avatar avatar) { animator.avatar = avatar; break; }
 
-            GreyboxStageBuilder.EnsureIkPass(); // S-195 — 없으면 OnAnimatorIK가 안 불린다
-            BuildRunnerParcel(root, animator);
             return root;
-        }
-
-        /// <summary>
-        /// S-195 — 러너에게 **택배 상자를 들려 보낸다.**
-        ///
-        /// 타이틀은 이 게임이 무슨 게임인지 3초 안에 말해야 하는 화면인데, 빈손으로 달리면
-        /// 그냥 조깅이다. 상자를 들면 실루엣만으로 "배달"이 읽힌다.
-        ///
-        /// 플레이어의 캐리 경로(PlayerStatusManager)를 쓰지 않는 이유: 러너는 연출 인형이라
-        /// 상태·주문 데이터가 없다. 겉모습만 같은 규격(0.7u·바닥 정렬)으로 직접 얹는다.
-        /// </summary>
-        private static void BuildRunnerParcel(GameObject runner, Animator animator)
-        {
-            // 앵커 위치는 플레이어와 같은 값 — 손 IK 오프셋이 그 기준으로 잡혀 있다.
-            GameObject anchor = new GameObject("CarryAnchor");
-            anchor.transform.SetParent(runner.transform, false);
-            anchor.transform.localPosition = GreyboxStageBuilder.CarryAnchorLocal;
-            anchor.transform.localScale = GreyboxStageBuilder.CarryAnchorScale;
-
-            GameObject parcel = AssetDatabase.LoadAssetAtPath<GameObject>(PARCEL_PREFAB);
-            if (parcel == null)
-            {
-                Debug.Log("[타이틀무대] 택배 상자 프리팹 미발견 — 러너는 빈손으로 달린다: " + PARCEL_PREFAB);
-                return;
-            }
-
-            // S-198 — **정규화를 앵커 밖에서 끝내고 마지막에 붙인다.** 앵커에 스케일이 걸린
-            // 뒤로는, 앵커 밑에서 월드 바운즈로 0.7u를 맞추면 그 스케일을 되돌리는 값이 나와
-            // 러너 상자만 플레이어보다 커진다(플레이어는 상자를 만든 뒤 붙이므로 앵커 스케일을
-            // 그대로 먹는다). 만드는 순서를 플레이어와 같게 맞춰 두 경로를 일치시킨다.
-            // 구조도 플레이어와 같게 만든다: 빈 루트 + 그 안의 `Visual`.
-            // 정렬 오프셋은 Visual이 물고, 루트는 앵커 기준 위치만 담당한다 — 둘이 한 오브젝트에
-            // 겹치면 나중에 위치를 덮어쓸 때 정렬이 같이 날아간다.
-            GameObject box = new GameObject("CarriedBox");
-            GameObject visual = (GameObject)PrefabUtility.InstantiatePrefab(parcel, box.transform);
-            visual.name = "Visual";
-            visual.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
-
-            // 캐리 상자 규격: 높이 0.7u 정규화 + 바닥을 루트 원점에 맞춘다(PlayerStatusManager와 동일).
-            Bounds bounds = RenderBounds(visual);
-            if (bounds.size.y > 0.001f)
-            {
-                visual.transform.localScale = Vector3.one * (0.7f / bounds.size.y);
-                bounds = RenderBounds(visual);
-                visual.transform.position += box.transform.position
-                    - new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);
-            }
-
-            box.transform.SetParent(anchor.transform, false);
-            // S-196 — 플레이어와 같은 높이로 띄운다(AttachCarried의 CARRY_ART_LIFT와 같은 값).
-            box.transform.localPosition = new Vector3(0f, 0.2196f, 0f);
-            foreach (Collider c in visual.GetComponentsInChildren<Collider>(true)) c.enabled = false;
-
-            // 캐리 자세(IsCarrying)는 **디렉터가 플레이에서 세운다** — 애니메이터 파라미터는
-            // 에디터에서 넣어도 플레이 시작에 초기화되므로 여기서 켜 봐야 소용없다.
-            if (animator != null)
-                GreyboxStageBuilder.AttachCarryHandIK(animator.gameObject, anchor.transform);
         }
 
         private static void AttachDirector(GameObject stage, GameObject runner)

@@ -72,9 +72,7 @@ namespace DontLate
         {
             if (_keypadDisplay == null) return;
             string dots = string.Empty;
-            // S-193 — ●/○(U+25CF·U+25CB)도 폰트에 없어 네모 4개로 떴다. 비번 자리 표시는
-            // 채움/빈칸만 구분되면 되므로 ASCII로 낮춘다.
-            for (int i = 0; i < 4; i++) dots += i < _entry.Length ? "*" : "_";
+            for (int i = 0; i < 4; i++) dots += i < _entry.Length ? "●" : "○";
             _keypadDisplay.text = string.IsNullOrEmpty(message)
                 ? "공동현관  " + dots + "\n<size=60%><color=#8a93a8>비번은 폰 배송 앱에</color></size>"
                 : message;

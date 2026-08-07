@@ -260,12 +260,9 @@ namespace DontLate.EditorTools
             EnsureFolder("Assets/Prefabs/Hand");
 
             GameObject temp = new GameObject("StreetLampLight");
-            temp.transform.localRotation = Quaternion.Euler(45f, 0f, 0f); // 광추 메시 기준각(코드가 상쇄해 수직)
+            temp.transform.localRotation = Quaternion.Euler(45f, 0f, 0f); // 아래 45° 조사
             Light light = temp.AddComponent<Light>();
-            // S-193 — 남규님이 Spot → **Point**로 바꿨다. 스팟은 원뿔 밖이 딱 끊겨 가로등 밑동과
-            // 보도 옆면이 검게 남는데, 포인트는 사방으로 퍼져 등 주변이 자연스럽게 젖는다.
-            // 코드도 같은 기준으로 만들어 둔다 — 안 그러면 프리팹을 지운 사람에게만 스팟이 부활한다.
-            light.type = LightType.Point;
+            light.type = LightType.Spot;
             light.range = 8f;
             light.spotAngle = 60f;
             light.innerSpotAngle = LAMP_INNER_ANGLE;
@@ -291,10 +288,8 @@ namespace DontLate.EditorTools
                 // S-192 — 조사각은 여기서 보장한다. 생성 함수(GetOrCreateLampLightPrefab)는
                 // 프리팹이 이미 있으면 통째로 건너뛰므로 코드에서 각도를 바꿔도 반영되지 않는다
                 // (남규님 "Inner 60"이 재조립 후에도 22로 남던 이유). 이 함수는 매 조립마다 돈다.
-                // S-193 — 단 **광원 종류는 손대지 않는다.** 남규님이 Point로 바꿨고, 각도는
-                // Point에선 의미가 없다. 스팟일 때만 각을 맞춘다.
                 Light spot = root.GetComponent<Light>();
-                if (spot != null && spot.type == LightType.Spot) spot.innerSpotAngle = LAMP_INNER_ANGLE;
+                if (spot != null) spot.innerSpotAngle = LAMP_INNER_ANGLE;
 
                 Transform coneT = root.transform.Find("Cone");
                 GameObject cone;
@@ -1128,18 +1123,11 @@ namespace DontLate.EditorTools
             SetReference(hub, "_gameState", gameState);
             if (animator != null) SetReference(anim, "_animator", animator);
 
-            // 든 상자가 붙는 자리. S-196 — 남규님이 플레이 중 직접 맞춘 값(y 1.05 → 0.528).
-            // 왜 내렸나: S-195에서 팔 길이 한계로 손이 상자까지 못 올라갔다. 앵커를 내리면
-            // **손 IK 목표도 같이 내려와** 팔이 닿는다(그립 오프셋이 앵커 기준이라 자동으로 따라온다).
+            // 든 상자가 붙는 자리 — 가슴 높이 앞쪽.
             GameObject carryAnchor = new GameObject(PREFIX + "CarryAnchor");
             carryAnchor.transform.SetParent(player.transform, false);
-            carryAnchor.transform.localPosition = CarryAnchorLocal;
-            carryAnchor.transform.localScale = CarryAnchorScale;
+            carryAnchor.transform.localPosition = new Vector3(0f, 1.05f, 0.45f);
             SetReference(player.GetComponent<PlayerStatusManager>(), "_carryAnchor", carryAnchor.transform);
-
-            // S-195 — 캐리 중 양손을 상자에 붙인다. **Animator와 같은 게임오브젝트**에 얹어야
-            // OnAnimatorIK가 불린다(플레이어 루트가 아니라 비주얼 자식이다).
-            if (animator != null) AttachCarryHandIK(animator.gameObject, carryAnchor.transform);
 
             // S-070 ③ — 씬 전이 복원 상자가 캠프 박스와 동일 룩을 갖도록 비주얼 프리팹 주입.
             GameObject parcelPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Auto/prop_box_parcel.prefab");
@@ -1195,62 +1183,7 @@ namespace DontLate.EditorTools
             foreach (Object asset in AssetDatabase.LoadAllAssetsAtPath(COURIER_FBX_PATH))
                 if (asset is Avatar avatar) { animator.avatar = avatar; break; }
 
-            EnsureIkPass(); // S-195 — 이게 꺼져 있으면 OnAnimatorIK가 아예 안 불린다
             return animator;
-        }
-
-        /// <summary>
-        /// S-196·S-198 — 캐리 앵커 위치·크기(남규님 실조정값). 타이틀 러너도 같은 값을 써야 룩이 맞는다.
-        ///
-        /// 앵커 스케일은 **자식 전체에 걸린다** — 상자 크기와 손 IK 목표가 함께 줄어든다
-        /// (그립 오프셋을 앵커의 `TransformPoint`로 풀기 때문). 상자를 작게 하면서 손도 같이
-        /// 좁혀 잡게 하려는 조정이라 이 결합이 의도대로 작동한다.
-        /// </summary>
-        internal static readonly Vector3 CarryAnchorLocal = new Vector3(0f, 0.35f, 0.5f);
-        internal static readonly Vector3 CarryAnchorScale = new Vector3(0.5f, 0.6f, 0.6f);
-
-        /// <summary>
-        /// S-195 — 캐리 손 IK를 얹는다(멱등). 플레이어·타이틀 러너 공용이라 여기 둔다.
-        /// </summary>
-        internal static void AttachCarryHandIK(GameObject animatorHost, Transform carryAnchor)
-        {
-            if (animatorHost == null || carryAnchor == null) return;
-
-            CarryHandIK ik = animatorHost.GetComponent<CarryHandIK>();
-            if (ik == null) ik = animatorHost.AddComponent<CarryHandIK>();
-            // 앵커는 씬 오브젝트 참조라 SerializedObject로 넣는다(CODE_RULES §6 — 리플렉션 대입은
-            // 저장 시 {fileID: 0}으로 유실된 이력이 있다).
-            var so = new SerializedObject(ik);
-            so.FindProperty("_carryAnchor").objectReferenceValue = carryAnchor;
-            so.ApplyModifiedPropertiesWithoutUndo();
-        }
-
-        /// <summary>
-        /// S-195 — 배달원 컨트롤러의 IK Pass를 켠다(멱등).
-        ///
-        /// 이 체크 하나가 꺼져 있으면 `OnAnimatorIK`가 **호출조차 되지 않는다** — 코드도 배선도
-        /// 멀쩡한데 손이 안 붙는, 원인이 안 보이는 부류의 실패다. 사람이 인스펙터에서 켜 두는
-        /// 것에 기대면 재조립·클론 때마다 되돌아가므로 빌더가 매번 보장한다.
-        /// </summary>
-        internal static void EnsureIkPass()
-        {
-            var ac = AssetDatabase.LoadAssetAtPath<UnityEditor.Animations.AnimatorController>(COURIER_AC_PATH);
-            if (ac == null) return;
-
-            UnityEditor.Animations.AnimatorControllerLayer[] layers = ac.layers;
-            bool changed = false;
-            for (int i = 0; i < layers.Length; i++)
-            {
-                if (layers[i].iKPass) continue;
-                layers[i].iKPass = true;
-                changed = true;
-            }
-            if (!changed) return;
-
-            ac.layers = layers; // 배열을 되대입해야 반영된다 — 요소만 고치면 사본이라 버려진다
-            EditorUtility.SetDirty(ac);
-            AssetDatabase.SaveAssets();
-            Debug.Log("[애니] AC_chr_courier — IK Pass 활성화(캐리 양손 IK 전제).");
         }
 
         private static Bounds ComputeRenderBounds(GameObject root)
@@ -1419,6 +1352,11 @@ namespace DontLate.EditorTools
             Shader shader = emissive ? Shader.Find("Universal Render Pipeline/Lit") : Shader.Find("DontLate/GreyboxSnow");
             material = new Material(shader);
             material.color = color;
+            if (emissive)
+            {
+                material.EnableKeyword("_EMISSION");
+                material.SetColor("_EmissionColor", color * 1.8f);
+            }
             AssetDatabase.CreateAsset(material, path);
             // S-190 — 이미시브 설정은 **CreateAsset 뒤에** 한다. URP 머티리얼 초기화가 키워드를
             // 리셋해서, 앞에서 켜면 저장된 에셋에는 꺼진 채로 남는다(같은 함정을 GB_Sign에서

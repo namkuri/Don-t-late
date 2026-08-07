@@ -190,10 +190,6 @@ namespace DontLate.EditorTools
             EdgeGateBuildKit.BuildGate("EdgeGate_Prev", new Vector3(-19f, 0f, 0f), DontLate.DistrictEdgeGate.Direction.Prev, gameState);
             EdgeGateBuildKit.BuildGate("EdgeGate_Next", new Vector3(19f, 0f, 0f), DontLate.DistrictEdgeGate.Direction.Next, gameState);
 
-            // S-199 — 저장 직전에 아트 우선 규칙을 한 번 더 적용한다. 백드롭 배치(위) 이후에
-            // 생기는 빌더물(교차도로·중앙선 등)이 세트에도 담겨 있으면 여기서 사본이 정리된다.
-            ArtBackdropKit.SweepBuilderDuplicates();
-
             EditorSceneManager.SaveScene(scene, scenePath);
             Debug.Log("[DistrictSceneBuilder] " + scenePath + " 조립 완료 — 매니저 제외 무대 + 슬롯 마커 "
                     + (BUILDING_SLOTS + PROP_SLOTS) + "개.");
@@ -473,10 +469,9 @@ namespace DontLate.EditorTools
                 GreyboxStageBuilder.GetOrCreateHighlightMaterial());
             GreyboxStageBuilder.SetReference(vending, "_renderer", renderers[0]);
 
-            // S-193 — 편의점 데코(`__gb_Deco_store_2`) 철거(남규님 지시). 이 모델은 전고 0.7u로
-            // 캘리브레이션이 어긋나 있어(위 건물 풀 배제 사유와 같은 개체) 거리에서 장난감처럼 보였다.
-            // ⚠ 함께 사라지는 것: 여기 붙어 있던 **편의점 구매창**(KioskBuildKit). 구역 상점은
-            //   자판기만 남는다 — 편의점을 되살리려면 제대로 된 모델에 다시 붙여야 한다.
+            // 편의점 — 거리 상점 데코에 구매창을 붙인다 (남규님: 편의점도 구매 UI).
+            GameObject store = GreyboxStageBuilder.PlaceCatalog("store_2", new Vector3(6.5f, 0f, 2.4f), 180f);
+            if (store != null) KioskBuildKit.MakeKiosk(store, "편의점", KioskBuildKit.ConvenienceItems);
         }
 
         // S-123 ① — 독백 스팟 부착 (문자열 배열이라 SerializedObject로 주입).

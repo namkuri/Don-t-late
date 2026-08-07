@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace DontLate
@@ -458,7 +457,6 @@ namespace DontLate
             if (visual.TryGetComponent(out CarryDeadlineLabel label)) Destroy(label);
 
             visual.SetParent(null, worldPositionStays: true);
-            RestoreFreeScale(visual);
 
             if (visual.TryGetComponent(out Collider collider))
             {
@@ -502,7 +500,6 @@ namespace DontLate
         {
             if (_heldDrink != null) return false;
             _heldDrink = visual;
-            RememberFreeScale(visual); // S-200 — 앵커 배율이 걸리기 전 값
             visual.SetParent(_carryAnchor, false);
             visual.localPosition = new Vector3(0.35f, -0.15f, 0f); // 상자와 공존 — 옆손
             visual.localRotation = Quaternion.identity;
@@ -616,7 +613,6 @@ namespace DontLate
             Transform drink = _heldDrink;
             _heldDrink = null;
             drink.SetParent(null, worldPositionStays: true);
-            RestoreFreeScale(drink); // S-200 — 상자와 같은 경로: 앵커 배율이 구워지는 것을 되돌린다
 
             if (drink.TryGetComponent(out Collider collider)) collider.enabled = true;
             if (!drink.TryGetComponent(out Rigidbody body)) body = drink.gameObject.AddComponent<Rigidbody>();
@@ -638,67 +634,29 @@ namespace DontLate
             Debug.Log("[드링크] 던짐 (좌클릭) — E로 다시 주울 수 있다");
         }
 
-        /// <summary>
-        /// S-196 — 든 상자를 앵커보다 살짝 **위로** 띄운다.
-        ///
-        /// 남규님이 플레이 중 맞춘 값을 옮긴 것이다. 인스펙터에선 상자 안쪽 아트 노드를
-        /// (`prop_box_parcel(Clone)`) y 0.274 → 0.462로 올렸는데, 그 노드는 팩토리가 만드는
-        /// `Prefabs/Auto` 프리팹 안에 있어 재임포트로 덮인다. 게다가 상자 조립 코드가 매번
-        /// **바닥을 루트 원점에 정렬**하므로 프리팹 쪽 y를 고쳐도 그 자리에서 상쇄된다.
-        /// 그래서 같은 결과를 상자 루트를 띄우는 것으로 낸다 —
-        /// 0.1882(안쪽 노드 이동량) × 1.1667(Visual 정규화 배율) = 0.2196u, 월드 결과가 동일하다.
-        /// </summary>
-        private const float CARRY_ART_LIFT = 0.2196f;
-
-        /// <summary>
-        /// S-200 — 손에 들기 **전**의 로컬 스케일. 놓을 때 이 값으로 되돌린다.
-        ///
-        /// 왜 필요한가: 캐리 앵커에는 스케일이 걸려 있고(S-198, 0.5·0.6·0.6), 놓을 때
-        /// `SetParent(null, worldPositionStays: true)`를 쓰면 유니티가 **보이는 크기를 지키려고
-        /// 그 배율을 로컬 스케일에 구워 넣는다.** 그래서 다시 집으면 앵커 배율이 한 번 더 곱해지고,
-        /// 들었다 놓을 때마다 상자가 계속 작아졌다(남규님 보고: "던지고 다시 잡을 때마다 작아짐").
-        /// 보이는 위치는 지켜야 하므로 worldPositionStays는 그대로 두고, 스케일만 되돌린다.
-        /// </summary>
-        private readonly Dictionary<Transform, Vector3> _freeScale = new Dictionary<Transform, Vector3>();
-
-        private void RememberFreeScale(Transform visual)
-        {
-            // 이미 기록돼 있으면 덮지 않는다 — 그건 앵커 배율이 섞인 값이다.
-            if (visual == null || _freeScale.ContainsKey(visual)) return;
-            _freeScale[visual] = visual.localScale;
-        }
-
-        private void RestoreFreeScale(Transform visual)
-        {
-            if (visual == null) return;
-            if (_freeScale.TryGetValue(visual, out Vector3 scale)) visual.localScale = scale;
-            _freeScale.Remove(visual);
-        }
-
         /// <summary>든 물건의 겉모습을 캐리 앵커에 붙인다. 내려놓을 때 함께 사라진다.</summary>
         public void AttachCarried(Transform visual)
         {
-            RememberFreeScale(visual); // S-200 — 앵커 배율이 걸리기 전 값
             visual.SetParent(_carryAnchor, false);
             visual.localRotation = Quaternion.identity;
             DeliveryOrderSO labelOrder; // S-073 ④ — 이 비주얼이 표현하는 주문 (직전 TryCarry 결과)
             if (_fillSecondSlot) // S-055 — 2번 슬롯은 머리 위
             {
                 _carriedVisual2 = visual;
-                visual.localPosition = new Vector3(0f, CARRY_ART_LIFT + 0.62f, 0f);
+                visual.localPosition = new Vector3(0f, 0.62f, 0f);
                 _fillSecondSlot = false;
                 labelOrder = CarriedOrder2;
             }
             else if (CarriedOrder3 != null && _carriedVisual3 == null) // S-134 ② — 3번 슬롯은 그 위
             {
                 _carriedVisual3 = visual;
-                visual.localPosition = new Vector3(0f, CARRY_ART_LIFT + 1.24f, 0f);
+                visual.localPosition = new Vector3(0f, 1.24f, 0f);
                 labelOrder = CarriedOrder3;
             }
             else
             {
                 _carriedVisual = visual;
-                visual.localPosition = new Vector3(0f, CARRY_ART_LIFT, 0f);
+                visual.localPosition = Vector3.zero;
                 labelOrder = CarriedOrder;
             }
 
