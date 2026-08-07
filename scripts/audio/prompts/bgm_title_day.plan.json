@@ -1,0 +1,93 @@
+{
+  "chunks": [
+    {
+      "text": "[Opening Fanfare]",
+      "duration_ms": 12000,
+      "positive_styles": [
+        "106 BPM",
+        "cheerful brassy analog synth fanfare",
+        "sparkling bell synth accents",
+        "bright FM electric piano chords",
+        "crisp dry drum machine snare roll",
+        "high-energy welcoming title screen theme",
+        "major key",
+        "playful retro 80s aesthetic",
+        "wide stereo production"
+      ],
+      "negative_styles": [
+        "vocals",
+        "jazz",
+        "acoustic guitar"
+      ],
+      "context_adherence": "high",
+      "conditioning_ref": null,
+      "condition_strength": null
+    },
+    {
+      "text": "[Main Theme]",
+      "duration_ms": 18000,
+      "positive_styles": [
+        "106 BPM",
+        "driving synth bassline",
+        "clean bright synth lead playing a catchy hook",
+        "four-on-the-floor dry drum machine groove",
+        "funky FM electric piano rhythm",
+        "sunny city pop style",
+        "sparkling retro synth textures",
+        "bright and nostalgic mix",
+        "major key"
+      ],
+      "negative_styles": [
+        "vocals",
+        "jazz",
+        "acoustic guitar"
+      ],
+      "context_adherence": "high",
+      "conditioning_ref": null,
+      "condition_strength": null
+    },
+    {
+      "text": "[B Section Development]",
+      "duration_ms": 16000,
+      "positive_styles": [
+        "106 BPM",
+        "airy analog pad layers",
+        "playful bell synth melody handoffs",
+        "syncopated synth bass groove",
+        "crisp hi-hat patterns",
+        "bright FM electric piano color chords",
+        "cheerful morning atmosphere",
+        "clean production"
+      ],
+      "negative_styles": [
+        "vocals",
+        "jazz",
+        "acoustic guitar"
+      ],
+      "context_adherence": "high",
+      "conditioning_ref": null,
+      "condition_strength": null
+    },
+    {
+      "text": "[Outro Re-entrance]",
+      "duration_ms": 14000,
+      "positive_styles": [
+        "106 BPM",
+        "recap of the bright clean synth lead hook",
+        "driving analog synth rhythm section",
+        "sparkling bell synths",
+        "warm tape-saturated retro 80s feel",
+        "festive final major chord hit",
+        "playful resolution"
+      ],
+      "negative_styles": [
+        "vocals",
+        "jazz",
+        "acoustic guitar"
+      ],
+      "context_adherence": "high",
+      "conditioning_ref": null,
+      "condition_strength": null
+    }
+  ]
+}

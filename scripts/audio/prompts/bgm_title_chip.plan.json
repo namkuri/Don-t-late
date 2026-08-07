@@ -1,0 +1,88 @@
+{
+  "chunks": [
+    {
+      "text": "[Opening Fanfare]",
+      "duration_ms": 10000,
+      "positive_styles": [
+        "112 BPM",
+        "retro 8-bit game console sound",
+        "bright square wave fanfare lead",
+        "crisp white noise snare roll",
+        "triangle wave bass accentuating the downbeats",
+        "major key chord progression",
+        "playful comedic build",
+        "energetically driving",
+        "short dynamic opening section"
+      ],
+      "negative_styles": [
+        "jazz",
+        "acoustic guitar"
+      ],
+      "context_adherence": "high",
+      "conditioning_ref": null,
+      "condition_strength": null
+    },
+    {
+      "text": "[Main Theme A]",
+      "duration_ms": 20000,
+      "positive_styles": [
+        "112 BPM",
+        "bouncy chiptune groove",
+        "playful square wave melody with slight pitch bends",
+        "staccato triangle wave bassline",
+        "rapid arpeggios using simple waveforms",
+        "crunchy primitive electronic drum beat",
+        "bright and high-energy feel",
+        "8-bit aesthetic",
+        "retro video game level music"
+      ],
+      "negative_styles": [
+        "jazz",
+        "acoustic guitar"
+      ],
+      "context_adherence": "high",
+      "conditioning_ref": null,
+      "condition_strength": null
+    },
+    {
+      "text": "[B-Section Break]",
+      "duration_ms": 12000,
+      "positive_styles": [
+        "112 BPM",
+        "comedic call-and-response between two different duty cycle square waves",
+        "syncopated triangle bassline",
+        "halftempo visual game feel",
+        "pixelated filter sweep effect",
+        "light woodblock-like noise channel percussion",
+        "unexpected musical pauses for comedic timing"
+      ],
+      "negative_styles": [
+        "jazz",
+        "acoustic guitar"
+      ],
+      "context_adherence": "high",
+      "conditioning_ref": null,
+      "condition_strength": null
+    },
+    {
+      "text": "[Theme Outro]",
+      "duration_ms": 18000,
+      "positive_styles": [
+        "112 BPM",
+        "triumphant return of the main melody in pitch-shifted harmonies",
+        "driving double-time electronic groove",
+        "descending arpeggio runs",
+        "sudden comedic programmatic coin-sound ending",
+        "sharp final chord cut",
+        "clean authentic game-over style release"
+      ],
+      "negative_styles": [
+        "jazz",
+        "acoustic guitar"
+      ],
+      "context_adherence": "high",
+      "conditioning_ref": null,
+      "condition_strength": null
+    }
+  ]
+}

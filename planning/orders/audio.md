@@ -1127,3 +1127,33 @@ main에도 없는 고유 산출물이다 — 커밋된 적이 없어 브랜치 �
 
 MDA 판정 (D-070): **무관** — 재미 축 무기여. 유실 방지다. 되돌릴 수 없는 삭제를 앞두고 있어
 순서상 지금 해야 하는 일이며, 작업량은 복사 1회다.
+
+### 결과 (AU-031) · 2026-08-08 04:18 (정수 공장 · 리드 ~4분 · feature/jjs-s206-au029-au030, base=main)
+
+8파일 신규 등재. 내용 무수정(자동 생성물 원형 보존).
+
+| 파일 | md | plan.json | 창작 태그 방향 |
+|---|---|---|---|
+| `bgm_title_chip` | 2,907B | 2,621B | 8-bit chiptune · square/triangle wave · bouncy and comedic |
+| `bgm_title_day` | 3,108B | 2,577B | major key city pop · retro 80s FM 일렉피아노 · sunny Korean neighborhood morning |
+| `bgm_title_night` | 3,013B | 2,228B | moody neon nightscape · 고깃집 골목 야간 배달 |
+| `bgm_title_rush` | 3,048B | 2,391B | fast driving beat · rush hour chase · comedic tension |
+
+**관찰 (실측)**
+- 8파일 전부 워크트리 원본과 **`cmp` 바이트 동일** (위 표의 크기는 복사본 실측치)
+- 비밀정보 스캔(`api_key|secret|token|sk-|xi-api`) **미검출** — 프롬프트 텍스트와 chunks 구조뿐
+- `.plan.json` 4종 전부 `chunks` 키 보유 — main의 `bgm_title.plan.json`과 동형(파싱 성공)
+- 커밋 관례 정합 확인: main의 `bgm_day_loop`·`bgm_night_var`·`bgm_title`이 이미 `.md`+`.plan.json`
+  쌍으로 등재돼 있다. `.gitignore`에도 프롬프트 제외 규칙이 없다(154행이 오히려 "재현 정보는
+  `scripts/audio/prompts/`가 보유"라고 명시).
+- `.cs` 변경 0 → pre-commit 컴파일 게이트 비대상
+
+**왜 유실 직전이었나 (재발 방지)**: 이 8건은 **어느 브랜치에도 커밋된 적이 없는 untracked 파일**이라
+`git branch -d`의 안전장치도, `merge-base --is-ancestor` 검사도 잡아내지 못한다. 브랜치 정리에서
+안전하다고 판정한 근거는 전부 *커밋된* 내용에 대한 것이었다.
+→ **워크트리를 폐기하기 전에는 반드시 `git status --porcelain`으로 미추적 파일을 먼저 본다.**
+   브랜치가 main에 다 들어갔다는 것과 워크트리 디렉토리가 비었다는 것은 완전히 다른 명제다.
+
+**잔여**: 워크트리 `Don-t-late-wt1`의 나머지 미추적 3건은 회수 불요 —
+`scripts/audio/rules/GAME-SFX-RULES.md`는 main에 이미 있고, gif 1건은 07-22 화면 녹화 잔재다.
+워크트리 폐기 여부는 남규님 판단 대기.
