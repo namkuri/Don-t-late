@@ -820,7 +820,9 @@ namespace DontLate
             {
                 ("택", "택배", Screen.Delivery, new Color(0.95f, 0.62f, 0.25f)),
                 ("음", "음악", Screen.Music, new Color(0.62f, 0.45f, 0.95f)),
-                ("금", "금융", Screen.Invest, new Color(0.30f, 0.78f, 0.50f)),
+                // S-201 — 금융앱(늦코인) 은퇴(남규님: 안 쓴다). 홈 화면에서 빼면 진입 경로가 사라진다.
+                // Screen.Invest 화면 자체는 남겨 둔다 — 지우면 열거형·전환 코드가 줄줄이 딸려 나오고,
+                // 안 열리는 화면은 비용이 0이다. 되살릴 땐 이 줄만 되돌리면 된다.
                 ("은", "은행", Screen.Bank, new Color(0.32f, 0.56f, 0.92f)),
                 ("가", "가구", Screen.Furniture, new Color(0.75f, 0.52f, 0.35f)),
                 ("지", "지도", Screen.Map, new Color(0.30f, 0.62f, 0.85f)),      // S-062 ⑦

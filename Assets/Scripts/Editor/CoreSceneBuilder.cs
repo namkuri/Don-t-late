@@ -1792,6 +1792,10 @@ namespace DontLate.EditorTools
                 so.wallMountable = items[i].wall;
                 // S-109 — 실아트 스왑 계약: Art/Props/<id>.fbx → 팩토리 프리팹이 있으면 배선 (없으면 색박스 폴백).
                 so.prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Auto/" + items[i].id + ".prefab");
+                // S-201 — 모델 회전 보정. 의자 원본이 누운 채로 나와 배치하면 뒤집혀 있었다(남규님 지적).
+                // 표에 새 열을 붙이지 않고 여기서 예외만 잡는다 — 지금 보정이 필요한 모델이 하나뿐이라
+                // 열을 늘리면 나머지 9줄이 전부 0으로 채워진 잡음이 된다. 늘어나면 그때 표로 옮긴다.
+                so.prefabRotation = items[i].id == "chair" ? new Vector3(90f, 0f, 0f) : Vector3.zero;
                 EditorUtility.SetDirty(so);
                 catalog[i] = so;
             }

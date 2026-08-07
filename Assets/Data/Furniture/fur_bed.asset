@@ -19,4 +19,5 @@ MonoBehaviour:
   color: {r: 0.3, g: 0.42, b: 0.55, a: 1}
   prefab: {fileID: 1197447227546795548, guid: 857bde24eda16b7448ddca342fbb03c2, type: 3}
   prefabScale: 2
+  prefabRotation: {x: 0, y: 0, z: 0}
   wallMountable: 0

@@ -130,8 +130,12 @@ namespace DontLate
                 _ghostId = PhoneView.PendingPlacementId;
                 _ghost = BuildGhost(_ghostId);
             }
+            // S-201 — 고스트도 배치될 결과와 같은 회전 보정을 받아야 한다. 안 그러면 미리보기는
+            // 누워 있는데 놓으면 서는(또는 반대) 어긋남이 생긴다.
+            FurnitureSO ghostSo = Find(_ghostId);
+            Quaternion ghostFix = ghostSo != null ? Quaternion.Euler(ghostSo.prefabRotation) : Quaternion.identity;
             _ghost.transform.SetPositionAndRotation(
-                pos + Vector3.up * 0.001f, Quaternion.Euler(0f, _ghostYaw, 0f));
+                pos + Vector3.up * 0.001f, Quaternion.Euler(0f, _ghostYaw, 0f) * ghostFix);
 
             // 클릭 = 확정 (폰이 열려 있으면 폰 조작에 양보).
             if (!mouse.leftButton.wasPressedThisFrame || PhoneView.IsOpen) return;
@@ -487,7 +491,9 @@ namespace DontLate
 
             if (so != null && so.prefab != null)
             {
-                visual = Instantiate(so.prefab, position, rotation);
+                // S-201 — 모델 회전 보정을 **배치 회전 뒤에** 곱한다(로컬 기준). 그래야 플레이어가
+                // 돌린 방향(rotationY)은 그대로 살고, 누워 나오는 모델만 제자리에서 세워진다.
+                visual = Instantiate(so.prefab, position, rotation * Quaternion.Euler(so.prefabRotation));
                 // S-173 ② — 모델 제작 스케일이 제각각이라 방 안에서 크기가 안 맞는다(침대가 작다).
                 // 프리팹 원본을 건드리지 않고 SO에서 배율만 준다 — 다른 씬의 같은 프리팹은 그대로.
                 if (!Mathf.Approximately(so.prefabScale, 1f))
