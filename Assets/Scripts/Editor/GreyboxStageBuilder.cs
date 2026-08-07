@@ -1134,6 +1134,7 @@ namespace DontLate.EditorTools
             GameObject carryAnchor = new GameObject(PREFIX + "CarryAnchor");
             carryAnchor.transform.SetParent(player.transform, false);
             carryAnchor.transform.localPosition = CarryAnchorLocal;
+            carryAnchor.transform.localScale = CarryAnchorScale;
             SetReference(player.GetComponent<PlayerStatusManager>(), "_carryAnchor", carryAnchor.transform);
 
             // S-195 — 캐리 중 양손을 상자에 붙인다. **Animator와 같은 게임오브젝트**에 얹어야
@@ -1199,9 +1200,14 @@ namespace DontLate.EditorTools
         }
 
         /// <summary>
-        /// S-196 — 캐리 앵커 위치(남규님 실조정값). 타이틀 러너도 같은 값을 써야 룩이 맞는다.
+        /// S-196·S-198 — 캐리 앵커 위치·크기(남규님 실조정값). 타이틀 러너도 같은 값을 써야 룩이 맞는다.
+        ///
+        /// 앵커 스케일은 **자식 전체에 걸린다** — 상자 크기와 손 IK 목표가 함께 줄어든다
+        /// (그립 오프셋을 앵커의 `TransformPoint`로 풀기 때문). 상자를 작게 하면서 손도 같이
+        /// 좁혀 잡게 하려는 조정이라 이 결합이 의도대로 작동한다.
         /// </summary>
-        internal static readonly Vector3 CarryAnchorLocal = new Vector3(0f, 0.528f, 0.45f);
+        internal static readonly Vector3 CarryAnchorLocal = new Vector3(0f, 0.35f, 0.5f);
+        internal static readonly Vector3 CarryAnchorScale = new Vector3(0.5f, 0.6f, 0.6f);
 
         /// <summary>
         /// S-195 — 캐리 손 IK를 얹는다(멱등). 플레이어·타이틀 러너 공용이라 여기 둔다.

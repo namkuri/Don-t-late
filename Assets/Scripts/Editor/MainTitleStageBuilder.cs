@@ -134,6 +134,7 @@ namespace DontLate.EditorTools
             GameObject anchor = new GameObject("CarryAnchor");
             anchor.transform.SetParent(runner.transform, false);
             anchor.transform.localPosition = GreyboxStageBuilder.CarryAnchorLocal;
+            anchor.transform.localScale = GreyboxStageBuilder.CarryAnchorScale;
 
             GameObject parcel = AssetDatabase.LoadAssetAtPath<GameObject>(PARCEL_PREFAB);
             if (parcel == null)
@@ -142,22 +143,31 @@ namespace DontLate.EditorTools
                 return;
             }
 
-            GameObject visual = (GameObject)PrefabUtility.InstantiatePrefab(parcel, anchor.transform);
-            visual.name = "CarriedBox";
-            visual.transform.localPosition = Vector3.zero;
-            visual.transform.localRotation = Quaternion.identity;
+            // S-198 — **정규화를 앵커 밖에서 끝내고 마지막에 붙인다.** 앵커에 스케일이 걸린
+            // 뒤로는, 앵커 밑에서 월드 바운즈로 0.7u를 맞추면 그 스케일을 되돌리는 값이 나와
+            // 러너 상자만 플레이어보다 커진다(플레이어는 상자를 만든 뒤 붙이므로 앵커 스케일을
+            // 그대로 먹는다). 만드는 순서를 플레이어와 같게 맞춰 두 경로를 일치시킨다.
+            // 구조도 플레이어와 같게 만든다: 빈 루트 + 그 안의 `Visual`.
+            // 정렬 오프셋은 Visual이 물고, 루트는 앵커 기준 위치만 담당한다 — 둘이 한 오브젝트에
+            // 겹치면 나중에 위치를 덮어쓸 때 정렬이 같이 날아간다.
+            GameObject box = new GameObject("CarriedBox");
+            GameObject visual = (GameObject)PrefabUtility.InstantiatePrefab(parcel, box.transform);
+            visual.name = "Visual";
+            visual.transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
 
-            // 캐리 상자 규격: 높이 0.7u 정규화 + 바닥을 앵커 원점에 맞춘다(PlayerStatusManager와 동일).
+            // 캐리 상자 규격: 높이 0.7u 정규화 + 바닥을 루트 원점에 맞춘다(PlayerStatusManager와 동일).
             Bounds bounds = RenderBounds(visual);
             if (bounds.size.y > 0.001f)
             {
                 visual.transform.localScale = Vector3.one * (0.7f / bounds.size.y);
                 bounds = RenderBounds(visual);
-                visual.transform.position += anchor.transform.position
+                visual.transform.position += box.transform.position
                     - new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);
             }
+
+            box.transform.SetParent(anchor.transform, false);
             // S-196 — 플레이어와 같은 높이로 띄운다(AttachCarried의 CARRY_ART_LIFT와 같은 값).
-            visual.transform.localPosition += new Vector3(0f, 0.2196f, 0f);
+            box.transform.localPosition = new Vector3(0f, 0.2196f, 0f);
             foreach (Collider c in visual.GetComponentsInChildren<Collider>(true)) c.enabled = false;
 
             // 캐리 자세(IsCarrying)는 **디렉터가 플레이에서 세운다** — 애니메이터 파라미터는
