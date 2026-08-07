@@ -1103,3 +1103,27 @@ Director가 기각한 "루프 트림"도 최대치가 몇 MB라 같은 결론이
   `active=Pixel_Night_Funk_Don-T-Late_NoVocal` `isPlaying=True` — 보컬제거본 정상 재생
 - 컴파일 0에러 0워닝 · 콘솔 에러/워닝 **0** · EditMode **90/90** · 캡처 `Screenshots/au030_title_bgm.png`
 - q0.22 프로브 후 14곡 전량 재임포트로 `.meta` 원복 확인 (`git diff Assets/Audio/` 변경 0)
+
+## AU-031 · 발주 2026-08-08 04:14 → 정수 공장 (타이틀 BGM 프롬프트 4종 회수 — 워크트리 유실 직전)
+
+요구 (남규님 지시): 브랜치 정리 중 발견 보고에 대해 **"프롬프트 8건 살려줘"**.
+
+경위: 원격 브랜치 24개 정리(2026-08-08) 중 워크트리 `C:\Works\Game\Don-t-late-wt1`에
+**미추적(untracked) 파일 11건**이 남아 있는 것을 발견했다. 그중 8건이 어느 브랜치에도,
+main에도 없는 고유 산출물이다 — 커밋된 적이 없어 브랜치 삭제와 무관하게 **워크트리를 지우는 순간 소멸**한다.
+
+대상 (2026-07-22 생성, `prompt_builder.py` 조립분):
+`scripts/audio/prompts/bgm_title_{chip,day,night,rush}.md` + 각 `.plan.json` = 8파일
+
+- 성격: 타이틀 BGM **4방향 탐색안**(칩튠·낮·밤·질주). main에 `bgm_title.md`/`.plan.json` 본편은 이미 있고
+  이 4종은 그 변주다. BOM §8 `bgm_title` 슬롯은 **"0곡 — 공백(Director 보류)"** 상태라
+  나중에 타이틀곡을 다시 굴릴 때 그대로 재사용된다.
+- 커밋 관례 정합: main의 `bgm_day_loop`·`bgm_night_var`·`bgm_title`이 `.md`+`.plan.json` 쌍으로
+  등재돼 있다 — 같은 형식이므로 신규 규칙이 필요 없다.
+
+작업: 워크트리 → 본 저장소 `scripts/audio/prompts/`로 복사 후 커밋. 내용 수정 없음(자동 생성물 원형 보존).
+
+수용기준: 8파일이 저장소에 존재 · 워크트리 원본과 바이트 동일 · 비밀정보 미포함 · 커밋 경계 준수
+
+MDA 판정 (D-070): **무관** — 재미 축 무기여. 유실 방지다. 되돌릴 수 없는 삭제를 앞두고 있어
+순서상 지금 해야 하는 일이며, 작업량은 복사 1회다.
