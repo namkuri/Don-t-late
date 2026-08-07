@@ -5788,3 +5788,36 @@ teddy_bear(484,398) · fur_plant(488,952) · fur_rug(471,932) · fur_tv(479,886)
 
 ⚠ push 시 **LFS 오브젝트 미업로드로 거부**(GH008). `git lfs push --all origin main` 선행 필요
 (6.7GB 업로드). FBX를 교체하는 작업은 이 단계를 빼먹으면 push가 막힌다.
+
+### PR 검수 기록 2026-08-07 23:33 (관제) · 열린 PR 4건
+
+**#44 `feat/foodstreet-only` — 내용은 이미 main에 있다.** S-199에서 이 브랜치의
+`set_foodstreet.prefab`만 골라 반입했다(씬 본문 10개는 제외). 브랜치는 main보다 13커밋 뒤처짐.
+→ 추가로 받을 것 없음. **닫아도 된다.**
+
+**#46 `fix/art-scene` — ⚠ 받으면 안 된다(되돌림 PR).** 124파일 +68,238/−47,834.
+merge-base는 최신(`6cb87a5c`)인데 아래를 **삭제**한다:
+- `Assets/Audio/SFX/sfx_tutorial_step.wav`(+meta) · `scripts/audio/prompts/sfx_tutorial_step.md`
+  · `planning/orders/audio.md` 28줄 → **정수님 AU-028이 통째로 사라진다**
+- `Assets/Scripts/Utils/CarryHandIK.cs`(+meta) → S-195 캐리 양손 IK
+- `Assets/Art/Characters/A_chr_courier_idle.fbx`(+meta) → S-197 Idle 애니메이션
+- `planning/orders/system.md` 453줄 변경(대장 되돌림) · 씬 본문 10개 · ProjectSettings
+게다가 `set_foodstreet.prefab`이 **더 빈약하다** — 중첩 프리팹 105(PR#46) vs **123(현재 main)**.
+즉 아트 쪽으로도 얻을 게 없다. 민지님 로컬이 옛 스냅샷 기준이라 생긴 일로 보인다.
+
+**#42 `feat/art-dev`** — main보다 42커밋 뒤처짐. 종전 판정 유지(보류).
+
+**#45 `feature/jjs-s200-carry-scale`(정수님)** — S-200과 같은 증상을 다룬 것으로 보인다.
+main에는 관제판 수정이 이미 들어가 있어(커밋 `S-200`) 내용 대조 후 처리 필요 — **다음 건으로 이월.**
+
+### S-201 ③-2 결과 2026-08-07 23:33 (self-tested) — 의자 3배
+
+앞서 "원본이 불량본이라 제외"했던 의자를 처리했다. **그 파일 안에서 의자만 골라낼 수 있다** —
+원본 12개 메시 중 `geometry_0.022`가 현재 의자와 치수(0.55×1.00×0.66)·메시 이름이 정확히 일치한다.
+그것만 남기고 11개를 지운 뒤 쿼드릭 감축: **485,167 → 33,000**(현재 11,049의 약 3배).
+
+관찰: 메시 (0.555, 1.005, 0.659) · 루트 스케일 1 · 머티리얼 `Material_0.022` ·
+**텍스처 `chair_Image_0_4` 유지**(S-132에서 살려 둔 2048²가 그대로 붙는다) ·
+프리팹 크기 (0.50, 0.90, 0.59) · 회전 보정 (90,0,0) 유지 · 컴파일 0에러 0워닝 · EditMode 46/46.
+
+가구 폴리 현황: **의자 33,000 · 나머지 7종 16,000 · 침대 7,999**(지시대로 유지).
