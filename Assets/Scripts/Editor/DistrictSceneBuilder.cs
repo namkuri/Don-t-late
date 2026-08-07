@@ -190,6 +190,10 @@ namespace DontLate.EditorTools
             EdgeGateBuildKit.BuildGate("EdgeGate_Prev", new Vector3(-19f, 0f, 0f), DontLate.DistrictEdgeGate.Direction.Prev, gameState);
             EdgeGateBuildKit.BuildGate("EdgeGate_Next", new Vector3(19f, 0f, 0f), DontLate.DistrictEdgeGate.Direction.Next, gameState);
 
+            // S-199 — 저장 직전에 아트 우선 규칙을 한 번 더 적용한다. 백드롭 배치(위) 이후에
+            // 생기는 빌더물(교차도로·중앙선 등)이 세트에도 담겨 있으면 여기서 사본이 정리된다.
+            ArtBackdropKit.SweepBuilderDuplicates();
+
             EditorSceneManager.SaveScene(scene, scenePath);
             Debug.Log("[DistrictSceneBuilder] " + scenePath + " 조립 완료 — 매니저 제외 무대 + 슬롯 마커 "
                     + (BUILDING_SLOTS + PROP_SLOTS) + "개.");
