@@ -5574,3 +5574,28 @@ MDA 판정 (D-070): **강화** — 캐리 실루엣은 코어루프 정체성이
 사장님 등 다른 NPC 애니메이션에 영향 없음
 
 MDA 판정 (D-070): **강화** — 정지 자세가 없으면 캐릭터가 살아 있지 않게 보인다. 첫인상 직격.
+
+### S-197 결과 2026-08-07 21:22 (self-tested)
+
+원인: 블렌드 트리 Speed **0.00 자리에 걷기 클립**이 물려 있었다(0.00·2.50 둘 다
+`A_chr_courier_walk.fbx`). **Idle 클립이 프로젝트에 아예 없었다** — 그래서 멈춰도 계속 걸었다.
+코드는 문제가 없었다: `PlanarVelocity`라 중력이 안 섞이고 정지 시 `Speed`는 정확히 0이다.
+
+조치: 지정하신 Mixamo Idle을 `_intake` → `Art/Characters/A_chr_courier_idle.fbx`로 반입하고
+블렌드 트리 0번에 물렸다. 매니페스트에 출처·라이선스 기록(Adobe/Mixamo 무료).
+
+**임포트 함정(실측·재발 방지)**: 아바타를 `CopyFromOther`(배달원 아바타 복사)로 잡으면 이 FBX는
+**테이크가 0개로 잡혀 클립이 통째로 사라진다**. `CreateFromThisModel`로 자기 아바타를 만들면
+정상 인식되고, 휴머노이드 클립은 아바타가 달라도 리타깃되므로 재생엔 문제가 없다.
+(walk는 CopyFromOther로 되어 있어 그대로 따라 했다가 한 바퀴 돌았다.)
+
+관찰:
+- 블렌드 트리 0.00 ← `Idle` / 2.50 ← walk / 4.50 ← run
+- 클립 `Idle` 1.97s · loop True · isHumanMotion True
+- 빌라촌 플레이·입력 없음: **Speed 0.000 · 재생 클립 Idle w1.00**
+- 캡처 `Screenshots/s197_idle_zoom.png` — 두 발 모은 정지 자세
+- 컴파일 0에러 0워닝 · EditMode 46/46
+
+작업 메모: `ModelImporter.SaveAndReimport()`가 응답 없이 매달리는 사례 반복. 설정 기록
+(`WriteImportSettingsIfDirty`)과 재임포트(`ImportAsset`)를 **별도 exec로 쪼개면** 통과한다.
+또한 Unity가 메모리 상 임포터 상태로 `.meta`를 덮어쓰므로 **meta 직접 편집은 무효**다 — API로 바꿔야 한다.
