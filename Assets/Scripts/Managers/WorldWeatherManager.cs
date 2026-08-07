@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -88,6 +88,7 @@ namespace DontLate
             WorldEvents.ClockTicked += OnClockTicked;
             WorldEvents.DayPhaseChanged += OnDayPhaseChanged;
             WorldEvents.SceneTransitionCompleted += OnSceneChanged;
+            WorldEvents.EndingStarted += OnEndingStartedWeather; // S-202 — 엔딩은 맑음으로
         }
 
         private void OnDisable()
@@ -95,6 +96,7 @@ namespace DontLate
             WorldEvents.ClockTicked -= OnClockTicked;
             WorldEvents.DayPhaseChanged -= OnDayPhaseChanged;
             WorldEvents.SceneTransitionCompleted -= OnSceneChanged;
+            WorldEvents.EndingStarted -= OnEndingStartedWeather;
         }
 
         private void Start()
@@ -159,6 +161,17 @@ namespace DontLate
         public void RerollNow() => Reroll();
 
         private bool _pinnedClearScene;
+
+        // S-202 — 엔딩은 맑음으로 끝난다(남규님 지시). 배웅 장면에 비·눈이 오면 결말의 온도가 어긋난다.
+        // 한 번 켜지면 세션이 끝날 때까지 유지된다 — 엔딩 뒤엔 타이틀로 가므로 되돌릴 일이 없다.
+        private bool _endingClear;
+
+        private void OnEndingStartedWeather()
+        {
+            _endingClear = true;
+            _pinnedClearScene = true;
+            if (Weather != WeatherType.Clear) SetWeather(WeatherType.Clear);
+        }
 
         private void Reroll()
         {
@@ -299,7 +312,7 @@ namespace DontLate
 
         private void OnSceneChanged(GameScene scene)
         {
-            _pinnedClearScene = PinsClear(scene);
+            _pinnedClearScene = PinsClear(scene) || _endingClear;
             if (_pinnedClearScene && Weather != WeatherType.Clear) SetWeather(WeatherType.Clear);
 
             _sceneZOffset = scene == GameScene.Home ? 10f : 0f; // S-044 ① — 방 뒷벽(z3) 너머 창밖

@@ -174,12 +174,21 @@ namespace DontLate
 
         // ── 부품 ─────────────────────────────────────────────
 
-        private Transform FindPlayer() // Find 금지 규칙 — 물리 쿼리 실측 (CampBossNpc 관례)
+        /// <summary>
+        /// Find 금지 규칙 — 물리 쿼리로 찾는다 (CampBossNpc 관례).
+        ///
+        /// S-202 — **고정 버퍼(NonAlloc 16칸)를 쓰면 안 된다.** `OverlapSphereNonAlloc`은 가까운
+        /// 순서가 아니라 **임의 순서**로 채우고 버퍼가 차면 나머지를 버린다. 캠프 반경 60u에는
+        /// 콜라이더가 22개 있고 플레이어가 그중 22번째로 들어와(실측) 16칸 밖으로 밀렸다 —
+        /// 그래서 엔딩 시퀀스가 시작하자마자 `player == null`로 조용히 빠져나갔다.
+        /// 무대에 콜라이더가 하나 늘 때마다 다시 터질 수 있는 구조라 **상한 없는 쪽**으로 바꾼다.
+        /// 엔딩 진입에 한 번 도는 코드라 할당 비용은 문제되지 않는다.
+        /// </summary>
+        private Transform FindPlayer()
         {
-            int count = Physics.OverlapSphereNonAlloc(Vector3.zero, 60f, _hits);
-            for (int i = 0; i < count; i++)
+            foreach (Collider hit in Physics.OverlapSphere(Vector3.zero, 60f))
             {
-                PlayerManager player = _hits[i].GetComponentInParent<PlayerManager>();
+                PlayerManager player = hit.GetComponentInParent<PlayerManager>();
                 if (player != null) return player.transform;
             }
             return null;

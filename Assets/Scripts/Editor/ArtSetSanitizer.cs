@@ -45,7 +45,7 @@ namespace DontLate.EditorTools
                 : $"{touched}개 프리팹에서 기능물 {removedTotal}개를 걷어냈습니다.\n\n"
                   + "머티리얼을 입힌 시각물은 그대로 남습니다(아트가 이깁니다).\n"
                   + "프리팹 변경분을 커밋해 주세요.";
-            EditorUtility.DisplayDialog("세트 정리", message, "확인");
+            // S-202 — 모달 제거(남규님 제안). 다이얼로그는 스크립트로 부를 때 에디터를 멈춘다.
             Debug.Log("[세트정리] " + message.Replace("\n", " "));
         }
 

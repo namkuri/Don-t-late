@@ -176,7 +176,16 @@ namespace DontLate.EditorTools
             return true;
         }
 
-        private static void Info(string message) => EditorUtility.DisplayDialog("아트 세트", message, "확인");
-        private static void Warn(string message) => EditorUtility.DisplayDialog("아트 세트 — 확인 필요", message, "확인");
+        // S-202 — 결과 통지는 **콘솔 로그로만** 한다(남규님 제안).
+        //
+        // 모달 다이얼로그는 사람이 누를 때까지 에디터 메인 스레드를 붙잡는다. 그래서 이 메뉴를
+        // 스크립트(unity-cli exec)로 부르면 **커넥터가 통째로 멈춘다** — 실제로 두 번 겪었고
+        // 한 번은 4분간 무응답이었다. 로그는 그 위험이 없고, 콘솔에 남아 나중에 되짚기도 낫다.
+        // 경고는 LogWarning이라 콘솔 필터로 바로 걸린다.
+        private static void Info(string message)
+            => Debug.Log("[아트세트] " + message.Replace("\n\n", " · ").Replace("\n", " "));
+
+        private static void Warn(string message)
+            => Debug.LogWarning("[아트세트] " + message.Replace("\n\n", " · ").Replace("\n", " "));
     }
 }
