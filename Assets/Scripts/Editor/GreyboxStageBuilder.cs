@@ -1128,10 +1128,12 @@ namespace DontLate.EditorTools
             SetReference(hub, "_gameState", gameState);
             if (animator != null) SetReference(anim, "_animator", animator);
 
-            // 든 상자가 붙는 자리 — 가슴 높이 앞쪽.
+            // 든 상자가 붙는 자리. S-196 — 남규님이 플레이 중 직접 맞춘 값(y 1.05 → 0.528).
+            // 왜 내렸나: S-195에서 팔 길이 한계로 손이 상자까지 못 올라갔다. 앵커를 내리면
+            // **손 IK 목표도 같이 내려와** 팔이 닿는다(그립 오프셋이 앵커 기준이라 자동으로 따라온다).
             GameObject carryAnchor = new GameObject(PREFIX + "CarryAnchor");
             carryAnchor.transform.SetParent(player.transform, false);
-            carryAnchor.transform.localPosition = new Vector3(0f, 1.05f, 0.45f);
+            carryAnchor.transform.localPosition = CarryAnchorLocal;
             SetReference(player.GetComponent<PlayerStatusManager>(), "_carryAnchor", carryAnchor.transform);
 
             // S-195 — 캐리 중 양손을 상자에 붙인다. **Animator와 같은 게임오브젝트**에 얹어야
@@ -1195,6 +1197,11 @@ namespace DontLate.EditorTools
             EnsureIkPass(); // S-195 — 이게 꺼져 있으면 OnAnimatorIK가 아예 안 불린다
             return animator;
         }
+
+        /// <summary>
+        /// S-196 — 캐리 앵커 위치(남규님 실조정값). 타이틀 러너도 같은 값을 써야 룩이 맞는다.
+        /// </summary>
+        internal static readonly Vector3 CarryAnchorLocal = new Vector3(0f, 0.528f, 0.45f);
 
         /// <summary>
         /// S-195 — 캐리 손 IK를 얹는다(멱등). 플레이어·타이틀 러너 공용이라 여기 둔다.

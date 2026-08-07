@@ -133,7 +133,7 @@ namespace DontLate.EditorTools
             // 앵커 위치는 플레이어와 같은 값 — 손 IK 오프셋이 그 기준으로 잡혀 있다.
             GameObject anchor = new GameObject("CarryAnchor");
             anchor.transform.SetParent(runner.transform, false);
-            anchor.transform.localPosition = new Vector3(0f, 1.05f, 0.45f);
+            anchor.transform.localPosition = GreyboxStageBuilder.CarryAnchorLocal;
 
             GameObject parcel = AssetDatabase.LoadAssetAtPath<GameObject>(PARCEL_PREFAB);
             if (parcel == null)
@@ -156,6 +156,8 @@ namespace DontLate.EditorTools
                 visual.transform.position += anchor.transform.position
                     - new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);
             }
+            // S-196 — 플레이어와 같은 높이로 띄운다(AttachCarried의 CARRY_ART_LIFT와 같은 값).
+            visual.transform.localPosition += new Vector3(0f, 0.2196f, 0f);
             foreach (Collider c in visual.GetComponentsInChildren<Collider>(true)) c.enabled = false;
 
             // 캐리 자세(IsCarrying)는 **디렉터가 플레이에서 세운다** — 애니메이터 파라미터는

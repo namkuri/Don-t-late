@@ -634,6 +634,18 @@ namespace DontLate
             Debug.Log("[드링크] 던짐 (좌클릭) — E로 다시 주울 수 있다");
         }
 
+        /// <summary>
+        /// S-196 — 든 상자를 앵커보다 살짝 **위로** 띄운다.
+        ///
+        /// 남규님이 플레이 중 맞춘 값을 옮긴 것이다. 인스펙터에선 상자 안쪽 아트 노드를
+        /// (`prop_box_parcel(Clone)`) y 0.274 → 0.462로 올렸는데, 그 노드는 팩토리가 만드는
+        /// `Prefabs/Auto` 프리팹 안에 있어 재임포트로 덮인다. 게다가 상자 조립 코드가 매번
+        /// **바닥을 루트 원점에 정렬**하므로 프리팹 쪽 y를 고쳐도 그 자리에서 상쇄된다.
+        /// 그래서 같은 결과를 상자 루트를 띄우는 것으로 낸다 —
+        /// 0.1882(안쪽 노드 이동량) × 1.1667(Visual 정규화 배율) = 0.2196u, 월드 결과가 동일하다.
+        /// </summary>
+        private const float CARRY_ART_LIFT = 0.2196f;
+
         /// <summary>든 물건의 겉모습을 캐리 앵커에 붙인다. 내려놓을 때 함께 사라진다.</summary>
         public void AttachCarried(Transform visual)
         {
@@ -643,20 +655,20 @@ namespace DontLate
             if (_fillSecondSlot) // S-055 — 2번 슬롯은 머리 위
             {
                 _carriedVisual2 = visual;
-                visual.localPosition = new Vector3(0f, 0.62f, 0f);
+                visual.localPosition = new Vector3(0f, CARRY_ART_LIFT + 0.62f, 0f);
                 _fillSecondSlot = false;
                 labelOrder = CarriedOrder2;
             }
             else if (CarriedOrder3 != null && _carriedVisual3 == null) // S-134 ② — 3번 슬롯은 그 위
             {
                 _carriedVisual3 = visual;
-                visual.localPosition = new Vector3(0f, 1.24f, 0f);
+                visual.localPosition = new Vector3(0f, CARRY_ART_LIFT + 1.24f, 0f);
                 labelOrder = CarriedOrder3;
             }
             else
             {
                 _carriedVisual = visual;
-                visual.localPosition = Vector3.zero;
+                visual.localPosition = new Vector3(0f, CARRY_ART_LIFT, 0f);
                 labelOrder = CarriedOrder;
             }
 
