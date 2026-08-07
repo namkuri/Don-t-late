@@ -1143,29 +1143,26 @@ namespace DontLate
                 ("볼륨-", () => WorldAudioManager.Instance?.SetVolume(WorldAudioManager.Instance.Volume - 0.1f)),
                 ("볼륨+", () => WorldAudioManager.Instance?.SetVolume(WorldAudioManager.Instance.Volume + 0.1f)),
             };
+            // S-202 — 버튼이 폰 스크린 밖으로 나가던 것을 잡는다(남규님 보고).
+            // 실측: 스크린 폭 **266px**인데 종전 배치는 `6 + 3×96 + 84 = 378px`까지 뻗었다.
+            // 좌우 여백 6px을 빼고 남은 폭을 4칸으로 **나눠 쓰도록** 계산식으로 바꾼다 —
+            // 고정 픽셀은 스크린 크기가 바뀌면 또 터진다.
+            const float SCREEN_W = 266f;
+            const float PAD = 6f;
+            const float GAP = 4f;
+            float btnW = (SCREEN_W - PAD * 2f - GAP * (controls.Length - 1)) / controls.Length;
+
             for (int i = 0; i < controls.Length; i++)
             {
                 System.Action act = controls[i].act;
                 Button b = MakeButton(screen.transform, "Ctl" + i, controls[i].label, () => { act(); RefreshMusic(); });
                 RectTransform rect = (RectTransform)b.transform;
                 rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0f, 1f);
-                rect.sizeDelta = new Vector2(84f, 60f);
-                rect.anchoredPosition = new Vector2(6f + i * 96f, -260f); // S-032 ② 하향 — 위 250px는 플레이리스트 몫
+                rect.sizeDelta = new Vector2(btnW, 60f);
+                rect.anchoredPosition = new Vector2(PAD + i * (btnW + GAP), -260f);
             }
-            // 곡선택 — 현재 슬롯 풀 1~4번
-            for (int i = 0; i < 4; i++)
-            {
-                int index = i;
-                Button b = MakeButton(screen.transform, "Track" + i, (i + 1) + "번", () =>
-                {
-                    WorldAudioManager.Instance?.PlayTrackAt(index);
-                    RefreshMusic();
-                });
-                RectTransform rect = (RectTransform)b.transform;
-                rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0f, 1f);
-                rect.sizeDelta = new Vector2(84f, 48f);
-                rect.anchoredPosition = new Vector2(6f + i * 96f, -334f); // S-032 ②
-            }
+            // S-202 — 곡선택 1~4번 버튼 제거(남규님 지시). '다음곡'으로 순환하면 되고,
+            // 슬롯 번호는 플레이어에게 의미가 없다. 재생 API(PlayTrackAt)는 그대로 남는다.
         }
 
         private void BuildInvestScreen()

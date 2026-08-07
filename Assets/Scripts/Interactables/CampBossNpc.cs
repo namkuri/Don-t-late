@@ -33,7 +33,12 @@ namespace DontLate
         private Quaternion _frontRotation;
         private Transform _player;
         private float _pollTimer;
-        private readonly Collider[] _hits = new Collider[16];
+        // S-202 — 16칸은 위험하다. `OverlapSphereNonAlloc`은 **가까운 순서가 아니라 임의 순서**로
+        // 채우고 버퍼가 차면 나머지를 버린다. 반경 12u 실측이 콜라이더 13개(플레이어가 13번째)라
+        // 여유가 3칸뿐이었다 — 무대에 소품이 몇 개만 늘어도 사장님이 플레이어를 못 보게 된다.
+        // 같은 결함이 엔딩에서 이미 터졌다(WorldEndingManager, 22개 중 22번째로 밀림).
+        // 주기 폴링이라 할당은 피하고 버퍼만 넉넉히 잡는다.
+        private readonly Collider[] _hits = new Collider[64];
 
         // S-096 — 상자 손상 잔소리 멘트 풀 (랜덤 · 연속 중복 회피)
         private static readonly string[] SCOLD_LINES =

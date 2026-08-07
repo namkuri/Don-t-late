@@ -1,4 +1,4 @@
-using TMPro;
+﻿using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -74,8 +74,12 @@ namespace DontLate
         private const float LINE_INTERVAL_SECONDS = 0.3f; // S-094 ② — 500ms는 느리다 (남규님 판정)
 
         // ── S-087 — 영수증 포맷: 좌(이름)/우(금액) 정렬은 TMP line-height 0 트릭 ──
-        private const string RULE_STARS = "<align=center><color=#4a5568>******************************************</color></align>"; // S-088 ① — 폭 맞춤
-        private const string RULE_DASH = "<align=center><color=#8a93a8>----------------------------------------------------</color></align>"; // S-088 ①
+        // S-202 — 구분선을 **글자 폭에 의존하지 않게** 만든다. 종전엔 고정 개수의 `*`·`-`라
+        // 폰트를 바꾸면 글리프 advance가 달라져 줄이 짧아지거나 종이를 넘쳤다(남규님 보고).
+        // `<mspace>`는 글자마다 **폭을 em으로 못박아** 폰트와 무관하게 만든다.
+        // 본문 실측 600px / fontSize 34 = 17.6em → 0.44em × 40칸 = 17.6em (종이 폭에 정확히 맞다).
+        private const string RULE_STARS = "<align=center><color=#4a5568><mspace=0.44em>****************************************</mspace></color></align>";
+        private const string RULE_DASH = "<align=center><color=#8a93a8><mspace=0.44em>----------------------------------------</mspace></color></align>";
 
         private static string Row(string left, string right)
             => "<align=left>" + left + "<line-height=0>\n<align=right>" + right + "<line-height=1em>";

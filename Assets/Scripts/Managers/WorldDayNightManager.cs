@@ -117,15 +117,28 @@ namespace DontLate
         {
             WorldEvents.WeatherChanged += OnWeatherChanged;
             WorldEvents.SceneTransitionCompleted += OnSceneArrivedSky; // S-176
+            WorldEvents.EndingStarted += OnEndingStartedSky;           // S-202 — 엔딩은 낮으로
         }
 
         private void OnDisable()
         {
             WorldEvents.WeatherChanged -= OnWeatherChanged;
             WorldEvents.SceneTransitionCompleted -= OnSceneArrivedSky;
+            WorldEvents.EndingStarted -= OnEndingStartedSky;
         }
 
         // S-176 — 새 씬의 라이팅 설정이 원본 스카이박스를 다시 걸어 놓는다. 도착할 때마다 되잡는다.
+        // S-202 — 엔딩 개시. 하늘을 정오로 묶고 즉시 반영한다(다음 틱까지 밤으로 남지 않게).
+        private void OnEndingStartedSky()
+        {
+            _endingSky = true;
+            ApplyVisuals(SkyMinute);
+            DayPhase phase = ResolvePhase(SkyMinute);
+            if (phase == _phase) return;
+            _phase = phase;
+            WorldEvents.RaiseDayPhaseChanged(phase);
+        }
+
         private void OnSceneArrivedSky(GameScene scene)
         {
             _skyScene = scene;       // S-189 — 구역별 하늘 고정 판정에 쓴다
@@ -434,11 +447,17 @@ namespace DontLate
                 ambient.a);
         }
 
+        // S-202 — **엔딩은 낮으로 끝난다**(남규님 지시). 빚을 다 갚고 사람들이 배웅하는 장면이
+        // 한밤중이면 "새 출발"로 읽히지 않는다. 시계는 그대로 흐르고 보이는 하늘만 정오로 고정한다
+        // (S-184·S-189와 같은 수법). 구역 밤 고정보다 **우선**한다 — 엔딩이 마지막 화면이다.
+        private bool _endingSky;
+
         private float SkyMinute
         {
             get
             {
                 if (_gameState == null) return INTRO_SKY_MINUTE;
+                if (_endingSky) return INTRO_SKY_MINUTE;            // 엔딩이 최우선
                 if (PinsNight(_skyScene)) return NEON_SKY_MINUTE;   // 구역 고정이 첫 인상보다 우선
                 return _gameState.introGraceActive ? INTRO_SKY_MINUTE : _gameState.minuteOfDay;
             }

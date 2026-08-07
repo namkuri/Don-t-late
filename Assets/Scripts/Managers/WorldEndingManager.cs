@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -81,6 +81,23 @@ namespace DontLate
             _sequenceRunning = true;
             Debug.Log("[엔딩] 시퀀스 시작 t=" + Time.time.ToString("0.0"));
             WorldEvents.RaiseEndingStarted(); // S-107 ① — 엔딩 BGM 전환 (클립 도착 전엔 무해)
+
+            // S-203 — 엔딩에 들어서는 순간 **대화창만 남기고 전부 끈다**(남규님 지시).
+            // 종전엔 크레딧 직전에야 껐다 — 그전까지 HUD·폰·상단바·'정산하기' 버튼이 그대로 떠서
+            // 작별 장면 위에 얹혀 있었다. 남기는 둘:
+            //   DialogueCanvas — 작별 대사가 여기서 재생된다(끄면 엔딩이 안 보인다)
+            //   FadeCanvas     — 씬 전환용. 끄면 마지막 타이틀 복귀가 검은 화면 없이 툭 끊긴다.
+            var hiddenCanvases = new List<Canvas>();
+            foreach (Canvas canvas in FindObjectsByType<Canvas>())
+            {
+                if (canvas == null || !canvas.enabled) continue;
+                if (canvas.name == "DialogueCanvas" || canvas.name == "FadeCanvas") continue;
+                canvas.enabled = false;
+                hiddenCanvases.Add(canvas);
+            }
+            Debug.Log("[엔딩] UI 소등 " + hiddenCanvases.Count + "개 (대화창·페이드 유지)");
+            _keepUiHidden = true;
+            StartCoroutine(KeepUiHidden(hiddenCanvases)); // 뒤늦게 켜지는 것까지 잡는다(아래 참조)
             Transform player = FindPlayer();
             if (player == null) { _sequenceRunning = false; yield break; }
 
@@ -140,16 +157,17 @@ namespace DontLate
             if (controller != null) controller.enabled = false;
             yield return StartCoroutine(WalkTo(player, player.position + Vector3.left * 14f, faceLeft: true));
             player.gameObject.SetActive(false);
+            _keepUiHidden = false; // S-204 — 감시 종료: 이 뒤로 크레딧 캔버스가 생긴다
             Debug.Log("[엔딩] 퇴장 완료 t=" + Time.time.ToString("0.0"));
 
             // 4단 — 카메라 상승(하늘) + 크레딧 (늦지마 → 잊지마).
-            // HUD·씬 버튼 등 오버레이 일괄 소등 — 하늘과 크레딧만 남긴다 (페이드 캔버스는 전환용으로 유지).
-            var dimmedCanvases = new List<Canvas>();
+            // S-203 — 소등은 시퀀스 시작에서 이미 했다. 여기선 **대화창까지** 마저 끈다:
+            // 작별 대사는 끝났고 크레딧 화면에 대화 박스가 남아 있으면 안 된다.
             foreach (Canvas canvas in FindObjectsByType<Canvas>())
             {
                 if (canvas == null || !canvas.enabled || canvas.name == "FadeCanvas") continue;
                 canvas.enabled = false;
-                dimmedCanvases.Add(canvas);
+                hiddenCanvases.Add(canvas);
             }
 
             Camera camera = Camera.main;
@@ -165,7 +183,7 @@ namespace DontLate
             Debug.Log("[엔딩] 크레딧 종료 t=" + Time.time.ToString("0.0"));
 
             // 5단 — 타이틀 복귀. Core 상주 캔버스(HUD 등)는 되살린다 — 전환 페이드가 깜빡임을 덮는다.
-            foreach (Canvas canvas in dimmedCanvases)
+            foreach (Canvas canvas in hiddenCanvases)
                 if (canvas != null) canvas.enabled = true;
             _gameState.endingPlayed = true;
             _sequenceRunning = false;
@@ -174,12 +192,21 @@ namespace DontLate
 
         // ── 부품 ─────────────────────────────────────────────
 
-        private Transform FindPlayer() // Find 금지 규칙 — 물리 쿼리 실측 (CampBossNpc 관례)
+        /// <summary>
+        /// Find 금지 규칙 — 물리 쿼리로 찾는다 (CampBossNpc 관례).
+        ///
+        /// S-202 — **고정 버퍼(NonAlloc 16칸)를 쓰면 안 된다.** `OverlapSphereNonAlloc`은 가까운
+        /// 순서가 아니라 **임의 순서**로 채우고 버퍼가 차면 나머지를 버린다. 캠프 반경 60u에는
+        /// 콜라이더가 22개 있고 플레이어가 그중 22번째로 들어와(실측) 16칸 밖으로 밀렸다 —
+        /// 그래서 엔딩 시퀀스가 시작하자마자 `player == null`로 조용히 빠져나갔다.
+        /// 무대에 콜라이더가 하나 늘 때마다 다시 터질 수 있는 구조라 **상한 없는 쪽**으로 바꾼다.
+        /// 엔딩 진입에 한 번 도는 코드라 할당 비용은 문제되지 않는다.
+        /// </summary>
+        private Transform FindPlayer()
         {
-            int count = Physics.OverlapSphereNonAlloc(Vector3.zero, 60f, _hits);
-            for (int i = 0; i < count; i++)
+            foreach (Collider hit in Physics.OverlapSphere(Vector3.zero, 60f))
             {
-                PlayerManager player = _hits[i].GetComponentInParent<PlayerManager>();
+                PlayerManager player = hit.GetComponentInParent<PlayerManager>();
                 if (player != null) return player.transform;
             }
             return null;
@@ -261,15 +288,64 @@ namespace DontLate
             return root.transform;
         }
 
+        /// <summary>
+        /// S-203 — 한 번 끄는 것으로는 부족하다. 이름표(`NameCanvas`)처럼 **엔딩 중에 생기거나
+        /// 스스로 다시 켜지는 UI**가 있어 시작 시점의 일괄 소등을 빠져나간다(실측: 소등 13개 뒤에도
+        /// NameCanvas가 남았다 — 엔딩 NPC가 스폰되며 이름표를 켠다).
+        /// 그래서 퇴장이 끝날 때까지 **지켜보며 계속 끈다.** 대화창·페이드는 예외.
+        /// </summary>
+        private IEnumerator KeepUiHidden(List<Canvas> hidden)
+        {
+            // S-204 — 감시는 **퇴장까지만**. 그 뒤엔 크레딧이 자기 캔버스(`EndingCreditsCanvas`)를
+            // 새로 만드는데, 계속 훑으면 그것까지 매 프레임 꺼 버려 **크레딧과 로고 전환이 아예
+            // 안 보인다**(S-203에서 내가 넣은 감시가 만든 회귀 — 남규님 보고).
+            while (_keepUiHidden)
+            {
+                foreach (Canvas canvas in FindObjectsByType<Canvas>())
+                {
+                    if (canvas == null || !canvas.enabled) continue;
+                    if (canvas.name == "DialogueCanvas" || canvas.name == "FadeCanvas") continue;
+                    if (canvas.name == "EndingCreditsCanvas") continue; // 안전망 — 순서가 어긋나도 크레딧은 산다
+                    canvas.enabled = false;
+                    if (!hidden.Contains(canvas)) hidden.Add(canvas);
+                }
+                yield return null;
+            }
+        }
+
+        private bool _keepUiHidden;
+
+        private static readonly int SpeedHash = Animator.StringToHash("Speed");
+        private static readonly int GroundedHash = Animator.StringToHash("IsGrounded");
+
+        /// <summary>
+        /// 대상을 목표 지점까지 걸린다. **애니메이터에 속도를 직접 먹인다** —
+        /// S-203: 종전엔 트랜스폼만 옮겨서, 이동은 하는데 걷기 모션이 안 나오고 Idle인 채로
+        /// 미끄러졌다(남규님 보고). 평소엔 `PlayerAnimationManager`가 `Locomotion.PlanarVelocity`를
+        /// 읽어 Speed를 세우는데, 퇴장 직전에 조작 잠금으로 **Locomotion을 꺼 버려** 그 공급이
+        /// 끊긴 것이 원인이다. 연출이 직접 움직이는 구간에선 연출이 신호도 책임진다.
+        /// </summary>
         private static IEnumerator WalkTo(Transform mover, Vector3 goal, bool faceLeft = false)
         {
             if (faceLeft) mover.rotation = Quaternion.LookRotation(Vector3.left);
+
+            Animator animator = mover != null ? mover.GetComponentInChildren<Animator>() : null;
+            if (animator != null) animator.SetBool(GroundedHash, true);
+
             while (mover != null && Vector3.Distance(mover.position, goal) > 0.05f)
             {
+                // 속도를 **매 프레임** 다시 세운다. `PlayerAnimationManager.Update()`가 같은 프레임에
+                // `Locomotion.PlanarVelocity`(퇴장 중엔 0)로 Speed를 덮어쓰기 때문이다 — 한 번만
+                // 세우면 다음 프레임에 지워져 Idle로 미끄러진다(실측). 코루틴은 Update 뒤에 돌아
+                // 이 대입이 마지막에 남는다.
+                if (animator != null) animator.SetFloat(SpeedHash, WALK_SPEED); // 블렌드 임계 2.5=걷기
+
                 // dt 클램프 — 프레임 스톨(알탭·에디터 왕복) 순간이동 방지 (S-104 실측 교훈)
                 mover.position = Vector3.MoveTowards(mover.position, goal, WALK_SPEED * Mathf.Min(Time.deltaTime, 0.05f));
                 yield return null;
             }
+
+            if (animator != null) animator.SetFloat(SpeedHash, 0f); // 도착하면 Idle로
         }
 
         /// <summary>클램프 누적 대기 — WaitForSeconds는 스톨 dt를 통째로 삼켜 연출 단계를 건너뛴다 (S-104).</summary>
