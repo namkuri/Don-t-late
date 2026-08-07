@@ -5848,3 +5848,25 @@ main 최신 기준(뒤처짐 0) · 22파일 **전부 신규 추가**(삭제·수
    (로컬이 main보다 오래된 상태라 리셋으로 잃을 것이 없다.)
 
 **LFS 메모**: 아트 파일이 오간 뒤 push는 `git lfs push --all origin main` 선행이 필요할 수 있다(GH008).
+
+### PR 검수 기록 2026-08-08 00:16 (관제)
+
+**#49 `add/christmas-light`(민지님) — 씬 본문만 빼고 반입 완료.**
+main 최신 기준(뒤처짐 0) · 14파일 중 **13개 수용, `Assets/Scenes/FoodStreet.unity` 1개 제외**
+(빌더가 매번 만드는 것 — D-061).
+
+코드 검수 결과 **프로젝트 규칙을 지킨다**(민지님 첫 코드 기여):
+- `WorldEvents.DayPhaseChanged` 구독 + `OnEnable`/`OnDisable` 짝 (§3.1)
+- `[SerializeField] private`만 사용, public 필드 없음 (§6)
+- `FindObjectOfType`·`GameObject.Find`·태그 검색 없음 (§3.3)
+- `MaterialPropertyBlock`으로 머티리얼 인스턴스 낭비 회피
+- 저녁·밤에만 점등, 0.2초 간격 색 순환. 108줄.
+
+빌더(`FoodStreetSceneBuilder`)에도 생성 코드가 들어와 재조립 때 자동으로 선다.
+
+관찰: `__gb_ChristmasStringLights` 생성(자식 4) · 컴포넌트 1 · **겹침 0** ·
+플레이(먹자골목=밤 고정) Phase Night · **점등 True** · 전구 렌더러 72 · 필라이트 4 ·
+캡처 `Screenshots/s202_christmas.png` · 컴파일 0에러 0워닝 · EditMode 46/46.
+
+메모: 아트 레인이 **코드까지 규칙대로 보내온 첫 사례**다. 씬 본문 혼입만 반복되고 있으니
+"프리팹·코드·에셋은 받고 `.unity`는 안 받는다"를 다음 공지에 한 줄로 못박는 게 좋겠다.
