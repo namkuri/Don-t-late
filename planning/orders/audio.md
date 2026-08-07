@@ -1051,3 +1051,55 @@ freeze-guard 자동 차단 대상은 아니다(규칙상 동결은 유효 — �
 
 **이 등재로 풀리는 것**: 파이프라인 `intake`/`promote` 게이트가 bom_id를 찾는다 —
 AU-020·021·022·027·028이 5회 연속 수동 후공정으로 우회한 원인이 미등재였다.
+
+### 결과 (AU-030) · 2026-08-08 03:53 (정수 공장 · 리드 ~33분 · feature/jjs-s206-au029-au030, base=main)
+
+수정 2파일(`Assets/Data/BgmLibrary.asset` · `AudioImportPostprocessor.cs` — 후자는 **상수 원복 + 주석**).
+
+**⚠ 발주 가설 2개가 실측에서 깨졌다. 순서대로 적는다.**
+
+**① "미참조 6곡 100.9MB" — 오독이었다.** BgmLibrary에 없던 날씨 BGM 6곡(Rain on the Window·
+Neon Rain·Neon Snowfall·Sodium Fog·Midnight Heatwave·Daylight Snowfall)은 사장 파일이 아니라
+`Core.unity`의 `WorldAudioManager` **날씨 override 필드**(`_weatherBgm` 계열, AU-018 ②/AU-025)가
+참조 중이었다. BgmLibrary만 보고 판정하면 안 된다 — 날씨 BGM은 라이브러리를 거치지 않는 별도 경로다.
+
+**② "q0.26 → 0.22로 감축" — 0바이트다. 레버가 이미 바닥에 닿아 있었다.**
+같은 곡(`Daylight Snowfall.wav`, 49.3s 모노)을 품질만 바꿔 강제 재임포트하며 임포트 산출물
+(`AssetDatabaseExperimental.LookupArtifact` → `GetArtifactPaths` 실파일 크기)을 쟀다:
+
+| quality | 0.05 | 0.22 | 0.26 | 0.35 | 0.50 | 0.70 | 0.90 |
+|---|---|---|---|---|---|---|---|
+| 산출 | 374KB | 374KB | 374KB | 374KB | 431KB | 490KB | 555KB |
+
+**0.35 이하가 전부 동일 바이트 = Unity Vorbis 인코더의 하한 버킷**이고 현행 0.26이 이미 그 안이다.
+14곡 전량 q0.22 재임포트 후 합계도 **11,255KB → 11,255KB로 불변**(1바이트도 안 줄었다).
+→ **상수를 0.26으로 원복**하고, 위 측정표를 코드 주석에 박아 두었다. 다음 사람이 같은 삽질을
+반복하지 않게 하는 것이 이번 건의 실질 산출물이다. (측정이 죽은 게 아니라는 것은 q0.90=555KB로 반증했다.)
+
+**실제 감축분 — 미분류 보컬곡 제거 (Director 판정)**
+
+- `Pixel_Night_Funk_Don-T-Late.wav`(195.6s)는 BgmLibrary 슬롯이 `Unsorted`였다.
+  `WorldAudioManager.cs:296`이 추첨에서 제외하므로 **게임 진행 중 절대 재생되지 않으면서 빌드에는 실렸다**
+  (코드 주석에도 그렇게 적혀 있다). 출처는 S-052 "타이틀곡 보컬제거본 교체(보컬본 보관)".
+- 라이브러리 항목만 제거 — **wav 파일·CREDITS·manifest 기록은 그대로 남아** S-052의 보관 의도는 유지된다.
+- 감축 **1,541KB**. 잔여 참조 0건 실측(`guid b0e4edd3…` 전 에셋·씬 검색) → 빌드에서 빠진다.
+
+**오디오 예산 실측표 (임포트 산출물 기준)**
+
+| 항목 | 전 | 후 |
+|---|---|---|
+| BGM 14곡 | 11,255 KB | **9,714 KB** (13곡분 적재) |
+| SFX 41종 | 2,064 KB | 2,064 KB |
+| 오디오 합계 | 13,319 KB (13.0MB) | **11,778 KB (11.5MB)** |
+
+**③ 범위 밖 발견 — 오디오는 이미 작은 항목이다.** 배포 `WebGL.data.unityweb` 94.85MB 중
+오디오는 13.0MB = **13.7%**뿐이다(발주서 추정 18.5MB도 과대였다). 이번 감축은 data의 1.6%.
+**용량 문제의 본체는 오디오가 아니라 비오디오(메시·텍스처) 쪽**이다 — 별건 발주 대상으로 남긴다.
+Director가 기각한 "루프 트림"도 최대치가 몇 MB라 같은 결론이었을 것이다.
+
+**관찰 (Play 실측 · Core 씬)**
+- BgmLibrary `entries` 8 → **7**: Night×3 · Day×2 · Title×1(NoVocal) · Ending×1 — `Unsorted` 슬롯 소멸
+- Play 진입 → `_pools` **5 → 4개**(Unsorted 풀 자체가 안 생긴다) · 타이틀에서
+  `active=Pixel_Night_Funk_Don-T-Late_NoVocal` `isPlaying=True` — 보컬제거본 정상 재생
+- 컴파일 0에러 0워닝 · 콘솔 에러/워닝 **0** · EditMode **90/90** · 캡처 `Screenshots/au030_title_bgm.png`
+- q0.22 프로브 후 14곡 전량 재임포트로 `.meta` 원복 확인 (`git diff Assets/Audio/` 변경 0)
