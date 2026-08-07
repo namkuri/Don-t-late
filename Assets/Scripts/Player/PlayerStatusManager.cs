@@ -1,5 +1,4 @@
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace DontLate
 {
@@ -457,8 +456,7 @@ namespace DontLate
             // S-073 ④ — 마감 라벨은 '들고 있을 때'만: 손을 떠나면 라벨째 제거.
             if (visual.TryGetComponent(out CarryDeadlineLabel label)) Destroy(label);
 
-            visual.SetParent(null, worldPositionStays: true);
-            RestoreFreeScale(visual);
+            DetachKeepingWorldPose(visual);
 
             if (visual.TryGetComponent(out Collider collider))
             {
@@ -468,6 +466,22 @@ namespace DontLate
 
             if (visual.TryGetComponent(out Rigidbody body)) body.isKinematic = false;
             else visual.gameObject.AddComponent<Rigidbody>();
+        }
+
+        /// <summary>
+        /// S-200 — 손에서 뗄 때 <b>월드 포즈만</b> 유지하고 로컬 스케일은 손대지 않는다.
+        ///
+        /// 종전의 `SetParent(null, worldPositionStays: true)`는 월드 스케일을 지키려고
+        /// 앵커 스케일(GreyboxStageBuilder.CarryAnchorScale = 0.5/0.6/0.6)을
+        /// 로컬 스케일에 눌러 담았다. 그 상자를 다시 잡으면 앵커 스케일이 한 번 더 곱해지므로
+        /// 던지고 잡기를 반복할수록 계속 작아졌다(2회 = 0.25/0.36/0.36배).
+        /// 로컬 스케일을 그대로 두면 바닥 상자는 언제나 원래 크기, 든 상자는 언제나 앵커 배율이다.
+        /// </summary>
+        private static void DetachKeepingWorldPose(Transform visual)
+        {
+            visual.GetPositionAndRotation(out Vector3 position, out Quaternion rotation);
+            visual.SetParent(null, worldPositionStays: false);
+            visual.SetPositionAndRotation(position, rotation);
         }
 
         /// <summary>든 상자를 마우스가 가리키는 방향으로 던진다 (S-016 ⑦ — 물리 드롭 + 초기 속도).</summary>
@@ -502,7 +516,6 @@ namespace DontLate
         {
             if (_heldDrink != null) return false;
             _heldDrink = visual;
-            RememberFreeScale(visual); // S-200 — 앵커 배율이 걸리기 전 값
             visual.SetParent(_carryAnchor, false);
             visual.localPosition = new Vector3(0.35f, -0.15f, 0f); // 상자와 공존 — 옆손
             visual.localRotation = Quaternion.identity;
@@ -615,8 +628,7 @@ namespace DontLate
 
             Transform drink = _heldDrink;
             _heldDrink = null;
-            drink.SetParent(null, worldPositionStays: true);
-            RestoreFreeScale(drink); // S-200 — 상자와 같은 경로: 앵커 배율이 구워지는 것을 되돌린다
+            DetachKeepingWorldPose(drink); // S-200 — 드링크도 같은 결함(던지고 줍기를 반복하면 작아졌다)
 
             if (drink.TryGetComponent(out Collider collider)) collider.enabled = true;
             if (!drink.TryGetComponent(out Rigidbody body)) body = drink.gameObject.AddComponent<Rigidbody>();
@@ -650,35 +662,9 @@ namespace DontLate
         /// </summary>
         private const float CARRY_ART_LIFT = 0.2196f;
 
-        /// <summary>
-        /// S-200 — 손에 들기 **전**의 로컬 스케일. 놓을 때 이 값으로 되돌린다.
-        ///
-        /// 왜 필요한가: 캐리 앵커에는 스케일이 걸려 있고(S-198, 0.5·0.6·0.6), 놓을 때
-        /// `SetParent(null, worldPositionStays: true)`를 쓰면 유니티가 **보이는 크기를 지키려고
-        /// 그 배율을 로컬 스케일에 구워 넣는다.** 그래서 다시 집으면 앵커 배율이 한 번 더 곱해지고,
-        /// 들었다 놓을 때마다 상자가 계속 작아졌다(남규님 보고: "던지고 다시 잡을 때마다 작아짐").
-        /// 보이는 위치는 지켜야 하므로 worldPositionStays는 그대로 두고, 스케일만 되돌린다.
-        /// </summary>
-        private readonly Dictionary<Transform, Vector3> _freeScale = new Dictionary<Transform, Vector3>();
-
-        private void RememberFreeScale(Transform visual)
-        {
-            // 이미 기록돼 있으면 덮지 않는다 — 그건 앵커 배율이 섞인 값이다.
-            if (visual == null || _freeScale.ContainsKey(visual)) return;
-            _freeScale[visual] = visual.localScale;
-        }
-
-        private void RestoreFreeScale(Transform visual)
-        {
-            if (visual == null) return;
-            if (_freeScale.TryGetValue(visual, out Vector3 scale)) visual.localScale = scale;
-            _freeScale.Remove(visual);
-        }
-
         /// <summary>든 물건의 겉모습을 캐리 앵커에 붙인다. 내려놓을 때 함께 사라진다.</summary>
         public void AttachCarried(Transform visual)
         {
-            RememberFreeScale(visual); // S-200 — 앵커 배율이 걸리기 전 값
             visual.SetParent(_carryAnchor, false);
             visual.localRotation = Quaternion.identity;
             DeliveryOrderSO labelOrder; // S-073 ④ — 이 비주얼이 표현하는 주문 (직전 TryCarry 결과)
