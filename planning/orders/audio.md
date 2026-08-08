@@ -1157,3 +1157,43 @@ MDA 판정 (D-070): **무관** — 재미 축 무기여. 유실 방지다. 되�
 **잔여**: 워크트리 `Don-t-late-wt1`의 나머지 미추적 3건은 회수 불요 —
 `scripts/audio/rules/GAME-SFX-RULES.md`는 main에 이미 있고, gif 1건은 07-22 화면 녹화 잔재다.
 워크트리 폐기 여부는 남규님 판단 대기.
+
+---
+
+## AU-032 · 발주 2026-08-08 → 정수 공장 (폭염·안개 날씨 BGM 낮/밤 분리)
+
+요구 (남규님 원문): `HEAT 밤 곡 : Sunny Afternoon Drive.wav` / `FOG 낮 곡 : Pale White Haze.wav` ·
+"HEAT 파일명이 밤/낮 반대로 되어있으면 파일명 수정".
+
+- **배경**: AU-025(비)·AU-026(눈)으로 날씨×시간대 분리가 2종 완료. 폭염·안개는 아직
+  `_bgmHeat`/`_bgmFog` 단곡·phase-blind → 낮이든 밤이든 한 곡. 곡 2종 확보(Director Suno) → 분리 가능.
+- **확정 배정** (Director 세션 내 승인):
+
+| 날씨 | 낮 | 밤 |
+|---|---|---|
+| Heat | `Heatwave Afternoon.wav` (기존 `Midnight Heatwave` 개명) | `Heatwave Night Drive.wav` (신곡 · 원제 `Sunny Afternoon Drive`) |
+| Fog | `Pale White Haze.wav` (신곡 · 원제 유지) | `Sodium Fog.wav` (기존) |
+
+- **개명 근거**: 신곡 원제가 역할과 반대다(`Sunny Afternoon Drive`가 **밤** 곡 — Director 청취 판정).
+  분리하면 기존 `Midnight Heatwave`도 **낮** 곡이 되어 역시 반대가 된다. 이름 교환(덮어쓰기)·신곡만
+  개명 대신 **충돌 없는 새 이름 2개**를 택했다(Director 3안 중 ⭐안). 원제는 `assets_manifest.md`에
+  병기 보존 — 라이선스 추적선을 끊지 않는다. Fog 신곡은 원제가 역할과 정합해 개명 없음.
+
+**작업**
+1. `WorldAudioManager`: `_bgmHeat`→`_bgmHeatDay`/`_bgmHeatNight`, `_bgmFog`→`_bgmFogDay`/`_bgmFogNight`.
+   `RefreshWeatherBgm()`의 Heat·Fog 케이스를 `night ? …Night : …Day`로 (Rain/Snow와 동형).
+   재평가 경로(`OnDayPhaseChanged`→`RefreshWeatherBgm`)는 AU-025가 이미 설치 → 추가 배선 불요.
+2. `CoreSceneBuilder` 배선 4행 교체.
+3. 반입: 신곡 2곡 `Downloads`→`Assets/Audio/BGM/` (**꼬리 페이드 트림** — 실측상 머리는 풀레벨,
+   꼬리만 페이드아웃: Sunny 86.1s 중 약 3s / Pale 149.6s 중 약 6s). 기존 `Midnight Heatwave.wav`는
+   `git mv`로 개명(.meta 동반 — GUID 보존이 배선 생명줄).
+4. `.gitignore` allowlist 갱신(신규 2 + 개명분) · `assets_manifest.md` 등재 · BOM §8 갱신.
+
+**경계**: Storm BGM은 범위 밖(곡 없음 — AU-024 프롬프트 대기). 씬 본문 미커밋(빌더 정본).
+공장→PR, main 머지는 관제 게이트. base=`feature/jjs-s206-au029-au030` 스택(PR #52 미머지).
+
+**수용기준**: 컴파일 0에러·0워닝 · Heat/Fog 각각 낮·밤 곡이 갈려 재생(실측) · 날씨 유지 중 낮↔밤
+전환 시 곡 교체 · 개명 후 GUID 유실 0(배선 살아있음) · 원제 추적 가능 · 예산 증가분 실측 기재.
+
+MDA 판정 (D-070): **강화** — AU-025/026과 동형. 날씨 몰입을 시간대 축으로 심화. 곡 확보됨 = 저비용.
+코어루프 불변. (AU-030 실측: 오디오는 빌드 data 94.85MB 중 11.5MB — 2곡 추가 여력 있음.)
