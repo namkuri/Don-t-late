@@ -163,7 +163,12 @@ namespace DontLate.EditorTools
             if (bounds.min.z - frontZ <= 0.01f) return null; // 이미 카메라 앞까지 깔려 있다
 
             // 아트판 아래로 얼마나 내릴지. 0이면 윗면이 같은 높이가 되어 겹치는 구간에서 z파이팅이 난다.
-            const float SINK = 0.05f;
+            // S-212 보정② — 0.05는 **눈에 보이는 단**이었다: 아트 발판(깊이 6u)이 넓은 판 위에 얹힌
+            // 사각형으로 읽힌다(남규님 지적). 이 무대는 1픽셀 ≈ 0.059u(카메라 41u·FOV 22·480×270)라
+            // 0.01u면 화면상 0.2px = 무단차이면서 깊이 정밀도 여유는 남는다.
+            // 근본은 아트 세트의 바닥을 넓히는 것이다 — 넓어지면 위 조기 return이 걸려 이 판은
+            // 아예 생성되지 않는다(보철이 스스로 물러나는 구조).
+            const float SINK = 0.01f;
 
             float depth = bounds.max.z - frontZ;               // 원본 뒤끝까지 통으로
             float height = Mathf.Max(0.1f, bounds.size.y);     // 원본이 Plane(두께 0)이어도 실체를 준다
