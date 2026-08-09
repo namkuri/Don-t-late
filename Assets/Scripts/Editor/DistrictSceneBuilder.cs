@@ -101,7 +101,14 @@ namespace DontLate.EditorTools
             // 슬롯 생성기는 소품·가로수만 담당한다.
             // ⚠ 대가: 구역별(빌라촌·상가·주택가) 건물 다양성이 사라진다 — 소품만 구역색을 낸다.
             //   구역별 거리를 되살리려면 세트를 구역 수만큼 만들어 교체하는 쪽이 정도다.
-            AttachLayoutGenerator(slotsRoot, new List<Transform>(), propSlots, gameState);
+            // S-214 ① — **빌라촌은 생성기를 달지 않는다**(남규님 지시 — 아트가 수동 배치 후 반입).
+            // 슬롯 마커는 그대로 남긴다: 생성기만 빠지면 런타임에 `GeneratedLayout`(절차적 소품·
+            // 가로수)이 아예 생기지 않고, 나중에 되살릴 때 슬롯을 다시 깔 필요가 없다.
+            // 다른 구역(먹자골목·촬영용 District 1)은 종전대로 — 지시는 빌라촌 한정이다.
+            if (scenePath != DISTRICT_PATH)
+                AttachLayoutGenerator(slotsRoot, new List<Transform>(), propSlots, gameState);
+            else
+                Debug.Log("[DistrictSceneBuilder] 빌라촌 — 절차적 배치 생성기 생략 (S-214 ①, 아트 수동 배치 예정).");
 
             // S-141 — 민지님 세트 프리팹(`set_district_2`)을 배경 파사드로 깐다.
             // 절차적 슬롯을 대체하지 않는다: 슬롯은 Z=2.6 근경에서 구역별로 채워지고,

@@ -15,13 +15,12 @@ namespace DontLate.EditorTools
     public static class HillsideStageBuilder
     {
         private const string SCENE_PATH = "Assets/Scenes/Hillside.unity";
-        private const string HILL_FBX = "Assets/Art/Terrains/hill.fbx";
         private const string UPHILL_SET_PREFAB = "Assets/Prefabs/Hand/set_hillside_uphill.prefab";
 
-        // 남규님이 씬에서 직접 맞춘 값(S-129 실측) — x·y는 그대로 쓴다.
-        // z만 2.70 → 4.00으로 넓혔다: 5.4u 폭에는 보행 레인(±2.6)과 판잣집이 같이 설 자리가 없다.
-        private static readonly Vector3 HILL_POS = new Vector3(31.9f, 0f, 0f);
-        private static readonly Vector3 HILL_SCALE = new Vector3(51.79f, 2.78f, 4.00f);
+        // S-214 ③ — 남규님이 준 오르막 지형 수치. `__gb_Hill`을 대신할 몸집이라 z를 늘려 깔아 준다.
+        private const float UPHILL_SCALE_Z = 5.9f;
+        private const float UPHILL_POSITION_Z = 0f;
+
         private const float LANE_HALF_Z = 2.6f;   // 걷기 허용 폭 (능선 위)
         private const float BACK_ROW_Z = 3.3f;    // 능선 뒤편 — 판잣집·데코 줄 (레인 밖)
 
@@ -48,7 +47,6 @@ namespace DontLate.EditorTools
 
             var (gameState, tuning, _) = GreyboxStageBuilder.GetOrCreateStageData();
 
-            Material asphalt = GreyboxStageBuilder.GetOrCreateMaterial("HillAsphalt", new Color(0.23f, 0.24f, 0.26f), false);
             _dirtMat = GreyboxStageBuilder.GetOrCreateMaterial("HillDirt", new Color(0.43f, 0.35f, 0.26f), false);
             _wallMat = GreyboxStageBuilder.GetOrCreateMaterial("HillWall", new Color(0.48f, 0.42f, 0.33f), false);
 
@@ -61,7 +59,15 @@ namespace DontLate.EditorTools
             baseGround.GetComponent<Renderer>().sharedMaterial = _dirtMat;
             baseGround.layer = GreyboxStageBuilder.LAYER_GROUND;
 
-            BuildHill(asphalt);
+            // S-214 ③ — **`__gb_Hill` 생산 중단**(남규님 지시). 지형 소유가 빌더의 회색 산에서
+            // 민지님 오르막 세트로 넘어간다.
+            //
+            // 그래서 **배경 세트를 여기로 끌어올린다**. 종전엔 배치가 다 끝난 뒤(플레이어·카메라 절)에
+            // 깔았는데, 이제 밟을 지형이 그 세트 안에 있다 — 늦게 깔면 이 아래 GroundY 레이캐스트가
+            // 때릴 게 BaseGround(y≈0)뿐이라 산비탈 배치물이 전부 평지로 주저앉는다.
+            // 배경을 먼저 세우는 것 자체는 원래 규약이기도 하다(S-199 주석).
+            ArtBackdropKit.Build(ArtBackdropKit.Hillside); // S-180 ② — 아트 세트 소켓(프리팹 없으면 무시)
+            TuneUphill(scene);                            // 오르막을 지형으로 — 콜라이더 on + 수치
             Physics.SyncTransforms(); // 이 아래 배치는 전부 GroundY 레이캐스트에 의존한다
 
             // ── 달동네 판잣집 — S-206에서 **빌더 생산 중단**(남규님 지시). ──
@@ -98,7 +104,7 @@ namespace DontLate.EditorTools
             BuildCat(gameState, OnGround(34f, -1.2f));
 
             // ── 플레이어·카메라(Y 팔로우) ────────────────────
-            ArtBackdropKit.Build(ArtBackdropKit.Hillside); // S-180 ② — 아트 세트 소켓(프리팹 없으면 무시)
+            // (배경 세트는 S-214 ③에서 지형 절로 올라갔다 — 여기서 다시 깔면 두 벌이 선다.)
             GreyboxStageBuilder.BuildPlayer(gameState, tuning);
             GameObject player = GameObject.Find("__gb_Player");
             if (player != null) player.transform.position = OnGround(-16f, 0f, 0.1f);
@@ -133,6 +139,11 @@ namespace DontLate.EditorTools
             // 교체 시점엔 빌더 사본이 아직 없다 — 그래서 사냥을 빠져나가 같은 자리에 두 벌이 섰다.
             // District가 S-199에서 겪은 것과 같은 결함이고, 해법도 같다(멱등이라 몇 번 불러도 안전).
             ArtBackdropKit.SweepBuilderDuplicates();
+
+            // S-214 ③ — 스윕이 **배경층 콜라이더를 일괄로 끄기 때문에**(통행 판정에 끼면 안 된다는
+            // S-119 ① 규약) 방금 켜 둔 오르막 콜라이더도 같이 꺼진다(실측: MC=False로 되돌아감).
+            // 오르막은 배경이 아니라 밟는 지형이므로 스윕 뒤에 한 번 더 세운다. 멱등이라 안전하다.
+            TuneUphill(scene);
 
             EditorSceneManager.SaveScene(scene, SCENE_PATH);
             Debug.Log("[Hillside] 유선형 산 무대 조립 완료 — 정상 y" + GroundY(31.9f).ToString("F2")
@@ -172,7 +183,7 @@ namespace DontLate.EditorTools
             foreach (GameObject root in scene.GetRootGameObjects())
             {
                 if (root.name != "set_hillside_uphill") continue;
-                if (!setOwnsUphill) return; // 세트에 없으면 씬에 선 이 한 벌이 정본이다
+                if (!setOwnsUphill) return; // 세트에 없으면 씬에 선 이 한 벌이 정본이다 (손질은 지형 절에서 한 번에)
                 Undo.DestroyObjectImmediate(root);
             }
 
@@ -196,6 +207,44 @@ namespace DontLate.EditorTools
                 child.gameObject.layer = GreyboxStageBuilder.LAYER_GROUND;
         }
 
+        /// <summary>
+        /// S-214 ③ — 오르막 세트의 `uphill`을 **지형으로 쓸 수 있게** 손질한다(남규님 수치).
+        /// `__gb_Hill`을 걷어낸 자리를 이 메시가 대신 받으므로 콜라이더가 켜져 있어야 한다 —
+        /// 꺼져 있으면 GroundY 레이캐스트가 전부 BaseGround(y≈0)를 때려 무대가 평지가 된다.
+        /// 프리팹이 아니라 **씬 인스턴스에** 건다: 민지님이 프리팹을 다시 반입해도 이 손질은 유지된다.
+        /// </summary>
+        private static void TuneUphill(Scene scene)
+        {
+            // 오르막은 두 곳 중 하나에 있다: 독립 세트(`set_hillside_uphill`) 또는 배경 세트
+            // (`__gb_ArtBackdrop`) 안. 민지님이 배경에 품어 보낸 이후로는 후자다(S-206).
+            // 어디 있든 찾도록 씬 전체에서 이름으로 집는다.
+            Transform uphill = null;
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                foreach (Transform child in root.GetComponentsInChildren<Transform>(true))
+                    if (child.name == "uphill") { uphill = child; break; }
+                if (uphill != null) break;
+            }
+
+            if (uphill == null)
+            {
+                Debug.LogWarning("[Hillside] 씬에 `uphill`이 없다 — 지형 콜라이더 손질 생략(무대가 평지가 된다).");
+                return;
+            }
+
+            Vector3 scale = uphill.localScale;
+            uphill.localScale = new Vector3(scale.x, scale.y, UPHILL_SCALE_Z);
+            Vector3 position = uphill.localPosition;
+            uphill.localPosition = new Vector3(position.x, position.y, UPHILL_POSITION_Z);
+
+            MeshCollider collider = uphill.GetComponent<MeshCollider>();
+            if (collider == null) collider = uphill.gameObject.AddComponent<MeshCollider>();
+            collider.enabled = true;
+
+            Debug.Log("[Hillside] 오르막 지형 손질 — scale.z " + UPHILL_SCALE_Z + " · position.z "
+                + UPHILL_POSITION_Z + " · MeshCollider on (S-214 ③).");
+        }
+
         /// <summary>배경 세트 프리팹 안에 오르막 세트가 들어 있는가 (S-206 · 중복 방지).</summary>
         private static bool SetPrefabContainsUphill()
         {
@@ -205,33 +254,6 @@ namespace DontLate.EditorTools
             foreach (Transform child in setPrefab.GetComponentsInChildren<Transform>(true))
                 if (child.name == "set_hillside_uphill") return true;
             return false;
-        }
-
-        private static void BuildHill(Material surface)
-        {
-            GameObject source = AssetDatabase.LoadAssetAtPath<GameObject>(HILL_FBX);
-            if (source == null)
-            {
-                Debug.LogError("[Hillside] " + HILL_FBX + " 없음 — 지형 없이 조립한다.");
-                return;
-            }
-            // 프리팹 Variant 결합 회피 — 독립 클론으로 만든다 (2026-07-20 실수→규칙).
-            GameObject hill = (GameObject)Object.Instantiate(source);
-            hill.name = "__gb_Hill";
-            hill.transform.SetPositionAndRotation(HILL_POS, Quaternion.identity);
-            hill.transform.localScale = HILL_SCALE;
-            hill.layer = GreyboxStageBuilder.LAYER_GROUND;
-
-            foreach (Renderer renderer in hill.GetComponentsInChildren<Renderer>())
-                renderer.sharedMaterial = surface;
-
-            foreach (MeshFilter filter in hill.GetComponentsInChildren<MeshFilter>())
-            {
-                filter.gameObject.layer = GreyboxStageBuilder.LAYER_GROUND; // S-128 ③ — 눈·비가 여기 쌓인다
-                MeshCollider collider = filter.GetComponent<MeshCollider>();
-                if (collider == null) collider = filter.gameObject.AddComponent<MeshCollider>();
-                collider.sharedMesh = filter.sharedMesh;
-            }
         }
 
         /// <summary>지형 표면 높이. Ground 레이어만 본다 — 이미 놓인 데코·플레이어에 걸리지 않는다.</summary>
