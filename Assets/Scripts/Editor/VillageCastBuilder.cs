@@ -38,13 +38,17 @@ namespace DontLate.EditorTools
             public readonly string MaterialPath;
             /// <summary>S-217 ②③ — 두 번째 동작이 **진짜 걷기 클립**인가. 제자리 동작이면 false(미끄러짐 방지).</summary>
             public readonly bool SecondClipMoves;
+            /// <summary>S-218 ① — 소셜 프로필 id·표시명(근접 이름표). 대사 풀 JSON의 값과 같아야 한다.</summary>
+            public readonly string NpcId;
+            public readonly string DisplayName;
 
             public CastMember(string name, string modelPath, Vector3 position, float rotationY, float scale,
                 string firstClipPath, string secondClipPath, float firstDuration, float secondDuration,
                 bool usePedestrianMovement, string talkPoolPath, string materialPath = null,
-                bool secondClipMoves = true)
+                bool secondClipMoves = true, string npcId = null, string displayName = null)
             {
                 SecondClipMoves = secondClipMoves;
+                NpcId = npcId; DisplayName = displayName;
                 Name = name; ModelPath = modelPath; Position = position; RotationY = rotationY; Scale = scale;
                 FirstClipPath = firstClipPath; SecondClipPath = secondClipPath;
                 FirstDuration = firstDuration; SecondDuration = secondDuration;
@@ -61,7 +65,8 @@ namespace DontLate.EditorTools
                 "Assets/Art/Characters/Animation/A_malsoon/malsoon_Angry.fbx",
                 "Assets/Art/Characters/Animation/A_malsoon/malsoon_Angry_2.fbx",
                 3f, 3f, false, "Assets/Data/Dialogue/Source/parkmalsoon-random-talk.json",
-                "Assets/Art/Characters/Materials/malsoon.fbm.mat"),
+                "Assets/Art/Characters/Materials/malsoon.fbm.mat",
+                npcId: "parkmalsoon", displayName: "박말순"),
 
             // 나아라 — 서 있다 걷다를 반복(배회 ON).
             new CastMember("naara", "Assets/Art/Characters/naara/gs_girl_mixamo_rig_final.fbx",
@@ -69,7 +74,8 @@ namespace DontLate.EditorTools
                 "Assets/Art/Characters/naara/naara_Idle.fbx",
                 "Assets/Art/Characters/naara/gs_girl_walking.fbx",
                 4f, 3f, true, "Assets/Data/Dialogue/Source/na-ara-random-talk.json",
-                "Assets/Art/Characters/Materials/gs_girl.mat"),
+                "Assets/Art/Characters/Materials/gs_girl.mat",
+                npcId: "na_ara", displayName: "나아라"),
 
             // 오지혜 — 대기 자세와 인사를 번갈아. **두 클립 다 제자리 동작이라 걷지 않는다**(S-217 ②③).
             // 배회를 켜 뒀더니 발이 붙은 채 미끄러져 다녔고, 도로까지 흘러가 차에 치였다(남규님 관찰).
@@ -79,7 +85,8 @@ namespace DontLate.EditorTools
                 "Assets/Art/Characters/Animation/A_jihye/jihye_Idle.fbx",
                 "Assets/Art/Characters/Animation/A_jihye/jihye_Standing Greeting.fbx",
                 4f, 3f, true, "Assets/Data/Dialogue/Source/yoo-jihye-random-talk.json",
-                null, secondClipMoves: false),
+                null, secondClipMoves: false,
+                npcId: "yoo_jihye", displayName: "오지혜"),
         };
 
         /// <summary>
@@ -169,6 +176,11 @@ namespace DontLate.EditorTools
                 // S-217 ②③ — 첫 동작은 어느 NPC나 제자리(대기·화내기)라 항상 정지.
                 SetPrivate(animation, "_firstClipMoves", false);
                 SetPrivate(animation, "_secondClipMoves", member.SecondClipMoves);
+
+                // S-218 ① — 근접 이름표(S-120). 그레이박스 행인은 `NpcBuildKit`이 달아 주는데
+                // 상주 3인은 이 빌더가 세우므로 여기서 같은 것을 단다. 표시는 `PedestrianNpc.SetHighlight`가
+                // 켠다 — 컴포넌트가 없으면 조용히 아무 것도 안 뜬다(남규님이 본 상태).
+                NpcBuildKit.AttachNameLabel(instance, member.NpcId, member.DisplayName ?? member.Name);
                 built++;
             }
 

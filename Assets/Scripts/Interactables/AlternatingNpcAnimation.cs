@@ -79,6 +79,7 @@ namespace DontLate
             if (!_graph.IsValid()) return;
 
             _timer += Time.deltaTime;
+            StepBlend(); // S-218 ③
             LoopActiveClip();
             float duration = _showingFirst ? _firstDuration : _secondDuration;
             if (_timer >= duration) Show(!_showingFirst);
@@ -114,17 +115,48 @@ namespace DontLate
                 && (_showingFirst ? _firstClipMoves : _secondClipMoves));
         }
 
+        // S-218 ③ — 전환이 **한 프레임에 뚝 끊겨** 어색했다(남규님 지적). 믹서 가중치를
+        // 이 시간에 걸쳐 옮겨 두 동작을 겹쳐 준다. 0.28초는 사람 동작이 자연스럽게 넘어가는
+        // 최소치 근처 — 더 길면 인사 같은 짧은 동작이 반쯤 섞인 채로 끝난다.
+        private const float BLEND_SECONDS = 0.28f;
+        private float _blendRemaining;
+
         private void Show(bool first)
         {
             _showingFirst = first;
             _timer = 0f;
             ApplyMovementGate();
-            _mixer.SetInputWeight(0, first ? 1f : 0f);
-            _mixer.SetInputWeight(1, first ? 0f : 1f);
-            _firstPlayable.SetSpeed(first ? 1d : 0d);
-            _secondPlayable.SetSpeed(first ? 0d : 1d);
+
+            // 재생 자체는 양쪽 다 돌린다 — 꺼진 쪽이 정지해 있으면 섞이는 동안 얼어붙은 자세가 비친다.
+            _firstPlayable.SetSpeed(1d);
+            _secondPlayable.SetSpeed(1d);
             if (first) _firstPlayable.SetTime(0d);
             else _secondPlayable.SetTime(0d);
+
+            _blendRemaining = BLEND_SECONDS;
+        }
+
+        /// <summary>가중치를 목표로 서서히 민다. 블렌드가 끝나면 뒤로 물러난 쪽 재생을 멈춘다.</summary>
+        private void StepBlend()
+        {
+            float target = _showingFirst ? 1f : 0f;
+            float weight = _mixer.GetInputWeight(0);
+
+            if (_blendRemaining > 0f)
+            {
+                _blendRemaining -= Time.deltaTime;
+                weight = Mathf.MoveTowards(weight, target, Time.deltaTime / BLEND_SECONDS);
+            }
+            else
+            {
+                weight = target;
+                // 다 넘어갔으면 안 보이는 쪽은 세워 둔다(불필요한 평가 낭비 방지).
+                _firstPlayable.SetSpeed(_showingFirst ? 1d : 0d);
+                _secondPlayable.SetSpeed(_showingFirst ? 0d : 1d);
+            }
+
+            _mixer.SetInputWeight(0, weight);
+            _mixer.SetInputWeight(1, 1f - weight);
         }
 
         private void LoopActiveClip()

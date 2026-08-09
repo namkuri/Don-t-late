@@ -661,7 +661,11 @@ namespace DontLate
                     float scaleY = Mathf.Max(Mathf.Abs(scale.y), 0.001f);
                     float scaleZ = Mathf.Max(Mathf.Abs(scale.z), 0.001f);
                     CapsuleCollider capsule = gameObject.AddComponent<CapsuleCollider>();
-                    capsule.center = transform.InverseTransformPoint(bounds.center);
+                    // S-218 ② — 중심의 **x·z는 0으로 못박는다**(남규님 지시).
+                    // 렌더 바운즈 중심을 그대로 쓰면 메시 피벗이 치우친 모델(Tripo 산출물)에서
+                    // 판정이 몸 밖으로 밀려난다 — 나아라 실측 center.x −2.53. 상호작용·피격이
+                    // 허공에서 일어난다. 높이(y)만 바운즈를 따르고 좌우·앞뒤는 발밑 축에 맞춘다.
+                    capsule.center = new Vector3(0f, transform.InverseTransformPoint(bounds.center).y, 0f);
                     capsule.radius = Mathf.Max(bounds.size.x / scaleX, bounds.size.z / scaleZ) * 0.35f;
                     capsule.height = Mathf.Max(bounds.size.y / scaleY, capsule.radius * 2f);
                     capsule.isTrigger = true;
