@@ -1,4 +1,4 @@
-using TMPro;
+﻿using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -6,11 +6,12 @@ using UnityEngine.UI;
 namespace DontLate
 {
     /// <summary>
-    /// 가방 슬롯 1칸 (S-064). 좌클릭=선택(들 수 있으면 손에), 우클릭=컨텍스트 메뉴,
+    /// 가방 슬롯 1칸 (S-064). 좌클릭=사용/들기(S-205), 우클릭=컨텍스트 메뉴(버리기),
     /// 드래그 드랍=칸 이동. 표시만 담당 — 데이터 조작은 BagView가 한다.
     /// </summary>
     public class BagSlot : MonoBehaviour,
-        IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler
+        IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler,
+        IPointerEnterHandler, IPointerExitHandler
     {
         [SerializeField] private BagView _view;
         [SerializeField] private int _index;
@@ -99,6 +100,11 @@ namespace DontLate
             if (eventData.button == PointerEventData.InputButton.Left) _view.OnSlotLeftClick(_index);
             else if (eventData.button == PointerEventData.InputButton.Right) _view.OnSlotRightClick(_index);
         }
+
+        // S-205 — 좌클릭 즉시 사용을 알려 주는 호버 툴팁. 조작이 바뀌었는데 화면에 아무 안내가
+        // 없으면 플레이어는 여전히 우클릭을 찾는다. 문구 판단은 BagView가 한다(아이템 종류를 안다).
+        public void OnPointerEnter(PointerEventData eventData) => _view?.OnSlotHover(_index, true);
+        public void OnPointerExit(PointerEventData eventData) => _view?.OnSlotHover(_index, false);
 
         public void OnBeginDrag(PointerEventData eventData)
         {

@@ -104,15 +104,21 @@ namespace DontLate
             _sequenceLabel.text = sb.ToString();
         }
 
-        /// <summary>이번 프레임에 눌린 방향키 인덱스(←0 ↑1 →2 ↓3), 없으면 -1.</summary>
+        /// <summary>
+        /// 이번 프레임에 눌린 방향 인덱스(←0 ↑1 →2 ↓3), 없으면 -1.
+        ///
+        /// S-205 — **WASD도 같이 받는다**(남규님 지시). 이동이 WASD라 손이 거기 있는데
+        /// 미니게임만 방향키를 요구하면, 전화가 울릴 때마다 손을 옮기는 것 자체가 페널티가 된다.
+        /// 둘 다 열어 두면 플레이어가 편한 쪽을 쓴다 — 화면 표시(←↑→↓)는 그대로 둔다.
+        /// </summary>
         private static int ReadArrowPressed()
         {
             Keyboard kb = Keyboard.current;
             if (kb == null) return -1;
-            if (kb.leftArrowKey.wasPressedThisFrame) return 0;
-            if (kb.upArrowKey.wasPressedThisFrame) return 1;
-            if (kb.rightArrowKey.wasPressedThisFrame) return 2;
-            if (kb.downArrowKey.wasPressedThisFrame) return 3;
+            if (kb.leftArrowKey.wasPressedThisFrame  || kb.aKey.wasPressedThisFrame) return 0;
+            if (kb.upArrowKey.wasPressedThisFrame    || kb.wKey.wasPressedThisFrame) return 1;
+            if (kb.rightArrowKey.wasPressedThisFrame || kb.dKey.wasPressedThisFrame) return 2;
+            if (kb.downArrowKey.wasPressedThisFrame  || kb.sKey.wasPressedThisFrame) return 3;
             return -1;
         }
     }
