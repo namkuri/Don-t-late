@@ -6306,3 +6306,46 @@ MDA 판정 (D-070): **강화** — 밤 조명은 낮밤 전환이 이 프로젝�
 
 MDA 판정 (D-070): **강화(미학)** — "늦지마"의 무대는 서울 거리의 실재감이 자산인데, 떠 있는 슬래브는
 그 환상을 깬다. 역학·역학균형은 불변(걷기 볼륨·충돌 미변경).
+
+### S-212 · 결과 2026-08-09 22:58 (리드 26분 · 셀프검증 3종 + 테스트 90/90 통과)
+
+**시공 도중 방향 전환 1회 (기록)**: 처음엔 두 빌더의 바닥 크기를 직접 키웠는데 **화면이 안 바뀌었다**.
+원인은 [ArtBackdropKit.cs](../../Assets/Scripts/Editor/ArtBackdropKit.cs) `TakeOverBuilderVisuals`(S-188) —
+아트 세트에 동명 오브젝트가 있으면 **빌더 사본을 지운다**. `set_apartment.prefab`에 `__gb_YardGround`·
+`__gb_LobbyGround`, `set_hillside.prefab`에 `__gb_BaseGround`가 담겨 있어 실제 화면의 바닥은 아트판이었다.
+세트를 고치면 민지님 산출물을 공장이 건드리는 셈이라, **대체가 아니라 덧대기**로 전환했다.
+
+변경 3파일 (+57줄 · 삭제 0):
+
+| 파일 | 내용 |
+|---|---|
+| [GreyboxStageBuilder.cs](../../Assets/Scripts/Editor/GreyboxStageBuilder.cs) | `ExtendGroundForward(name, frontZ, padMinX, padMaxX)` 신규 — 기존 바닥의 바운즈·머티리얼·`LAYER_GROUND`를 승계해 **−z 쪽으로만** 이어 붙인다 |
+| [ApartmentStageBuilder.cs](../../Assets/Scripts/Editor/ApartmentStageBuilder.cs) | 세트 배치 뒤 Yard·Lobby를 z −40까지. 좌우는 **바깥쪽만** 24u |
+| [HillsideStageBuilder.cs](../../Assets/Scripts/Editor/HillsideStageBuilder.cs) | 세트 배치 뒤 BaseGround를 z −40까지 |
+
+`*_Front`라는 다른 이름을 쓰므로 S-188 교체 대상이 아니고, 세트가 갱신돼도 다음 재조립 때 새 바운즈로
+다시 계산된다. 좌우 여유를 바깥쪽만 준 이유: 마당·로비를 둘 다 안쪽으로 넓히면 경계에서 두 바닥이
+겹쳐 z파이팅이 난다(실측 전 설계 판단).
+
+관찰 (Play 실측 · 재조립 후):
+
+| 지점 | 화면 하단 하늘 |
+|---|---|
+| Hillside 낮 들머리(x −16) | **0** (수정 전 40%) |
+| Hillside 낮 정상(x 31.9 · y 11.09) | **0** |
+| Hillside 낮 날머리(x 70) | **0** |
+| Hillside 밤 21:00 | **0** |
+| Apartment 낮 12:00 | **0** (좌측 모서리 쐐기까지 소멸) |
+| Apartment 밤 21:00 | **0** |
+
+- 생성 바운즈 실측: `__gb_YardGround_Front` x −44~−1 · `__gb_LobbyGround_Front` x −2~46 · 둘 다 z −40~−3 ·
+  `__gb_BaseGround_Front` z −40~−6 (머티리얼 `GB_HillAsphalt` = 아트판 승계 확인).
+- 컴파일 통과 · 콘솔 에러 0 · 워닝 0 · EditMode 테스트 **90/90**.
+- 전 씬 재조립은 생략했다 — 변경이 **새 메서드 추가 + 두 빌더의 호출 1줄**뿐이라 다른 씬의 조립 경로는
+  건드리지 않는다(Village·Camp·FoodStreet 빌더 코드 무변경).
+- 캡처 검수 서브에이전트(S-099 게이트)는 이 세션의 도구 제약으로 미가동 — 캡처 6장을 직접 열어 판정했다.
+
+범위 밖 관찰 2건 (별건 후보):
+- Hillside 정상·날머리에서 **산 능선이 화면 하단을 크게 차지**한다(카메라 Y 추종 + 산 형상). 이번 변경과
+  무관하지만 프레이밍이 답답하다.
+- Hillside 아트 세트 건물 일부가 **기울어져** 서 있다(정상 캡처 좌측).

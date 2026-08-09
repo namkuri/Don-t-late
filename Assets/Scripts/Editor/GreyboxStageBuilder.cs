@@ -123,6 +123,49 @@ namespace DontLate.EditorTools
             lane.GetComponent<Renderer>().sharedMaterial = laneMaterial;
         }
 
+        /// <summary>
+        /// S-212 — 지면을 **카메라 쪽(−z)으로만** 늘린다. 이미 서 있는 바닥 오브젝트의 바운즈·머티리얼을
+        /// 읽어 그 앞에 같은 면을 이어 붙이는 방식이다.
+        ///
+        /// 왜 바닥 오브젝트 자체를 키우지 않나: Apartment·Hillside의 바닥은 **아트 세트 소유**다
+        /// (S-188 — 세트에 동명 오브젝트가 있으면 빌더 사본이 지워진다). 빌더에서 크기를 고쳐도
+        /// 아트판이 이기므로 화면은 그대로다. 세트를 고치면 민지님 작업물을 공장이 건드리는 셈이라,
+        /// 대체가 아니라 **덧대기**로 간다 — 이름이 달라 S-188 교체 대상이 아니고, 세트가 갱신돼도
+        /// 다음 재조립 때 새 바운즈로 다시 계산된다.
+        ///
+        /// 뒤(+z)로는 절대 늘리지 않는다 — 뒷벽·능선 뒤 실루엣 자리를 침범한다.
+        /// </summary>
+        /// <param name="objectName">__gb_ 접두어를 뺀 바닥 오브젝트 이름 (예: "YardGround")</param>
+        /// <param name="frontZ">여기까지 채운다. 카메라(z −40) 앞을 덮으려면 −40 근방.</param>
+        /// <param name="padMinX">−x 쪽으로 더 넓힐 폭. 무대 끝에서 화면 모서리에 하늘이 남을 때 쓴다.</param>
+        /// <param name="padMaxX">+x 쪽 확장 폭. 두 바닥을 나란히 이을 땐 **바깥쪽만** 넓혀 겹침을 피한다.</param>
+        internal static GameObject ExtendGroundForward(string objectName, float frontZ,
+            float padMinX = 0f, float padMaxX = 0f)
+        {
+            GameObject source = GameObject.Find(PREFIX + objectName);
+            if (source == null)
+            {
+                Debug.Log($"[지면] {PREFIX + objectName} 없음 — 전경 확장 생략.");
+                return null;
+            }
+            if (!source.TryGetComponent(out Renderer renderer)) return null;
+
+            Bounds bounds = renderer.bounds;
+            float gap = bounds.min.z - frontZ;
+            if (gap <= 0.01f) return null; // 이미 카메라 앞까지 깔려 있다
+
+            // 두께는 최소 0.1u — 원본이 Plane(두께 0)이어도 z파이팅 없이 윗면이 맞물리게 한다.
+            float height = Mathf.Max(0.1f, bounds.size.y);
+            float minX = bounds.min.x - padMinX;
+            float maxX = bounds.max.x + padMaxX;
+            GameObject front = CreatePrimitive(PrimitiveType.Cube, objectName + "_Front",
+                new Vector3((minX + maxX) * 0.5f, bounds.max.y - height * 0.5f, frontZ + gap * 0.5f));
+            front.transform.localScale = new Vector3(maxX - minX, height, gap);
+            front.GetComponent<Renderer>().sharedMaterial = renderer.sharedMaterial;
+            front.layer = LAYER_GROUND; // 원본과 같은 면 — 적설·발자국 판정 경로 유지
+            return front;
+        }
+
         private static void BuildManagers(GameStateSO gameState, TuningConfigSO tuning)
         {
             GameObject managers = CreateEmpty("Managers", Vector3.zero);
