@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.Animations;
+using UnityEngine.Playables;
 
 namespace DontLate
 {
@@ -7,7 +9,7 @@ namespace DontLate
     /// - 신호 대기: 교차 도로 앞에서 차량 신호가 끝날 때까지(보행 가능=적신호) 멈춘다.
     /// - 회피: 전방에 행인·플레이어·장애물이 있으면 잠깐 멈췄다 계속, 오래 막히면 되돌아간다.
     /// - 반응: 플레이어가 근처를 뛰어가면 잠시 바라보고 다시 걷는다. (호감도 인사말은 소셜 후속.)
-    /// - 피격: 차에 치이면 소멸(TrafficCar 몫) — 씬 재입장 시 복귀. 감지용 트리거+키네마틱 RB 장착.
+    /// - 피격: 차에 치이면 **죽지 않고 날아간다**(S-210) — 플레이어와 같은 규격의 넉백. 감지용 트리거+키네마틱 RB 장착.
     /// </summary>
     public class PedestrianNpc : MonoBehaviour, IInteractable
     {
@@ -19,6 +21,8 @@ namespace DontLate
         [SerializeField] private GameStateSO _gameState;
         [SerializeField] private Renderer _bodyRenderer;
         [SerializeField] private Material _highlightMaterial;
+        [SerializeField] private Animator _animator;
+        [SerializeField] private AnimationClip _walkClip;
         private Material _normalMaterial;
         [Tooltip("교차 도로 신호등 (S-076 ② — 비면 무신호 씬).")]
         [SerializeField] private TrafficLight _signal;
@@ -43,36 +47,135 @@ namespace DontLate
         private float _watchTimer;    // 뛰는 플레이어 바라보기
         private float _senseTimer;    // 주변 감지 주기
         private Transform _watched;
+        private bool _interactionDialogueActive;
+        private Quaternion _rotationBeforeInteraction;
         private readonly Collider[] _senseHits = new Collider[8];
+        private PlayableGraph _walkGraph;
+        private AnimationClipPlayable _walkPlayable;
+        private Vector3 _lastAnimationPosition;
+        private bool _centerTurnsOnVisuals;
+        private bool _movementEnabled = true;
+        private WalkableVolume _walkableVolume;
+        private TextAsset _randomTalkSource;
+        private Sprite _npcInfoBackground;
+        private NpcNameLabel _npcInfoLabel;
+        private RandomTalkPoolData _randomTalkPool;
+        private bool _randomTalkLoaded;
+        private int _lastRandomTalkIndex = -1;
+        private DialogueScenarioSO _interactionScenario;
+
+        [System.Serializable]
+        private sealed class RandomTalkPoolData
+        {
+            public string npcId;
+            public string displayName;
+            public bool avoidImmediateRepeat;
+            public RandomTalkLineData[] lines;
+        }
+
+        [System.Serializable]
+        private sealed class RandomTalkLineData
+        {
+            public string speaker;
+            public string text;
+        }
+
+        internal void CenterTurnsOnVisuals() => _centerTurnsOnVisuals = true;
+
+        internal void Configure(bool movementEnabled, TextAsset randomTalkSource, Sprite npcInfoBackground)
+        {
+            _movementEnabled = movementEnabled;
+            _randomTalkSource = randomTalkSource;
+            _npcInfoBackground = npcInfoBackground;
+            EnsureRandomTalkLoaded();
+            EnsureInteractionPhysics();
+        }
 
         private void Start()
         {
+            if (_movementEnabled)
+            {
+                _walkableVolume = FindNearestWalkableVolume();
+                Vector3 start = transform.position;
+                start.z = ClampWalkableZ(start.z);
+                transform.position = start;
+            }
+
             _centerX = transform.position.x;
             _centerZ = transform.position.z;
+            if (!_movementEnabled)
+            {
+                _lastAnimationPosition = transform.position;
+                return;
+            }
+
             _direction = Random.value < 0.5f ? 1 : -1;
             // 같은 씬 행인들이 발맞추지 않게 시작 위상 분산.
             transform.position += Vector3.right * Random.Range(-_patrolHalf * 0.5f, _patrolHalf * 0.5f);
+            _lastAnimationPosition = transform.position;
+            InitializeWalkAnimation();
             Face();
+        }
+
+        private void LateUpdate()
+        {
+            if (!_walkPlayable.IsValid()) return;
+
+            bool moved = (transform.position - _lastAnimationPosition).sqrMagnitude > 0.000001f;
+            _walkPlayable.SetSpeed(moved ? 1d : 0d);
+            _lastAnimationPosition = transform.position;
+
+            if (moved && _walkClip.length > 0f && _walkPlayable.GetTime() >= _walkClip.length)
+                _walkPlayable.SetTime(_walkPlayable.GetTime() % _walkClip.length);
+        }
+
+        private void OnDestroy()
+        {
+            if (_walkGraph.IsValid()) _walkGraph.Destroy();
+            if (_interactionScenario != null) Destroy(_interactionScenario);
+        }
+
+        private void InitializeWalkAnimation()
+        {
+            if (_animator == null || _walkClip == null) return;
+
+            _walkGraph = PlayableGraph.Create(name + "_Walk");
+            _walkGraph.SetTimeUpdateMode(DirectorUpdateMode.GameTime);
+            _walkPlayable = AnimationClipPlayable.Create(_walkGraph, _walkClip);
+            _walkPlayable.SetApplyFootIK(true);
+            _walkPlayable.SetSpeed(0d);
+            AnimationPlayableOutput output = AnimationPlayableOutput.Create(_walkGraph, "Walk", _animator);
+            output.SetSourcePlayable(_walkPlayable);
+            _walkGraph.Play();
         }
 
         private void Update()
         {
             if (_flying) { FlyStep(); return; } // S-210 — 날아가는 동안엔 배회·감지 전부 정지
+            if (_interactionDialogueActive)
+            {
+                WorldDialogueManager manager = WorldDialogueManager.Instance;
+                if (manager != null && manager.IsPlaying)
+                {
+                    ShowNpcInfo();
+                    LookAtWatched();
+                    return;
+                }
+
+                _interactionDialogueActive = false;
+                _watched = null;
+                if (_npcInfoLabel != null) _npcInfoLabel.Show(false);
+                if (_movementEnabled) Face();
+                else transform.rotation = _rotationBeforeInteraction;
+            }
 
             // S-076 ② — 뛰는 플레이어 구경: 걸음을 멈추고 그쪽을 바라본다.
             // S-081 후속(R31b) — 좌우 스냅이 아니라 실제 플레이어 방향으로 (눈을 마주친다).
             if (_watchTimer > 0f)
             {
                 _watchTimer -= Time.deltaTime;
-                if (_watched != null)
-                {
-                    Vector3 look = _watched.position - transform.position;
-                    look.y = 0f;
-                    if (look.sqrMagnitude > 0.01f)
-                        transform.rotation = Quaternion.Slerp(transform.rotation,
-                            Quaternion.LookRotation(look), Time.deltaTime * 10f);
-                }
-                if (_watchTimer <= 0f) Face(); // 다시 갈 길 간다
+                LookAtWatched();
+                if (_watchTimer <= 0f && _movementEnabled) Face(); // 다시 갈 길 간다
                 return;
             }
 
@@ -82,6 +185,8 @@ namespace DontLate
                 _senseTimer = 0.3f;
                 SenseRunner();
             }
+
+            if (!_movementEnabled) return;
 
             if (_pauseTimer > 0f)
             {
@@ -114,6 +219,7 @@ namespace DontLate
 
             // 목표 Z로 옆걸음. 막힘이 풀리면 _sideStep이 0으로 잦아들며 원래 레인으로 돌아온다.
             float z = Mathf.MoveTowards(transform.position.z, _centerZ + _sideStep, SIDESTEP_SPEED * Time.deltaTime);
+            z = ClampWalkableZ(z);
 
             if (blocked)
             {
@@ -274,7 +380,78 @@ namespace DontLate
             ShowGreeting(curse);
         }
 
-        private void Face() => transform.rotation = Quaternion.Euler(0f, _direction > 0 ? 90f : -90f, 0f);
+        private void Face()
+        {
+            Quaternion facing = Quaternion.Euler(0f, _direction > 0 ? 90f : -90f, 0f);
+            SetRotationAroundVisualCenter(facing);
+        }
+
+        private void SetRotationAroundVisualCenter(Quaternion rotation)
+        {
+            if (!_centerTurnsOnVisuals || !TryGetVisualCenter(out Vector3 centerBefore))
+            {
+                transform.rotation = rotation;
+                return;
+            }
+
+            transform.rotation = rotation;
+            if (!TryGetVisualCenter(out Vector3 centerAfter)) return;
+
+            Vector3 correction = centerBefore - centerAfter;
+            correction.y = 0f;
+            transform.position += correction;
+            _centerX += correction.x;
+            _centerZ += correction.z;
+            Vector3 clamped = transform.position;
+            clamped.z = ClampWalkableZ(clamped.z);
+            transform.position = clamped;
+            _centerZ = ClampWalkableZ(_centerZ);
+        }
+
+        private bool TryGetVisualCenter(out Vector3 center)
+        {
+            Renderer[] renderers = GetComponentsInChildren<Renderer>();
+            if (renderers.Length == 0)
+            {
+                center = default;
+                return false;
+            }
+
+            Bounds bounds = renderers[0].bounds;
+            for (int i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
+            center = bounds.center;
+            return true;
+        }
+
+        private WalkableVolume FindNearestWalkableVolume()
+        {
+            WalkableVolume[] volumes = FindObjectsByType<WalkableVolume>(
+                FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            WalkableVolume nearest = null;
+            float nearestDistance = float.MaxValue;
+            Vector3 position = transform.position;
+            for (int i = 0; i < volumes.Length; i++)
+            {
+                Bounds bounds = volumes[i].Bounds;
+                float dx = Mathf.Max(bounds.min.x - position.x, 0f, position.x - bounds.max.x);
+                float dz = Mathf.Max(bounds.min.z - position.z, 0f, position.z - bounds.max.z);
+                float distance = dx * dx + dz * dz;
+                if (distance >= nearestDistance) continue;
+                nearestDistance = distance;
+                nearest = volumes[i];
+            }
+            return nearest;
+        }
+
+        private float ClampWalkableZ(float z)
+        {
+            if (_walkableVolume == null) return z;
+            const float MARGIN = 0.25f;
+            Bounds bounds = _walkableVolume.Bounds;
+            float min = bounds.min.z + MARGIN;
+            float max = bounds.max.z - MARGIN;
+            return min <= max ? Mathf.Clamp(z, min, max) : bounds.center.z;
+        }
 
         // ── S-080 ① — 인사 인터랙션: E로 말 걸면 멈춰서 바라보고 한마디, 소셜앱에 등재 ──
 
@@ -285,6 +462,9 @@ namespace DontLate
 
         public void Interact(PlayerContext ctx)
         {
+            if (ctx?.Player != null && ctx.Player.GameState != null)
+                _gameState = ctx.Player.GameState;
+
             // S-123 ⑤ — 가방에 꽃이 있으면 선물이 인사를 대신한다(호감도 큰 폭 상승).
             // 가방에서 직접 소모하는 이유: BagItemConsumed 이벤트는 음료 마시기가 같이 듣고 있어
             // "주기"와 "마시기"가 충돌한다(정적 이벤트는 취소 불가).
@@ -301,10 +481,138 @@ namespace DontLate
             }
 
             _watched = ctx.Transform;
-            _watchTimer = 2f; // 잠시 멈춰 바라본다
+            _rotationBeforeInteraction = transform.rotation;
             if (_gameState != null && !string.IsNullOrEmpty(_npcId))
                 NpcAffinityLedger.Meet(_gameState, _npcId);
-            ShowGreeting(Greetings[Random.Range(0, Greetings.Length)]);
+            RandomTalkLineData line = GetRandomTalkLine();
+            if (!ShowInteractionDialogue(line))
+            {
+                _watchTimer = 2f;
+                ShowGreeting(line.text);
+            }
+        }
+
+        private RandomTalkLineData GetRandomTalkLine()
+        {
+            EnsureRandomTalkLoaded();
+            RandomTalkLineData[] lines = _randomTalkPool?.lines;
+            if (lines == null || lines.Length == 0)
+                return new RandomTalkLineData
+                {
+                    speaker = _randomTalkPool?.displayName ?? gameObject.name,
+                    text = Greetings[Random.Range(0, Greetings.Length)],
+                };
+
+            int index;
+            if (_randomTalkPool.avoidImmediateRepeat && lines.Length > 1 && _lastRandomTalkIndex >= 0)
+            {
+                index = Random.Range(0, lines.Length - 1);
+                if (index >= _lastRandomTalkIndex) index++;
+            }
+            else
+            {
+                index = Random.Range(0, lines.Length);
+            }
+
+            _lastRandomTalkIndex = index;
+            RandomTalkLineData line = lines[index];
+            if (line != null && !string.IsNullOrEmpty(line.text)) return line;
+            return new RandomTalkLineData
+            {
+                speaker = _randomTalkPool.displayName ?? gameObject.name,
+                text = Greetings[Random.Range(0, Greetings.Length)],
+            };
+        }
+
+        private bool ShowInteractionDialogue(RandomTalkLineData line)
+        {
+            WorldDialogueManager manager = WorldDialogueManager.Instance;
+            if (manager == null || line == null) return false;
+            if (manager.IsPlaying) return true;
+
+            if (_interactionScenario == null)
+            {
+                _interactionScenario = ScriptableObject.CreateInstance<DialogueScenarioSO>();
+                _interactionScenario.hideFlags = HideFlags.HideAndDontSave;
+                _interactionScenario.name = string.IsNullOrEmpty(_npcId)
+                    ? gameObject.name + "_RandomTalk"
+                    : _npcId + "_RandomTalk";
+                _interactionScenario.lines = new[] { new DialogueScenarioSO.Line() };
+            }
+
+            DialogueScenarioSO.Line dialogueLine = _interactionScenario.lines[0];
+            dialogueLine.speaker = string.IsNullOrEmpty(line.speaker)
+                ? _randomTalkPool?.displayName ?? gameObject.name
+                : line.speaker;
+            dialogueLine.text = line.text;
+            dialogueLine.portrait = null;
+            _interactionDialogueActive = true;
+            _watchTimer = 0f;
+            ShowNpcInfo();
+            manager.PlayScenario(_interactionScenario);
+            return true;
+        }
+
+        private void ShowNpcInfo()
+        {
+            if (_npcInfoLabel == null)
+            {
+                _npcInfoLabel = GetComponent<NpcNameLabel>();
+                if (_npcInfoLabel == null) _npcInfoLabel = gameObject.AddComponent<NpcNameLabel>();
+            }
+
+            string displayName = _randomTalkPool?.displayName;
+            if (string.IsNullOrEmpty(displayName)) displayName = gameObject.name;
+            _npcInfoLabel.Configure(displayName, _gameState, _npcId, _npcInfoBackground);
+            _npcInfoLabel.ShowDialogueInfo();
+        }
+
+        private void LookAtWatched()
+        {
+            if (_watched == null) return;
+            Vector3 look = _watched.position - transform.position;
+            look.y = 0f;
+            if (look.sqrMagnitude > 0.01f)
+                SetRotationAroundVisualCenter(Quaternion.Slerp(transform.rotation,
+                    Quaternion.LookRotation(look), Time.deltaTime * 10f));
+        }
+
+        private void EnsureRandomTalkLoaded()
+        {
+            if (_randomTalkLoaded) return;
+            _randomTalkLoaded = true;
+            if (_randomTalkSource == null || string.IsNullOrEmpty(_randomTalkSource.text)) return;
+
+            _randomTalkPool = JsonUtility.FromJson<RandomTalkPoolData>(_randomTalkSource.text);
+            if (_randomTalkPool != null && !string.IsNullOrEmpty(_randomTalkPool.npcId))
+                _npcId = _randomTalkPool.npcId;
+        }
+
+        private void EnsureInteractionPhysics()
+        {
+            if (!TryGetComponent(out Collider _))
+            {
+                Renderer[] renderers = GetComponentsInChildren<Renderer>();
+                if (renderers.Length > 0)
+                {
+                    Bounds bounds = renderers[0].bounds;
+                    for (int i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
+
+                    Vector3 scale = transform.lossyScale;
+                    float scaleX = Mathf.Max(Mathf.Abs(scale.x), 0.001f);
+                    float scaleY = Mathf.Max(Mathf.Abs(scale.y), 0.001f);
+                    float scaleZ = Mathf.Max(Mathf.Abs(scale.z), 0.001f);
+                    CapsuleCollider capsule = gameObject.AddComponent<CapsuleCollider>();
+                    capsule.center = transform.InverseTransformPoint(bounds.center);
+                    capsule.radius = Mathf.Max(bounds.size.x / scaleX, bounds.size.z / scaleZ) * 0.35f;
+                    capsule.height = Mathf.Max(bounds.size.y / scaleY, capsule.radius * 2f);
+                    capsule.isTrigger = true;
+                }
+            }
+
+            if (!TryGetComponent(out Rigidbody body)) body = gameObject.AddComponent<Rigidbody>();
+            body.isKinematic = true;
+            body.useGravity = false;
         }
 
         private const string GIFT_ITEM_ID = "flower"; // S-123 ⑤ — 선물은 꽃만 (드링크까지 포함하면 오소비)

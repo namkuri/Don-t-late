@@ -41,14 +41,19 @@
 | chr_courier | late_man.fbx | `Assets/Art/Characters/chr_courier.fbx` (덮어쓰기·GUID 보존, 구 coupang.fbx 대체) | 2 | Tripo(민지) | ⚠ 과금제=산출물 소유권 (D-029) — 플랜 확인 후 커밋 | 2026-07-21 |
 | A_chr_courier_walk | A_late_man_walking.fbx | `Assets/Art/Characters/A_chr_courier_walk.fbx` | 1 | **Mixamo**(Adobe·민지 매개) | Adobe 무료 라이선스(Mixamo) | 2026-07-21 |
 | A_chr_courier_idle | Idle.fbx | `Assets/Art/Characters/A_chr_courier_idle.fbx` | 1 | **Mixamo**(Adobe) — `_intake/art/Mixamo/Animations/A_Late_Man/` | Adobe 무료 라이선스(Mixamo) | 2026-08-07 |
-| chr_jihye | jihye.fbx | `Assets/Art/Characters/jiyhe/jihye.fbx` | 1 | Tripo(민지) — `_intake/art/Tripo/Characters/juhye_*` 계열 | ⚠ 과금제=산출물 소유권 (D-029) — chr_courier와 동일 조건 | 2026-08-08 |
-| A_jihye_greeting | jihye_StandingGreeting.controller | `Assets/Art/Characters/jiyhe/` (컨트롤러+GenericAvatar) | 1 | **Mixamo**(Adobe) — `_intake/art/Mixamo/Animations/A_jihye/jihye_Standing Greeting.fbx` | Adobe 무료 라이선스(Mixamo) | 2026-08-08 |
-| chr_dummy_npc | dummynpc.fbx · dummy_npc_walking.fbx | `Assets/Art/Characters/dummy_man/` | 2 | Tripo(민지) + **Mixamo** 워킹 모션 | 메시=D-029 조건 · 모션=Adobe 무료(Mixamo) | 2026-08-08 |
+| chr_jihye | jihye.fbx | `Assets/Art/Characters/jihye/jihye.fbx` (PR#57에서 `jiyhe/`→`jihye/` 재편) | 1 | Tripo(민지) — `_intake/art/Tripo/Characters/juhye_*` 계열 | ⚠ 과금제=산출물 소유권 (D-029) — chr_courier와 동일 조건 | 2026-08-08 |
+| A_jihye_greeting | jihye_StandingGreeting.controller | `Assets/Art/Characters/Animation/A_jihye/` (Idle·Standing Greeting fbx — PR#57에서 컨트롤러 대체) | 1 | **Mixamo**(Adobe) — `_intake/art/Mixamo/Animations/A_jihye/jihye_Standing Greeting.fbx` | Adobe 무료 라이선스(Mixamo) | 2026-08-08 |
+| chr_dummy_npc | dummynpc.fbx · dummy_npc_walking.fbx | `Assets/Art/Characters/dummy/` (PR#57에서 `dummy_man/`→`dummy/` 재편) | 2 | Tripo(민지) + **Mixamo** 워킹 모션 | 메시=D-029 조건 · 모션=Adobe 무료(Mixamo) | 2026-08-08 |
+| A_jihye_idle | jihye_Idle.fbx | `Assets/Art/Characters/Animation/A_jihye/jihye_Idle.fbx` | 1 | **Mixamo**(Adobe·민지 매개) | Adobe 무료 라이선스(Mixamo) | 2026-08-09 |
+| chr_naara | naara_Idle.fbx | `Assets/Art/Characters/naara/` · `Assets/Art/Characters/Animation/naara_Idle.fbx` | 2 | Tripo 메시(민지) + **Mixamo** 모션 | 메시=D-029 조건 · 모션=Adobe 무료(Mixamo) | 2026-08-09 |
+| A_malsoon_angry | malsoon_Angry.fbx · malsoon_Angry_2.fbx | `Assets/Art/Characters/Animation/A_malsoon/` | 2 | **Mixamo**(Adobe·민지 매개) | Adobe 무료 라이선스(Mixamo) | 2026-08-09 |
+| chr_gs_girl | gs_girl_mixamo_rig_final.fbx · gs_girl_walking.fbx | `Assets/Art/Characters/Animation/` (+ `Materials/gs_girl.mat`·`Textures/gs_girl.jpg`) | 2 | Tripo 메시(민지) + **Mixamo** 리깅·모션 | 메시=D-029 조건 · 모션=Adobe 무료(Mixamo) | 2026-08-09 |
 
 ### 검역 수치 (교체 INTAKE 2026-07-21)
 - **chr_courier(late_man)**: fbx tris=**5432 (Characters 상한 5000 초과 432 → 경고**, 차단 아님·데시메이트 권고), verts=8809. **animType=Human 셋업 성공** — 아바타 isValid=True·isHuman=True (Mixamo 리그 mixamorig: 접두 32본, 계층 chr_courier/Armature/Root/mixamorig:Hips). 원임포트 높이 **1.07u**(앵커 1.8u ±30% 미달·경고) → 빌더가 렌더바운즈 기준 ×1.686 스케일로 **1.800u 정규화**·발끝 y=0 정렬. **텍스처 없음**(임베디드 0·버텍스컬러 없음·FBX 텍스처참조 경로 무효 `E:\dontlate`) → 회색 렌더. **쿠팡 로고: 텍스처 미포함으로 확인 불가**(후속 텍스처 반입 시 자동추출 규칙 처리 예정).
 - **A_chr_courier_walk**: Mixamo 걷기, clip "mixamo.com" **0.967s**, animType=Human(아바타 CopyFromOther=chr_courier)·loop=True·isHumanMotion=True. 리타깃 경고(수치 아님)만.
 - **A_chr_courier_run**(기존): Human 재셋업, clip 0.533s·loop=True·human=True.
+- **PR#57 폴더 재편(2026-08-09)**: 민지님이 `_intake/art/Mixamo|Tripo/` 아래 애니메이션·모델을 `Art/Characters/{Animation,Materials,Textures}/`로 옮겼다. **GUID는 전부 보존**(이동 34종 실측, 중복 0건) — meta가 함께 이동해 씬·프리팹 참조가 끊기지 않는다. 코드가 잡고 있던 `_intake` 경로는 `District1SceneBuilder`의 `ChatGPT/UI/` 하나뿐이고 이번 이동 대상이 아니다. 중복 폴더 2건(`jiyhe/`·`dummy_man/` — PR#53 반입분)은 신규 경로로 대체되어 철거했다.
 - **민지님 캐릭터 반입(2026-08-08 · PR `docs/pull-readme-from-art-dev`에서 아트만 선별)**: `jihye.fbx` 9,072tri · `dummynpc.fbx`/`dummy_npc_walking.fbx` 각 5,881tri — 셋 다 animType=**Generic**(휴머노이드 리타깃 대상 아님, 자체 컨트롤러 `jihye_StandingGreeting`로 재생). 김사장 머티리얼(`kimsajng.mat`+`kimsajang_.jpg`) 동반. 콘솔 에러 0 · 아직 씬·프리팹 미참조.
 - **A_chr_courier_idle**(S-197): Mixamo Idle, clip "Idle" **1.97s**·loop=True·isHumanMotion=True. animType=Human, 아바타는 **CreateFromThisModel**(CopyFromOther로 넣으면 테이크 0개로 잎힌 — 실측). 휴머노이드라 아바타가 달라도 배달원 리그로 리타깃된다.
 - **AC_chr_courier.controller**: 파라미터 3종(Speed float·IsCarrying bool·IsGrounded bool — PlayerAnimationManager 계약) + 기본 스테이트 **Locomotion = Speed 1D 블렌드트리**(Walk@0·Walk@2.5·Run@4.5 — idle 클립 미납품이라 0 구간은 Walk 대체).
