@@ -6789,3 +6789,33 @@ S-216에서 지혜·나아라·박말순이 겪은 것과 같은 원인이다.
 (미끄러짐·체형 붕괴 없음) · 콘솔 에러·워닝 0.
 
 MDA 판정 (D-070): **강화(미학)** — 거리를 채우는 인구가 회색 캡슐이면 그레이박스 티가 그대로다.
+
+### S-221 · 결과 2026-08-10 01:46 (셀프검증 3종 통과)
+
+**함정 하나를 먼저 짚었다**: 지시하신 `dummynpc.fbx`는 **본이 하나도 없는 정지 메시**다
+(실측 transform 1개 · Humanoid로 올려도 `isHuman=False`). 그걸 비주얼로 쓰면 애니메이션이 못 돈다.
+같은 캐릭터의 **리깅본이 `dummy_npc_walking.fbx`**(27본 · 아바타 `isHuman=True` · 걷기 클립 동반)라
+비주얼을 그쪽으로 잡았다. 지시의 두 요구("실모델로 바꾼다"+"애니메이션도 잘 적용")를 동시에 만족하는 유일한 선택이다.
+`dummynpc.fbx`는 Generic으로 되돌렸다(못 쓰는 아바타를 남기면 다음 사람이 헷갈린다).
+
+고친 것 셋:
+- `dummy_npc_walking.fbx` 리그를 **Humanoid + CreateFromThisModel**로(S-216과 같은 처방).
+  종전엔 Generic·아바타 없음이라 `TryApplyDummyWalkerVisual`이 **에러만 남기고 되돌아갔다**.
+- `name == "__gb_Walker_A"` 게이트 제거 — **전 씬 행인 전원**에 적용(민지님 반입본은 한 명에게만 걸려 있었다).
+- 동반 머티리얼(`dummynpc.fbm.mat`) 주입 — FBX 임베디드는 텍스처를 못 찾아 새하얗게 나온다
+  (S-215에서 박말순·나아라가 겪은 것과 같다).
+
+관찰:
+| 씬 | 행인 | 실모델 |
+|---|---|---|
+| Village | 3 | 3 |
+| Hillside | 2 | 2 |
+| FoodStreet | 3 | 3 |
+| Camp | 2 | 2 |
+| Apartment | 2 | 2 |
+
+- 아바타 `dummy_npc_walkingAvatar(human=True)` 전원 · 캡슐 잔재 0
+- 머티리얼 `dummynpc.fbm` · 텍스처 `dummynpc.fbm` 전원
+- Play 3회 샘플: A x−2.6→−2.0 · B x8.3→9.3 · C x13.0→13.6 (이동 확인),
+  전고 1.55~1.70 진동 = **걷기 사이클**(팔다리가 움직여 바운즈가 뛴다 — 축소가 아니다)
+- 콘솔 에러·워닝 0 · EditMode 90/90 · 캡처 `Screenshots/s221_walkers.png`
