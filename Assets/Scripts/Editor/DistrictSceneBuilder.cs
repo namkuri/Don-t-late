@@ -45,6 +45,12 @@ namespace DontLate.EditorTools
         {
             EnsureSceneFile(DISTRICT_PATH);
             BuildStage(DISTRICT_PATH, VillaBuildings);
+
+            // S-212 — 상주 NPC 3인은 빌라촌 전용이라 `BuildStage` 밖에서 얹는다
+            // (같은 조립을 먹자골목·촬영용 District 1도 쓰므로 안에 넣으면 거기까지 따라간다).
+            Scene village = EditorSceneManager.GetSceneByPath(DISTRICT_PATH);
+            VillageCastBuilder.Build(village);
+            EditorSceneManager.SaveScene(village, DISTRICT_PATH);
         }
 
         /// <summary>씬 파일이 없으면 만든다 — `BuildStage`는 OpenScene으로 시작한다.</summary>

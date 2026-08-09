@@ -6296,3 +6296,44 @@ Village에 NPC를 세우는 코드가 없다(PR이 건드린 스크립트는 `Np
 
 MDA 판정 (D-070): **강화** — 빌리지가 텅 비면 소셜·랜덤 대사·호감도가 전부 죽는다.
 동시에 공정 결함(손배치 유실)을 구조로 막는 건이라 레일 보강도 겸한다.
+
+### S-212 · 결과 2026-08-09 23:01 (셀프검증 3종 통과)
+
+원인은 진단대로였다 — 민지님의 NPC 배치가 **씬 본문에만** 있었고 씬은 커밋되지 않으니 여행하지 못했다.
+씬을 규칙을 어겨 받는 대신 **배치를 코드로 옮겼다**: 신규
+[VillageCastBuilder.cs](../../Assets/Scripts/Editor/VillageCastBuilder.cs).
+
+민지님 씬 YAML에서 전수 추출한 값(반올림 없이 그대로 이식):
+
+| NPC | 모델 | 위치 | 회전 Y | 스케일 | 동작 A/B (초) | 배회 | 대사 풀 |
+|---|---|---|---|---|---|---|---|
+| 박말순 | `malsoon/malsoon.fbx` | (14.911, −0.072, −0.694) | −37.509 | 1.6452 | Angry / Angry_2 (3/3) | ✗ | parkmalsoon |
+| 나아라 | `naara/gs_girl_mixamo_rig_final.fbx` | (−13.922, 0.036, −3.009) | 135 | 1.4685 | naara_Idle / gs_girl_walking (4/3) | ✓ | na-ara |
+| 오지혜 | `jihye/jihye.fbx` | (2.555, −0.016, 2.652) | −59.554 | 2.0518 | jihye_Idle / Standing Greeting (4/3) | ✓ | yoo-jihye |
+
+**머티리얼까지가 배치였다**: FBX 임베디드 머티리얼은 텍스처를 못 찾아 박말순·나아라가 **새하얗게**
+나온다(실측: baseMap 없음). 민지님은 씬에서 `malsoon.fbm.mat`·`gs_girl.mat`를 갈아 끼웠고,
+그 교체를 빌더에 함께 넣었다. 오지혜는 임베디드가 `jihye_T`를 제대로 물어 손대지 않았다.
+
+주의해 처리한 것:
+- 참조 주입은 **리플렉션 직접 대입**(2026-07-20 실수→규칙 — SerializedObject 주입은 저장 시
+  `{fileID: 0}`으로 날아간다). 저장된 씬 YAML에서 15개 참조 전부 guid 실재 확인.
+- 모델은 `Object.Instantiate` 독립 클론(프리팹 Variant 결합 회피 — 같은 날 규칙).
+- FBX 안 애니메이션은 서브에셋이라 `LoadAllAssetRepresentationsAtPath` + `__preview__` 제외로 꺼낸다.
+- 상주 NPC는 빌라촌 전용이므로 `BuildStage` **밖**에서 얹었다 — 안에 넣으면 같은 조립을 쓰는
+  먹자골목·촬영용 District 1까지 따라간다.
+
+관찰 (재조립 + Play 실측):
+- 씬 루트에 `malsoon`·`naara`·`jihye` 3인 + `VillageNpcAnimations`(컴포넌트 3개) 생성
+- 머티리얼: `malsoon.fbm`(tex malsoon.fbm) · `gs_girl`(tex gs_girl) · 오지혜 `jihye_T` — 백색 해소
+- Play 진입 시 `PedestrianNpc` 6개(상주 3 + 그레이박스 워커 3) · 나아라·오지혜는 이동 확인,
+  박말순은 제자리(설정대로) · 콘솔 에러·워닝 0
+- 캡처: `Screenshots/s212_malsoon.png`
+
+곁가지 보고(발주 아님): 배회 NPC가 **원 배치에서 20u 넘게 멀어진다**(오지혜 x 2.6 → 24.3 실측).
+`PedestrianNpc`의 배회 반경은 `_patrolHalf` 기본 6인데 시작 좌표가 `Start`에서 잡히는 시점 문제로
+보인다. 민지님 설계 의도인지 확인이 필요하다 — 의도가 아니면 별건으로 잡는다.
+
+**공정 교훈**: 손배치는 씬에만 남고 씬은 여행하지 않는다. 아트 레인이 배치를 만들면
+**빌더 코드로 옮기는 단계가 반입 절차에 포함돼야 한다** — 이번처럼 사후 복구는 씬 YAML을
+역공학하는 비용이 든다.
