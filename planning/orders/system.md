@@ -6112,3 +6112,36 @@ MDA 판정 (D-070): **강화** — 능선 데코 겹침 정리의 잔여분. 룩
 둘뿐(총 루트 26 → 25) · 콘솔 에러·워닝 0 · Main 플레이 진입 정상.
 
 날머리 x70 자리가 비었다 — 채우는 건 아트 몫이다.
+
+## S-208 · 발주 2026-08-09 21:33 → ClaudeCode (밤 씬 도착 시 조명 재동기)
+
+요구 (남규님 관찰 원문): "밤에 먹자골목 간 뒤에 빌라촌으로 돌아오면 조명 또는 전등이 다 꺼지는
+에러가 있음."
+
+재현 (실측 · Play):
+
+| 단계 | 가로등 |
+|---|---|
+| Village 체류 중 Day→Night 전환 | **8/8 점등** |
+| Village → FoodStreet (밤) | 0/8 |
+| FoodStreet → Village (밤) | **0/8** |
+
+원인: `WorldDayNightManager.OnSceneArrivedSky()`가 `if (phase == _phase) return;`으로
+**페이즈가 그대로면 `DayPhaseChanged`를 발행하지 않는다**. 반면 조명 오브젝트는 씬마다 새로
+태어나며 `StreetLampLight.Awake()`가 소등 상태로 시작해 **오직 그 이벤트로만** 상태를 배운다
+(D-027 — 매니저 직접 참조 금지). 밤(또는 저녁)에 씬을 옮기면 전이 전후 페이즈가 같아 이벤트가
+끊기고, 새 램프는 배울 기회를 영영 못 얻는다. 왕복뿐 아니라 **밤중 첫 진입도 동일**하다.
+
+동일 결함 사거리: `StreetLampLight` · `SignGlow` · `StarField` · `ChristmasStringLights`
+(전부 씬 로컬 + `DayPhaseChanged` 단독 구독).
+
+수정: `OnSceneArrivedSky`의 조기 return 제거 — 씬 도착마다 현재 페이즈를 **무조건 재발행**한다.
+새 램프는 `_initialized=false`라 첫 수신을 '현재 상태'로 보고 플리커 없이 즉시 반영한다(설계 의도).
+World 구독자 2종은 재발행 안전 — `WorldWeatherManager`는 `_phase` 대입+그레이드 갱신(리롤 없음),
+`WorldAudioManager`는 `ApplySlot`/`UpdateAmbient`로 씬 전이마다 이미 도는 경로다.
+
+수용기준: 밤 상태에서 Village↔FoodStreet 왕복 후 **가로등 8/8 점등** · 밤중 첫 진입도 8/8 ·
+낮 진입 시 0/8 유지(오점등 없음) · 콘솔 에러·워닝 0.
+
+MDA 판정 (D-070): **강화** — 밤 조명은 낮밤 전환이 이 프로젝트에서 사는 방식(ARCHITECTURE §3)이고,
+배송지가 깜깜하면 목적지 하이라이트·간판 발광이 통째로 죽는다. 첫인상 직격.
