@@ -6695,3 +6695,16 @@ jihye   center=(0.000, 0.491, 0.000) r=0.34  이름표=있음
 블렌드 타이머: malsoon 0.163 / naara 0.161 / jihye 0.161 (전환 순간 포착 — 0.28에서 감소 중)
 ```
 콘솔 에러·워닝 0 · EditMode 90/90.
+
+## S-219 · 발주 2026-08-10 01:08 → ClaudeCode (빌라촌 배경 세트 교체 → set_district_3)
+
+요구 (남규님 원문): `Assets/Prefabs/Hand/set_district_3.prefab`을 지금 Village 씬에 적용할 것.
+
+배경: 남규님이 새 세트를 만들어 뒀다(01:06 생성, 아직 미추적). 현재 빌라촌은 `set_district_2`를
+`ArtBackdropKit.District`로 받아 쓰는데, 이 소켓은 **촬영용 District 1과 공유**한다 —
+그대로 갈아 끼우면 촬영 씬까지 따라 바뀐다. S-192 선례대로 **구역 전용 소켓**을 새로 판다.
+
+수용기준: Village 재조립 시 `set_district_3`이 배경으로 선다 · 촬영용 District 1은 종전 세트 유지 ·
+겹침·콜라이더 규약(S-119 ①·S-188) 종전대로 · 콘솔 에러·워닝 0.
+
+MDA 판정 (D-070): **강화(미학)** — 거리 룩 교체.
