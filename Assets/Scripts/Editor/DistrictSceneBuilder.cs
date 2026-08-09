@@ -76,6 +76,9 @@ namespace DontLate.EditorTools
             _buildingWhitelist = buildingWhitelist;
             _backdrop = backdrop;
             Scene scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
+            // 이 조립은 빌라촌·먹자골목·촬영용 District 1이 함께 쓴다. 빌라촌에만 걸 규칙이 몇 개 있어
+            // (S-214 ① 생성기 생략 · S-222 인물 축소) 한 곳에서 판정한다.
+            bool isVillage = scenePath == DISTRICT_PATH;
 
             // 멱등: 이전 조립물 정리.
             GreyboxStageBuilder.Clear();
@@ -107,7 +110,7 @@ namespace DontLate.EditorTools
             // 슬롯 마커는 그대로 남긴다: 생성기만 빠지면 런타임에 `GeneratedLayout`(절차적 소품·
             // 가로수)이 아예 생기지 않고, 나중에 되살릴 때 슬롯을 다시 깔 필요가 없다.
             // 다른 구역(먹자골목·촬영용 District 1)은 종전대로 — 지시는 빌라촌 한정이다.
-            if (scenePath != DISTRICT_PATH)
+            if (!isVillage)
                 AttachLayoutGenerator(slotsRoot, new List<Transform>(), propSlots, gameState);
             else
                 Debug.Log("[DistrictSceneBuilder] 빌라촌 — 절차적 배치 생성기 생략 (S-214 ①, 아트 수동 배치 예정).");
@@ -126,8 +129,12 @@ namespace DontLate.EditorTools
             AttachCargoSpawner(gameState);
 
             // S-052 ③ — 심부름 할머니 (길 건너까지 짐 옮기기). 행인 3명은 신호등 생성 뒤에 (S-076 ② 주입).
-            NpcBuildKit.BuildErrandNpc("ErrandGranny", "할머니", new Vector3(12f, 0f, -1.8f),
-                new Vector3(-6f, 0f, -1.8f), gameState, 1500);
+            // S-222 — **빌라촌에선 세우지 않는다**(남규님 지시). 아트가 채울 자리를 비운다.
+            //   같은 조립을 쓰는 먹자골목·촬영용 District 1은 종전대로 — 지시는 빌라촌 한정이다.
+            //   ⚠ 심부름은 빌라촌의 사이드 수입원이었다. 언덕주택가에 같은 NPC가 남아 콘텐츠 자체는 산다.
+            if (!isVillage)
+                NpcBuildKit.BuildErrandNpc("ErrandGranny", "할머니", new Vector3(12f, 0f, -1.8f),
+                    new Vector3(-6f, 0f, -1.8f), gameState, 1500);
 
             // S-057 — 교차(Z) 골목 도로: 진행축과 직각으로 차가 관통한다. 보고 건너라.
             // S-074 ⑨ — 도로를 슬롯 사이(x=0, 건물 슬롯 ±4 스킵됨)로 이설 + 횡단보도 + 신호등.
@@ -176,8 +183,13 @@ namespace DontLate.EditorTools
 
             // S-052 ② 행인 3 — S-076 ②: 신호를 지키고, 전방 회피·뛰는 플레이어 구경까지.
             NpcBuildKit.BuildPedestrian("Walker_A", new Vector3(-8f, 0f, 2.2f), new Color(0.45f, 0.52f, 0.62f), 6f, signal, ROAD_X, "walker_a", gameState);
-            NpcBuildKit.BuildPedestrian("Walker_B", new Vector3(6f, 0f, 2.6f), new Color(0.60f, 0.48f, 0.40f), 7f, signal, ROAD_X, "walker_b", gameState);
-            NpcBuildKit.BuildPedestrian("Walker_C", new Vector3(18f, 0f, 2.0f), new Color(0.50f, 0.58f, 0.45f), 5f, signal, ROAD_X, "walker_c", gameState);
+            // S-222 — 빌라촌은 A 한 명만 남긴다(남규님 지시). 상주 NPC 3인이 이미 서 있어
+            // 그레이박스 행인까지 셋이면 좁은 보도가 붐빈다.
+            if (!isVillage)
+            {
+                NpcBuildKit.BuildPedestrian("Walker_B", new Vector3(6f, 0f, 2.6f), new Color(0.60f, 0.48f, 0.40f), 7f, signal, ROAD_X, "walker_b", gameState);
+                NpcBuildKit.BuildPedestrian("Walker_C", new Vector3(18f, 0f, 2.0f), new Color(0.50f, 0.58f, 0.45f), 5f, signal, ROAD_X, "walker_c", gameState);
+            }
 
             GameObject trafficGo = GreyboxStageBuilder.CreateEmpty("Traffic", new Vector3(ROAD_X, 0f, 0f));
             TrafficRoad trafficRoad = trafficGo.AddComponent<TrafficRoad>();
