@@ -116,10 +116,20 @@ namespace DontLate.EditorTools
                         renderer.sharedMaterial = material;
                 }
 
+                // S-213 — 루트 모션은 끈다. `AlternatingNpcAnimation`이 런타임에도 끄지만,
+                // 씬에 켜진 채로 저장되면 인스펙터를 열어 본 사람이 원인을 여기서 찾게 된다.
+                Animator animator = instance.GetComponentInChildren<Animator>(true);
+                if (animator != null) animator.applyRootMotion = false;
+
                 var animation = director.AddComponent<AlternatingNpcAnimation>();
                 // SerializedObject 주입은 저장 시 오브젝트 참조가 {fileID: 0}으로 날아갈 수 있다
                 // (2026-07-20 실수→규칙) — 리플렉션으로 직접 넣는다.
                 GreyboxStageBuilder.SetReference(animation, "_target", instance);
+                // S-213 — 아바타를 명시 주입한다. 모델 FBX가 Humanoid면 인스턴스의 Animator가
+                // 이미 물고 있지만, 비어 있으면 `AlternatingNpcAnimation`이 경고만 남기고
+                // **조용히 아무 것도 안 한다**(스크립트 47행). 인스펙터에서 비어 보이는 것도
+                // 남규님이 지적한 증상이라 값을 눈에 보이게 채워 둔다.
+                GreyboxStageBuilder.SetReference(animation, "_avatar", LoadAvatar(member.ModelPath));
                 GreyboxStageBuilder.SetReference(animation, "_firstClip", LoadClip(member.FirstClipPath));
                 GreyboxStageBuilder.SetReference(animation, "_secondClip", LoadClip(member.SecondClipPath));
                 GreyboxStageBuilder.SetReference(animation, "_randomTalkPool",
@@ -145,6 +155,17 @@ namespace DontLate.EditorTools
         /// FBX 안의 애니메이션 클립을 꺼낸다. 서브에셋이라 `LoadAssetAtPath`로는 안 잡히고,
         /// 미리보기용 `__preview__` 클립이 섞여 나오므로 걸러 낸다.
         /// </summary>
+        /// <summary>모델 FBX가 만든 Avatar 서브에셋. 리그가 Generic이면 없다(S-213 전 상태).</summary>
+        private static Avatar LoadAvatar(string modelPath)
+        {
+            foreach (Object asset in AssetDatabase.LoadAllAssetsAtPath(modelPath))
+            {
+                if (asset is Avatar avatar) return avatar;
+            }
+            Debug.LogWarning("[빌라촌NPC] 아바타 없음 — " + modelPath + " (리그가 Humanoid인지 확인)");
+            return null;
+        }
+
         private static AnimationClip LoadClip(string path)
         {
             foreach (Object asset in AssetDatabase.LoadAllAssetRepresentationsAtPath(path))

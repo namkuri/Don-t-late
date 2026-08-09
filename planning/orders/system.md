@@ -6353,3 +6353,44 @@ MDA 판정 (D-070): **강화** — 빌리지가 텅 비면 소셜·랜덤 대사
 
 MDA 판정 (D-070): **강화** — 거리의 살아있음이 NPC 연출에 걸려 있다. 지금 상태는 눈에 띄는 파손이라
 첫인상 직격이며, S-212 복구가 무의미해진다.
+
+### S-213 · 결과 2026-08-09 23:28 (셀프검증 3종 통과)
+
+**세 증상이 한 원인이었다**: 관련 FBX 8개가 전부 `animationType: 2`(Generic) · `avatarSetup: 0`(아바타 없음).
+
+아바타가 없으면 Mixamo 클립이 **휴머노이드 리타깃을 못 타고 트랜스폼 경로 커브로 그대로 재생**된다.
+그 커브에는 뼈의 위치·**스케일**이 통째로 들어 있어서:
+- ① 커브가 `Armature` 등 자식 노드를 직접 밀어 **몸이 루트에서 떨어져 나간다**(남규님이 본 미끄러짐·순간이동).
+  `applyRootMotion=false`는 이걸 못 막는다 — 루트 모션이 아니라 평범한 자식 트랜스폼 커브라서 그렇다.
+- ② 걷기 클립의 스케일 커브가 다른 리그 기준이라 몸이 **졸라맨처럼 줄어든다**.
+- ③ 인스펙터의 Avatar가 비어 있던 것은 증상이 아니라 **원인 그 자체**였다.
+
+조치: 8개 FBX를 **Humanoid + CreateFromThisModel**로 재설정(에디터 API — .meta 반영).
+`CopyFromOther`는 쓰지 않는다(테이크 0개로 잡히는 함정 — S-197 기록). 빌더는 아바타를 명시 주입하고
+`applyRootMotion=false`를 씬에도 굳혀 둔다(인스펙터에서 원인을 오해하지 않도록).
+
+| 파일 | 전 | 후 |
+|---|---|---|
+| jihye · gs_girl_mixamo_rig_final · malsoon (모델 3) | Generic·아바타 없음 | Human · 아바타 생성 **valid=True human=True** |
+| jihye_Idle · Standing Greeting · naara_Idle · gs_girl_walking · malsoon_Angry ×2 (클립 5) | Generic | Human · 클립 **isHumanMotion=True** 전수 |
+
+관찰 (Play 실측 · 시간차 2회 샘플):
+```
+malsoon root(14.9,-0.1,-0.7) 자식local(0,0,0) 높이1.73
+naara   root(-11.5→-13.9)    자식local(0,0,0) 높이1.62→1.61
+jihye   root(-0.7→2.6)       자식local(0,0,0) 높이2.11
+```
+- **자식 local이 (0,0,0) 고정** = 몸이 루트에서 떨어지지 않는다(① 해소).
+- **높이 불변** = 축소 없음(② 해소). 캡처 `Screenshots/s213_naara.png` — 걷는 중 체형 정상.
+- Avatar 3인 전부 채워짐(③ 해소). Controller가 빈 것은 **설계대로다** — 이 연출은
+  `AlternatingNpcAnimation`이 PlayableGraph로 직접 구동하며 `runtimeAnimatorController`를 의도적으로
+  null로 둔다(스크립트 55행). 컨트롤러를 물리면 두 구동이 싸운다.
+- 콘솔 에러·워닝 0.
+
+부수 효과: S-212에서 보고한 "배회 NPC가 20u 넘게 멀어짐"도 **같은 원인이었다** — 클립의 위치 커브가
+캐릭터를 밀어내고 있었다. 지금은 순찰 반경(±6) 안에서 논다.
+
+곁가지(발주 아님): 재임포트 때 `ArtImportPostprocessor` 감사 경고가 뜬다 —
+`malsoon_Angry(_2)` 폴리 6,464 > 상한 5,000 · 전고 1.00u(앵커 1.8u 미달). 검역은 경고 모드라
+차단하지 않는다(ARCHITECTURE §7-4). 애니메이션 전용 FBX라 폴리는 실사용에 안 쓰이지만,
+정리하려면 민지님이 애니메이션 FBX에서 메시를 빼고 내보내면 된다.
