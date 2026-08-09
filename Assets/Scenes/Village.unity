@@ -12374,6 +12374,7 @@ GameObject:
   - component: {fileID: 900000000000002}
   - component: {fileID: 900000000000003}
   - component: {fileID: 900000000000004}
+  - component: {fileID: 900000000000007}
   m_Layer: 0
   m_Name: VillageNpcAnimations
   m_TagString: Untagged
@@ -12409,10 +12410,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DontLate.AlternatingNpcAnimation
   _target: {fileID: 900000000000005}
+  _avatar: {fileID: 0}
   _firstClip: {fileID: 7400000, guid: 9dc174c55c6f3774c9e6dce61eedc3c4, type: 3}
   _secondClip: {fileID: 7400000, guid: 09c10c93678d7624a85fb0516daef930, type: 3}
   _firstDuration: 3
   _secondDuration: 3
+  _usePedestrianMovement: 0
+  _randomTalkPool: {fileID: 4900000, guid: 26e4e08773ec4cf795a92414cfb50418, type: 3}
 --- !u!114 &900000000000004
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12426,10 +12430,33 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DontLate.AlternatingNpcAnimation
   _target: {fileID: 900000000000006}
+  _avatar: {fileID: 0}
   _firstClip: {fileID: 7400000, guid: 2c3a95214e1781947b5354089d988be8, type: 3}
   _secondClip: {fileID: -4791504522942941401, guid: 87b73d4fd15f04b408db151adc9f2098, type: 3}
   _firstDuration: 4
   _secondDuration: 3
+  _usePedestrianMovement: 1
+  _randomTalkPool: {fileID: 4900000, guid: d220f9e8641f49dcb4c38ea4e139a671, type: 3}
+--- !u!114 &900000000000007
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 900000000000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7d3693c8df84f619a8b2a25a16599d2, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DontLate.AlternatingNpcAnimation
+  _target: {fileID: 900000000000008}
+  _avatar: {fileID: 0}
+  _firstClip: {fileID: 7400000, guid: 8c6b0ea38bd91714ebb88046e95c9ffd, type: 3}
+  _secondClip: {fileID: 7400000, guid: fa964749e194af540a96080bfe44c90e, type: 3}
+  _firstDuration: 4
+  _secondDuration: 3
+  _usePedestrianMovement: 1
+  _randomTalkPool: {fileID: 4900000, guid: 2b4923fbd2b24df1a97234cc5d22ef89, type: 3}
 --- !u!1 &900000000000005 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 542b2628deff82743b9d54b7007f056d, type: 3}
@@ -12439,6 +12466,11 @@ GameObject:
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: f76792e1ed708b9498b7b8464e46a03a, type: 3}
   m_PrefabInstance: {fileID: 1119991453}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &900000000000008 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: d024d61c318a96a47903b068dcac842b, type: 3}
+  m_PrefabInstance: {fileID: 2000291970}
   m_PrefabAsset: {fileID: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
