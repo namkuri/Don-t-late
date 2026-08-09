@@ -49,6 +49,7 @@
 | A_malsoon_angry | malsoon_Angry.fbx · malsoon_Angry_2.fbx | `Assets/Art/Characters/Animation/A_malsoon/` | 2 | **Mixamo**(Adobe·민지 매개) | Adobe 무료 라이선스(Mixamo) | 2026-08-09 |
 | chr_gs_girl | gs_girl_mixamo_rig_final.fbx · gs_girl_walking.fbx | `Assets/Art/Characters/Animation/` (+ `Materials/gs_girl.mat`·`Textures/gs_girl.jpg`) | 2 | Tripo 메시(민지) + **Mixamo** 리깅·모션 | 메시=D-029 조건 · 모션=Adobe 무료(Mixamo) | 2026-08-09 |
 | ui_call_malsoon | angry_malsoon.png | `Assets/Art/Characters/Textures/angry_malsoon.png` | 1 | 생성(민지) — 박말순 수신화면 초상 | 자체 생성물, 외부 소재 없음 | 2026-08-09 |
+| t_dummy_npc | dummynpc.fbm.jpg · dummynpc.fbm.mat | `Assets/Art/Characters/Textures/` · `Materials/` | 2 | Tripo(민지) — dummynpc.fbx 동반 텍스처 | 메시와 동일 조건(D-029) | 2026-08-10 |
 
 ### 검역 수치 (교체 INTAKE 2026-07-21)
 - **chr_courier(late_man)**: fbx tris=**5432 (Characters 상한 5000 초과 432 → 경고**, 차단 아님·데시메이트 권고), verts=8809. **animType=Human 셋업 성공** — 아바타 isValid=True·isHuman=True (Mixamo 리그 mixamorig: 접두 32본, 계층 chr_courier/Armature/Root/mixamorig:Hips). 원임포트 높이 **1.07u**(앵커 1.8u ±30% 미달·경고) → 빌더가 렌더바운즈 기준 ×1.686 스케일로 **1.800u 정규화**·발끝 y=0 정렬. **텍스처 없음**(임베디드 0·버텍스컬러 없음·FBX 텍스처참조 경로 무효 `E:\dontlate`) → 회색 렌더. **쿠팡 로고: 텍스처 미포함으로 확인 불가**(후속 텍스처 반입 시 자동추출 규칙 처리 예정).

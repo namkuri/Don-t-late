@@ -19,12 +19,6 @@ namespace DontLate.EditorTools
 
         private static readonly string[] DummyWalkerScenePaths =
         {
-            "Assets/Scenes/Apartment.unity",
-            "Assets/Scenes/Camp.unity",
-            "Assets/Scenes/FoodStreet.unity",
-            "Assets/Scenes/District.unity",
-            "Assets/Scenes/Hillside.unity",
-            "Assets/Scenes/Main.unity",
             "Assets/Scenes/Village.unity",
         };
 
@@ -223,6 +217,15 @@ namespace DontLate.EditorTools
             Debug.Log($"[NpcBuildKit] Dummy Walker A visual applied to {changed} scene object(s).");
         }
 
+        [InitializeOnLoadMethod]
+        private static void ApplyVillageWalkerAAnimationOnce()
+        {
+            const string sessionKey = "DontLate.NpcBuildKit.ApplyVillageWalkerAAnimationOnce";
+            if (SessionState.GetBool(sessionKey, false)) return;
+            SessionState.SetBool(sessionKey, true);
+            EditorApplication.delayCall += ApplyDummyWalkerAVisual;
+        }
+
         private static bool TryApplyDummyWalkerVisual(GameObject root, out Renderer bodyRenderer,
             out Animator animator, out AnimationClip walkClip)
         {
@@ -230,9 +233,11 @@ namespace DontLate.EditorTools
             animator = null;
             walkClip = FindWalkClip();
             GameObject model = AssetDatabase.LoadAssetAtPath<GameObject>(DUMMY_NPC_MODEL_PATH);
-            if (model == null || walkClip == null)
+            Avatar avatar = FindAvatar(DUMMY_NPC_MODEL_PATH);
+            if (avatar == null) avatar = FindAvatar(DUMMY_NPC_WALK_PATH);
+            if (model == null || walkClip == null || avatar == null)
             {
-                Debug.LogError("[NpcBuildKit] Dummy NPC model or walk clip is missing.", root);
+                Debug.LogError("[NpcBuildKit] Dummy NPC model, walk clip, or humanoid avatar is missing.", root);
                 return false;
             }
 
@@ -270,15 +275,17 @@ namespace DontLate.EditorTools
 
             bodyRenderer = renderers[0];
             animator = visual.GetComponentInChildren<Animator>(true);
-            if (animator == null)
-            {
-                animator = visual.AddComponent<Animator>();
-                Object[] modelAssets = AssetDatabase.LoadAllAssetsAtPath(DUMMY_NPC_MODEL_PATH);
-                foreach (Object asset in modelAssets)
-                    if (asset is Avatar avatar) { animator.avatar = avatar; break; }
-            }
+            if (animator == null) animator = visual.AddComponent<Animator>();
+            animator.avatar = avatar;
             animator.applyRootMotion = false;
             return true;
+        }
+
+        private static Avatar FindAvatar(string assetPath)
+        {
+            foreach (Object asset in AssetDatabase.LoadAllAssetsAtPath(assetPath))
+                if (asset is Avatar avatar && avatar.isValid && avatar.isHuman) return avatar;
+            return null;
         }
 
         private static AnimationClip FindWalkClip()
