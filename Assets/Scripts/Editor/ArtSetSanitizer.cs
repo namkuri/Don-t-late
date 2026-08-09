@@ -63,6 +63,8 @@ namespace DontLate.EditorTools
             foreach (Transform child in root.transform)
                 if (ArtSetRules.IsBuilderOwned(child.gameObject)) doomed.Add(child.gameObject);
 
+            CollectExactTwins(root.transform, doomed); // S-206
+
             if (doomed.Count == 0)
             {
                 PrefabUtility.UnloadPrefabContents(root);
@@ -76,9 +78,41 @@ namespace DontLate.EditorTools
             PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
             PrefabUtility.UnloadPrefabContents(root);
 
-            Debug.Log($"[세트정리] {System.IO.Path.GetFileName(prefabPath)} — 기능물 {names.Length}개 제거: "
+            Debug.Log($"[세트정리] {System.IO.Path.GetFileName(prefabPath)} — 기능물·쌍둥이 {names.Length}개 제거: "
                 + string.Join(", ", names));
             return names.Length;
+        }
+
+        /// <summary>
+        /// S-206 — **트랜스폼까지 똑같은 쌍둥이 최상위 자식**을 한 벌만 남기고 걷어낸다.
+        ///
+        /// `set_hillside`에 13종이 이름·위치·회전·스케일이 전부 같은 채로 두 벌씩 들어 있었다
+        /// (blue_house·retro_korean_house·old_stair·er… 실측: 두 벌 모두 같은 좌표·스케일).
+        /// 완전히 겹친 메시 두 장은 Z파이팅만 만들 뿐 화면에 보태는 게 없다 — 의도된 배치일 수
+        /// 없어서 기계적으로 지워도 안전하다. 반대로 **좌표가 조금이라도 다르면 손대지 않는다**:
+        /// 같은 집을 여러 채 늘어놓는 것은 정상적인 배치이고, 그건 민지님 몫이다.
+        /// </summary>
+        private static void CollectExactTwins(Transform root, List<GameObject> doomed)
+        {
+            var seen = new List<Transform>();
+            foreach (Transform child in root)
+            {
+                if (doomed.Contains(child.gameObject)) continue;
+
+                bool twin = false;
+                foreach (Transform other in seen)
+                {
+                    if (other.name != child.name) continue;
+                    if (other.localPosition != child.localPosition) continue;
+                    if (other.localRotation != child.localRotation) continue;
+                    if (other.localScale != child.localScale) continue;
+                    twin = true;
+                    break;
+                }
+
+                if (twin) doomed.Add(child.gameObject);
+                else seen.Add(child);
+            }
         }
     }
 }

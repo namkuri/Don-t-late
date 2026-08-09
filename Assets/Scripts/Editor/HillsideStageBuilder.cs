@@ -51,8 +51,6 @@ namespace DontLate.EditorTools
             Material asphalt = GreyboxStageBuilder.GetOrCreateMaterial("HillAsphalt", new Color(0.23f, 0.24f, 0.26f), false);
             _dirtMat = GreyboxStageBuilder.GetOrCreateMaterial("HillDirt", new Color(0.43f, 0.35f, 0.26f), false);
             _wallMat = GreyboxStageBuilder.GetOrCreateMaterial("HillWall", new Color(0.48f, 0.42f, 0.33f), false);
-            Material moonHouse = GreyboxStageBuilder.GetOrCreateMaterial("HillMoonHouse", new Color(0.66f, 0.51f, 0.42f), false);
-            Material slate = GreyboxStageBuilder.GetOrCreateMaterial("HillSlate", new Color(0.29f, 0.31f, 0.33f), false);
 
             // ── 지형 ─────────────────────────────────────────────
             // 산 아래를 받치는 평지(들머리·날머리 바깥과 능선 뒤편). 산의 평지 구간과 같은 y0라
@@ -66,14 +64,10 @@ namespace DontLate.EditorTools
             BuildHill(asphalt);
             Physics.SyncTransforms(); // 이 아래 배치는 전부 GroundY 레이캐스트에 의존한다
 
-            // ── 달동네 판잣집 — 능선 뒤편(레인 밖)에 고도를 따라 줄지어 실루엣을 만든다 ──
-            BuildMoonHouse("MoonHouse_S1", OnGround(9f, BACK_ROW_Z, -0.25f), moonHouse, slate);
-            BuildMoonHouse("MoonHouse_S2", OnGround(17f, BACK_ROW_Z, -0.25f), moonHouse, slate);
-            BuildMoonHouse("MoonHouse_S3", OnGround(24f, BACK_ROW_Z, -0.25f), moonHouse, slate);
-            BuildMoonHouse("MoonHouse_P1", OnGround(30f, BACK_ROW_Z, -0.2f), moonHouse, slate);
-            BuildMoonHouse("MoonHouse_P2", OnGround(35f, BACK_ROW_Z, -0.2f), moonHouse, slate);
-            BuildMoonHouse("MoonHouse_D1", OnGround(43f, BACK_ROW_Z, -0.25f), moonHouse, slate);
-            BuildMoonHouse("MoonHouse_D2", OnGround(51f, BACK_ROW_Z, -0.25f), moonHouse, slate);
+            // ── 달동네 판잣집 — S-206에서 **빌더 생산 중단**(남규님 지시). ──
+            // 능선 뒤편 실루엣은 이제 민지님 세트가 담당한다(blue_house·mint_house·pink_korea_house·
+            // old_stair 등). 빌더의 회색 박스 7채는 같은 능선에 겹쳐 서서 아트 실루엣을 가렸다.
+            // 되살릴 일이 있으면 git 이력에 원 좌표가 남아 있다 — 죽은 코드로 들고 있지 않는다.
 
             // ── 걷기 볼륨 — 능선 위만. z는 산 폭(±4)보다 좁게 잡아 옆으로 떨어지지 않게 한다 ──
             GameObject volume = GreyboxStageBuilder.CreateEmpty("Walkable", Vector3.zero);
@@ -111,7 +105,9 @@ namespace DontLate.EditorTools
 
             // S-115 — 실물 데코: 들머리·날머리 평지에 한옥 (산비탈은 판잣집 몫).
             GreyboxStageBuilder.PlaceCatalog("old_korea_house", OnGround(-17f, BACK_ROW_Z + 0.6f));
-            GreyboxStageBuilder.PlaceCatalog("retro_korean_house", OnGround(-6f, BACK_ROW_Z + 0.6f));
+            // S-206 — `retro_korean_house`는 빌더가 놓지 않는다(남규님 지시). 민지님 세트에
+            // 같은 집이 이미 서 있는데(평이름 `retro_korean_house`), 빌더 사본은 `__gb_Deco_` 접두어가
+            // 붙어 이름이 어긋나 자동 교체 규칙(S-188)에 걸리지 않았다 — 그래서 두 채가 겹쳐 섰다.
             GreyboxStageBuilder.PlaceCatalog("red_korean_house", OnGround(70f, BACK_ROW_Z + 0.6f));
             GreyboxStageBuilder.PlaceCatalog("Pot_unity", OnGround(-11.5f, 2.4f));
             GreyboxStageBuilder.PlaceCatalog("black_Trash_unity", OnGround(4f, 2.4f));
@@ -129,6 +125,12 @@ namespace DontLate.EditorTools
                 serialized.FindProperty("_followY").boolValue = true;
                 serialized.ApplyModifiedPropertiesWithoutUndo();
             }
+
+            // S-206 — 조립이 끝난 뒤 한 번 더 훑는다. `ArtBackdropKit.Build`는 카탈로그
+            // 데코보다 **먼저** 도는데, 민지님 세트에 같은 데코가 담겨 있어(`__gb_Deco_bycle` 등 6종)
+            // 교체 시점엔 빌더 사본이 아직 없다 — 그래서 사냥을 빠져나가 같은 자리에 두 벌이 섰다.
+            // District가 S-199에서 겪은 것과 같은 결함이고, 해법도 같다(멱등이라 몇 번 불러도 안전).
+            ArtBackdropKit.SweepBuilderDuplicates();
 
             EditorSceneManager.SaveScene(scene, SCENE_PATH);
             Debug.Log("[Hillside] 유선형 산 무대 조립 완료 — 정상 y" + GroundY(31.9f).ToString("F2")
@@ -155,9 +157,27 @@ namespace DontLate.EditorTools
         /// </summary>
         private static void EnsureUphillSet(Scene scene)
         {
+            // S-206 — **배경 세트가 이미 오르막을 품고 있으면 빌더는 손을 뗀다(아트 우선).**
+            // 민지님이 `set_hillside`를 묶을 때 오르막 세트를 통째로 안에 넣었는데, 빌더도 따로
+            // 한 벌을 세워 **원점에 정확히 두 벌**이 겹쳐 있었다(실측: 둘 다 (0,0,0)).
+            // 이름이 `__gb_` 접두어가 아니라 S-188 자동 교체 규칙에 안 걸리므로 여기서 막는다.
+            //
+            // 이 검사가 아래 "이미 있으면 통과"보다 **먼저** 와야 한다 — Clear는 `__gb_`만 지우므로
+            // 지난 조립이 남긴 빌더 사본이 씬에 그대로 살아 있고, 순서가 반대면 그놈 때문에
+            // 조기 return 해서 영영 안 지워진다(실측으로 확인한 함정).
+            bool setOwnsUphill = SetPrefabContainsUphill();
+
             foreach (GameObject root in scene.GetRootGameObjects())
             {
-                if (root.name == "set_hillside_uphill") return;
+                if (root.name != "set_hillside_uphill") continue;
+                if (!setOwnsUphill) return; // 세트에 없으면 씬에 선 이 한 벌이 정본이다
+                Undo.DestroyObjectImmediate(root);
+            }
+
+            if (setOwnsUphill)
+            {
+                Debug.Log("[Hillside] 오르막 세트가 배경 세트에 내장됨 — 빌더 사본 생략(아트 우선).");
+                return;
             }
 
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(UPHILL_SET_PREFAB);
@@ -172,6 +192,17 @@ namespace DontLate.EditorTools
             instance.name = "set_hillside_uphill";
             foreach (Transform child in instance.GetComponentsInChildren<Transform>(true))
                 child.gameObject.layer = GreyboxStageBuilder.LAYER_GROUND;
+        }
+
+        /// <summary>배경 세트 프리팹 안에 오르막 세트가 들어 있는가 (S-206 · 중복 방지).</summary>
+        private static bool SetPrefabContainsUphill()
+        {
+            GameObject setPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(ArtBackdropKit.Hillside.PrefabPath);
+            if (setPrefab == null) return false;
+
+            foreach (Transform child in setPrefab.GetComponentsInChildren<Transform>(true))
+                if (child.name == "set_hillside_uphill") return true;
+            return false;
         }
 
         private static void BuildHill(Material surface)
@@ -215,13 +246,6 @@ namespace DontLate.EditorTools
             => new Vector3(x, GroundY(x, z) + lift, z);
 
         // ── 판잣집: 몸통 + 슬레이트 지붕(살짝 기울임) ──
-        private static void BuildMoonHouse(string id, Vector3 basePos, Material body, Material roof)
-        {
-            BuildBox(id, basePos + Vector3.up * 1f, new Vector3(2.6f, 2f, 1.8f), body);
-            GameObject roofGo = BuildBox(id + "_roof", basePos + new Vector3(0f, 2.12f, 0f), new Vector3(3f, 0.18f, 2.1f), roof);
-            roofGo.transform.rotation = Quaternion.Euler(0f, 0f, 6f);
-        }
-
         // S-059 고양이 — 작은 주황 덩어리 + 상호작용 트리거.
         private static void BuildCat(GameStateSO gameState, Vector3 position)
         {
@@ -262,14 +286,6 @@ namespace DontLate.EditorTools
             GreyboxStageBuilder.SetReference(cat, "_highlightRenderer", bodyRenderer);
             GreyboxStageBuilder.SetReference(cat, "_normalMaterial", fur);
             GreyboxStageBuilder.SetReference(cat, "_highlightMaterial", highlight);
-        }
-
-        private static GameObject BuildBox(string name, Vector3 position, Vector3 size, Material material)
-        {
-            GameObject box = GreyboxStageBuilder.CreatePrimitive(PrimitiveType.Cube, name, position);
-            box.transform.localScale = size;
-            box.GetComponent<Renderer>().sharedMaterial = material;
-            return box;
         }
 
         private static void AttachSpawner(GameStateSO gameState)
