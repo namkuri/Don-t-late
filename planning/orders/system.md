@@ -6394,3 +6394,19 @@ jihye   root(-0.7→2.6)       자식local(0,0,0) 높이2.11
 `malsoon_Angry(_2)` 폴리 6,464 > 상한 5,000 · 전고 1.00u(앵커 1.8u 미달). 검역은 경고 모드라
 차단하지 않는다(ARCHITECTURE §7-4). 애니메이션 전용 FBX라 폴리는 실사용에 안 쓰이지만,
 정리하려면 민지님이 애니메이션 FBX에서 메시를 빼고 내보내면 된다.
+
+## S-214 · 발주 2026-08-09 23:58 → ClaudeCode (빌라촌·언덕 무대 정리 — 아트 재작업 자리 비우기)
+
+요구 (남규님 원문):
+1. Village 씬에서 **`GeneratedLayout` 삭제** (아트에서 수동 배치 후 반입 예정).
+2. Village 씬 `__gb_ArtBackdrop` 자식 중 겹쳐 있는 것들 **전부 삭제** —
+   police · orange_market · chicken_house · korean_cafe · market · bycle · Bench_unity.
+   아트에서 작업하고 다시 반입할 것.
+3. Hillside 씬에서 **`__gb_Hill` 삭제** · `set_hillside_uphill`의 `uphill`에
+   **Mesh Collider 켜기** · scale z축 **5.9** · position z축 **0**.
+
+수용기준: 재조립 후 세 항목이 씬에 반영된다(오브젝트 부재·콜라이더 on·수치 일치) ·
+언덕 지형이 사라져도 배치·통행이 깨지지 않는다 · 콘솔 에러·워닝 0.
+
+MDA 판정 (D-070): **무관(공정 정리)** — 아트 재작업을 위한 자리 비우기다. 미학·역학을 직접
+바꾸지 않으나, ③은 지형 소유가 빌더에서 아트로 넘어가는 전환이라 통행 판정 회귀 위험이 있다.
