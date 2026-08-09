@@ -15,6 +15,9 @@ namespace DontLate
         [SerializeField, Min(0.1f)] private float _firstDuration = 3f;
         [SerializeField, Min(0.1f)] private float _secondDuration = 3f;
         [SerializeField] private bool _usePedestrianMovement;
+        [Tooltip("S-217 — 이 동작을 재생하는 동안 걸어도 되는가. 제자리 동작(인사·화내기)에 켜면 슬라이딩한다.")]
+        [SerializeField] private bool _firstClipMoves;
+        [SerializeField] private bool _secondClipMoves = true;
         [SerializeField] private TextAsset _randomTalkPool;
         [SerializeField] private Sprite _npcInfoBackground;
 
@@ -95,10 +98,27 @@ namespace DontLate
             if (_graph.IsValid()) _graph.Destroy();
         }
 
+        /// <summary>
+        /// S-217 ②③ — **제자리 동작 중엔 걷지 않는다.**
+        /// 지혜의 두 클립(`jihye_Idle`·`Standing Greeting`)은 둘 다 발이 붙어 있는 동작인데
+        /// 몸이 이동하니 미끄러져 다녔다(남규님 관찰: "손 흔들면서 슬라이딩으로 돌아다님").
+        /// 걷기 클립이 없는 NPC는 이동시키면 반드시 슬라이딩한다 — 이동 허용을 **클립별로** 건다.
+        /// 나아라는 두 번째가 진짜 걷기 클립이라 그때만 걷는다.
+        /// </summary>
+        private void ApplyMovementGate()
+        {
+            if (_target == null) return;
+            PedestrianNpc pedestrian = _target.GetComponent<PedestrianNpc>();
+            if (pedestrian == null) return;
+            pedestrian.SetMovementAllowed(_usePedestrianMovement
+                && (_showingFirst ? _firstClipMoves : _secondClipMoves));
+        }
+
         private void Show(bool first)
         {
             _showingFirst = first;
             _timer = 0f;
+            ApplyMovementGate();
             _mixer.SetInputWeight(0, first ? 1f : 0f);
             _mixer.SetInputWeight(1, first ? 0f : 1f);
             _firstPlayable.SetSpeed(first ? 1d : 0d);

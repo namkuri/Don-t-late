@@ -36,11 +36,15 @@ namespace DontLate.EditorTools
             public readonly string TalkPoolPath;
             /// <summary>씬에서 갈아 끼운 머티리얼. 비면 FBX 임베디드 머티리얼 그대로.</summary>
             public readonly string MaterialPath;
+            /// <summary>S-217 ②③ — 두 번째 동작이 **진짜 걷기 클립**인가. 제자리 동작이면 false(미끄러짐 방지).</summary>
+            public readonly bool SecondClipMoves;
 
             public CastMember(string name, string modelPath, Vector3 position, float rotationY, float scale,
                 string firstClipPath, string secondClipPath, float firstDuration, float secondDuration,
-                bool usePedestrianMovement, string talkPoolPath, string materialPath = null)
+                bool usePedestrianMovement, string talkPoolPath, string materialPath = null,
+                bool secondClipMoves = true)
             {
+                SecondClipMoves = secondClipMoves;
                 Name = name; ModelPath = modelPath; Position = position; RotationY = rotationY; Scale = scale;
                 FirstClipPath = firstClipPath; SecondClipPath = secondClipPath;
                 FirstDuration = firstDuration; SecondDuration = secondDuration;
@@ -67,12 +71,15 @@ namespace DontLate.EditorTools
                 4f, 3f, true, "Assets/Data/Dialogue/Source/na-ara-random-talk.json",
                 "Assets/Art/Characters/Materials/gs_girl.mat"),
 
-            // 오지혜 — 대기 자세와 인사를 번갈아(배회 ON).
+            // 오지혜 — 대기 자세와 인사를 번갈아. **두 클립 다 제자리 동작이라 걷지 않는다**(S-217 ②③).
+            // 배회를 켜 뒀더니 발이 붙은 채 미끄러져 다녔고, 도로까지 흘러가 차에 치였다(남규님 관찰).
+            // 걷기 클립이 생기면 그때 열면 된다.
             new CastMember("jihye", "Assets/Art/Characters/jihye/jihye.fbx",
                 new Vector3(2.555153f, -0.016147971f, 2.6524115f), -59.554f, 2.0518f,
                 "Assets/Art/Characters/Animation/A_jihye/jihye_Idle.fbx",
                 "Assets/Art/Characters/Animation/A_jihye/jihye_Standing Greeting.fbx",
-                4f, 3f, true, "Assets/Data/Dialogue/Source/yoo-jihye-random-talk.json"),
+                4f, 3f, true, "Assets/Data/Dialogue/Source/yoo-jihye-random-talk.json",
+                null, secondClipMoves: false),
         };
 
         /// <summary>
@@ -84,11 +91,23 @@ namespace DontLate.EditorTools
         {
             Sprite infoBackground = AssetDatabase.LoadAssetAtPath<Sprite>(NPC_INFO_SPRITE);
 
+            // S-217 ① — **씬에서 옮긴 배치를 유지한다**(민지님 건의).
+            // 종전엔 재조립마다 지우고 하드코딩 좌표로 새로 세워서, 아트가 씬에서 위치를 잡아도
+            // 다음 빌드에 날아갔다. 이제 기존 인스턴스의 트랜스폼을 먼저 챙겨 두고 그대로 되돌려 준다 —
+            // 아트는 씬에서 옮기기만 하면 되고, 관제를 거칠 필요가 없다.
+            // 표의 좌표는 이제 **첫 배치 기본값**이다(씬에 아무 것도 없을 때만 쓰인다).
+            var kept = new System.Collections.Generic.Dictionary<string, (Vector3 pos, Quaternion rot, Vector3 scale)>();
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                if (!IsCastName(root.name)) continue;
+                kept[root.name] = (root.transform.position, root.transform.rotation, root.transform.localScale);
+            }
+
             foreach (GameObject root in scene.GetRootGameObjects())
                 if (root.name == ANIM_ROOT || IsCastName(root.name)) Object.DestroyImmediate(root);
 
             var director = new GameObject(ANIM_ROOT);
-            int built = 0;
+            int built = 0, preserved = 0;
 
             foreach (CastMember member in Cast)
             {
@@ -102,9 +121,18 @@ namespace DontLate.EditorTools
                 // Variant 결합 회피 — 독립 클론으로 만든다 (2026-07-20 실수→규칙).
                 var instance = (GameObject)Object.Instantiate(model);
                 instance.name = member.Name;
-                instance.transform.SetPositionAndRotation(
-                    member.Position, Quaternion.Euler(0f, member.RotationY, 0f));
-                instance.transform.localScale = Vector3.one * member.Scale;
+                if (kept.TryGetValue(member.Name, out var pose))
+                {
+                    instance.transform.SetPositionAndRotation(pose.pos, pose.rot);
+                    instance.transform.localScale = pose.scale;
+                    preserved++;
+                }
+                else
+                {
+                    instance.transform.SetPositionAndRotation(
+                        member.Position, Quaternion.Euler(0f, member.RotationY, 0f));
+                    instance.transform.localScale = Vector3.one * member.Scale;
+                }
 
                 // 민지님이 씬에서 갈아 끼운 머티리얼. FBX 임베디드 머티리얼은 텍스처를 못 찾아
                 // 새하얗게 나온다(malsoon·naara 실측: baseMap 없음) — 그 교체까지가 배치다.
@@ -138,10 +166,14 @@ namespace DontLate.EditorTools
                 SetPrivate(animation, "_firstDuration", member.FirstDuration);
                 SetPrivate(animation, "_secondDuration", member.SecondDuration);
                 SetPrivate(animation, "_usePedestrianMovement", member.UsePedestrianMovement);
+                // S-217 ②③ — 첫 동작은 어느 NPC나 제자리(대기·화내기)라 항상 정지.
+                SetPrivate(animation, "_firstClipMoves", false);
+                SetPrivate(animation, "_secondClipMoves", member.SecondClipMoves);
                 built++;
             }
 
-            Debug.Log("[빌라촌NPC] 상주 NPC " + built + "/" + Cast.Length + "인 배치 (S-215 — 민지님 손배치를 코드로 복원).");
+            Debug.Log("[빌라촌NPC] 상주 NPC " + built + "/" + Cast.Length + "인 배치 · "
+                + "씬 배치 유지 " + preserved + "인 (S-217 ① — 씬에서 옮긴 자리를 그대로 둔다).");
         }
 
         private static bool IsCastName(string name)

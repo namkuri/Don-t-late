@@ -55,6 +55,8 @@ namespace DontLate
         private Vector3 _lastAnimationPosition;
         private bool _centerTurnsOnVisuals;
         private bool _movementEnabled = true;
+        private bool _movementConfigured = true; // S-217 — 배치상 걸을 수 있는 NPC인가(게이트의 상한)
+        private Vector3 _homePosition;           // S-217 ④ — 사고 후 복귀 좌표
         private WalkableVolume _walkableVolume;
         private TextAsset _randomTalkSource;
         private Sprite _npcInfoBackground;
@@ -82,9 +84,23 @@ namespace DontLate
 
         internal void CenterTurnsOnVisuals() => _centerTurnsOnVisuals = true;
 
+        /// <summary>
+        /// S-217 ②③ — 재생 중인 동작에 따라 걸음을 열고 닫는다(`AlternatingNpcAnimation`이 호출).
+        /// 제자리 동작(인사·화내기) 중에 이동하면 발이 붙은 채 미끄러진다.
+        /// `Configure(movementEnabled: false)`로 아예 정지인 NPC는 여기서 다시 켜지지 않는다 —
+        /// 그건 배치 설정이고 이건 프레임 단위 게이트다.
+        /// </summary>
+        public void SetMovementAllowed(bool allowed)
+        {
+            if (!_movementConfigured) return;
+            _movementEnabled = allowed;
+        }
+
         internal void Configure(bool movementEnabled, TextAsset randomTalkSource, Sprite npcInfoBackground)
         {
             _movementEnabled = movementEnabled;
+            _movementConfigured = movementEnabled; // S-217 — 애초에 정지 배치면 게이트가 못 켠다
+            AdoptCrossingSignal();                 // S-217 ④ — 신호등을 보고 건너게
             _randomTalkSource = randomTalkSource;
             _npcInfoBackground = npcInfoBackground;
             EnsureRandomTalkLoaded();
@@ -103,6 +119,7 @@ namespace DontLate
 
             _centerX = transform.position.x;
             _centerZ = transform.position.z;
+            _homePosition = transform.position; // S-217 ④ — 사고로 밀려나면 돌아올 자리
             if (!_movementEnabled)
             {
                 _lastAnimationPosition = transform.position;
@@ -280,6 +297,18 @@ namespace DontLate
                 next.y = _landingY;
                 transform.position = next;
                 _flying = false;
+
+                // S-217 ④ — **걷지 못하는 NPC는 제자리로 돌아온다.**
+                // 넉백(S-210)으로 도로 쪽에 떨어지면 스스로 못 걸어 나오므로 거기 서서 계속 치인다
+                // (남규님 관찰: "지혜가 계속 차에 치임"). 걷는 NPC는 순찰로 알아서 복귀하므로 손대지 않는다.
+                if (!_movementEnabled && _homePosition != Vector3.zero)
+                {
+                    transform.position = _homePosition;
+                    Face();
+                    _pauseTimer = 0.8f;
+                    return;
+                }
+
                 _knockback = Vector3.zero;
                 _verticalVelocity = 0f;
                 _sideStep = 0f;      // 원래 레인으로 되돌아가며 걷는다(Update의 옆걸음 복귀가 처리)
@@ -421,6 +450,34 @@ namespace DontLate
             for (int i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
             center = bounds.center;
             return true;
+        }
+
+        /// <summary>
+        /// S-217 ④ — **신호등을 주워 온다.** 신호 대기 로직(S-076 ②)은 원래 있었는데,
+        /// 런타임에 붙는 상주 NPC(`AlternatingNpcAnimation`이 AddComponent)는 빌더가 참조를
+        /// 꽂아 줄 기회가 없어 `_signal`이 비어 있었다 — 그래서 지혜가 적신호에도 그냥 건너
+        /// 차에 치였다(남규님 관찰). 교차로는 씬에 하나뿐이라 이름 검색 없이 타입으로 집는다.
+        /// 이미 꽂혀 있으면(빌더가 넣어 준 행인) 건드리지 않는다.
+        /// </summary>
+        private void AdoptCrossingSignal()
+        {
+            if (_signal != null) return;
+
+            TrafficLight[] lights = FindObjectsByType<TrafficLight>(FindObjectsInactive.Exclude);
+            if (lights.Length == 0) return;
+
+            TrafficLight nearest = lights[0];
+            float best = Mathf.Abs(nearest.transform.position.x - transform.position.x);
+            for (int i = 1; i < lights.Length; i++)
+            {
+                float d = Mathf.Abs(lights[i].transform.position.x - transform.position.x);
+                if (d >= best) continue;
+                best = d;
+                nearest = lights[i];
+            }
+
+            _signal = nearest;
+            _roadX = nearest.transform.position.x; // 도로 중심 = 신호등이 선 x
         }
 
         private WalkableVolume FindNearestWalkableVolume()
