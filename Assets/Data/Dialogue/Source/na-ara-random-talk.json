@@ -5,8 +5,8 @@
   "displayName": "나아라",
   "npcRole": "편의점 알바생",
   "trigger": "interact",
-  "selectionMode": "random_single",
-  "avoidImmediateRepeat": true,
+  "selectionMode": "sequential",
+  "avoidImmediateRepeat": false,
   "lines": [
     {
       "lineId": "NA_ARA_RANDOM_01",

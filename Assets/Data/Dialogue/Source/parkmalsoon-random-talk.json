@@ -4,8 +4,8 @@
   "npcId": "parkmalsoon",
   "displayName": "박말순",
   "trigger": "interact",
-  "selectionMode": "random_single",
-  "avoidImmediateRepeat": true,
+  "selectionMode": "sequential",
+  "avoidImmediateRepeat": false,
   "lines": [
     {
       "lineId": "PMS_RANDOM_01",
@@ -71,6 +71,240 @@
       "lineId": "PMS_RANDOM_11",
       "speaker": "박말순",
       "text": "늦었다고 뛰다가 사람 치면 그날 장사는 끝이여.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_12",
+      "speaker": "박말순",
+      "text": "문 두드릴 땐 세 번이여. 한 번은 못 듣고 다섯 번은 시끄러워.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_13",
+      "speaker": "박말순",
+      "text": "내 나이가 몇인 줄 알어? 너보다 오래 이 골목 지켰다.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_14",
+      "speaker": "박말순",
+      "text": "벨 누르고 도망가듯 가지 말어. 사람 나올 때까지는 기다리는 게 예의여.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_15",
+      "speaker": "박말순",
+      "text": "비 오는 날은 봉지 하나라도 씌워줘. 젖으면 다 니 탓 된다.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_16",
+      "speaker": "박말순",
+      "text": "아이고, 그 무거운 걸 혼자 들어? 허리 나가면 아무도 안 챙겨줘.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_17",
+      "speaker": "박말순",
+      "text": "밥은 먹고 다니냐? 얼굴이 반쪽이여.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_18",
+      "speaker": "박말순",
+      "text": "내 손주도 너만 할 텐데... 아니다, 됐다.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_19",
+      "speaker": "박말순",
+      "text": "계단 뛰어 내려가지 말어. 그러다 구른다.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_20",
+      "speaker": "박말순",
+      "text": "사장 놈이 또 무리하게 시켰지? 딱 봐도 알어.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_21",
+      "speaker": "박말순",
+      "text": "늦었다고 뛰면 더 늦어. 넘어지면 처음부터 다시여.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_22",
+      "speaker": "박말순",
+      "text": "우산 없으면 하나 가져가. 돌려주러 또 와야 하니께.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_23",
+      "speaker": "박말순",
+      "text": "이 골목 개는 안 물어. 근디 짖긴 짖어.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_24",
+      "speaker": "박말순",
+      "text": "301호는 낮에 없어. 저녁에 가야 사람이 있다.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_25",
+      "speaker": "박말순",
+      "text": "문 앞에 둘 거면 사진이라도 찍어놔. 나중에 딴소리 듣지 말고.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_26",
+      "speaker": "박말순",
+      "text": "젊을 때 무릎 아껴. 나처럼 되면 늦어.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_27",
+      "speaker": "박말순",
+      "text": "오늘은 좀 천천히 가. 하늘이 심상찮여.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_28",
+      "speaker": "박말순",
+      "text": "인사 잘하는 놈이 결국 오래 간다.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_29",
+      "speaker": "박말순",
+      "text": "내가 잔소리하는 건 니가 미워서가 아니여.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_30",
+      "speaker": "박말순",
+      "text": "저 집 아줌마는 성격 있어. 조심혀.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_31",
+      "speaker": "박말순",
+      "text": "물 한 잔 먹고 가. 그 정도는 해줄 수 있어.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_32",
+      "speaker": "박말순",
+      "text": "땀 좀 닦어. 그렇게 다니면 손님이 놀란다.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_33",
+      "speaker": "박말순",
+      "text": "빚은 하루아침에 안 갚아져. 조급하면 사고 나.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_34",
+      "speaker": "박말순",
+      "text": "니 트럭 소리는 멀리서도 알아듣겄다.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_35",
+      "speaker": "박말순",
+      "text": "무단횡단하지 말어. 그거 한 번이면 끝이여.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_36",
+      "speaker": "박말순",
+      "text": "요즘 애들은 다 폰만 보고 걸어. 너도 마찬가지여.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_37",
+      "speaker": "박말순",
+      "text": "상자 던지지 말어! 안에 뭐 들었는지 알고?",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_38",
+      "speaker": "박말순",
+      "text": "어제도 늦었지? 다 보고 있었다.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_39",
+      "speaker": "박말순",
+      "text": "이 동네 사람들 다 니 얼굴 안다. 잘하고 다녀.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_40",
+      "speaker": "박말순",
+      "text": "겨울엔 장갑 껴. 손 트면 일도 못 혀.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_41",
+      "speaker": "박말순",
+      "text": "짐 실을 땐 무거운 걸 아래에. 그것도 모르냐?",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_42",
+      "speaker": "박말순",
+      "text": "니가 오는 날은 골목이 좀 시끄러워서 좋아.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_43",
+      "speaker": "박말순",
+      "text": "밤엔 가로등 있는 길로 다녀.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_44",
+      "speaker": "박말순",
+      "text": "배달통 뚜껑은 닫었냐? 열고 다니다 다 쏟는다.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_45",
+      "speaker": "박말순",
+      "text": "급하다고 남의 집 화분 밟지 말어!",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_46",
+      "speaker": "박말순",
+      "text": "오늘 잘했어. ...뭘 그렇게 봐, 딴 데 봐.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_47",
+      "speaker": "박말순",
+      "text": "다치면 나한테 와. 약은 있응께.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_48",
+      "speaker": "박말순",
+      "text": "니 어무니가 보면 속상하겄다.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_49",
+      "speaker": "박말순",
+      "text": "그만 좀 뛰어다녀. 보는 내가 다 숨차.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "PMS_RANDOM_50",
+      "speaker": "박말순",
+      "text": "조심히 가. ...그냥 조심히 가라고.",
       "portraitId": ""
     }
   ]

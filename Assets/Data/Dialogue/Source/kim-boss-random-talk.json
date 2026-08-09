@@ -4,8 +4,8 @@
   "npcId": "boss",
   "displayName": "김사장",
   "trigger": "interact",
-  "selectionMode": "random_single",
-  "avoidImmediateRepeat": true,
+  "selectionMode": "sequential",
+  "avoidImmediateRepeat": false,
   "lines": [
     {
       "lineId": "KIM_BOSS_RANDOM_01",
@@ -107,6 +107,204 @@
       "lineId": "KIM_BOSS_RANDOM_17",
       "speaker": "김사장",
       "text": "다녀와. 너무 힘들면 돌아와도 돼. 혼자 끙끙대지는 말고.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KB_RANDOM_18",
+      "speaker": "김사장",
+      "text": "시간 계산부터 해. 무작정 뛰는 건 계획이 아니야.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KB_RANDOM_19",
+      "speaker": "김사장",
+      "text": "가까운 데부터 돌아. 동선이 곧 돈이다.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KB_RANDOM_20",
+      "speaker": "김사장",
+      "text": "무거운 건 아래, 가벼운 건 위. 기본이야.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KB_RANDOM_21",
+      "speaker": "김사장",
+      "text": "상자 모서리 찍히면 안에 것도 상한다.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KB_RANDOM_22",
+      "speaker": "김사장",
+      "text": "냉동은 제일 마지막에 싣고 제일 먼저 내려.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KB_RANDOM_23",
+      "speaker": "김사장",
+      "text": "고객이 화내면 일단 듣기만 해. 변명은 나중에.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KB_RANDOM_24",
+      "speaker": "김사장",
+      "text": "주소가 이상하면 출발 전에 전화해. 도착해서 하면 늦어.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KB_RANDOM_25",
+      "speaker": "김사장",
+      "text": "문 앞 배송은 사진 남겨. 그게 널 지켜준다.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KB_RANDOM_26",
+      "speaker": "김사장",
+      "text": "벨 두 번 눌러도 안 나오면 규정대로 처리해.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KB_RANDOM_27",
+      "speaker": "김사장",
+      "text": "개 있는 집은 문 열기 전에 소리부터 들어.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KB_RANDOM_28",
+      "speaker": "김사장",
+      "text": "계단이 많은 집은 한 번에 몰아서 올려.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KB_RANDOM_29",
+      "speaker": "김사장",
+      "text": "엘리베이터 잡아놓고 짐 옮기지 마. 욕먹는다.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KB_RANDOM_30",
+      "speaker": "김사장",
+      "text": "골목에선 속도 줄여. 애들이 튀어나온다.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KB_RANDOM_31",
+      "speaker": "김사장",
+      "text": "기름값도 네 수입에서 나가는 거다.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KB_RANDOM_32",
+      "speaker": "김사장",
+      "text": "장부는 그날그날 맞춰. 밀리면 답 없다.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KB_RANDOM_33",
+      "speaker": "김사장",
+      "text": "빚은 이자가 먼저 자란다. 원금부터 쳐라.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KB_RANDOM_34",
+      "speaker": "김사장",
+      "text": "돈 급하다고 무리한 콜 잡지 마.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KB_RANDOM_35",
+      "speaker": "김사장",
+      "text": "진상은 어디에나 있다. 네 잘못이 아니야.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KB_RANDOM_36",
+      "speaker": "김사장",
+      "text": "사고 나면 회사보다 네가 먼저 다친다.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KB_RANDOM_37",
+      "speaker": "김사장",
+      "text": "안전장비 값 아끼는 놈치고 오래 가는 놈 못 봤다.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KB_RANDOM_38",
+      "speaker": "김사장",
+      "text": "물 챙겨 다녀. 여름엔 그게 제일 중요해.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KB_RANDOM_39",
+      "speaker": "김사장",
+      "text": "겨울엔 손난로 하나 넣어둬.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KB_RANDOM_40",
+      "speaker": "김사장",
+      "text": "밥은 거르지 마라. 굶고 뛰면 판단이 흐려진다.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KB_RANDOM_41",
+      "speaker": "김사장",
+      "text": "잠은 자둬. 졸음이 제일 무섭다.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KB_RANDOM_42",
+      "speaker": "김사장",
+      "text": "오늘 몇 건 했는지 세지 말고, 몇 건 안전했는지 세.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KB_RANDOM_43",
+      "speaker": "김사장",
+      "text": "실적은 나중에 따라온다. 사고만 없으면.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KB_RANDOM_44",
+      "speaker": "김사장",
+      "text": "못 하겠으면 못 하겠다고 말해. 그게 더 도움 된다.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KB_RANDOM_45",
+      "speaker": "김사장",
+      "text": "나도 처음엔 상자 떨어뜨렸다. 여러 번.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KB_RANDOM_46",
+      "speaker": "김사장",
+      "text": "이 일 오래 하면 골목 지도가 머리에 박힌다.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KB_RANDOM_47",
+      "speaker": "김사장",
+      "text": "단골 생기면 그때부터 좀 편해져.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KB_RANDOM_48",
+      "speaker": "김사장",
+      "text": "늦으면 전화라도 해. 기다리는 사람 마음도 있으니까.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KB_RANDOM_49",
+      "speaker": "김사장",
+      "text": "무리해서 번 돈은 결국 병원비로 나간다.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "KB_RANDOM_50",
+      "speaker": "김사장",
+      "text": "오늘도 고생했다. 내일 보자.",
       "portraitId": ""
     }
   ]

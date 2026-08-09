@@ -570,17 +570,11 @@ namespace DontLate
                     text = Greetings[Random.Range(0, Greetings.Length)],
                 };
 
-            int index;
-            if (_randomTalkPool.avoidImmediateRepeat && lines.Length > 1 && _lastRandomTalkIndex >= 0)
-            {
-                index = Random.Range(0, lines.Length - 1);
-                if (index >= _lastRandomTalkIndex) index++;
-            }
-            else
-            {
-                index = Random.Range(0, lines.Length);
-            }
-
+            // S-224 — **순차 재생**(남규님 지시). 종전엔 무작위로 뽑고 직전 것만 피했는데,
+            // 50줄이 되면 무작위는 "아까 그 말 또 하네"가 금방 온다(생일 문제) — 순서대로 돌면
+            // 한 바퀴를 다 듣기 전엔 절대 반복되지 않는다. 작가가 순서로 흐름을 설계할 수도 있다.
+            // 풀 끝에 닿으면 처음으로 돌아간다.
+            int index = (_lastRandomTalkIndex + 1) % lines.Length;
             _lastRandomTalkIndex = index;
             RandomTalkLineData line = lines[index];
             if (line != null && !string.IsNullOrEmpty(line.text)) return line;

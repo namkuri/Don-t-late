@@ -5,8 +5,8 @@
   "displayName": "유지혜",
   "npcRole": "꽃집 주인",
   "trigger": "interact",
-  "selectionMode": "random_single",
-  "avoidImmediateRepeat": true,
+  "selectionMode": "sequential",
+  "avoidImmediateRepeat": false,
   "lines": [
     {
       "lineId": "YOO_JIHYE_RANDOM_01",
@@ -132,6 +132,180 @@
       "lineId": "YOO_JIHYE_RANDOM_21",
       "speaker": "유지혜",
       "text": "오늘도 무사히 끝내고 돌아오세요. 꼭이요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YJH_RANDOM_22",
+      "speaker": "유지혜",
+      "text": "오늘은 어제보다 표정이 좋아 보이세요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YJH_RANDOM_23",
+      "speaker": "유지혜",
+      "text": "이 계절엔 향이 진한 꽃이 잘 나가요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YJH_RANDOM_24",
+      "speaker": "유지혜",
+      "text": "꽃다발은 무게 중심을 잡아 안으면 덜 흔들려요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YJH_RANDOM_25",
+      "speaker": "유지혜",
+      "text": "배달 중에 꽃이 상하지 않게 세워서 실어주세요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YJH_RANDOM_26",
+      "speaker": "유지혜",
+      "text": "물통은 넘치지 않을 만큼만 채웠어요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YJH_RANDOM_27",
+      "speaker": "유지혜",
+      "text": "손이 차네요. 밖이 많이 추웠죠?",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YJH_RANDOM_28",
+      "speaker": "유지혜",
+      "text": "급하게 드시면 체해요. 조금만 천천히요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YJH_RANDOM_29",
+      "speaker": "유지혜",
+      "text": "저희 가게는 늦게까지 열어요. 언제든 들르세요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YJH_RANDOM_30",
+      "speaker": "유지혜",
+      "text": "시든 꽃도 말려두면 오래 볼 수 있어요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YJH_RANDOM_31",
+      "speaker": "유지혜",
+      "text": "향이 강한 건 좁은 방엔 안 어울려요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YJH_RANDOM_32",
+      "speaker": "유지혜",
+      "text": "받는 분이 알레르기가 있는지 물어보는 게 좋아요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YJH_RANDOM_33",
+      "speaker": "유지혜",
+      "text": "포장지 색은 계절을 따라가면 실패가 없어요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YJH_RANDOM_34",
+      "speaker": "유지혜",
+      "text": "리본은 조금 느슨하게 묶는 게 예뻐요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YJH_RANDOM_35",
+      "speaker": "유지혜",
+      "text": "사과할 때 주는 꽃은 화려하지 않은 게 나아요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YJH_RANDOM_36",
+      "speaker": "유지혜",
+      "text": "축하 자리엔 밝은 색이 좋고요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YJH_RANDOM_37",
+      "speaker": "유지혜",
+      "text": "요즘은 화분을 더 많이 찾으세요. 오래 가니까요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YJH_RANDOM_38",
+      "speaker": "유지혜",
+      "text": "이 화분은 물을 일주일에 한 번이면 충분해요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YJH_RANDOM_39",
+      "speaker": "유지혜",
+      "text": "잎이 노래지면 대개 물을 너무 많이 준 거예요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YJH_RANDOM_40",
+      "speaker": "유지혜",
+      "text": "저도 처음엔 다 죽였어요. 지금은 좀 나아졌고요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YJH_RANDOM_41",
+      "speaker": "유지혜",
+      "text": "실수해도 괜찮아요. 다음 계절이 또 오니까요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YJH_RANDOM_42",
+      "speaker": "유지혜",
+      "text": "오늘 배송 많으세요? 무리는 하지 마시고요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YJH_RANDOM_43",
+      "speaker": "유지혜",
+      "text": "헬멧은 꼭 쓰세요. 그거 하나가 크게 달라요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YJH_RANDOM_44",
+      "speaker": "유지혜",
+      "text": "어두워지면 밝은 옷이 안전해요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YJH_RANDOM_45",
+      "speaker": "유지혜",
+      "text": "비 오는 날엔 브레이크가 늦게 들어요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YJH_RANDOM_46",
+      "speaker": "유지혜",
+      "text": "저녁은 드셨어요? 안 드셨으면 뭐라도 사 드세요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YJH_RANDOM_47",
+      "speaker": "유지혜",
+      "text": "힘들 땐 힘들다고 말해도 돼요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YJH_RANDOM_48",
+      "speaker": "유지혜",
+      "text": "여기 꽃들도 매일 조금씩만 자라요. 사람도 그렇겠죠.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YJH_RANDOM_49",
+      "speaker": "유지혜",
+      "text": "가끔은 아무것도 안 사고 그냥 오셔도 돼요.",
+      "portraitId": ""
+    },
+    {
+      "lineId": "YJH_RANDOM_50",
+      "speaker": "유지혜",
+      "text": "오늘도 무사히요. 그거면 충분해요.",
       "portraitId": ""
     }
   ]
