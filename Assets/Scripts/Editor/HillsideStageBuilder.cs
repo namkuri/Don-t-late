@@ -108,7 +108,9 @@ namespace DontLate.EditorTools
             // S-206 — `retro_korean_house`는 빌더가 놓지 않는다(남규님 지시). 민지님 세트에
             // 같은 집이 이미 서 있는데(평이름 `retro_korean_house`), 빌더 사본은 `__gb_Deco_` 접두어가
             // 붙어 이름이 어긋나 자동 교체 규칙(S-188)에 걸리지 않았다 — 그래서 두 채가 겹쳐 섰다.
-            GreyboxStageBuilder.PlaceCatalog("red_korean_house", OnGround(70f, BACK_ROW_Z + 0.6f));
+            // S-207 — `red_korean_house`도 빌더가 놓지 않는다(남규님 지시). S-206에선 아트 사본이
+            // 빈 껍데기라 빌더판을 남겼는데, 남규님이 그 판단을 뒤집었다 — 날머리(x70)가 비더라도
+            // 겹쳐 서는 것보단 낫다. 채우는 건 아트 몫이다.
             GreyboxStageBuilder.PlaceCatalog("Pot_unity", OnGround(-11.5f, 2.4f));
             GreyboxStageBuilder.PlaceCatalog("black_Trash_unity", OnGround(4f, 2.4f));
             GreyboxStageBuilder.PlaceCatalog("bycle", OnGround(-4f, 2.4f), 15f);

@@ -6101,3 +6101,14 @@ MDA 판정 (D-070): **강화** — 중복 배치는 Z-파이팅·이중 콜라�
 수용기준: Hillside 재조립 후 씬 루트에 `__gb_Deco_red_korean_house` 0건 · 콘솔 에러 0.
 
 MDA 판정 (D-070): **강화** — 능선 데코 겹침 정리의 잔여분. 룩 결함을 남기지 않는다.
+
+### S-207 · 결과 2026-08-09 20:54 (셀프검증 3종 통과)
+
+[HillsideStageBuilder.cs](../../Assets/Scripts/Editor/HillsideStageBuilder.cs)에서
+`PlaceCatalog("red_korean_house", …)` 한 줄 철거. 재조립하면 `Clear`가 `__gb_` 접두어를 지우므로
+씬에 남아 있던 것도 함께 사라진다.
+
+관찰: 재조립 후 씬 루트 `red_korean` **0건** · 남은 빌더 데코는 `__gb_Deco_Pot_unity`·`__gb_Deco_bycle`
+둘뿐(총 루트 26 → 25) · 콘솔 에러·워닝 0 · Main 플레이 진입 정상.
+
+날머리 x70 자리가 비었다 — 채우는 건 아트 몫이다.
