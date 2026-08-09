@@ -425,8 +425,9 @@ namespace DontLate
 
         private WalkableVolume FindNearestWalkableVolume()
         {
-            WalkableVolume[] volumes = FindObjectsByType<WalkableVolume>(
-                FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            // 반입 시 정렬 인자 제거 — Unity 6.5에서 해당 오버로드가 폐기 경고(CS0618)를 낸다.
+            // 여기선 정렬이 필요 없다(아래에서 최단거리 하나만 고른다).
+            WalkableVolume[] volumes = FindObjectsByType<WalkableVolume>(FindObjectsInactive.Exclude);
             WalkableVolume nearest = null;
             float nearestDistance = float.MaxValue;
             Vector3 position = transform.position;

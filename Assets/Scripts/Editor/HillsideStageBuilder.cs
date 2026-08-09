@@ -68,6 +68,11 @@ namespace DontLate.EditorTools
             // 배경을 먼저 세우는 것 자체는 원래 규약이기도 하다(S-199 주석).
             ArtBackdropKit.Build(ArtBackdropKit.Hillside); // S-180 ② — 아트 세트 소켓(프리팹 없으면 무시)
             TuneUphill(scene);                            // 오르막을 지형으로 — 콜라이더 on + 수치
+
+            // S-212(정수님) — 산 아래 평지가 z −6에서 끔겨 화면 하단 40%가 하늘이었다.
+            // 세트 배치 뒤에 불러 아트판 바닥(세트의 __gb_BaseGround)의 머티리얼·바운즈를 이어 붙인다.
+            // ⚠ 호출 위치를 지형 절로 올렸다(S-214에서 배경 조립이 앞으로 이동) — 원래 자리엔 이제 세트가 없다.
+            GreyboxStageBuilder.ExtendGroundForward("BaseGround", -40f);
             Physics.SyncTransforms(); // 이 아래 배치는 전부 GroundY 레이캐스트에 의존한다
 
             // ── 달동네 판잣집 — S-206에서 **빌더 생산 중단**(남규님 지시). ──

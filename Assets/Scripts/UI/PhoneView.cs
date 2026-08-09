@@ -1520,9 +1520,12 @@ namespace DontLate
                 {
                     sb.Append(row).Append("  <color=#ff9f45>미상차</color>\n"); // 캠프에서 실어야 스폰된다
                     // S-072 ⑨ — 구역 표시 회귀 수리: 미상차 행에도 목적지 구역을 보여준다
-                    // (상차완료 행에만 있던 └ 서브라인이 미상차에선 빠져 있었다).
+                    // (상차완료 행에만 있던 서브라인이 미상차에선 빠져 있었다).
+                    // S-213 — 서브라인 머리글자는 ASCII 하이픈. 종전 `└`(U+2514)는 세 폰트·폴백
+                    // 어디에도 없어 두부(□)로 뜨고, 리스트가 갱신될 때마다 콘솔 경고가 재발했다
+                    // (S-193에서 괘선 `─`를 같은 이유로 걷어냈는데 이 두 줄이 남아 있었다).
                     if (!string.IsNullOrEmpty(d.District))
-                        sb.Append("<size=78%><color=#8a93a8>  └ ").Append(d.District).Append("</color></size>\n");
+                        sb.Append("<size=78%><color=#8a93a8>  - ").Append(d.District).Append("</color></size>\n");
                 }
                 else
                 {
@@ -1534,7 +1537,7 @@ namespace DontLate
                     if (_lastClockMinute >= 0)
                     {
                         int remain = Mathf.RoundToInt(d.DeadlineMinuteOfDay) - _lastClockMinute;
-                        sb.Append("<size=78%><color=#8a93a8>  └ ").Append(d.District).Append(" · ")
+                        sb.Append("<size=78%><color=#8a93a8>  - ").Append(d.District).Append(" · ") // S-213
                           .Append(remain >= 0 ? "남은 " + remain + "분" : "마감 지남").Append("</color></size>\n");
                     }
                 }

@@ -223,6 +223,7 @@ namespace DontLate
             Time.timeScale = 1f;
             IsOpen = false;
             _panel.SetActive(false);
+
             WorldSceneFlowManager.Instance.Request(GameScene.Home);
         }
 

@@ -1,11 +1,11 @@
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 namespace DontLate.EditorTools
 {
     /// <summary>
-    /// S-212 — 빌라촌 상주 NPC 3인(박말순·나아라·오지혜)을 **빌더 산출물로** 세운다.
+    /// S-215 — 빌라촌 상주 NPC 3인(박말순·나아라·오지혜)을 **빌더 산출물로** 세운다.
     ///
     /// 왜 이 파일이 생겼나: 민지님이 PR#57에서 이 셋을 `Village.unity` 본문에 손으로 배치했다.
     /// 그런데 씬 본문은 커밋하지 않는 것이 이 프로젝트의 규칙이고(D-061 — 빌더가 정본), 그래서
@@ -116,7 +116,7 @@ namespace DontLate.EditorTools
                         renderer.sharedMaterial = material;
                 }
 
-                // S-213 — 루트 모션은 끈다. `AlternatingNpcAnimation`이 런타임에도 끄지만,
+                // S-216 — 루트 모션은 끈다. `AlternatingNpcAnimation`이 런타임에도 끄지만,
                 // 씬에 켜진 채로 저장되면 인스펙터를 열어 본 사람이 원인을 여기서 찾게 된다.
                 Animator animator = instance.GetComponentInChildren<Animator>(true);
                 if (animator != null) animator.applyRootMotion = false;
@@ -125,7 +125,7 @@ namespace DontLate.EditorTools
                 // SerializedObject 주입은 저장 시 오브젝트 참조가 {fileID: 0}으로 날아갈 수 있다
                 // (2026-07-20 실수→규칙) — 리플렉션으로 직접 넣는다.
                 GreyboxStageBuilder.SetReference(animation, "_target", instance);
-                // S-213 — 아바타를 명시 주입한다. 모델 FBX가 Humanoid면 인스턴스의 Animator가
+                // S-216 — 아바타를 명시 주입한다. 모델 FBX가 Humanoid면 인스턴스의 Animator가
                 // 이미 물고 있지만, 비어 있으면 `AlternatingNpcAnimation`이 경고만 남기고
                 // **조용히 아무 것도 안 한다**(스크립트 47행). 인스펙터에서 비어 보이는 것도
                 // 남규님이 지적한 증상이라 값을 눈에 보이게 채워 둔다.
@@ -141,7 +141,7 @@ namespace DontLate.EditorTools
                 built++;
             }
 
-            Debug.Log("[빌라촌NPC] 상주 NPC " + built + "/" + Cast.Length + "인 배치 (S-212 — 민지님 손배치를 코드로 복원).");
+            Debug.Log("[빌라촌NPC] 상주 NPC " + built + "/" + Cast.Length + "인 배치 (S-215 — 민지님 손배치를 코드로 복원).");
         }
 
         private static bool IsCastName(string name)
@@ -155,7 +155,7 @@ namespace DontLate.EditorTools
         /// FBX 안의 애니메이션 클립을 꺼낸다. 서브에셋이라 `LoadAssetAtPath`로는 안 잡히고,
         /// 미리보기용 `__preview__` 클립이 섞여 나오므로 걸러 낸다.
         /// </summary>
-        /// <summary>모델 FBX가 만든 Avatar 서브에셋. 리그가 Generic이면 없다(S-213 전 상태).</summary>
+        /// <summary>모델 FBX가 만든 Avatar 서브에셋. 리그가 Generic이면 없다(S-216 전 상태).</summary>
         private static Avatar LoadAvatar(string modelPath)
         {
             foreach (Object asset in AssetDatabase.LoadAllAssetsAtPath(modelPath))
