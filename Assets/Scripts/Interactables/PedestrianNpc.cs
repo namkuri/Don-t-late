@@ -93,7 +93,11 @@ namespace DontLate
         public void SetMovementAllowed(bool allowed)
         {
             if (!_movementConfigured) return;
+            bool opening = allowed && !_movementEnabled;
             _movementEnabled = allowed;
+            // S-220 — 걸음이 열리는 순간 몸을 진행 방향으로 맞춘다. 구경·대화로 다른 데를 보다가
+            // 그대로 출발하면 옆으로·뒤로 걷는다. "걸어갈 땐 걸어가는 방향을 본다"의 두 번째 관문.
+            if (opening && _watchTimer <= 0f && !_interactionDialogueActive) Face();
         }
 
         internal void Configure(bool movementEnabled, TextAsset randomTalkSource, Sprite npcInfoBackground)
@@ -192,7 +196,12 @@ namespace DontLate
             {
                 _watchTimer -= Time.deltaTime;
                 LookAtWatched();
-                if (_watchTimer <= 0f && _movementEnabled) Face(); // 다시 갈 길 간다
+                // S-220 — 구경이 끝나면 **무조건** 진행 방향으로 되돌린다.
+                // 종전엔 `&& _movementEnabled`가 붙어 있어, S-217의 클립 게이트가 닫힌 구간
+                // (제자리 동작 중)에 구경이 끝나면 이 복귀가 통째로 건너뛰어졌다 — 플레이어를 본 채
+                // 굳었다가 다음 걷기 구간에 그 방향 그대로 전진해 **문워크**가 됐다(남규님 관찰).
+                // 걷지 않는 NPC라도 몸을 제자리로 돌려놓는 게 맞다.
+                if (_watchTimer <= 0f) Face(); // 다시 갈 길 간다
                 return;
             }
 
