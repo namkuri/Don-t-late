@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.Animations;
+using UnityEngine.Playables;
 
 namespace DontLate
 {
@@ -19,6 +21,8 @@ namespace DontLate
         [SerializeField] private GameStateSO _gameState;
         [SerializeField] private Renderer _bodyRenderer;
         [SerializeField] private Material _highlightMaterial;
+        [SerializeField] private Animator _animator;
+        [SerializeField] private AnimationClip _walkClip;
         private Material _normalMaterial;
         [Tooltip("교차 도로 신호등 (S-076 ② — 비면 무신호 씬).")]
         [SerializeField] private TrafficLight _signal;
@@ -44,6 +48,9 @@ namespace DontLate
         private float _senseTimer;    // 주변 감지 주기
         private Transform _watched;
         private readonly Collider[] _senseHits = new Collider[8];
+        private PlayableGraph _walkGraph;
+        private AnimationClipPlayable _walkPlayable;
+        private Vector3 _lastAnimationPosition;
 
         private void Start()
         {
@@ -52,7 +59,40 @@ namespace DontLate
             _direction = Random.value < 0.5f ? 1 : -1;
             // 같은 씬 행인들이 발맞추지 않게 시작 위상 분산.
             transform.position += Vector3.right * Random.Range(-_patrolHalf * 0.5f, _patrolHalf * 0.5f);
+            _lastAnimationPosition = transform.position;
+            InitializeWalkAnimation();
             Face();
+        }
+
+        private void LateUpdate()
+        {
+            if (!_walkPlayable.IsValid()) return;
+
+            bool moved = (transform.position - _lastAnimationPosition).sqrMagnitude > 0.000001f;
+            _walkPlayable.SetSpeed(moved ? 1d : 0d);
+            _lastAnimationPosition = transform.position;
+
+            if (moved && _walkClip.length > 0f && _walkPlayable.GetTime() >= _walkClip.length)
+                _walkPlayable.SetTime(_walkPlayable.GetTime() % _walkClip.length);
+        }
+
+        private void OnDestroy()
+        {
+            if (_walkGraph.IsValid()) _walkGraph.Destroy();
+        }
+
+        private void InitializeWalkAnimation()
+        {
+            if (_animator == null || _walkClip == null) return;
+
+            _walkGraph = PlayableGraph.Create(name + "_Walk");
+            _walkGraph.SetTimeUpdateMode(DirectorUpdateMode.GameTime);
+            _walkPlayable = AnimationClipPlayable.Create(_walkGraph, _walkClip);
+            _walkPlayable.SetApplyFootIK(true);
+            _walkPlayable.SetSpeed(0d);
+            AnimationPlayableOutput output = AnimationPlayableOutput.Create(_walkGraph, "Walk", _animator);
+            output.SetSourcePlayable(_walkPlayable);
+            _walkGraph.Play();
         }
 
         private void Update()

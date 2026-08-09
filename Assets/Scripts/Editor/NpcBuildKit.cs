@@ -1,5 +1,7 @@
 ﻿using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace DontLate.EditorTools
 {
@@ -11,6 +13,20 @@ namespace DontLate.EditorTools
     {
         private const string NPC_INFO_SPRITE_PATH = "Assets/Art/UI/npc_info.png";
         private const string DIALOGUE_DIR = "Assets/Data/Dialogue";
+        private const string DUMMY_NPC_MODEL_PATH = "Assets/Art/Characters/dummy/dummynpc.fbx";
+        private const string DUMMY_NPC_WALK_PATH = "Assets/Art/Characters/dummy/dummy_npc_walking.fbx";
+        private const string DUMMY_WALKER_NAME = "__gb_Walker_A";
+
+        private static readonly string[] DummyWalkerScenePaths =
+        {
+            "Assets/Scenes/Apartment.unity",
+            "Assets/Scenes/Camp.unity",
+            "Assets/Scenes/FoodStreet.unity",
+            "Assets/Scenes/District.unity",
+            "Assets/Scenes/Hillside.unity",
+            "Assets/Scenes/Main.unity",
+            "Assets/Scenes/Village.unity",
+        };
 
         /// <summary>캡슐 몸통 + 머리 피규어. 반환 GO에 컴포넌트를 붙여 쓴다. 콜라이더는 호출부 몫.</summary>
         internal static (GameObject go, Renderer body) BuildFigure(
@@ -131,6 +147,10 @@ namespace DontLate.EditorTools
             TrafficLight signal = null, float roadX = 0f, string npcId = null, GameStateSO gameState = null)
         {
             var (go, bodyRenderer) = BuildFigure(name, position, "NpcWalker_" + name, color, 1.7f);
+            Animator walkerAnimator = null;
+            AnimationClip walkClip = null;
+            if (name == DUMMY_WALKER_NAME)
+                TryApplyDummyWalkerVisual(go, out bodyRenderer, out walkerAnimator, out walkClip);
 
             // S-076 ② — 차 피격 감지용 몸통 트리거 + 키네마틱 RB (플레이어는 통과 유지 — 트리거라 밀지 않음).
             BoxCollider hitBox = go.AddComponent<BoxCollider>();
@@ -155,9 +175,118 @@ namespace DontLate.EditorTools
             serialized.FindProperty("_bodyRenderer").objectReferenceValue = bodyRenderer;
             serialized.FindProperty("_highlightMaterial").objectReferenceValue =
                 GreyboxStageBuilder.GetOrCreateHighlightMaterial();
+            serialized.FindProperty("_animator").objectReferenceValue = walkerAnimator;
+            serialized.FindProperty("_walkClip").objectReferenceValue = walkClip;
             serialized.ApplyModifiedPropertiesWithoutUndo();
 
             AttachNameLabel(go, npcId, name); // S-120 — 근접 이름표
+        }
+
+        [MenuItem("Tools/DontLate/Apply Dummy Walker A Visual")]
+        public static void ApplyDummyWalkerAVisual()
+        {
+            int changed = 0;
+            foreach (string scenePath in DummyWalkerScenePaths)
+            {
+                Scene scene = SceneManager.GetSceneByPath(scenePath);
+                bool wasLoaded = scene.IsValid() && scene.isLoaded;
+                if (!wasLoaded) scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Additive);
+                bool sceneChanged = false;
+                foreach (GameObject root in scene.GetRootGameObjects())
+                {
+                    Transform[] transforms = root.GetComponentsInChildren<Transform>(true);
+                    foreach (Transform candidate in transforms)
+                    {
+                        if (candidate.name != DUMMY_WALKER_NAME) continue;
+
+                        PedestrianNpc npc = candidate.GetComponent<PedestrianNpc>();
+                        if (npc == null) continue;
+                        if (!TryApplyDummyWalkerVisual(candidate.gameObject,
+                            out Renderer bodyRenderer, out Animator animator, out AnimationClip walkClip)) continue;
+
+                        SerializedObject serialized = new SerializedObject(npc);
+                        serialized.FindProperty("_bodyRenderer").objectReferenceValue = bodyRenderer;
+                        serialized.FindProperty("_animator").objectReferenceValue = animator;
+                        serialized.FindProperty("_walkClip").objectReferenceValue = walkClip;
+                        serialized.ApplyModifiedPropertiesWithoutUndo();
+                        EditorUtility.SetDirty(npc);
+                        sceneChanged = true;
+                        changed++;
+                    }
+                }
+
+                if (sceneChanged) EditorSceneManager.SaveScene(scene);
+                if (!wasLoaded) EditorSceneManager.CloseScene(scene, true);
+            }
+
+            AssetDatabase.SaveAssets();
+            Debug.Log($"[NpcBuildKit] Dummy Walker A visual applied to {changed} scene object(s).");
+        }
+
+        private static bool TryApplyDummyWalkerVisual(GameObject root, out Renderer bodyRenderer,
+            out Animator animator, out AnimationClip walkClip)
+        {
+            bodyRenderer = null;
+            animator = null;
+            walkClip = FindWalkClip();
+            GameObject model = AssetDatabase.LoadAssetAtPath<GameObject>(DUMMY_NPC_MODEL_PATH);
+            if (model == null || walkClip == null)
+            {
+                Debug.LogError("[NpcBuildKit] Dummy NPC model or walk clip is missing.", root);
+                return false;
+            }
+
+            Transform oldVisual = root.transform.Find("DummyNpcVisual");
+            if (oldVisual != null) Object.DestroyImmediate(oldVisual.gameObject);
+            Transform body = root.transform.Find("Body");
+            if (body != null) Object.DestroyImmediate(body.gameObject);
+            Transform head = root.transform.Find("Head");
+            if (head != null) Object.DestroyImmediate(head.gameObject);
+
+            GameObject visual = PrefabUtility.InstantiatePrefab(model, root.scene) as GameObject;
+            if (visual == null) return false;
+            visual.name = "DummyNpcVisual";
+            visual.transform.SetParent(root.transform, false);
+            visual.transform.localPosition = Vector3.zero;
+            visual.transform.localRotation = Quaternion.identity;
+            visual.transform.localScale = Vector3.one;
+
+            Renderer[] renderers = visual.GetComponentsInChildren<Renderer>(true);
+            if (renderers.Length == 0)
+            {
+                Object.DestroyImmediate(visual);
+                Debug.LogError("[NpcBuildKit] Dummy NPC model has no renderer.", root);
+                return false;
+            }
+
+            Bounds bounds = renderers[0].bounds;
+            for (int i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
+            if (bounds.size.y > 0.001f)
+                visual.transform.localScale = Vector3.one * (1.7f / bounds.size.y);
+
+            bounds = renderers[0].bounds;
+            for (int i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
+            visual.transform.position += Vector3.up * (root.transform.position.y - bounds.min.y);
+
+            bodyRenderer = renderers[0];
+            animator = visual.GetComponentInChildren<Animator>(true);
+            if (animator == null)
+            {
+                animator = visual.AddComponent<Animator>();
+                Object[] modelAssets = AssetDatabase.LoadAllAssetsAtPath(DUMMY_NPC_MODEL_PATH);
+                foreach (Object asset in modelAssets)
+                    if (asset is Avatar avatar) { animator.avatar = avatar; break; }
+            }
+            animator.applyRootMotion = false;
+            return true;
+        }
+
+        private static AnimationClip FindWalkClip()
+        {
+            Object[] assets = AssetDatabase.LoadAllAssetsAtPath(DUMMY_NPC_WALK_PATH);
+            foreach (Object asset in assets)
+                if (asset is AnimationClip clip && !clip.name.StartsWith("__preview__")) return clip;
+            return null;
         }
 
         /// <summary>S-120 — 근접 이름표 부착: 이름은 NpcSO(Data/Npcs/npc_&lt;id&gt;)의 displayName,
