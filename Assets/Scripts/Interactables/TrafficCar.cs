@@ -14,6 +14,12 @@ namespace DontLate
         private float _stopLineZ;
         private static float _lastHitTime = -10f; // 다중 히트 방지 (전 차량 공유)
 
+        // S-166 ⑥ — 남규님 "3배 더 크게". 수평만 3배로 키운다 — 수직까지 3배면 22.5로
+        // 지붕 높이까지 솟아 만화가 되고, 착지 전 낙사 안전망(FALL_LIMIT_Y)에 걸릴 수 있다.
+        // S-210 — 행인도 **같은 상수를 쓴다**. "플레이어와 동일한 넉백"이 발주 문구였으니
+        // 값을 복사해 두 벌로 두면 다음에 한쪽만 손질돼 어긋난다.
+        private const float KNOCKBACK_GAIN = 3f;
+
         public void Launch(float velocityZ, float halfSpan, TrafficLight signal = null, float stopLineZ = 4.5f)
         {
             _velocityZ = velocityZ;
@@ -39,14 +45,19 @@ namespace DontLate
 
         private void OnTriggerEnter(Collider other)
         {
-            // S-076 ② — 행인 피격: 그 자리에서 사라진다 (씬 재입장 시 복귀 — 씬 오브젝트 리로드).
+            // S-076 ② → **S-210에서 뒤집힘**: 행인은 죽지 않는다(남규님 지시).
+            // 종전엔 `Destroy`라 씬을 다시 들어오기 전까지 그 행인이 영영 사라졌다 — 거리가 비어 가고
+            // 소셜·호감도 대상까지 같이 없어졌다. 이제 플레이어와 **같은 규격의 넉백**만 준다.
             PedestrianNpc pedestrian = other.GetComponentInParent<PedestrianNpc>();
             if (pedestrian != null)
             {
-                if (DistrictCaptureDemo.SuppressTrafficAccidents) return; // S-122 ⑯ — 촬영 중 행인 소멸·크래시 SFX 금지
-                Debug.Log("[교통사고] 행인이 차에 치였다 — 소멸 (씬 재입장 시 복귀).");
+                if (DistrictCaptureDemo.SuppressTrafficAccidents) return; // S-122 ⑯ — 촬영 중 사고 연출 금지
+                Debug.Log("[교통사고] 행인이 차에 치였다 — 날아감(죽지 않는다).");
                 WorldAudioManager.Instance?.PlayCarCrashSfx();
-                Destroy(pedestrian.gameObject);
+                pedestrian.ApplyKnockback(new Vector3(
+                    Random.Range(-2.5f, 2.5f) * KNOCKBACK_GAIN,
+                    9f,
+                    Mathf.Sign(_velocityZ) * 5.5f * KNOCKBACK_GAIN));
                 return;
             }
 
@@ -71,9 +82,6 @@ namespace DontLate
             if (player.Status.IsCarrying) player.Status.ReleaseCarry(dropAsPhysics: true); // 승격분
 
             // S-066 ③ — 사람이 날아간다 + 끼익!쿵! (클립 소켓 비면 무음 — AU-020).
-            // S-166 ⑥ — 남규님 "3배 더 크게". 수평만 3배로 키운다 — 수직까지 3배면 22.5로
-            // 지붕 높이까지 솟아 만화가 되고, 착지 전 낙사 안전망(FALL_LIMIT_Y)에 걸릴 수 있다.
-            const float KNOCKBACK_GAIN = 3f;
             player.Locomotion.ApplyKnockback(new Vector3(
                 Random.Range(-2.5f, 2.5f) * KNOCKBACK_GAIN,
                 9f,

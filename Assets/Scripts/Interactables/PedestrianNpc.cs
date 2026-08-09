@@ -57,6 +57,8 @@ namespace DontLate
 
         private void Update()
         {
+            if (_flying) { FlyStep(); return; } // S-210 — 날아가는 동안엔 배회·감지 전부 정지
+
             // S-076 ② — 뛰는 플레이어 구경: 걸음을 멈추고 그쪽을 바라본다.
             // S-081 후속(R31b) — 좌우 스냅이 아니라 실제 플레이어 방향으로 (눈을 마주친다).
             if (_watchTimer > 0f)
@@ -133,6 +135,55 @@ namespace DontLate
                 _pauseTimer = Random.Range(0.8f, 2.4f); // 끝에서 잠깐 두리번
                 Face();
             }
+        }
+
+        // ── S-210 — 차 사고: 죽는 대신 날아간다 ─────────────────────────────
+        // 종전엔 TrafficCar가 행인을 `Destroy` 했다(씬 재입장 전까지 영영 소멸). 남규님 지시로
+        // **절대 죽지 않게** 바꾼다 — 사고의 코미디는 남기고 세계는 보존한다.
+        // 값은 플레이어 넉백과 같은 규격: 수평은 18u/s²로 감쇠, 수직은 중력에 맡긴다
+        // (PlayerLocomotionManager.ApplyKnockback + Update 감쇠와 같은 식).
+        // 플레이어는 CharacterController가 밀어 주지만 행인은 트랜스폼으로 걷는 물건이라
+        // 같은 식을 여기서 직접 적분한다 — 이 한 마리 때문에 CC를 붙이는 건 과하다.
+        private bool _flying;
+        private Vector3 _knockback;
+        private float _verticalVelocity;
+        private float _landingY;
+        private const float KNOCK_DECAY = 18f;   // 플레이어와 동일
+        private const float GRAVITY = -22f;      // 튜닝 SO를 참조하지 않는다 — 행인은 튜닝 대상이 아니다
+
+        /// <summary>차에 치였다. 이미 날고 있으면 무시 — 같은 차에 매 프레임 재발사되는 걸 막는다.</summary>
+        public void ApplyKnockback(Vector3 impulse)
+        {
+            if (_flying) return;
+            _flying = true;
+            _landingY = transform.position.y; // 맞은 자리의 지면 높이로 되돌아온다(언덕 대응)
+            _knockback = new Vector3(impulse.x, 0f, impulse.z);
+            _verticalVelocity = impulse.y;
+        }
+
+        private void FlyStep()
+        {
+            _knockback = Vector3.MoveTowards(_knockback, Vector3.zero, KNOCK_DECAY * Time.deltaTime);
+            _verticalVelocity += GRAVITY * Time.deltaTime;
+
+            Vector3 next = transform.position
+                + (_knockback + Vector3.up * _verticalVelocity) * Time.deltaTime;
+
+            if (_verticalVelocity < 0f && next.y <= _landingY)
+            {
+                next.y = _landingY;
+                transform.position = next;
+                _flying = false;
+                _knockback = Vector3.zero;
+                _verticalVelocity = 0f;
+                _sideStep = 0f;      // 원래 레인으로 되돌아가며 걷는다(Update의 옆걸음 복귀가 처리)
+                _blockedTime = 0f;
+                _pauseTimer = 0.8f;  // 잠깐 정신 차리고
+                Face();
+                return;
+            }
+
+            transform.position = next;
         }
 
         /// <summary>
