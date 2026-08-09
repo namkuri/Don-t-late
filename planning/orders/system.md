@@ -6279,3 +6279,30 @@ MDA 판정 (D-070): **강화** — 밤 조명은 낮밤 전환이 이 프로젝�
   테스트 부산물이지 산출물 결함이 아니다).
 - 캡처: `Screenshots/bug_village_night_lamps_off.png`(수정 전 · 8/8 소등) ·
   `Screenshots/s208_village_night_lit.png`(수정 후 · 광추 8개 점등, Day 1 23:09).
+
+## S-212 · 발주 2026-08-09 22:32 → ClaudeCode (Apartment·Hillside 지면 깊이 확장)
+
+요구 (남규님 원문): "Village 씬처럼 ground 깔면 될 것 같다."
+
+감사 근거 (S-211 후속 야간 점검 · Play 실측): Apartment·Hillside는 낮·밤 모두 **화면 하단 40~60%가
+하늘**로 뜬다 — 무대가 공중에 떠 있는 것으로 읽힌다. 원인은 지면이 없는 게 아니라 **z(깊이) 방향으로만
+안 깔린 것**:
+
+| 씬 | 지면 | z 범위 |
+|---|---|---|
+| Village(정상) | `Ground` Plane scale(12,1,**8**) | z −40~40 (80u) |
+| Hillside | `BaseGround` Plane scale(12,1,**1.2**) — HillsideStageBuilder.cs:58 | z −6~6 |
+| Apartment | `YardGround`/`LobbyGround` size z=**6** — ApartmentStageBuilder.cs:40·47 | z −3~3 |
+
+카메라는 z −40에서 8~12° 내려본다. 지면이 z −6에서 끊기니 그 앞은 전부 하늘이 된다.
+
+수용기준:
+- Apartment·Hillside 낮/밤 캡처에서 **화면 하단 하늘 노출 0** (Village 프레이밍과 동등).
+- 확장은 **카메라 쪽(−z)으로만** — Apartment `BackWall`(z 3.1)·Hillside 능선 뒤 아트 세트를 뚫지 않는다.
+- Hillside는 들머리·정상·날머리 3지점 캡처로 판정. 경사 구간이 평면 확장으로 안 메워지면 **별건 보고**
+  (이번 발주에서 지형을 새로 만들지 않는다 — YAGNI).
+- 지면 레이어는 기존대로 `LAYER_GROUND` 유지(적설·발자국 판정 경로 불변) · 콘솔 에러·워닝 0.
+- 커밋은 빌더 `.cs` 2파일만. 씬 본문은 각 PC에서 `DontLate/Build/...` 재조립(D-061 경계).
+
+MDA 판정 (D-070): **강화(미학)** — "늦지마"의 무대는 서울 거리의 실재감이 자산인데, 떠 있는 슬래브는
+그 환상을 깬다. 역학·역학균형은 불변(걷기 볼륨·충돌 미변경).
