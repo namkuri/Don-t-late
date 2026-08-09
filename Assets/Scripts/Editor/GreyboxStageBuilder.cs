@@ -134,6 +134,15 @@ namespace DontLate.EditorTools
         /// 다음 재조립 때 새 바운즈로 다시 계산된다.
         ///
         /// 뒤(+z)로는 절대 늘리지 않는다 — 뒷벽·능선 뒤 실루엣 자리를 침범한다.
+        ///
+        /// S-212 보정 — **한 장으로 통째 깐다(남규님 "Village처럼 큼지막한 Ground")**.
+        /// 처음엔 원본 앞(z −40 ~ 원본 앞끝)만 채웠는데, 좌우 여유를 준 x 구간에서는 그 뒤쪽
+        /// (원본이 없는 z −3~3)이 빈 채로 남아 **왼쪽에 계단 같은 구멍**이 보였다(남규님 지적).
+        /// 그래서 판을 원본 **뒤끝까지** 통으로 깔고, 대신 **아트판보다 살짝 아래**에 둔다 —
+        /// 겹치는 구간은 아트판이 위에서 이겨 룩이 유지되고(면이 어긋나 z파이팅도 없다),
+        /// 아트판이 없는 구간은 이 판이 받친다. 씬당 1장이 아니라 **바닥 오브젝트당 1장**인 이유는
+        /// 머티리얼 때문이다: 마당(회색)과 로비(아트 아스팔트)는 서로 다른 바닥이라 한 장으로 묶으면
+        /// 둘 중 하나의 룩이 사라진다.
         /// </summary>
         /// <param name="objectName">__gb_ 접두어를 뺀 바닥 오브젝트 이름 (예: "YardGround")</param>
         /// <param name="frontZ">여기까지 채운다. 카메라(z −40) 앞을 덮으려면 −40 근방.</param>
@@ -151,19 +160,23 @@ namespace DontLate.EditorTools
             if (!source.TryGetComponent(out Renderer renderer)) return null;
 
             Bounds bounds = renderer.bounds;
-            float gap = bounds.min.z - frontZ;
-            if (gap <= 0.01f) return null; // 이미 카메라 앞까지 깔려 있다
+            if (bounds.min.z - frontZ <= 0.01f) return null; // 이미 카메라 앞까지 깔려 있다
 
-            // 두께는 최소 0.1u — 원본이 Plane(두께 0)이어도 z파이팅 없이 윗면이 맞물리게 한다.
-            float height = Mathf.Max(0.1f, bounds.size.y);
+            // 아트판 아래로 얼마나 내릴지. 0이면 윗면이 같은 높이가 되어 겹치는 구간에서 z파이팅이 난다.
+            const float SINK = 0.05f;
+
+            float depth = bounds.max.z - frontZ;               // 원본 뒤끝까지 통으로
+            float height = Mathf.Max(0.1f, bounds.size.y);     // 원본이 Plane(두께 0)이어도 실체를 준다
             float minX = bounds.min.x - padMinX;
             float maxX = bounds.max.x + padMaxX;
-            GameObject front = CreatePrimitive(PrimitiveType.Cube, objectName + "_Front",
-                new Vector3((minX + maxX) * 0.5f, bounds.max.y - height * 0.5f, frontZ + gap * 0.5f));
-            front.transform.localScale = new Vector3(maxX - minX, height, gap);
-            front.GetComponent<Renderer>().sharedMaterial = renderer.sharedMaterial;
-            front.layer = LAYER_GROUND; // 원본과 같은 면 — 적설·발자국 판정 경로 유지
-            return front;
+            GameObject slab = CreatePrimitive(PrimitiveType.Cube, objectName + "_Front",
+                new Vector3((minX + maxX) * 0.5f,
+                            bounds.max.y - SINK - height * 0.5f,
+                            frontZ + depth * 0.5f));
+            slab.transform.localScale = new Vector3(maxX - minX, height, depth);
+            slab.GetComponent<Renderer>().sharedMaterial = renderer.sharedMaterial;
+            slab.layer = LAYER_GROUND; // 원본과 같은 면 — 적설·발자국 판정 경로 유지
+            return slab;
         }
 
         private static void BuildManagers(GameStateSO gameState, TuningConfigSO tuning)
