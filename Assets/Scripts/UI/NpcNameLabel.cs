@@ -29,6 +29,19 @@ namespace DontLate
         private TMP_Text _affinityLabel;
         private TMP_Text _interactionLabel;
 
+        internal void Configure(string displayName, GameStateSO gameState, string npcId, Sprite backgroundSprite)
+        {
+            _displayName = displayName;
+            _gameState = gameState;
+            _npcId = npcId;
+            _backgroundSprite = backgroundSprite;
+        }
+
+        internal void ShowDialogueInfo()
+        {
+            Show(true);
+        }
+
         public void Show(bool on)
         {
             if (!on)

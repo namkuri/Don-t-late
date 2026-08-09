@@ -12417,6 +12417,7 @@ MonoBehaviour:
   _secondDuration: 3
   _usePedestrianMovement: 0
   _randomTalkPool: {fileID: 4900000, guid: 26e4e08773ec4cf795a92414cfb50418, type: 3}
+  _npcInfoBackground: {fileID: 21300000, guid: e7284e8957d30834aa9ee73174f071ca, type: 3}
 --- !u!114 &900000000000004
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12437,6 +12438,7 @@ MonoBehaviour:
   _secondDuration: 3
   _usePedestrianMovement: 1
   _randomTalkPool: {fileID: 4900000, guid: d220f9e8641f49dcb4c38ea4e139a671, type: 3}
+  _npcInfoBackground: {fileID: 21300000, guid: e7284e8957d30834aa9ee73174f071ca, type: 3}
 --- !u!114 &900000000000007
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12457,6 +12459,7 @@ MonoBehaviour:
   _secondDuration: 3
   _usePedestrianMovement: 1
   _randomTalkPool: {fileID: 4900000, guid: 2b4923fbd2b24df1a97234cc5d22ef89, type: 3}
+  _npcInfoBackground: {fileID: 21300000, guid: e7284e8957d30834aa9ee73174f071ca, type: 3}
 --- !u!1 &900000000000005 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 542b2628deff82743b9d54b7007f056d, type: 3}

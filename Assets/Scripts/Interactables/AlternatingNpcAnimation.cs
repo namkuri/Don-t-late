@@ -16,6 +16,7 @@ namespace DontLate
         [SerializeField, Min(0.1f)] private float _secondDuration = 3f;
         [SerializeField] private bool _usePedestrianMovement;
         [SerializeField] private TextAsset _randomTalkPool;
+        [SerializeField] private Sprite _npcInfoBackground;
 
         private PlayableGraph _graph;
         private AnimationMixerPlayable _mixer;
@@ -33,7 +34,7 @@ namespace DontLate
             {
                 PedestrianNpc pedestrian = _target.GetComponent<PedestrianNpc>();
                 if (pedestrian == null) pedestrian = _target.AddComponent<PedestrianNpc>();
-                pedestrian.Configure(_usePedestrianMovement, _randomTalkPool);
+                pedestrian.Configure(_usePedestrianMovement, _randomTalkPool, _npcInfoBackground);
                 if (_usePedestrianMovement) pedestrian.CenterTurnsOnVisuals();
             }
 

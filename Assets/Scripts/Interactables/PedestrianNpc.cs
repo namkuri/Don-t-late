@@ -47,6 +47,8 @@ namespace DontLate
         private float _watchTimer;    // 뛰는 플레이어 바라보기
         private float _senseTimer;    // 주변 감지 주기
         private Transform _watched;
+        private bool _interactionDialogueActive;
+        private Quaternion _rotationBeforeInteraction;
         private readonly Collider[] _senseHits = new Collider[8];
         private PlayableGraph _walkGraph;
         private AnimationClipPlayable _walkPlayable;
@@ -55,6 +57,8 @@ namespace DontLate
         private bool _movementEnabled = true;
         private WalkableVolume _walkableVolume;
         private TextAsset _randomTalkSource;
+        private Sprite _npcInfoBackground;
+        private NpcNameLabel _npcInfoLabel;
         private RandomTalkPoolData _randomTalkPool;
         private bool _randomTalkLoaded;
         private int _lastRandomTalkIndex = -1;
@@ -78,10 +82,11 @@ namespace DontLate
 
         internal void CenterTurnsOnVisuals() => _centerTurnsOnVisuals = true;
 
-        internal void Configure(bool movementEnabled, TextAsset randomTalkSource)
+        internal void Configure(bool movementEnabled, TextAsset randomTalkSource, Sprite npcInfoBackground)
         {
             _movementEnabled = movementEnabled;
             _randomTalkSource = randomTalkSource;
+            _npcInfoBackground = npcInfoBackground;
             EnsureRandomTalkLoaded();
             EnsureInteractionPhysics();
         }
@@ -146,19 +151,29 @@ namespace DontLate
 
         private void Update()
         {
+            if (_interactionDialogueActive)
+            {
+                WorldDialogueManager manager = WorldDialogueManager.Instance;
+                if (manager != null && manager.IsPlaying)
+                {
+                    ShowNpcInfo();
+                    LookAtWatched();
+                    return;
+                }
+
+                _interactionDialogueActive = false;
+                _watched = null;
+                if (_npcInfoLabel != null) _npcInfoLabel.Show(false);
+                if (_movementEnabled) Face();
+                else transform.rotation = _rotationBeforeInteraction;
+            }
+
             // S-076 ② — 뛰는 플레이어 구경: 걸음을 멈추고 그쪽을 바라본다.
             // S-081 후속(R31b) — 좌우 스냅이 아니라 실제 플레이어 방향으로 (눈을 마주친다).
             if (_watchTimer > 0f)
             {
                 _watchTimer -= Time.deltaTime;
-                if (_watched != null)
-                {
-                    Vector3 look = _watched.position - transform.position;
-                    look.y = 0f;
-                    if (look.sqrMagnitude > 0.01f)
-                        transform.rotation = Quaternion.Slerp(transform.rotation,
-                            Quaternion.LookRotation(look), Time.deltaTime * 10f);
-                }
+                LookAtWatched();
                 if (_watchTimer <= 0f && _movementEnabled) Face(); // 다시 갈 길 간다
                 return;
             }
@@ -318,13 +333,18 @@ namespace DontLate
         private void Face()
         {
             Quaternion facing = Quaternion.Euler(0f, _direction > 0 ? 90f : -90f, 0f);
+            SetRotationAroundVisualCenter(facing);
+        }
+
+        private void SetRotationAroundVisualCenter(Quaternion rotation)
+        {
             if (!_centerTurnsOnVisuals || !TryGetVisualCenter(out Vector3 centerBefore))
             {
-                transform.rotation = facing;
+                transform.rotation = rotation;
                 return;
             }
 
-            transform.rotation = facing;
+            transform.rotation = rotation;
             if (!TryGetVisualCenter(out Vector3 centerAfter)) return;
 
             Vector3 correction = centerBefore - centerAfter;
@@ -392,6 +412,9 @@ namespace DontLate
 
         public void Interact(PlayerContext ctx)
         {
+            if (ctx?.Player != null && ctx.Player.GameState != null)
+                _gameState = ctx.Player.GameState;
+
             // S-123 ⑤ — 가방에 꽃이 있으면 선물이 인사를 대신한다(호감도 큰 폭 상승).
             // 가방에서 직접 소모하는 이유: BagItemConsumed 이벤트는 음료 마시기가 같이 듣고 있어
             // "주기"와 "마시기"가 충돌한다(정적 이벤트는 취소 불가).
@@ -408,11 +431,15 @@ namespace DontLate
             }
 
             _watched = ctx.Transform;
-            _watchTimer = 2f; // 잠시 멈춰 바라본다
+            _rotationBeforeInteraction = transform.rotation;
             if (_gameState != null && !string.IsNullOrEmpty(_npcId))
                 NpcAffinityLedger.Meet(_gameState, _npcId);
             RandomTalkLineData line = GetRandomTalkLine();
-            if (!ShowInteractionDialogue(line)) ShowGreeting(line.text);
+            if (!ShowInteractionDialogue(line))
+            {
+                _watchTimer = 2f;
+                ShowGreeting(line.text);
+            }
         }
 
         private RandomTalkLineData GetRandomTalkLine()
@@ -469,8 +496,35 @@ namespace DontLate
                 : line.speaker;
             dialogueLine.text = line.text;
             dialogueLine.portrait = null;
+            _interactionDialogueActive = true;
+            _watchTimer = 0f;
+            ShowNpcInfo();
             manager.PlayScenario(_interactionScenario);
             return true;
+        }
+
+        private void ShowNpcInfo()
+        {
+            if (_npcInfoLabel == null)
+            {
+                _npcInfoLabel = GetComponent<NpcNameLabel>();
+                if (_npcInfoLabel == null) _npcInfoLabel = gameObject.AddComponent<NpcNameLabel>();
+            }
+
+            string displayName = _randomTalkPool?.displayName;
+            if (string.IsNullOrEmpty(displayName)) displayName = gameObject.name;
+            _npcInfoLabel.Configure(displayName, _gameState, _npcId, _npcInfoBackground);
+            _npcInfoLabel.ShowDialogueInfo();
+        }
+
+        private void LookAtWatched()
+        {
+            if (_watched == null) return;
+            Vector3 look = _watched.position - transform.position;
+            look.y = 0f;
+            if (look.sqrMagnitude > 0.01f)
+                SetRotationAroundVisualCenter(Quaternion.Slerp(transform.rotation,
+                    Quaternion.LookRotation(look), Time.deltaTime * 10f));
         }
 
         private void EnsureRandomTalkLoaded()
