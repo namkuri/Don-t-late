@@ -299,8 +299,10 @@ Suno 프롬프트로 직접 생성 → 공장이 반입·트림·배선.
 | `Rain on the Window.wav` | Rain(낮) | 152.9s → 148.6s | 아웃트로 페이드아웃 4.1s 트림 + 컷엣지 15ms 마이크로페이드 (AU-025) |
 | `Neon Snowfall.wav` | Snow(밤) | 84.2s → 82.4s | 아웃트로 페이드 1.8s 트림 |
 | `Daylight Snowfall.wav` | Snow(낮) | 52.8s → 49.3s | 아웃트로 페이드아웃 3.5s 트림 + 컷엣지 15ms 마이크로페이드 (AU-026) |
-| `Midnight Heatwave.wav` | Heat | 60.1s → 59.9s | 미세 트림(거의 플랫) |
-| `Sodium Fog.wav` | Fog | 65.2s → 65.2s | 트림 불요(플랫) |
+| `Heatwave Afternoon.wav` | Heat(낮) | 60.1s → 59.9s | 미세 트림(거의 플랫) · **원제 `Midnight Heatwave`** (AU-032 개명) |
+| `Heatwave Night Drive.wav` | Heat(밤) | 86.1s → 82.5s | 아웃트로 페이드아웃 3.6s 트림 + 컷엣지 15ms 마이크로페이드 (AU-032) · **원제 `Sunny Afternoon Drive`** |
+| `Pale White Haze.wav` | Fog(낮) | 149.6s → 143.5s | 아웃트로 페이드아웃 6.1s 트림 + 컷엣지 15ms 마이크로페이드 (AU-032) · 원제 유지 |
+| `Sodium Fog.wav` | Fog(밤) | 65.2s → 65.2s | 트림 불요(플랫) |
 
 - **트림 이유**: Suno 곡은 앞뒤 페이드가 붙어 루프하면 이음새에서 음량이 꺼진다. 바디 RMS(-17dB) 대비
   -5dB 아래 앞뒤 램프를 잘라 풀레벨 경계로 만들고(scratchpad `trim_bgm.py`), 컷 엣지 15ms 마이크로페이드(클릭 방지).
@@ -311,7 +313,13 @@ Suno 프롬프트로 직접 생성 → 공장이 반입·트림·배선.
   2곡. `WorldAudioManager`가 `_phase`(Evening·Night→밤곡, else→낮곡) 참조로 선택하고 `DayPhaseChanged`에서도
   재평가 → 비 오는 중 낮↔밤 전환 시 곡이 크로스페이드로 교체된다. 폭염·안개는 여전히 낮밤 공용 1곡.
 - **눈도 낮/밤 분리 (AU-026 · 2026-08-01)**: Snow는 `_bgmSnowDay`(Daylight Snowfall)/`_bgmSnowNight`(Neon Snowfall)
-  2곡. 비와 동일 로직(`_phase` 참조 + `DayPhaseChanged` 재평가). 폭염·안개만 낮밤 공용 1곡 잔존.
+  2곡. 비와 동일 로직(`_phase` 참조 + `DayPhaseChanged` 재평가).
+- **폭염·안개도 낮/밤 분리 (AU-032 · 2026-08-08)**: Heat는 `_bgmHeatDay`(Heatwave Afternoon)/
+  `_bgmHeatNight`(Heatwave Night Drive), Fog는 `_bgmFogDay`(Pale White Haze)/`_bgmFogNight`(Sodium Fog).
+  이로써 **곡이 있는 날씨 4종 전부 시간대 분리 완료** — 남은 것은 Storm(곡 없음, 시간대 슬롯 유지).
+  - **개명 2건**: 신곡 원제 `Sunny Afternoon Drive`가 실제로는 **밤** 곡이고(Director 청취 판정),
+    분리하면 `Midnight Heatwave`가 **낮** 곡이 되어 둘 다 이름이 역할과 반대가 됐다. 이름 교환(덮어쓰기)
+    대신 충돌 없는 새 이름 2개로 정리했고 원제는 이 표에 병기해 라이선스 추적선을 유지한다.
 - 라우드니스: 4곡 rms -16.6~-17.2dB(Suno 자체 정규화 일관) · peak -3.2~-3.8dB. 정규화 불요.
 
 ## sfx_footstep 교체 (걷는 소리 재생성) — ElevenLabs · 2026-07-28

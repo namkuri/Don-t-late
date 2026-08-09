@@ -257,8 +257,10 @@ namespace DontLate.EditorTools
             SetField(audio, "_bgmRainDay", LoadBgm("Rain on the Window"));         // AU-025 비·낮
             SetField(audio, "_bgmSnowNight", LoadBgm("Neon Snowfall"));           // AU-026 눈·밤(원제)
             SetField(audio, "_bgmSnowDay", LoadBgm("Daylight Snowfall"));          // AU-026 눈·낮
-            SetField(audio, "_bgmHeat", LoadBgm("Midnight Heatwave"));
-            SetField(audio, "_bgmFog", LoadBgm("Sodium Fog"));
+            SetField(audio, "_bgmHeatDay", LoadBgm("Heatwave Afternoon"));         // AU-032 폭염·낮(구 Midnight Heatwave)
+            SetField(audio, "_bgmHeatNight", LoadBgm("Heatwave Night Drive"));     // AU-032 폭염·밤
+            SetField(audio, "_bgmFogDay", LoadBgm("Pale White Haze"));             // AU-032 안개·낮
+            SetField(audio, "_bgmFogNight", LoadBgm("Sodium Fog"));                // AU-032 안개·밤(원제)
             SetField(audio, "_gameState", AssetDatabase.LoadAssetAtPath<GameStateSO>(DATA_ROOT + "/GameState.asset"));
 
             // 태양은 Core 소유(D-021 교정) — 콘텐츠 씬은 자체 Directional Light를 두지 않는다.
