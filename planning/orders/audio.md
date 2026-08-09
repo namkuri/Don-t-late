@@ -1329,3 +1329,48 @@ Storm 유지 중 낮↔밤 전환 시 곡 교체 · Rain↔Storm 전환 시 곡 
 
 MDA 판정 (D-070): **강화** — 날씨 BGM 공백 1건 소멸. 코드 1행·에셋 0·예산 0으로 태풍의 음향 무드가
 평상시곡에서 우천곡으로 교정된다. 코어루프 불변.
+
+### 결과 (AU-033) · 2026-08-09 (정수 공장 · 리드 ~15분 · feature/jjs-au033-storm-bgm, base=feature/jjs-au032-heat-fog-bgm)
+
+수정 3파일 · **코드 1행 추가** · 신규 에셋 0 · 예산 증가 0.
+
+**관찰 (Play 실측)** — 타이틀 게이트를 내리고(`_titleScene=false`·`_bgmReleased=true`) production 경로로 구동.
+
+| # | 날씨/phase | 실제 재생 `_active.clip` | `_active.time` |
+|---|---|---|---|
+| ① | Storm / Day | **Rain on the Window** (비 낮곡) | 2.7s |
+| ② | Storm / Night | **Neon Rain** (비 밤곡) | 2.8s |
+| ③ | Rain / Night | Neon Rain | 7.9s |
+| ④ | Storm / Night | Neon Rain | **12.9s** |
+| ⑤ | Clear / Day | Sunlit_Seoul_Afternoon (시간대 슬롯 복귀) | 2.4s |
+| ⑥ | Storm / Evening | Neon Rain (Evening=밤곡) | 2.5s |
+
+- ①→② **태풍 유지 중 낮↔밤 전환 시 곡 교체** 확인.
+- ③→④ **Rain↔Storm 전환에서 `time`이 7.9s→12.9s로 계속 흐른다** = 같은 클립이라 `wb != _weatherBgm`이
+  거짓 → `ApplySlot` 미호출 → **재시작·크로스페이드 없이 이어진다**(수용기준 명시 항목). 날씨만 바뀌고
+  음악은 끊기지 않는 것이 의도한 동작이다.
+- ⑤ 날씨 해제 시 시간대 슬롯 복귀 — 무회귀.
+
+**기존 4날씨 무회귀 (전수 재확인)**
+
+| 날씨 | 낮 | 밤 |
+|---|---|---|
+| Rain | Rain on the Window | Neon Rain |
+| Snow | Daylight Snowfall | Neon Snowfall |
+| Heat | Heatwave Afternoon | Heatwave Night Drive |
+| Fog | Pale White Haze | Sodium Fog |
+| Cloudy | Seoul_Alley_Reflection (곡 없음 → 시간대 슬롯) | — |
+
+**셀프검증 3종**
+- `editor refresh --compile` → 컴파일 **0에러 0워닝**
+- `console --type error,warning` → **0건** (Play 중·종료 후 모두)
+- `editor play --wait` → 위 ①~⑥ + 무회귀 표 실측
+- EditMode **90/90** (failed 0 · skipped 0)
+
+**예산**: 신규 파일 0 → 오디오 합계 13,461 KB **불변**. AU-032 대비 증가분 0.
+
+**경계 준수**: 씬 본문 미커밋 · 배선 변경 0(`_bgmRainDay/Night`는 이미 물려 있어 Core 재빌드 불요) ·
+CREDITS 표에 추가되는 행 없음(신규 음원 0 = 라이선스 변동 0).
+
+**잔여**: 날씨 BGM 공백 **0건**. Storm 전용곡은 폐기가 아니라 보류 — AU-024 프롬프트 초안이 유효하고,
+곡이 생기면 `WorldAudioManager`의 Storm 1행을 `_bgmStormDay/Night`로 바꾸고 빌더에 2행 추가하면 된다.

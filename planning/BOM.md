@@ -165,7 +165,7 @@
 | bgm_weather_snow | 눈 무드 BGM | 낮/밤 2곡 · 49.3s/82.4s | **Suno(Director)** | **2곡 확정** — `Daylight Snowfall`(낮)·`Neon Snowfall`(밤) · AU-026 |
 | bgm_weather_heat | 폭염 무드 BGM | 낮/밤 2곡 · 59.9s/82.5s | **Suno(Director)** | **2곡 확정** — `Heatwave Afternoon`(낮)·`Heatwave Night Drive`(밤) · AU-032 |
 | bgm_weather_fog | 안개 무드 BGM | 낮/밤 2곡 · 143.5s/65.2s | **Suno(Director)** | **2곡 확정** — `Pale White Haze`(낮)·`Sodium Fog`(밤) · AU-032 |
-| bgm_weather_storm | 태풍 무드 BGM | 낮밤 공용 1곡 | **Suno(Director)** | **0곡 — 공백**. 빈 슬롯이면 시간대 슬롯이 그대로 이어진다 (프롬프트 초안 = AU-024) |
+| bgm_weather_storm | 태풍 무드 BGM | 비 곡 공유(낮/밤 2곡) | — (전용곡 0) | **전용곡 없음 → 비 곡 재사용** (AU-033). 태풍·비는 먹구름 색·천둥 코드까지 공유하고 차이는 강풍뿐이라 무드 축이 같다. 전용곡 프롬프트 초안(AU-024)은 유효 — 곡이 생기면 `_bgmStormDay/Night`로 1행 교체 |
 
 - **BgmLibrary SO를 거치지 않는다** — 날씨 곡은 `WorldAudioManager`의 `_bgmXxxDay/_bgmXxxNight` 필드에
   직접 배선되고, 그 배선의 정본은 `CoreSceneBuilder`다. 따라서 **스왑 계약 = 파일명**(`LoadBgm("…")` 문자열)이며

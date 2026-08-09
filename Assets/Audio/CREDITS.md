@@ -316,10 +316,14 @@ Suno 프롬프트로 직접 생성 → 공장이 반입·트림·배선.
   2곡. 비와 동일 로직(`_phase` 참조 + `DayPhaseChanged` 재평가).
 - **폭염·안개도 낮/밤 분리 (AU-032 · 2026-08-08)**: Heat는 `_bgmHeatDay`(Heatwave Afternoon)/
   `_bgmHeatNight`(Heatwave Night Drive), Fog는 `_bgmFogDay`(Pale White Haze)/`_bgmFogNight`(Sodium Fog).
-  이로써 **곡이 있는 날씨 4종 전부 시간대 분리 완료** — 남은 것은 Storm(곡 없음, 시간대 슬롯 유지).
+  이로써 **곡이 있는 날씨 4종 전부 시간대 분리 완료**.
   - **개명 2건**: 신곡 원제 `Sunny Afternoon Drive`가 실제로는 **밤** 곡이고(Director 청취 판정),
     분리하면 `Midnight Heatwave`가 **낮** 곡이 되어 둘 다 이름이 역할과 반대가 됐다. 이름 교환(덮어쓰기)
     대신 충돌 없는 새 이름 2개로 정리했고 원제는 이 표에 병기해 라이선스 추적선을 유지한다.
+- **태풍은 비 곡을 공유 (AU-033 · 2026-08-09)**: Storm 전용곡은 없고 `_bgmRainDay`/`_bgmRainNight`를
+  그대로 쓴다 — **신규 파일·라이선스 변동 0**(위 표에 추가되는 행 없음). 근거는 태풍과 비가 먹구름 색·
+  천둥 연출(`stormy = Rain || Storm`)까지 공유하고 차이가 강풍뿐이라는 것. 비 곡이 낮/밤 2곡이라
+  태풍도 곡 추가 없이 시간대가 갈린다. 전용곡(AU-024 프롬프트 초안)이 생기면 그때 슬롯만 갈아끼운다.
 - 라우드니스: 4곡 rms -16.6~-17.2dB(Suno 자체 정규화 일관) · peak -3.2~-3.8dB. 정규화 불요.
 
 ## sfx_footstep 교체 (걷는 소리 재생성) — ElevenLabs · 2026-07-28
