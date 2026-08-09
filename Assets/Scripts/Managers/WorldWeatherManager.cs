@@ -824,12 +824,11 @@ namespace DontLate
             Camera camera = Camera.main;
             if (camera == null) yield break;
 
-            // S-208 — 타이틀판은 **굵고 진하게, 그리고 화면 안에서**.
-            // 태풍 규격(폭 0.13u·알파 0.55)을 그대로 띄워 봤더니 스폰·렌더는 되는데(포인트 116개,
-            // isVisible=True) 캡처에서 아예 안 보였다 — 저해상 렌더를 거치면 2px짜리 반투명 선이라
-            // 하늘색 배경에 묻힌다. 비 오는 날엔 "있는 듯 마는 듯"이 맞지만, 심심한 첫 화면을 채우려면
-            // 보여야 한다. 스폰 지점도 26u → 17u로 당겨 비행의 대부분이 화면 안에서 벌어지게 한다
+            // S-208 — 타이틀판은 **화면 안에서, 조금 더 또렷하게**.
+            // 스폰 지점을 26u → 17u로 당겨 비행의 대부분이 화면 안에서 벌어지게 한다
             // (카메라 가시폭이 x −14~14라 26u 밖에서 출발하면 앞부분을 화면 밖에서 다 써 버린다).
+            // 높이대도 하늘·건물 위(3.2~7.5u)로 올려 잡는다 — 낮게 깔리면 도로·간판에 묻힌다.
+            // 폭은 S-209에서 태풍과 같은 값으로 되돌렸다(아래 참조). 알파만 조금 높다.
             bool titleMode = _titleScene && Weather != WeatherType.Storm;
 
             GameObject head = new GameObject("WindRibbon");
@@ -849,12 +848,12 @@ namespace DontLate
             trail.time = titleMode ? 1.25f : 0.85f;
             trail.minVertexDistance = 0.05f;
             trail.numCapVertices = 4;
-            // 폭 배수 8 = 최대 1.04u. 2.6배(0.34u)·4배(0.52u)는 캡처에서 아예 안 잡혔다 —
-            // 저해상 렌더를 4배로 다시 키우는 파이프라인이라 얇은 반투명 선은 중간에서 뭉개진다.
-            // 붉게 칠해 폭 1.35u로 키운 대조군이 또렷하게 잡히는 걸 확인하고 그 아래로 잡았다.
-            float width = titleMode ? 8f : 1f;
+            // S-209 — **폭은 태풍과 같은 값으로 되돌린다(남규님 지시).**
+            // S-208에서 8배(1.04u)까지 키웠던 근거는 "검증 캡처에 안 잡힌다"였는데, 남규님이
+            // 실제 화면에서 보고 굵다고 판정했다. 판정 주체는 사람이다 — 캡처가 못 잡는 것을
+            // 근거로 수치를 키운 게 과교정이었다. 캡처 판정은 "있다/없다"까지만 믿는다.
             trail.widthCurve = new AnimationCurve(
-                new Keyframe(0f, 0.02f * width), new Keyframe(0.25f, 0.13f * width), new Keyframe(1f, 0.015f * width));
+                new Keyframe(0f, 0.02f), new Keyframe(0.25f, 0.13f), new Keyframe(1f, 0.015f));
             trail.startColor = new Color(1f, 1f, 1f, titleMode ? 0.9f : 0.55f);
             // 꼬리 알파: 태풍은 0(완전 소멸)이지만 타이틀은 0.2를 남긴다 — 0으로 두면 리본 길이의
             // 대부분이 사실상 투명이라 "지나갔다"는 인상만 남고 형태가 안 읽힌다.
