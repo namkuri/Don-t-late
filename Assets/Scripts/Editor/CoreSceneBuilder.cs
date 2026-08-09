@@ -919,6 +919,34 @@ namespace DontLate.EditorTools
 
         // ── 가방 캔버스 (S-064) ──────────────────────────────
 
+        /// <summary>
+        /// S-205 — 가방 슬롯 호버 안내('[좌클릭] 사용')를 보장한다(멱등).
+        /// 가방 UI는 **아트 프리팹 경로와 코드 폴백 경로 둘**이라 한쪽에만 넣으면 조용히 빠진다 —
+        /// 실제로 쓰이는 건 프리팹 쪽이었다. 두 경로가 같은 것을 쓰도록 헬퍼로 뺀다.
+        /// 붙일 곳은 패널 하단 가운데. 평소엔 꺼져 있고 슬롯에 마우스를 올릴 때만 켜진다.
+        /// </summary>
+        private static void EnsureBagHoverHint(BagView view, Transform parent)
+        {
+            if (view == null || parent == null) return;
+
+            Transform existing = parent.Find("HoverHint");
+            TMP_Text hint = existing != null ? existing.GetComponent<TMP_Text>() : null;
+            if (hint == null)
+            {
+                TMP_FontAsset hintFont = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FONT_PATH);
+                hint = CreateText(parent, "HoverHint", "[좌클릭] 사용", hintFont, 24f,
+                    new Color(0.86f, 0.90f, 0.97f, 1f), TextAlignmentOptions.Center);
+            }
+
+            RectTransform rect = hint.rectTransform;
+            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0f);
+            rect.sizeDelta = new Vector2(420f, 34f);
+            rect.anchoredPosition = new Vector2(0f, 14f);
+            hint.gameObject.SetActive(false); // 호버할 때만 보인다
+
+            SetField(view, "_hoverHint", hint);
+        }
+
         private static BagView BuildBagCanvas(GameStateSO gameState)
         {
             GameObject inventoryPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(INVENTORY_UI_PREFAB_PATH);
@@ -928,6 +956,9 @@ namespace DontLate.EditorTools
                 instance.name = "BagCanvas";
                 BagView prefabView = instance.GetComponent<BagView>();
                 SetField(prefabView, "_gameState", gameState);
+                // S-205 — 아트 프리팹 경로에도 호버 안내를 얹는다. 이 분기가 **실제로 쓰이는 쪽**이라
+                // 아래 코드 폴백에만 넣었다가 안내가 안 뜬다(실측 — HoverHint 오브젝트 자체가 없었다).
+                EnsureBagHoverHint(prefabView, instance.transform);
                 EditorUtility.SetDirty(prefabView);
                 return prefabView;
             }
@@ -1094,13 +1125,14 @@ namespace DontLate.EditorTools
                 return b;
             }
 
-            Button useButton = MakeContextButton("UseButton", "사용", -10f, new Color(0.21f, 0.55f, 0.50f, 1f));
+            Button useButton = MakeContextButton("UseButton", "손에 들기", -10f, new Color(0.21f, 0.55f, 0.50f, 1f));
             Button dropButton = MakeContextButton("DropButton", "버리기", -62f, new Color(0.55f, 0.30f, 0.28f, 1f));
 
             SetField(view, "_panel", panel.gameObject);
             SetField(view, "_contextMenu", context);
             SetField(view, "_useButton", useButton);
             SetField(view, "_dropButton", dropButton);
+            EnsureBagHoverHint(view, panel.transform); // S-205
             EditorUtility.SetDirty(view);
             panel.gameObject.SetActive(false);
             context.SetActive(false);
