@@ -286,7 +286,7 @@
 | ui_bag_hud | 가방 5칸·상단 HUD·게이지 세그먼트 (S-063~064·088) | code | BagView·HUDView | ✅ |
 | scn_apartment / scn_hillside | 아파트·언덕 씬 무대 (S-038·049) | build | Scenes/ (빌더 정본) | ✅ |
 | web_pixelate_guard | 픽셀레이트 웹 퀄리티 고정+가속 안내 배너 템플릿 (S-077·085) | build | WebGLTemplates/DontLate | ✅ |
-| sfx_fanfare / sfx_thunder | 팡파레·천둥 소켓 (AU-021·022 — 클립 정수님 진행) | audio | Audio/SFX (스왑 계약) | 🔶 소켓만 |
+| sfx_fanfare / sfx_thunder | 팡파레·천둥 (AU-021·022) | audio | Audio/SFX (스왑 계약) | ✅ 클립 도착·배선 완료 — 상세 §15.2 |
 
 - **동결 선언(Q2)**: 본 문서 v0.4를 동결한다. 이후 신규 실물은 부록 append(직교 추가)만 허용,
   기존 행 수정은 사람 게이트. 미해소 잔여: 아트 스왑 대기(A-002~007)·오디오 클립 2종 — 소켓 계약으로 흡수됨.
@@ -306,3 +306,28 @@
   - 환경음 4: amb_foodalley·villatown·weather_heat·weather_rain·weather_snow (5파일 — heat/rain/snow는 날씨 v2)
 - 처분: 위 목록이 곧 BOM 등재(부록 append — 동결 원문 무수정). 개별 행 분해는 불요 —
   트리거 매핑은 각 시스템 발주 결과(planning/orders/system.md)가 정본.
+
+### §15.2 오디오 클립 5종 등재 (2026-08-08 · AU-029 — §15.1 이후 도착분)
+
+> §15.1(2026-07-29) 감사 시점 실물 36종 → 현재 **41종**. 차이 5종이 이 표다.
+> 그중 2종(fanfare·thunder)은 §15.1이 "클립 대기 — 설계대로 미존재"로 적었던 소켓이며, 이후 도착했다.
+> 위 §15 표 `sfx_fanfare / sfx_thunder` 행의 `🔶 소켓만` 표기를 이 등재에 맞춰 갱신했다
+> (동결 문서 기존 행 수정 — **남규님 승인이 게이트**, 2026-08-08 "①②③ 다 진행해줘").
+
+| bom_id | 트리거 (실코드 위치) | 소리 | 발주 | 상태 |
+|---|---|---|---|---|
+| sfx_car_crash | `TrafficCar.cs:48·81` → `PlayCarCrashSfx()` | 끼익!! 쿵! (차량 충돌·치임) | AU-020 (S-066 ③) | ✅ 도착·배선 |
+| sfx_thunder | `WorldWeatherManager.cs:992` → `PlayThunderSfx()` | 천둥 (태풍 날씨 간헐) | AU-022 (S-088 ⑥) | ✅ 도착·배선 |
+| sfx_fanfare | `SettlementView.cs:147` → `PlayFanfareSfx()` | 개척 해금 팡파레 (없으면 `sfx_settle_ok` 폴백) | AU-021 (S-086) | ✅ 도착·배선 |
+| sfx_level_up | `WorldEvents.PlayerLeveledUp` 구독 → `OnPlayerLeveledUp` | 상승 3음 칩튠 아르페지오 (0.569s) | AU-027 | ✅ 도착·배선 |
+| sfx_tutorial_step | `TutorialMissionCardView.cs:79` → `PlayTutorialStepSfx()` | 튜토리얼 단계 성공 확인음 | AU-028 (S-162) | ✅ 도착·배선 |
+
+- 소켓 주입은 전부 `CoreSceneBuilder.cs` `LoadSfx(...)` 라인 (각 221·222·228·251·252행). 클립 부재 시 무음 폴백.
+- 3자 정합 실측(2026-08-08): 5종 전부 `Assets/Audio/SFX/` 실파일 + git 등재 + `Assets/Audio/CREDITS.md` +
+  `assets_manifest.md` LICENSE 표에 존재 — 결손 0.
+- **등재 위치가 §8이 아니라 부록인 이유**: §8 SFX 표는 v0.4 동결 대상이고, §15.1이 미등재 23종을
+  개별 행 분해 없이 부록에 모은 선례를 세웠다("개별 행 분해는 불요 — 트리거 매핑은 각 시스템 발주 결과가 정본").
+  같은 처분을 따른다. 단 §15.1과 달리 이 5종은 **트리거를 실코드 위치로 명시**했다 —
+  AU-027 결과에서 "파일만 넣으면 울린다"가 거짓(빌더 주입 라인 누락으로 영구 무음)으로 드러났기 때문이다.
+- **이 등재로 풀리는 것**: 파이프라인 `intake`/`promote` 게이트가 bom_id를 찾는다.
+  AU-020·021·022·027·028이 전부 수동 후공정으로 우회했던 원인이 여기였다.

@@ -1,0 +1,88 @@
+{
+  "chunks": [
+    {
+      "text": "[Intro]",
+      "duration_ms": 12000,
+      "positive_styles": [
+        "104 BPM",
+        "cinematic opening",
+        "glossy synth pads",
+        "soft driving synth bass",
+        "ambient street soundscape",
+        "gated reverb snare tail",
+        "nostalgic retrograde atmosphere"
+      ],
+      "negative_styles": [
+        "vocals",
+        "jazz",
+        "acoustic guitar"
+      ],
+      "context_adherence": "high",
+      "conditioning_ref": null,
+      "condition_strength": null
+    },
+    {
+      "text": "[Theme Build]",
+      "duration_ms": 16000,
+      "positive_styles": [
+        "104 BPM",
+        "punchy analog synths",
+        "driving synth bass",
+        "bright arpeggiated synth",
+        "retro 80s drum machine groove",
+        "tempo sync delay",
+        "minor key progression"
+      ],
+      "negative_styles": [
+        "vocals",
+        "jazz",
+        "acoustic guitar"
+      ],
+      "context_adherence": "high",
+      "conditioning_ref": null,
+      "condition_strength": null
+    },
+    {
+      "text": "[Main Theme]",
+      "duration_ms": 20000,
+      "positive_styles": [
+        "104 BPM",
+        "catchy synth hook",
+        "retrowave lead synthesizer",
+        "heavy gated reverb drum machine",
+        "warm analog synth pads",
+        "driving sixteenth-note bassline",
+        "high energy retro feel"
+      ],
+      "negative_styles": [
+        "vocals",
+        "jazz",
+        "acoustic guitar"
+      ],
+      "context_adherence": "high",
+      "conditioning_ref": null,
+      "condition_strength": null
+    },
+    {
+      "text": "[Outro]",
+      "duration_ms": 12000,
+      "positive_styles": [
+        "104 BPM",
+        "fading drum machine groove",
+        "lingering glossy pads",
+        "slow filter sweep on bass",
+        "ambient rain soundscape fadeout",
+        "melancholic analog chords",
+        "retro synth decay"
+      ],
+      "negative_styles": [
+        "vocals",
+        "jazz",
+        "acoustic guitar"
+      ],
+      "context_adherence": "high",
+      "conditioning_ref": null,
+      "condition_strength": null
+    }
+  ]
+}

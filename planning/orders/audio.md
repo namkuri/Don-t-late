@@ -962,3 +962,238 @@ MDA 판정 (D-070): 강화 — AU-025와 동형, 날씨 몰입을 시간대 축�
 - 라이선스: CREDITS.md + assets_manifest.md LICENSE 표 등재(2026-08-05).
 - **잔여(관제)**: BOM §8 SFX 행 `sfx_level_up` 추가 — 정수는 CREDITS+manifest만(AU-011 선례).
   미등재라 파이프라인 `intake`/`promote` 게이트가 막혀 수동 후공정 경로로 진행했다.
+
+## AU-029 · 발주 2026-08-08 03:20 → 정수 공장 (BOM §8 SFX 5행 등재 · stale 표기 수정)
+
+요구 (남규님 지시): 개선 후보 정리 ③ — **BOM §8 미등재 5행 처리 위임 승인**.
+종전까지 이 항목은 대장에 "잔여(관제)"로 기록돼 공장이 손댈 수 없었다. 본 발주로 위임이 성립한다.
+
+배경 (실측): AU-020·021·022·027·028 결과 블록에 **"잔여(관제): BOM §8 SFX 행 추가"가 5회 반복
+기입**돼 있고 전부 미처리다. 미등재의 실비용은 문서 위생이 아니라 공정이다 —
+파이프라인 `intake`/`promote` 게이트가 bom_id를 못 찾아 막히고, 그래서 최근 SFX 5건이 전부
+**수동 후공정 우회 경로**로 나갔다(AU-027·028 결과에 명시).
+
+작업:
+1. `planning/BOM.md` §8 SFX 표에 5행 추가 — `sfx_car_crash` · `sfx_thunder` · `sfx_fanfare` ·
+   `sfx_tutorial_step` · `sfx_level_up`. 트리거 이벤트·용도·상태를 기존 행 형식에 맞춘다.
+2. `BOM.md:289` stale 수정 — `sfx_fanfare / sfx_thunder`가 `🔶 소켓만`으로 남아 있다.
+   두 클립 모두 main 도달 완료(AU-021·AU-022)이므로 실제 상태로 갱신.
+3. 표기 근거는 각 AU 결과 블록의 실측값(길이·채널·포맷)과 `Assets/Audio/SFX/` 실파일.
+
+수용기준: 5행이 §8 표에 존재 · 289행 stale 소멸 · 각 행의 bom_id가 실파일명과 정확히 일치 ·
+`Assets/Audio/CREDITS.md`·`assets_manifest.md`와 3자 정합
+
+MDA 판정 (D-070): **무관** — 재미 축 무기여. 공정 위생이다. 착수 근거는 위 "수동 우회 5회"라는
+누적 낭비이며, 방치하면 다음 SFX도 같은 우회를 반복한다.
+
+## AU-030 · 발주 2026-08-08 03:20 → 정수 공장 (WebGL 오디오 예산 재검토)
+
+요구 (남규님 지시): 개선 후보 정리 ② 승인.
+
+배경 (실측): 배포본 data **94.8MB** (S-136 · 2026-08-03 · Brotli+탄젠트 제거로 114.9→94.8 감축).
+저장소 원본은 BGM 14곡 **277MB** · SFX **27MB**. 임포트는 `AudioImportPostprocessor`가
+Vorbis 모노, `BGM_QUALITY=0.26` / `SFX_QUALITY=0.40`, BGM은 Compressed In Memory
+(Streaming 금지 — D-040, WebGL 미지원).
+
+조사·시공 3축:
+1. **중복본 실사용 확인** — `Pixel_Night_Funk_Don-T-Late.wav`(36MB)와 `_NoVocal.wav`(36MB)가
+   양쪽 다 `BgmLibrary` 슬롯에 물려 있는지. 한쪽만 쓰인다면 미사용본은 빌드에서 빠지는지 실측
+   (SO 미참조 에셋은 빌드 제외되므로 **먼저 확인하고, 빠진다면 손대지 않는다**).
+2. **루프 트림** — 곡별 실길이 측정. 인게임에서 루프로만 쓰이는 곡의 꼬리 여백은 이미
+   AU-025/026에서 다룬 기법(stdlib `wave` — `audioop`은 py3.13 제거됨)으로 처리 가능.
+   ⚠ 음악적 구간을 잘라내는 것은 **감각 판정**이므로 Director 청취 없이 확정하지 않는다.
+3. **비트레이트 A/B** — `BGM_QUALITY` 0.26 → 0.22 청감 비교. 차이가 안 들리면 채택.
+
+수용기준: 빌드 data 크기 **감축분을 실측 수치로 제시**(감축 전/후 MB) · 청감 열화 없음
+(Director 판정 필요분은 후보만 제시하고 대기) · 임포트 콘솔 0 · WebGL 제약(Streaming 금지) 불변
+
+⚠ 경계: **빌드·배포 자체는 관제 게이트**(gh-pages push 권한). 공장은 설정·에셋 변경과
+에디터 로컬 빌드 실측까지. 재배포는 별건.
+
+MDA 판정 (D-070): **무관** — 재미 3축 무기여. 다만 심사 동선이 웹 링크 1개라 로딩이 곧 첫 인상이고,
+현재 배포본은 **S-136 이후 70커밋(S-137~S-205) 미반영 구본**이다. 재배포가 언젠가 필요하므로
+그 전에 예산을 줄여 두는 순서다.
+
+### 결과 (AU-029) · 2026-08-08 03:24 (정수 공장 · 리드 ~4분 · feature/jjs-s206-au029-au030, base=main)
+
+수정 1파일 (`planning/BOM.md`). 코드·에셋 변경 0.
+
+**① 5종 등재** — `§15.2 오디오 클립 5종 등재` 신설. bom_id·트리거 실코드 위치·소리·발주번호·상태 5열.
+트리거는 문서를 믿지 않고 코드에서 직접 확인했다:
+
+| bom_id | 실측 트리거 |
+|---|---|
+| sfx_car_crash | `TrafficCar.cs:48·81` → `PlayCarCrashSfx()` |
+| sfx_thunder | `WorldWeatherManager.cs:992` → `PlayThunderSfx()` |
+| sfx_fanfare | `SettlementView.cs:147` → `PlayFanfareSfx()` (클립 null이면 `sfx_settle_ok` 폴백) |
+| sfx_level_up | `WorldEvents.PlayerLeveledUp` 구독 → `OnPlayerLeveledUp` (`WorldAudioManager.cs:231·436`) |
+| sfx_tutorial_step | `TutorialMissionCardView.cs:79` → `PlayTutorialStepSfx()` |
+
+소켓 주입은 5종 모두 `CoreSceneBuilder.cs`의 `LoadSfx(...)` 라인(221·222·228·251·252행)에 실재.
+**§15.1은 트리거를 적지 않았는데 이번엔 적었다** — AU-027에서 "파일만 넣으면 울린다"가 거짓으로
+드러난 이유가 정확히 이 빌더 주입 라인 누락이었고, 문서에 없으면 다음에도 같은 데서 막힌다.
+
+**② stale 소멸** — §15 표 `sfx_fanfare / sfx_thunder` 행의 `🔶 소켓만` → `✅ 클립 도착·배선 완료 — 상세 §15.2`.
+동결 문서 기존 행 수정이라 남규님 승인("①②③ 다 진행해줘", 2026-08-08)을 게이트로 삼았고,
+그 근거를 §15.2 머리글에 남겼다. 훅 검사 결과 `BOM.md`는 헤더에 `frozen: true`가 없어
+freeze-guard 자동 차단 대상은 아니다(규칙상 동결은 유효 — 그래서 승인을 근거로 적었다).
+
+**발주 사양 이탈 1건 (의도적)** — 발주서 수용기준은 "5행이 **§8** 표에 존재"였으나 **§15 부록에 넣었다.**
+§8 SFX 표는 v0.4 동결 대상이고, §15.1(2026-07-29)이 미등재 23종을 §8에 넣지 않고 부록에 모으며
+"개별 행 분해는 불요"라는 선례를 세웠다. 동결 규칙과 선례가 내가 쓴 수용기준보다 우선한다고 판단했다.
+
+**관찰 (실측 검증)**
+- 3자 정합: 5종 전부 `Assets/Audio/SFX/<bom_id>.wav` 실파일 · `git ls-files` 등재 1건씩 ·
+  `Assets/Audio/CREDITS.md` 기재 · `assets_manifest.md` LICENSE 표 기재 — **결손 0**.
+- 파일 수 대조: §15.1 감사 시점 36종 → 현재 **41종**. 차이 5 = 이번 등재분과 정확히 일치
+  (누락·유령 항목 없음).
+- `.cs` 변경 0이라 pre-commit 컴파일 게이트 비대상. Unity 불요 작업.
+
+**이 등재로 풀리는 것**: 파이프라인 `intake`/`promote` 게이트가 bom_id를 찾는다 —
+AU-020·021·022·027·028이 5회 연속 수동 후공정으로 우회한 원인이 미등재였다.
+
+### 결과 (AU-030) · 2026-08-08 03:53 (정수 공장 · 리드 ~33분 · feature/jjs-s206-au029-au030, base=main)
+
+수정 2파일(`Assets/Data/BgmLibrary.asset` · `AudioImportPostprocessor.cs` — 후자는 **상수 원복 + 주석**).
+
+**⚠ 발주 가설 2개가 실측에서 깨졌다. 순서대로 적는다.**
+
+**① "미참조 6곡 100.9MB" — 오독이었다.** BgmLibrary에 없던 날씨 BGM 6곡(Rain on the Window·
+Neon Rain·Neon Snowfall·Sodium Fog·Midnight Heatwave·Daylight Snowfall)은 사장 파일이 아니라
+`Core.unity`의 `WorldAudioManager` **날씨 override 필드**(`_weatherBgm` 계열, AU-018 ②/AU-025)가
+참조 중이었다. BgmLibrary만 보고 판정하면 안 된다 — 날씨 BGM은 라이브러리를 거치지 않는 별도 경로다.
+
+**② "q0.26 → 0.22로 감축" — 0바이트다. 레버가 이미 바닥에 닿아 있었다.**
+같은 곡(`Daylight Snowfall.wav`, 49.3s 모노)을 품질만 바꿔 강제 재임포트하며 임포트 산출물
+(`AssetDatabaseExperimental.LookupArtifact` → `GetArtifactPaths` 실파일 크기)을 쟀다:
+
+| quality | 0.05 | 0.22 | 0.26 | 0.35 | 0.50 | 0.70 | 0.90 |
+|---|---|---|---|---|---|---|---|
+| 산출 | 374KB | 374KB | 374KB | 374KB | 431KB | 490KB | 555KB |
+
+**0.35 이하가 전부 동일 바이트 = Unity Vorbis 인코더의 하한 버킷**이고 현행 0.26이 이미 그 안이다.
+14곡 전량 q0.22 재임포트 후 합계도 **11,255KB → 11,255KB로 불변**(1바이트도 안 줄었다).
+→ **상수를 0.26으로 원복**하고, 위 측정표를 코드 주석에 박아 두었다. 다음 사람이 같은 삽질을
+반복하지 않게 하는 것이 이번 건의 실질 산출물이다. (측정이 죽은 게 아니라는 것은 q0.90=555KB로 반증했다.)
+
+**실제 감축분 — 미분류 보컬곡 제거 (Director 판정)**
+
+- `Pixel_Night_Funk_Don-T-Late.wav`(195.6s)는 BgmLibrary 슬롯이 `Unsorted`였다.
+  `WorldAudioManager.cs:296`이 추첨에서 제외하므로 **게임 진행 중 절대 재생되지 않으면서 빌드에는 실렸다**
+  (코드 주석에도 그렇게 적혀 있다). 출처는 S-052 "타이틀곡 보컬제거본 교체(보컬본 보관)".
+- 라이브러리 항목만 제거 — **wav 파일·CREDITS·manifest 기록은 그대로 남아** S-052의 보관 의도는 유지된다.
+- 감축 **1,541KB**. 잔여 참조 0건 실측(`guid b0e4edd3…` 전 에셋·씬 검색) → 빌드에서 빠진다.
+
+**오디오 예산 실측표 (임포트 산출물 기준)**
+
+| 항목 | 전 | 후 |
+|---|---|---|
+| BGM 14곡 | 11,255 KB | **9,714 KB** (13곡분 적재) |
+| SFX 41종 | 2,064 KB | 2,064 KB |
+| 오디오 합계 | 13,319 KB (13.0MB) | **11,778 KB (11.5MB)** |
+
+**③ 범위 밖 발견 — 오디오는 이미 작은 항목이다.** 배포 `WebGL.data.unityweb` 94.85MB 중
+오디오는 13.0MB = **13.7%**뿐이다(발주서 추정 18.5MB도 과대였다). 이번 감축은 data의 1.6%.
+**용량 문제의 본체는 오디오가 아니라 비오디오(메시·텍스처) 쪽**이다 — 별건 발주 대상으로 남긴다.
+Director가 기각한 "루프 트림"도 최대치가 몇 MB라 같은 결론이었을 것이다.
+
+**관찰 (Play 실측 · Core 씬)**
+- BgmLibrary `entries` 8 → **7**: Night×3 · Day×2 · Title×1(NoVocal) · Ending×1 — `Unsorted` 슬롯 소멸
+- Play 진입 → `_pools` **5 → 4개**(Unsorted 풀 자체가 안 생긴다) · 타이틀에서
+  `active=Pixel_Night_Funk_Don-T-Late_NoVocal` `isPlaying=True` — 보컬제거본 정상 재생
+- 컴파일 0에러 0워닝 · 콘솔 에러/워닝 **0** · EditMode **90/90** · 캡처 `Screenshots/au030_title_bgm.png`
+- q0.22 프로브 후 14곡 전량 재임포트로 `.meta` 원복 확인 (`git diff Assets/Audio/` 변경 0)
+
+## AU-031 · 발주 2026-08-08 04:14 → 정수 공장 (타이틀 BGM 프롬프트 4종 회수 — 워크트리 유실 직전)
+
+요구 (남규님 지시): 브랜치 정리 중 발견 보고에 대해 **"프롬프트 8건 살려줘"**.
+
+경위: 원격 브랜치 24개 정리(2026-08-08) 중 워크트리 `C:\Works\Game\Don-t-late-wt1`에
+**미추적(untracked) 파일 11건**이 남아 있는 것을 발견했다. 그중 8건이 어느 브랜치에도,
+main에도 없는 고유 산출물이다 — 커밋된 적이 없어 브랜치 삭제와 무관하게 **워크트리를 지우는 순간 소멸**한다.
+
+대상 (2026-07-22 생성, `prompt_builder.py` 조립분):
+`scripts/audio/prompts/bgm_title_{chip,day,night,rush}.md` + 각 `.plan.json` = 8파일
+
+- 성격: 타이틀 BGM **4방향 탐색안**(칩튠·낮·밤·질주). main에 `bgm_title.md`/`.plan.json` 본편은 이미 있고
+  이 4종은 그 변주다. BOM §8 `bgm_title` 슬롯은 **"0곡 — 공백(Director 보류)"** 상태라
+  나중에 타이틀곡을 다시 굴릴 때 그대로 재사용된다.
+- 커밋 관례 정합: main의 `bgm_day_loop`·`bgm_night_var`·`bgm_title`이 `.md`+`.plan.json` 쌍으로
+  등재돼 있다 — 같은 형식이므로 신규 규칙이 필요 없다.
+
+작업: 워크트리 → 본 저장소 `scripts/audio/prompts/`로 복사 후 커밋. 내용 수정 없음(자동 생성물 원형 보존).
+
+수용기준: 8파일이 저장소에 존재 · 워크트리 원본과 바이트 동일 · 비밀정보 미포함 · 커밋 경계 준수
+
+MDA 판정 (D-070): **무관** — 재미 축 무기여. 유실 방지다. 되돌릴 수 없는 삭제를 앞두고 있어
+순서상 지금 해야 하는 일이며, 작업량은 복사 1회다.
+
+### 결과 (AU-031) · 2026-08-08 04:18 (정수 공장 · 리드 ~4분 · feature/jjs-s206-au029-au030, base=main)
+
+8파일 신규 등재. 내용 무수정(자동 생성물 원형 보존).
+
+| 파일 | md | plan.json | 창작 태그 방향 |
+|---|---|---|---|
+| `bgm_title_chip` | 2,907B | 2,621B | 8-bit chiptune · square/triangle wave · bouncy and comedic |
+| `bgm_title_day` | 3,108B | 2,577B | major key city pop · retro 80s FM 일렉피아노 · sunny Korean neighborhood morning |
+| `bgm_title_night` | 3,013B | 2,228B | moody neon nightscape · 고깃집 골목 야간 배달 |
+| `bgm_title_rush` | 3,048B | 2,391B | fast driving beat · rush hour chase · comedic tension |
+
+**관찰 (실측)**
+- 8파일 전부 워크트리 원본과 **`cmp` 바이트 동일** (위 표의 크기는 복사본 실측치)
+- 비밀정보 스캔(`api_key|secret|token|sk-|xi-api`) **미검출** — 프롬프트 텍스트와 chunks 구조뿐
+- `.plan.json` 4종 전부 `chunks` 키 보유 — main의 `bgm_title.plan.json`과 동형(파싱 성공)
+- 커밋 관례 정합 확인: main의 `bgm_day_loop`·`bgm_night_var`·`bgm_title`이 이미 `.md`+`.plan.json`
+  쌍으로 등재돼 있다. `.gitignore`에도 프롬프트 제외 규칙이 없다(154행이 오히려 "재현 정보는
+  `scripts/audio/prompts/`가 보유"라고 명시).
+- `.cs` 변경 0 → pre-commit 컴파일 게이트 비대상
+
+**왜 유실 직전이었나 (재발 방지)**: 이 8건은 **어느 브랜치에도 커밋된 적이 없는 untracked 파일**이라
+`git branch -d`의 안전장치도, `merge-base --is-ancestor` 검사도 잡아내지 못한다. 브랜치 정리에서
+안전하다고 판정한 근거는 전부 *커밋된* 내용에 대한 것이었다.
+→ **워크트리를 폐기하기 전에는 반드시 `git status --porcelain`으로 미추적 파일을 먼저 본다.**
+   브랜치가 main에 다 들어갔다는 것과 워크트리 디렉토리가 비었다는 것은 완전히 다른 명제다.
+
+**잔여**: 워크트리 `Don-t-late-wt1`의 나머지 미추적 3건은 회수 불요 —
+`scripts/audio/rules/GAME-SFX-RULES.md`는 main에 이미 있고, gif 1건은 07-22 화면 녹화 잔재다.
+워크트리 폐기 여부는 남규님 판단 대기.
+
+---
+
+## AU-032 · 발주 2026-08-08 → 정수 공장 (폭염·안개 날씨 BGM 낮/밤 분리)
+
+요구 (남규님 원문): `HEAT 밤 곡 : Sunny Afternoon Drive.wav` / `FOG 낮 곡 : Pale White Haze.wav` ·
+"HEAT 파일명이 밤/낮 반대로 되어있으면 파일명 수정".
+
+- **배경**: AU-025(비)·AU-026(눈)으로 날씨×시간대 분리가 2종 완료. 폭염·안개는 아직
+  `_bgmHeat`/`_bgmFog` 단곡·phase-blind → 낮이든 밤이든 한 곡. 곡 2종 확보(Director Suno) → 분리 가능.
+- **확정 배정** (Director 세션 내 승인):
+
+| 날씨 | 낮 | 밤 |
+|---|---|---|
+| Heat | `Heatwave Afternoon.wav` (기존 `Midnight Heatwave` 개명) | `Heatwave Night Drive.wav` (신곡 · 원제 `Sunny Afternoon Drive`) |
+| Fog | `Pale White Haze.wav` (신곡 · 원제 유지) | `Sodium Fog.wav` (기존) |
+
+- **개명 근거**: 신곡 원제가 역할과 반대다(`Sunny Afternoon Drive`가 **밤** 곡 — Director 청취 판정).
+  분리하면 기존 `Midnight Heatwave`도 **낮** 곡이 되어 역시 반대가 된다. 이름 교환(덮어쓰기)·신곡만
+  개명 대신 **충돌 없는 새 이름 2개**를 택했다(Director 3안 중 ⭐안). 원제는 `assets_manifest.md`에
+  병기 보존 — 라이선스 추적선을 끊지 않는다. Fog 신곡은 원제가 역할과 정합해 개명 없음.
+
+**작업**
+1. `WorldAudioManager`: `_bgmHeat`→`_bgmHeatDay`/`_bgmHeatNight`, `_bgmFog`→`_bgmFogDay`/`_bgmFogNight`.
+   `RefreshWeatherBgm()`의 Heat·Fog 케이스를 `night ? …Night : …Day`로 (Rain/Snow와 동형).
+   재평가 경로(`OnDayPhaseChanged`→`RefreshWeatherBgm`)는 AU-025가 이미 설치 → 추가 배선 불요.
+2. `CoreSceneBuilder` 배선 4행 교체.
+3. 반입: 신곡 2곡 `Downloads`→`Assets/Audio/BGM/` (**꼬리 페이드 트림** — 실측상 머리는 풀레벨,
+   꼬리만 페이드아웃: Sunny 86.1s 중 약 3s / Pale 149.6s 중 약 6s). 기존 `Midnight Heatwave.wav`는
+   `git mv`로 개명(.meta 동반 — GUID 보존이 배선 생명줄).
+4. `.gitignore` allowlist 갱신(신규 2 + 개명분) · `assets_manifest.md` 등재 · BOM §8 갱신.
+
+**경계**: Storm BGM은 범위 밖(곡 없음 — AU-024 프롬프트 대기). 씬 본문 미커밋(빌더 정본).
+공장→PR, main 머지는 관제 게이트. base=`feature/jjs-s206-au029-au030` 스택(PR #52 미머지).
+
+**수용기준**: 컴파일 0에러·0워닝 · Heat/Fog 각각 낮·밤 곡이 갈려 재생(실측) · 날씨 유지 중 낮↔밤
+전환 시 곡 교체 · 개명 후 GUID 유실 0(배선 살아있음) · 원제 추적 가능 · 예산 증가분 실측 기재.
+
+MDA 판정 (D-070): **강화** — AU-025/026과 동형. 날씨 몰입을 시간대 축으로 심화. 곡 확보됨 = 저비용.
+코어루프 불변. (AU-030 실측: 오디오는 빌드 data 94.85MB 중 11.5MB — 2곡 추가 여력 있음.)

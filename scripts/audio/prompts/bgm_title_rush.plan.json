@@ -1,0 +1,92 @@
+{
+  "chunks": [
+    {
+      "text": "[Intro]",
+      "duration_ms": 10000,
+      "positive_styles": [
+        "118 BPM",
+        "bright arpeggiated synth",
+        "gated reverb drum machine intro pattern",
+        "bold dynamic opening chord",
+        "driving synth bass pedal note",
+        "urgent tempo",
+        "retro 80s production",
+        "warm tape saturation"
+      ],
+      "negative_styles": [
+        "jazz",
+        "acoustic guitar",
+        "vocals"
+      ],
+      "context_adherence": "high",
+      "conditioning_ref": null,
+      "condition_strength": null
+    },
+    {
+      "text": "[Verse]",
+      "duration_ms": 15000,
+      "positive_styles": [
+        "118 BPM",
+        "punchy analog synths",
+        "driving synth bass running pattern",
+        "steady 80s drum machine beat",
+        "glossy pads filling background",
+        "comedic tension build",
+        "minor key harmony",
+        "tight sterile mixing"
+      ],
+      "negative_styles": [
+        "jazz",
+        "acoustic guitar",
+        "vocals"
+      ],
+      "context_adherence": "high",
+      "conditioning_ref": null,
+      "condition_strength": null
+    },
+    {
+      "text": "[Chorus]",
+      "duration_ms": 20000,
+      "positive_styles": [
+        "118 BPM",
+        "catchy synth hook",
+        "retrowave lead synthesizer",
+        "punchy synth brass stabs",
+        "energetic running late panic groove",
+        "thick bassline movement",
+        "gated reverb snare cracks",
+        "climax arrangement"
+      ],
+      "negative_styles": [
+        "jazz",
+        "acoustic guitar",
+        "vocals"
+      ],
+      "context_adherence": "high",
+      "conditioning_ref": null,
+      "condition_strength": null
+    },
+    {
+      "text": "[Outro]",
+      "duration_ms": 15000,
+      "positive_styles": [
+        "118 BPM",
+        "fading analog synth chords",
+        "slowing arpeggiated synth",
+        "drum machine dropping to kick only",
+        "glossy pad sustain",
+        "comedic resolution feel",
+        "retro-futuristic sign-off",
+        "gradual volume decay"
+      ],
+      "negative_styles": [
+        "jazz",
+        "acoustic guitar",
+        "vocals"
+      ],
+      "context_adherence": "high",
+      "conditioning_ref": null,
+      "condition_strength": null
+    }
+  ]
+}

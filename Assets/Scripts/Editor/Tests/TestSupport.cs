@@ -19,12 +19,30 @@ namespace DontLate.Tests
             field.SetValue(target, value);
         }
 
+        /// <summary>private 상태 읽기 (S-206 — 판정 후 내부 플래그 확인용).</summary>
+        public static object GetField(object target, string fieldName)
+        {
+            FieldInfo field = target.GetType().GetField(fieldName, FLAGS);
+            if (field == null)
+                throw new System.MissingFieldException(target.GetType().Name, fieldName);
+            return field.GetValue(target);
+        }
+
         public static object Invoke(object target, string methodName, params object[] args)
         {
             MethodInfo method = target.GetType().GetMethod(methodName, FLAGS);
             if (method == null)
                 throw new System.MissingMethodException(target.GetType().Name, methodName);
             return method.Invoke(target, args);
+        }
+
+        /// <summary>private static 규칙 함수 호출 (S-206 — 판정표가 static으로 나와 있는 것들).</summary>
+        public static object InvokeStatic(System.Type type, string methodName, params object[] args)
+        {
+            MethodInfo method = type.GetMethod(methodName, BindingFlags.Static | BindingFlags.NonPublic);
+            if (method == null)
+                throw new System.MissingMethodException(type.Name, methodName);
+            return method.Invoke(null, args);
         }
     }
 }
