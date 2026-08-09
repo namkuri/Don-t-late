@@ -40,6 +40,8 @@ namespace DontLate
         [SerializeField] private Sprite[] _appIcons;
         [Tooltip("Travel 지도 앱 배경 일러 (S-036). 실아트(A-004)가 오면 여기 꽂는다 — bom_id: ui_map_town")]
         [SerializeField] private Sprite _mapSprite;
+        [Tooltip("박말순 전화 수신 화면에 표시할 이미지")]
+        [SerializeField] private Texture2D _angryMalsoon;
         [Tooltip("NPC 프로필 카탈로그 (S-079 ④ — 소셜앱). 빌더 주입.")]
         [SerializeField] private NpcSO[] _npcCatalog;
 
@@ -1622,8 +1624,20 @@ namespace DontLate
         {
             GameObject screen = NewScreen(Screen.Call);
 
+            if (_angryMalsoon != null)
+            {
+                RawImage portrait = new GameObject("AngryMalsoon", typeof(RectTransform)).AddComponent<RawImage>();
+                portrait.transform.SetParent(screen.transform, false);
+                portrait.texture = _angryMalsoon;
+                portrait.raycastTarget = false;
+                RectTransform portraitRect = portrait.rectTransform;
+                portraitRect.anchorMin = portraitRect.anchorMax = portraitRect.pivot = new Vector2(0.5f, 1f);
+                portraitRect.sizeDelta = new Vector2(240f, 160f);
+                portraitRect.anchoredPosition = new Vector2(0f, -4f);
+            }
+
             TMP_Text caller = MakeText(screen.transform, "Caller", "", 30f, Color.white, TextAlignmentOptions.Center);
-            Anchor(caller.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -60f), 140f);
+            Anchor(caller.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(0f, -180f), 80f);
             _callLabel = caller;
 
             Button accept = MakeButton(screen.transform, "Accept", "받기", () =>
@@ -1661,7 +1675,7 @@ namespace DontLate
         {
             if (_callLabel != null)
                 // ☎ 글리프는 Pretendard SDF에 없음 — TMP 폴백 워닝 유발이라 텍스트로 대체 (S-037 부수).
-                _callLabel.text = "수신 중\n\n<size=140%><b>박말순</b></size>\n<color=#8a93a8>진상 기류의 냄새가 난다…</color>";
+                _callLabel.text = "수신 중\n<size=140%><b>박말순</b></size>";
         }
 
         private void RefreshBank()

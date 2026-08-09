@@ -1718,6 +1718,8 @@ namespace DontLate.EditorTools
             SetField(view, "_gameState", AssetDatabase.LoadAssetAtPath<GameStateSO>(DATA_ROOT + "/GameState.asset"));
             SetField(view, "_furnitureCatalog", GetOrCreateFurnitureCatalog()); // S-019 ④
             SetField(view, "_npcCatalog", GetOrCreateNpcCatalog());            // S-079 ④ — 소셜앱
+            SetField(view, "_angryMalsoon", AssetDatabase.LoadAssetAtPath<Texture2D>(
+                "Assets/Art/Characters/Textures/angry_malsoon.png"));
 
             // 폰 본체 — 우하단 앵커(사람 요청 S-011 후속).
             // 실아트(ui_phone_frame — S-117 크림+네이비 폰, 387×715 캔버스·개구 x56~323·y105~583 실측)
