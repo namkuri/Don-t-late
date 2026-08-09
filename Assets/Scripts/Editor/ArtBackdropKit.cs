@@ -42,6 +42,16 @@ namespace DontLate.EditorTools
         public static readonly SetPlacement District =
             new SetPlacement("Assets/Prefabs/Hand/set_district_2.prefab", new Vector3(-3.05f, 0f, 20.17f));
 
+        /// <summary>
+        /// S-219 — **빌라촌 전용 세트.** 남규님이 새로 만든 `set_district_3`으로 갈아 끼운다.
+        /// 종전엔 위 `District`(=`set_district_2`)를 촬영용 District 1과 **함께** 썼다 —
+        /// 그대로 바꾸면 촬영 씬까지 따라 바뀐다. 먹자골목 때와 같은 이유로 소켓을 가른다(S-192).
+        /// 오프셋은 District와 동일: 같은 방식으로 담은 캡처라 좌표계가 같다
+        /// (실측 바운즈 center (3.05, 5.80, −20.17) — 이 값을 되돌리면 원 배치로 돌아온다).
+        /// </summary>
+        public static readonly SetPlacement Village =
+            new SetPlacement("Assets/Prefabs/Hand/set_district_3.prefab", new Vector3(-3.05f, 0f, 20.17f));
+
         /// <summary>Camp 물류장. 민지님 조정본이 정본이라 원점 그대로 둔다(위 ⚠ 참조).</summary>
         public static readonly SetPlacement Camp =
             new SetPlacement("Assets/Prefabs/Hand/set_camp_1.prefab", Vector3.zero);

@@ -44,7 +44,9 @@ namespace DontLate.EditorTools
         public static void BuildDistrictStage()
         {
             EnsureSceneFile(DISTRICT_PATH);
-            BuildStage(DISTRICT_PATH, VillaBuildings);
+            // S-219 — 빌라촌은 제 세트(`set_district_3`)를 쓴다. 넘기지 않으면 촬영용과 공유하는
+            // `ArtBackdropKit.District`(=set_district_2)로 떨어진다.
+            BuildStage(DISTRICT_PATH, VillaBuildings, ArtBackdropKit.Village);
 
             // S-215 — 상주 NPC 3인은 빌라촌 전용이라 `BuildStage` 밖에서 얹는다
             // (같은 조립을 먹자골목·촬영용 District 1도 쓰므로 안에 넣으면 거기까지 따라간다).
