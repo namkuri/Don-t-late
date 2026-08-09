@@ -157,6 +157,21 @@
 | bgm_night_loop | 밤 BGM (Evening·Night) | 60~180s · Evening 진입(17시) 3초 크로스페이드로 교대 | **ElevenLabs(#9)** | **3곡 확정** |
 | bgm_title | 타이틀(Main 씬) BGM | 〃 | **ElevenLabs(#9)** | **0곡 — 공백**(Director 보류). 빈 슬롯이면 낮곡이 이어진다 |
 
+#### 날씨 BGM (시간대 슬롯 override — AU-018 ② 계열)
+
+| bom_id | 항목 | 스펙 | source | 비고 |
+|---|---|---|---|---|
+| bgm_weather_rain | 비 무드 BGM | 낮/밤 2곡 · 148.6s/145.6s | **Suno(Director)** | **2곡 확정** — `Rain on the Window`(낮)·`Neon Rain`(밤) · AU-025 |
+| bgm_weather_snow | 눈 무드 BGM | 낮/밤 2곡 · 49.3s/82.4s | **Suno(Director)** | **2곡 확정** — `Daylight Snowfall`(낮)·`Neon Snowfall`(밤) · AU-026 |
+| bgm_weather_heat | 폭염 무드 BGM | 낮/밤 2곡 · 59.9s/82.5s | **Suno(Director)** | **2곡 확정** — `Heatwave Afternoon`(낮)·`Heatwave Night Drive`(밤) · AU-032 |
+| bgm_weather_fog | 안개 무드 BGM | 낮/밤 2곡 · 143.5s/65.2s | **Suno(Director)** | **2곡 확정** — `Pale White Haze`(낮)·`Sodium Fog`(밤) · AU-032 |
+| bgm_weather_storm | 태풍 무드 BGM | 비 곡 공유(낮/밤 2곡) | — (전용곡 0) | **전용곡 없음 → 비 곡 재사용** (AU-033). 태풍·비는 먹구름 색·천둥 코드까지 공유하고 차이는 강풍뿐이라 무드 축이 같다. 전용곡 프롬프트 초안(AU-024)은 유효 — 곡이 생기면 `_bgmStormDay/Night`로 1행 교체 |
+
+- **BgmLibrary SO를 거치지 않는다** — 날씨 곡은 `WorldAudioManager`의 `_bgmXxxDay/_bgmXxxNight` 필드에
+  직접 배선되고, 그 배선의 정본은 `CoreSceneBuilder`다. 따라서 **스왑 계약 = 파일명**(`LoadBgm("…")` 문자열)이며
+  다곡 풀 슬롯의 "SO 참조가 계약" 규칙(위 D-042 주석)이 여기엔 적용되지 않는다. 리네임 시 빌더를 함께 고친다.
+- Clear·Cloudy는 날씨 곡 없음 = 기존 Day/Night 슬롯 유지(설계 — 평상시가 기본값).
+
 - ~~`bgm_night_var`(낮 곡 + 로우패스/리버브 변주)~~ **폐기(D-040)**: sacrifice 근거였던 제작비가 소멸했고,
   낮(major·105BPM)과 밤(minor·88BPM)은 BPM·조성이 달라 필터로 재현 불가. 전용 곡 = AudioMixer 불요.
 - source 전환: BGM도 **#9(ElevenLabs)** 에서 나왔다 — 원안의 Suno(#8)는 미사용. M0-06 #9 라인 실증.

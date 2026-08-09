@@ -87,8 +87,10 @@ namespace DontLate
         [SerializeField] private AudioClip _bgmRainNight; // AU-025 — 비·밤 (구 _bgmRain=Neon Rain)
         [SerializeField] private AudioClip _bgmSnowDay;   // AU-026 — 눈·낮 (Daylight Snowfall)
         [SerializeField] private AudioClip _bgmSnowNight; // AU-026 — 눈·밤 (구 _bgmSnow=Neon Snowfall)
-        [SerializeField] private AudioClip _bgmHeat;
-        [SerializeField] private AudioClip _bgmFog;
+        [SerializeField] private AudioClip _bgmHeatDay;   // AU-032 — 폭염·낮 (구 _bgmHeat=Heatwave Afternoon)
+        [SerializeField] private AudioClip _bgmHeatNight; // AU-032 — 폭염·밤 (Heatwave Night Drive)
+        [SerializeField] private AudioClip _bgmFogDay;    // AU-032 — 안개·낮 (Pale White Haze)
+        [SerializeField] private AudioClip _bgmFogNight;  // AU-032 — 안개·밤 (구 _bgmFog=Sodium Fog)
 
         [Header("믹스")]
         [SerializeField, Range(0f, 1f)] private float _volume = 0.5f;
@@ -406,8 +408,9 @@ namespace DontLate
             RefreshWeatherBgm(); // AU-018 ② + AU-025(비는 시간대별 곡)
         }
 
-        /// <summary>날씨 무드 BGM을 현재 날씨·시간대로 다시 정한다. 비·눈은 낮/밤 곡이 갈리고(AU-025·AU-026),
-        /// 나머지는 낮밤 공용 1곡. 없는 날씨는 null → 시간대 슬롯 유지. 바뀌면 ApplySlot로 크로스페이드.</summary>
+        /// <summary>날씨 무드 BGM을 현재 날씨·시간대로 다시 정한다. 비·눈·폭염·안개는 낮/밤 곡이 갈리고
+        /// (AU-025·AU-026·AU-032), 태풍은 비 곡을 공유한다(AU-033). 곡 없는 날씨(Clear·Cloudy)는 null →
+        /// 시간대 슬롯 유지. 바뀌면 ApplySlot로 크로스페이드.</summary>
         private void RefreshWeatherBgm()
         {
             bool night = _phase == DayPhase.Evening || _phase == DayPhase.Night;
@@ -415,8 +418,12 @@ namespace DontLate
             {
                 WeatherType.Rain => night ? _bgmRainNight : _bgmRainDay, // AU-025
                 WeatherType.Snow => night ? _bgmSnowNight : _bgmSnowDay, // AU-026
-                WeatherType.Heat => _bgmHeat,
-                WeatherType.Fog => _bgmFog,
+                WeatherType.Heat => night ? _bgmHeatNight : _bgmHeatDay, // AU-032
+                WeatherType.Fog => night ? _bgmFogNight : _bgmFogDay,    // AU-032
+                // AU-033 — 태풍은 비 곡 공유. 전용곡이 아니라 재사용인 이유: 태풍과 비는 먹구름 색·천둥
+                // (WorldWeatherManager의 stormy = Rain || Storm)까지 같은 계열이고 차이는 강풍뿐이다.
+                // 공백으로 두면 먹구름·천둥 속에서 평상시 도시곡이 흐른다. 전용곡이 생기면 이 줄만 갈아끼운다.
+                WeatherType.Storm => night ? _bgmRainNight : _bgmRainDay,
                 _ => null
             };
             if (wb != _weatherBgm) { _weatherBgm = wb; ApplySlot(); }

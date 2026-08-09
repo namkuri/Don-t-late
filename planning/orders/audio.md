@@ -1197,3 +1197,180 @@ MDA 판정 (D-070): **무관** — 재미 축 무기여. 유실 방지다. 되�
 
 MDA 판정 (D-070): **강화** — AU-025/026과 동형. 날씨 몰입을 시간대 축으로 심화. 곡 확보됨 = 저비용.
 코어루프 불변. (AU-030 실측: 오디오는 빌드 data 94.85MB 중 11.5MB — 2곡 추가 여력 있음.)
+
+### 결과 (AU-032) · 2026-08-09 (정수 공장 · feature/jjs-au032-heat-fog-bgm, base=main)
+
+수정 6파일 + 신곡 2곡 반입 + 개명 1건(`git mv` — GUID 보존).
+
+**곡 배정 (수용기준 대조 — Play 실측)**
+
+Play 진입 → 날씨·시간대를 production 경로(`WorldWeatherManager.SetWeather` ·
+`WorldEvents.RaiseDayPhaseChanged` → `WorldAudioManager.RefreshWeatherBgm`)로 구동하고
+`_weatherBgm`·`_active.clip`을 프레임 분리 exec로 읽었다.
+
+| # | 날씨 | phase | `_weatherBgm` | 실제 재생 `_active.clip` | isPlaying |
+|---|---|---|---|---|---|
+| ① | Heat | Day | Heatwave Afternoon | **Heatwave Afternoon** | True |
+| ② | Heat | Night | Heatwave Night Drive | **Heatwave Night Drive** | True |
+| ③ | Fog | Night | Sodium Fog | **Sodium Fog** | True |
+| ④ | Fog | Day | Pale White Haze | **Pale White Haze** | True |
+| ⑤ | Clear | Day | NULL | Seoul_Alley_Reflection(시간대 슬롯 복귀) | True |
+
+- **날씨 유지 중 낮↔밤 교체 확인**(①→②) · **시간대 유지 중 날씨 교체 확인**(③→④) 둘 다 실측.
+- Evening도 밤곡으로 갈린다(`night = Evening || Night` — Rain/Snow와 동형). Heat+Evening → Heatwave Night Drive 확인.
+- ⑤ 날씨 해제 시 `_weatherBgm=null` → 시간대 슬롯 곡으로 재크로스페이드(기존 동작 무회귀).
+
+**관측 함정 2건 (다음 사람 시간 절약)**
+- `WorldDayNightManager.SetTime()`은 `minuteOfDay`만 바꾼다 — phase 전이는 다음 `Update()` 틱 몫이라
+  **같은 exec 안에서 시각을 바꾸고 phase를 읽으면 이전 값이 나온다.** exec를 프레임 단위로 쪼개야 한다.
+- 타이틀 화면에선 `introGraceActive` 때문에 `SkyMinute`가 정오로 고정돼 **시각을 밤으로 옮겨도 phase가 Day**다
+  (S-009 설계). 또 `ApplySlot`의 `_titleScene` 게이트가 날씨 override보다 앞서서 **타이틀에선 날씨곡이 아예 안 걸린다.**
+  → 위 표 ①~⑤는 `_titleScene=false`·`_bgmReleased=true`로 타이틀 게이트를 내린 뒤 측정한 값이다.
+
+**개명 GUID 보존 (배선 생명줄)**
+
+| | GUID |
+|---|---|
+| HEAD의 `Midnight Heatwave.wav.meta` | `bfe916a78f65a8543998866e8677eb14` |
+| 개명 후 `Heatwave Afternoon.wav.meta` | `bfe916a78f65a8543998866e8677eb14` |
+
+동일 → 참조 유실 0. Core 씬 재빌드 후 `_bgmHeatDay` = Heatwave Afternoon (guid `bfe916a7…`) 물림 확인.
+
+**Core 씬 배선 실측** (`DontLate/Build/Core Scene` 재빌드 → SerializedObject 판독)
+
+```
+_bgmHeatDay   = Heatwave Afternoon    (bfe916a78f65a8543998866e8677eb14)
+_bgmHeatNight = Heatwave Night Drive  (54b519d226e340e41821f7f1a55fb9cb)
+_bgmFogDay    = Pale White Haze       (58a17dc48544deb42a6ab3e092f03d01)
+_bgmFogNight  = Sodium Fog            (6f050b2da2446f845bf98afb50033317)
+```
+Rain·Snow 4필드도 동시 판독 — 무회귀 확인.
+
+**트림 실측 (루프 이음새)**
+
+| 곡 | 원본 | 트림후 | head 0.5s | body | tail 0.5s |
+|---|---|---|---|---|---|
+| Heatwave Night Drive | 86.1s | **82.5s** | -19.7dB | -19.8dB | -15.7dB |
+| Pale White Haze | 149.6s | **143.5s** | -18.7dB | -14.1dB | -15.5dB |
+
+양끝 RMS가 바디 레벨 이상 = 페이드 램프 잔존 0. 루프 이음새에서 음량이 꺼지지 않는다.
+둘 다 48kHz 스테레오.
+
+**예산 실측 (AU-030과 같은 방법 — `LookupArtifact` → `GetArtifactPaths` 실파일 바이트)**
+
+| 곡 | 임포트 산출물 |
+|---|---|
+| Heatwave Night Drive (82.5s) | **628 KB** |
+| Pale White Haze (143.5s) | **1,053 KB** |
+| (참고) Heatwave Afternoon 472 · Sodium Fog 496 · Rain 876 · Neon Rain 1,009 · Daylight Snowfall 374 · Neon Snowfall 606 | |
+
+이를 AU-030 실측표에 얹으면:
+
+| 항목 | AU-030 후 | AU-032 후 |
+|---|---|---|
+| BGM(적재분) | 9,714 KB | **11,397 KB** |
+| SFX 41종 | 2,064 KB | 2,064 KB |
+| 오디오 합계 | 11,778 KB (11.5MB) | **13,461 KB (13.1MB)** |
+
+**증가분 +1,681 KB (+1.64MB)**. BGM 디스크 전량은 16곡 12,938 KB이고 여기서 미적재 보컬본
+(`Pixel_Night_Funk_Don-T-Late` 1,541 KB — AU-030에서 라이브러리 해제)을 뺀 값이 위 적재분이다.
+빌드 data 94.85MB 기준 오디오 비중 13.7% → **약 13.9%**(data 추정 96.5MB). AU-030 결론
+("용량 본체는 비오디오")은 그대로 유효 — 이번 증가는 data의 1.7%.
+
+**셀프검증 3종 + α**
+- `editor refresh --compile` → 컴파일 **0에러 0워닝**
+- `console --type error,warning` → **0건** (Play 종료 후 재확인도 0건)
+- `editor play --wait` → 위 ①~⑤ 실측
+- EditMode **90/90 통과** (failed 0 · skipped 0 — AU-030 기준선 유지, 회귀 0)
+
+**경계 준수**: 씬 본문 미커밋(빌더 정본) · 신곡 2곡은 `.gitignore` allowlist 등재 후 반입 ·
+라이선스는 `CREDITS.md`+`assets_manifest.md` 양쪽 기록(원제 병기로 추적선 유지) · Storm은 범위 밖(곡 없음).
+
+**잔여**: Storm BGM 1곡(AU-024 프롬프트 대기)이 유일한 날씨 BGM 공백. 이번 건으로
+**곡이 있는 날씨 4종(비·눈·폭염·안개) 전부 낮/밤 분리 완료**.
+
+---
+
+## AU-033 · 발주 2026-08-09 → 정수 공장 (태풍 BGM = 비 곡 공유)
+
+요구 (남규님 판단): "Storm 날씨에 비가 내리고 천둥이 치는 거면 Rain에 쓰이는 곡 그대로 써도 될 것 같다."
+→ 코드 확인 후 **재사용안 채택**(4안 중 ⭐).
+
+**코드 근거 (`WorldWeatherManager` 실측 — 발주 전 확인)**
+
+| 요소 | Storm | Rain |
+|---|---|---|
+| 비 | 간헐 — 8~18초 켜짐/6~14초 꺼짐 (`StormRainCycle`, S-088 ⑤) | 계속 |
+| 천둥번개 | 18~45초 간격 섬광 2연발 + `sfx_thunder` | **동일 코드 공유** (`stormy = Rain \|\| Storm`, S-088 ⑥) |
+| 먹구름 | 8개 · `(0.30,0.31,0.36,0.92)` | 8개 · **동일 색** |
+| 강풍 | `_windX` 좌/우 · 강수 기울기 · 공중 바람 줄기(S-089 ④) | 없음 |
+| 스태미나 패널티 | 15%(HUD "강풍") | 0 |
+| BGM | **없음 → 평상시 도시곡이 흐른다** | 낮/밤 2곡 |
+
+- **천둥은 Storm 전용이 아니다** — Rain에서도 친다. 따라서 두 날씨의 음향적 차이는 실질 **강풍 하나**뿐이고,
+  하늘색·구름·천둥·강수까지 같은 계열이다. 곡 공유 근거가 발주 가설보다 오히려 강하다.
+- **현행이 어색하다**: Storm은 BGM 슬롯이 비어 시간대 슬롯이 그대로 이어진다 = 먹구름 가득에 천둥이 치는데
+  **맑은 날 도시 산책곡**이 흐른다. Rain 곡을 물리면 무드가 맞고, Rain이 이미 낮/밤 2곡이라
+  **Storm도 추가 곡 없이 낮/밤 분리**된다.
+
+**작업**
+1. `WorldAudioManager.RefreshWeatherBgm()`에 `WeatherType.Storm => night ? _bgmRainNight : _bgmRainDay` 1행 추가.
+   XML 주석의 "없는 날씨(Storm 등)는 null" 문구를 현실에 맞게 갱신.
+2. `planning/BOM.md` `bgm_weather_storm` 행: "0곡 — 공백" → 비 곡 공유로 갱신(전용곡 여지 명시).
+3. `Assets/Audio/CREDITS.md` 날씨 BGM 절에 공유 사실 1줄(신규 파일·라이선스 변동 없음).
+
+**경계**: 신곡 생성·반입 0 · 에셋 0 · 예산 증가 0 · 씬 본문 미커밋(빌더 정본이나 이번 건은 배선 변경 없음 —
+`_bgmRainDay/Night`는 이미 물려 있다). Storm 전용곡은 **폐기 아님** — AU-024 프롬프트 초안은 살려두고,
+전용곡이 생기면 같은 1행을 `_bgmStormDay/Night`로 교체하면 된다(소켓 구조).
+
+**수용기준**: 컴파일 0에러 0워닝 · 콘솔 0건 · Play에서 Storm 낮 → 비 낮곡 / Storm 밤 → 비 밤곡 실측 ·
+Storm 유지 중 낮↔밤 전환 시 곡 교체 · Rain↔Storm 전환 시 곡 유지(같은 곡이므로 크로스페이드 없음) 확인 ·
+기존 4날씨 무회귀 · EditMode 90/90 유지.
+
+MDA 판정 (D-070): **강화** — 날씨 BGM 공백 1건 소멸. 코드 1행·에셋 0·예산 0으로 태풍의 음향 무드가
+평상시곡에서 우천곡으로 교정된다. 코어루프 불변.
+
+### 결과 (AU-033) · 2026-08-09 (정수 공장 · 리드 ~15분 · feature/jjs-au033-storm-bgm, base=feature/jjs-au032-heat-fog-bgm)
+
+수정 3파일 · **코드 1행 추가** · 신규 에셋 0 · 예산 증가 0.
+
+**관찰 (Play 실측)** — 타이틀 게이트를 내리고(`_titleScene=false`·`_bgmReleased=true`) production 경로로 구동.
+
+| # | 날씨/phase | 실제 재생 `_active.clip` | `_active.time` |
+|---|---|---|---|
+| ① | Storm / Day | **Rain on the Window** (비 낮곡) | 2.7s |
+| ② | Storm / Night | **Neon Rain** (비 밤곡) | 2.8s |
+| ③ | Rain / Night | Neon Rain | 7.9s |
+| ④ | Storm / Night | Neon Rain | **12.9s** |
+| ⑤ | Clear / Day | Sunlit_Seoul_Afternoon (시간대 슬롯 복귀) | 2.4s |
+| ⑥ | Storm / Evening | Neon Rain (Evening=밤곡) | 2.5s |
+
+- ①→② **태풍 유지 중 낮↔밤 전환 시 곡 교체** 확인.
+- ③→④ **Rain↔Storm 전환에서 `time`이 7.9s→12.9s로 계속 흐른다** = 같은 클립이라 `wb != _weatherBgm`이
+  거짓 → `ApplySlot` 미호출 → **재시작·크로스페이드 없이 이어진다**(수용기준 명시 항목). 날씨만 바뀌고
+  음악은 끊기지 않는 것이 의도한 동작이다.
+- ⑤ 날씨 해제 시 시간대 슬롯 복귀 — 무회귀.
+
+**기존 4날씨 무회귀 (전수 재확인)**
+
+| 날씨 | 낮 | 밤 |
+|---|---|---|
+| Rain | Rain on the Window | Neon Rain |
+| Snow | Daylight Snowfall | Neon Snowfall |
+| Heat | Heatwave Afternoon | Heatwave Night Drive |
+| Fog | Pale White Haze | Sodium Fog |
+| Cloudy | Seoul_Alley_Reflection (곡 없음 → 시간대 슬롯) | — |
+
+**셀프검증 3종**
+- `editor refresh --compile` → 컴파일 **0에러 0워닝**
+- `console --type error,warning` → **0건** (Play 중·종료 후 모두)
+- `editor play --wait` → 위 ①~⑥ + 무회귀 표 실측
+- EditMode **90/90** (failed 0 · skipped 0)
+
+**예산**: 신규 파일 0 → 오디오 합계 13,461 KB **불변**. AU-032 대비 증가분 0.
+
+**경계 준수**: 씬 본문 미커밋 · 배선 변경 0(`_bgmRainDay/Night`는 이미 물려 있어 Core 재빌드 불요) ·
+CREDITS 표에 추가되는 행 없음(신규 음원 0 = 라이선스 변동 0).
+
+**잔여**: 날씨 BGM 공백 **0건**. Storm 전용곡은 폐기가 아니라 보류 — AU-024 프롬프트 초안이 유효하고,
+곡이 생기면 `WorldAudioManager`의 Storm 1행을 `_bgmStormDay/Night`로 바꾸고 빌더에 2행 추가하면 된다.

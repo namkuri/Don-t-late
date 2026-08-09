@@ -101,7 +101,9 @@
 ## Suno BGM INTAKE (날씨 BGM · AU-018 ②) — 2026-07-27
 
 > 출처·권리·근거 = 위 Suno 절과 동일(Director 유료 플랜 · 상업 가능·소유권 귀속·무기한·표기 불요).
-> 날씨(Rain·Snow·Heat·Fog) 무드 BGM. **원제 유지** — 스왑 계약은 WorldAudioManager 필드 주입(`_bgmRain/Snow/Heat/Fog`).
+> 날씨(Rain·Snow·Heat·Fog) 무드 BGM. 스왑 계약은 WorldAudioManager 필드 주입(`_bgmXxxDay/_bgmXxxNight`) —
+> 배선 정본은 `CoreSceneBuilder`이고 그 키가 **파일명**이다. 원제는 원칙적으로 유지하되, 원제가 역할과
+> 반대라 혼동을 부르는 경우에 한해 개명하고 **원제를 아래 표 '출처'칸에 병기**한다(AU-032 · 라이선스 추적 유지).
 > 반입 후 **루프용 페이드 트림**(인트로 페이드인·아웃트로 페이드아웃 램프 제거 — Suno 곡은 앞뒤 페이드가 붙어 루프 부적합). 원본은 Downloads 보존.
 
 | 파일명 | 날씨 | 길이(트림후) | dest | 출처 | 라이선스 | 반입일 |
@@ -110,8 +112,10 @@
 | Rain on the Window.wav | Rain(낮) | 148.6s | `Assets/Audio/BGM/` | Suno (유료) — 페이드 트림 (AU-025) | 상업 사용 가능·소유권 귀속·무기한 | 2026-08-01 |
 | Neon Snowfall.wav | Snow(밤) | 82.4s | `Assets/Audio/BGM/` | Suno (유료) — 페이드 트림 | 〃 | 2026-07-27 |
 | Daylight Snowfall.wav | Snow(낮) | 49.3s | `Assets/Audio/BGM/` | Suno (유료) — 페이드 트림 (AU-026) | 상업 사용 가능·소유권 귀속·무기한 | 2026-08-01 |
-| Midnight Heatwave.wav | Heat | 59.9s | `Assets/Audio/BGM/` | Suno (유료) — 페이드 트림 | 〃 | 2026-07-27 |
-| Sodium Fog.wav | Fog | 65.2s | `Assets/Audio/BGM/` | Suno (유료) — 페이드 트림 | 〃 | 2026-07-27 |
+| Heatwave Afternoon.wav | Heat(낮) | 59.9s | `Assets/Audio/BGM/` | Suno (유료) — 페이드 트림 · **원제 `Midnight Heatwave`** (AU-032 개명) | 〃 | 2026-07-27 |
+| Heatwave Night Drive.wav | Heat(밤) | 82.5s | `Assets/Audio/BGM/` | Suno (유료) — 페이드 트림 · **원제 `Sunny Afternoon Drive`** (AU-032 개명) | 상업 사용 가능·소유권 귀속·무기한 | 2026-08-08 |
+| Pale White Haze.wav | Fog(낮) | 143.5s | `Assets/Audio/BGM/` | Suno (유료) — 페이드 트림 (AU-032) · 원제 유지 | 상업 사용 가능·소유권 귀속·무기한 | 2026-08-08 |
+| Sodium Fog.wav | Fog(밤) | 65.2s | `Assets/Audio/BGM/` | Suno (유료) — 페이드 트림 | 〃 | 2026-07-27 |
 
 - 임포트 = Vorbis q30 · Compressed In Memory · 스테레오(BGM 규격 자동). 배선 = `WeatherChanged` 구독 → 날씨 무드 곡이 시간대 슬롯 override(amb 우선순위와 동형).
 
