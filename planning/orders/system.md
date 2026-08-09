@@ -6145,3 +6145,23 @@ World 구독자 2종은 재발행 안전 — `WorldWeatherManager`는 `_phase` �
 
 MDA 판정 (D-070): **강화** — 밤 조명은 낮밤 전환이 이 프로젝트에서 사는 방식(ARCHITECTURE §3)이고,
 배송지가 깜깜하면 목적지 하이라이트·간판 발광이 통째로 죽는다. 첫인상 직격.
+
+### S-208 · 결과 2026-08-09 21:39 (리드 6분 · 셀프검증 3종 통과)
+
+[WorldDayNightManager.cs](../../Assets/Scripts/Managers/WorldDayNightManager.cs) `OnSceneArrivedSky`의
+조기 return 1줄 철거 — 씬 도착마다 현재 페이즈를 무조건 재발행한다. 다른 파일은 손대지 않았다.
+
+관찰 (Play 실측 · 램프 점등수는 `StreetLampLight._light.enabled` 집계):
+
+| 경로 | 수정 전 | 수정 후 |
+|---|---|---|
+| 밤중 Camp → Village 첫 진입 | 0/8 | **8/8** |
+| 밤중 Village → FoodStreet | 0/8 | **8/8** |
+| 밤중 FoodStreet → Village 복귀 | 0/8 | **8/8** |
+| 낮(13:00) Village 진입 | 0/8 | **0/8** (오점등 없음) |
+
+- 먹자골목은 S-189 밤 고정 구역이라 낮 시각에도 Night로 도착한다 — 설계대로이며 이번 변경과 무관.
+- 콘솔 에러 0 · 워닝 0 (검증 중 뜬 `Camp → Camp 는 허용되지 않은 전이다`는 exec 재시도가 낸
+  테스트 부산물이지 산출물 결함이 아니다).
+- 캡처: `Screenshots/bug_village_night_lamps_off.png`(수정 전 · 8/8 소등) ·
+  `Screenshots/s208_village_night_lit.png`(수정 후 · 광추 8개 점등, Day 1 23:09).

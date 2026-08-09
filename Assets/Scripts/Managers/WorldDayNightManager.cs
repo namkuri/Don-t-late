@@ -147,10 +147,15 @@ namespace DontLate
 
             // S-189 — 고정 구역을 드나들면 하늘 시각이 건너뛴다. 페이즈(밤 조명·블룸·간판 발광)를
             // 다음 틱까지 기다리지 않고 즉시 맞춘다 — 안 그러면 도착 첫 순간이 낮으로 보인다.
-            DayPhase phase = ResolvePhase(SkyMinute);
-            if (phase == _phase) return;
-            _phase = phase;
-            WorldEvents.RaiseDayPhaseChanged(phase);
+            // S-208 — **페이즈가 같아도 반드시 발행한다.** 조명 오브젝트(StreetLampLight·SignGlow·
+            // StarField·ChristmasStringLights)는 씬마다 새로 태어나 소등 상태로 시작하고, 오직 이
+            // 이벤트로만 현재 시간대를 배운다(D-027 — 매니저 직접 참조 금지). 밤에 씬을 옮기면
+            // Night→Night라 종전 조기 return이 이벤트를 삼켰고, 새 램프는 배울 기회를 영영 잃어
+            // 밤인데 거리가 깜깜했다(남규님 실관찰: 먹자골목 갔다 빌라촌 복귀 → 8/8 소등).
+            // 재발행은 안전하다: 새 오브젝트는 첫 수신을 '현재 상태'로 보고 플리커 없이 즉시 반영하고,
+            // World 구독자(Weather·Audio)는 씬 전이마다 이미 같은 갱신을 도는 멱등 경로다.
+            _phase = ResolvePhase(SkyMinute);
+            WorldEvents.RaiseDayPhaseChanged(_phase);
         }
 
         private void OnWeatherChanged(WeatherType weather)
