@@ -416,3 +416,28 @@ S-162 튜토리얼 미션 카드가 초록으로 바뀌는 순간에 1회. 9단�
 - 소켓 4겹은 **도착 전부터 전부 실재**했다(AU-027 반증 이후 관제가 채워 둠): `_sfxTutorialStep` 필드 ·
   `PlayTutorialStepSfx()` · `TutorialMissionCardView.OnStepCleared` 발화 · `CoreSceneBuilder`의
   `LoadSfx("sfx_tutorial_step")` 주입. 본 PR은 코드 변경 없이 파일만 채운다.
+
+## AU-034 sfx_throw 교체 (던지기 — "쉭" 제거) — ElevenLabs · 2026-08-10
+
+남규님 관찰 "물건 던질 때 쉭하는 이상한 소리". 클립 결함이 아니라 **프롬프트 결함**이었다 —
+종전 창작 태그가 `one quick soft airy toss swish, light`로, `airy swish`가 그 "쉭"의 정체다.
+
+- **채택 프롬프트(창작 태그)**: `dry cardboard box thump, one quick hit, punchy midrange, no hiss, no scratch`
+  + **`--no-anchors`**(토이톤 앵커 제거) · 요청 길이 0.5s · seed 662102799 · prompt_sha1 `c1264adaa13c`
+- **3라운드 21 take · Director 청취 3회**:
+  ① 마림바 톡 계열(앵커 유지) 9 take → **전량 기각 "삑 소리, 던지는 것 같지 않다"**.
+     원인 = 토이톤 앵커의 `marimba·synth pluck`이 **음정**을 만든다. 던지는 순간은 음정이 없다.
+  ② 판지 마찰(`--no-anchors`, `short scuff`) 6 take → 기각 **"그나마 던지는 소리 같은데 췩 같이 거슬린다"**.
+     원인 2겹 = 태그의 `scuff`(마찰=고역) + 원본이 -22~-33dB로 작게 뽑혀 게인 20~30dB에 히스가 같이 커짐.
+  ③ `scuff` → `thump`로 교체 + `no hiss, no scratch` 명시 6 take → **m26 채택**
+     (raw peak **0.0dB** — 유일하게 증폭 불요, 히스 원천 없음).
+- **후공정에 1-pole 저역통과 3kHz 추가** (이번 건 한정): 채택본에도 남은 고역 "췩"을 Director가 지적해
+  3kHz LPF → 트림 → 단일게인 → 8ms 페이드 → 모노. 실측 **0.175s · 모노 · peak -3.9dB · rms -14.0dB**(RMS 한계).
+  필터 강도는 5k/3k 두 벌을 발신해 Director가 3k를 지목했다.
+- 생성 실패율 기록: 21 take 중 **무음 7건**(전 구간 -40dBFS 미만). 앵커 유무와 무관하게 발생했다 —
+  sound-generation이 임팩트 계열에서 무음을 뱉는 빈도는 톤 계열보다 높다고 보는 편이 맞다.
+- ⚠ SFX는 API가 seed를 받지 않는다(body = `{text, duration_seconds}`). gen.json의 seed는 클라이언트
+  기록일 뿐 복원 불가 — **로컬 wav가 정본**.
+- 소켓 4겹 전부 실재 → **코드 변경 0줄**: `_sfxThrow` 필드 · `PlayThrowSfx()` ·
+  `PlayerStatusManager` 던지기 2곳(상자 `:508` · 드링크 `:649`) · `CoreSceneBuilder`의 `LoadSfx("sfx_throw")`.
+  같은 파일명 덮어쓰기라 **GUID 불변**(`452fe8ad3fa1c824695c6de22bccd9a7` — 교체 전후 동일 확인).
