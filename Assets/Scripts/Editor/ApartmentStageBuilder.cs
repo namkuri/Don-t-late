@@ -17,6 +17,7 @@ namespace DontLate.EditorTools
         private const int FLOORS = 4;
         private const float SHAFT_X = 20f;      // 샤프트 중심
         private const float SLAB_RIGHT = 18.4f; // 슬래브는 샤프트 앞에서 끝난다
+        private const float FOREGROUND_Z = -40f; // S-212 — 카메라(z −40.4) 앞까지 지면을 잇는다
 
         [MenuItem("DontLate/Build/Apartment Stage", priority = 14)]
         public static void BuildApartmentStage()
@@ -103,6 +104,15 @@ namespace DontLate.EditorTools
             EdgeGateBuildKit.BuildGate("EdgeGate_Prev", new Vector3(-19.5f, 0f, 0f), DontLate.DistrictEdgeGate.Direction.Prev, gameState, 4f);
 
             ArtBackdropKit.Build(ArtBackdropKit.Apartment); // S-180 ② — 아트 세트 소켓(프리팹 없으면 무시)
+
+            // S-212 — 카메라(z −40)와 바닥(z −3) 사이가 비어 화면 하단 절반이 하늘이었다.
+            // 세트 배치 **뒤에** 부른다 — 이 시점의 바닥은 아트판이고, 그 바운즈·머티리얼을 이어야
+            // 이음매가 안 보인다. 뒤(+z)는 BackWall이 있어 손대지 않는다.
+            // 좌우 여유는 **바깥쪽만** 준다 — 마당(x −20)·로비(x 22) 끝에서 화면 모서리에 하늘이
+            // 남는데, 둘 다 안쪽으로 넓히면 경계에서 두 바닥이 겹쳐 z파이팅이 난다.
+            const float SIDE_PAD = 24f;
+            GreyboxStageBuilder.ExtendGroundForward("YardGround", FOREGROUND_Z, padMinX: SIDE_PAD);
+            GreyboxStageBuilder.ExtendGroundForward("LobbyGround", FOREGROUND_Z, padMaxX: SIDE_PAD);
             GreyboxStageBuilder.BuildPlayer(gameState, tuning);
             GameObject player = GameObject.Find("__gb_Player");
             if (player != null) player.transform.position = new Vector3(-16f, 0.1f, 0f);

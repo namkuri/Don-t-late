@@ -99,6 +99,10 @@ namespace DontLate.EditorTools
 
             // ── 플레이어·카메라(Y 팔로우) ────────────────────
             ArtBackdropKit.Build(ArtBackdropKit.Hillside); // S-180 ② — 아트 세트 소켓(프리팹 없으면 무시)
+
+            // S-212 — 산 아래 평지가 z −6에서 끊겨 화면 하단 40%가 하늘이었다. 세트 배치 뒤에 불러
+            // 아트판 바닥(세트에 담긴 __gb_BaseGround)의 머티리얼·바운즈를 이어 붙인다.
+            GreyboxStageBuilder.ExtendGroundForward("BaseGround", -40f);
             GreyboxStageBuilder.BuildPlayer(gameState, tuning);
             GameObject player = GameObject.Find("__gb_Player");
             if (player != null) player.transform.position = OnGround(-16f, 0f, 0.1f);
