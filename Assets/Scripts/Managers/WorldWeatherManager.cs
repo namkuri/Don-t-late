@@ -162,6 +162,15 @@ namespace DontLate
 
         private bool _pinnedClearScene;
 
+        // S-208 — 타이틀(Main)에선 날씨와 무관하게 바람 리본을 띄운다(아트쪽 "인트로가 심심하다" 피드백).
+        // 리본은 S-092에서 태풍 전용으로 만든 것인데, 첫 화면에 필요한 건 비바람이 아니라 **움직임**이다
+        // — 같은 연출을 한 벌 더 만들지 않고 조건만 연다.
+        // 초기값 true: 게임은 타이틀에서 시작하고 그 첫 도착은 씬 전환 통지가 오지 않는다(BagView와 같은 관례).
+        private bool _titleScene = true;
+
+        /// <summary>바람 리본을 띄울 상황인가 — 태풍(S-092) 또는 타이틀(S-208). 실내에선 안 띄운다.</summary>
+        private bool WantsWindRibbons => !_indoorScene && (Weather == WeatherType.Storm || _titleScene);
+
         // S-202 — 엔딩은 맑음으로 끝난다(남규님 지시). 배웅 장면에 비·눈이 오면 결말의 온도가 어긋난다.
         // 한 번 켜지면 세션이 끝날 때까지 유지된다 — 엔딩 뒤엔 타이틀로 가므로 되돌릴 일이 없다.
         private bool _endingClear;
@@ -254,7 +263,7 @@ namespace DontLate
             }
             ApplyWindToFall(_rain);   // S-089 ① — 강수 기울기 (무풍이면 0)
             ApplyWindToFall(_snow);
-            ToggleWindStreaks(outdoor && Weather == WeatherType.Storm); // S-089 ④ — 공중 바람 줄기
+            ToggleWindStreaks(WantsWindRibbons);                    // S-089 ④ 공중 바람 줄기 · S-208 타이틀
             ToggleFogBanks(outdoor && Weather == WeatherType.Fog);      // S-091 ② — 안개 뭉치 층
 
             int cloudCount = Weather switch
@@ -312,6 +321,7 @@ namespace DontLate
 
         private void OnSceneChanged(GameScene scene)
         {
+            _titleScene = scene == GameScene.Main; // S-208
             _pinnedClearScene = PinsClear(scene) || _endingClear;
             if (_pinnedClearScene && Weather != WeatherType.Clear) SetWeather(WeatherType.Clear);
 
@@ -324,6 +334,9 @@ namespace DontLate
             // 씬 전환마다 재추첨되고 StormRainCycle 소유권이 흔들리므로, 게이트만 다시 적용한다.
             // _clouds 가드 = 씬 단독 Play: CoreBootstrap의 도착 통지가 이 매니저의 Start보다 먼저 돌 수 있다.
             if (_clouds != null) ApplyIndoorGate();
+            // S-208 — 리본 토글은 `_clouds` 가드 밖에서도 한 번 돌린다. 타이틀을 떠날 때 리본이
+            // 안 꺼지면 배송 씬 맑은 하늘에 그대로 남는다(멱등이라 두 번 불려도 안전).
+            ToggleWindStreaks(WantsWindRibbons);
             RefreshGradeTarget();
 
             // S-184 — 타이틀 쇼케이스(TitleShowcaseDirector)가 날씨를 순환시키므로, 게임 씬으로
@@ -338,7 +351,7 @@ namespace DontLate
         {
             bool outdoor = !_indoorScene;
             if (_hazeRoot != null) _hazeRoot.SetActive(outdoor && Weather == WeatherType.Heat);
-            ToggleWindStreaks(outdoor && Weather == WeatherType.Storm);
+            ToggleWindStreaks(WantsWindRibbons);
             ToggleFogBanks(outdoor && Weather == WeatherType.Fog);
             ApplyFallVolume();
             ClearAirborneIfIndoor(); // S-128 ① — 창밖 모드도 한 번 비운다(잔류 입자가 방 좌표에 남는다)
@@ -797,9 +810,12 @@ namespace DontLate
         {
             while (true)
             {
-                yield return new WaitForSeconds(Random.Range(0.6f, 1.8f));
+                // S-208 — 타이틀은 **성기게**. 태풍 밀도(최대 5개·0.6초 간격)를 첫 화면에 그대로 쓰면
+                // 로고 위로 리본이 계속 지나가 읽기가 방해된다. 심심함만 덜어내는 정도가 목적이다.
+                bool calmTitle = _titleScene && Weather != WeatherType.Storm;
+                yield return new WaitForSeconds(calmTitle ? Random.Range(1.8f, 3.6f) : Random.Range(0.6f, 1.8f));
                 _windRibbons.RemoveAll(r => r == null);
-                if (_windRibbons.Count < 5) StartCoroutine(WindRibbonFly());
+                if (_windRibbons.Count < (calmTitle ? 2 : 5)) StartCoroutine(WindRibbonFly());
             }
         }
 
@@ -808,12 +824,21 @@ namespace DontLate
             Camera camera = Camera.main;
             if (camera == null) yield break;
 
+            // S-208 — 타이틀판은 **굵고 진하게, 그리고 화면 안에서**.
+            // 태풍 규격(폭 0.13u·알파 0.55)을 그대로 띄워 봤더니 스폰·렌더는 되는데(포인트 116개,
+            // isVisible=True) 캡처에서 아예 안 보였다 — 저해상 렌더를 거치면 2px짜리 반투명 선이라
+            // 하늘색 배경에 묻힌다. 비 오는 날엔 "있는 듯 마는 듯"이 맞지만, 심심한 첫 화면을 채우려면
+            // 보여야 한다. 스폰 지점도 26u → 17u로 당겨 비행의 대부분이 화면 안에서 벌어지게 한다
+            // (카메라 가시폭이 x −14~14라 26u 밖에서 출발하면 앞부분을 화면 밖에서 다 써 버린다).
+            bool titleMode = _titleScene && Weather != WeatherType.Storm;
+
             GameObject head = new GameObject("WindRibbon");
             _windRibbons.Add(head);
             float direction = WindX == 0f ? 1f : WindX;
-            float baseY = Random.Range(1.6f, 6.5f);
+            float baseY = titleMode ? Random.Range(3.2f, 7.5f) : Random.Range(1.6f, 6.5f);
             head.transform.position = new Vector3(
-                camera.transform.position.x - direction * 26f, baseY, Random.Range(-1f, 3f));
+                camera.transform.position.x - direction * (titleMode ? 17f : 26f),
+                baseY, Random.Range(-1f, 3f));
 
             if (_ribbonMaterial == null)
             {
@@ -821,13 +846,19 @@ namespace DontLate
             }
             TrailRenderer trail = head.AddComponent<TrailRenderer>();
             trail.material = _ribbonMaterial;
-            trail.time = 0.85f;
+            trail.time = titleMode ? 1.25f : 0.85f;
             trail.minVertexDistance = 0.05f;
             trail.numCapVertices = 4;
+            // 폭 배수 8 = 최대 1.04u. 2.6배(0.34u)·4배(0.52u)는 캡처에서 아예 안 잡혔다 —
+            // 저해상 렌더를 4배로 다시 키우는 파이프라인이라 얇은 반투명 선은 중간에서 뭉개진다.
+            // 붉게 칠해 폭 1.35u로 키운 대조군이 또렷하게 잡히는 걸 확인하고 그 아래로 잡았다.
+            float width = titleMode ? 8f : 1f;
             trail.widthCurve = new AnimationCurve(
-                new Keyframe(0f, 0.02f), new Keyframe(0.25f, 0.13f), new Keyframe(1f, 0.015f));
-            trail.startColor = new Color(1f, 1f, 1f, 0.55f);
-            trail.endColor = new Color(1f, 1f, 1f, 0f);
+                new Keyframe(0f, 0.02f * width), new Keyframe(0.25f, 0.13f * width), new Keyframe(1f, 0.015f * width));
+            trail.startColor = new Color(1f, 1f, 1f, titleMode ? 0.9f : 0.55f);
+            // 꼬리 알파: 태풍은 0(완전 소멸)이지만 타이틀은 0.2를 남긴다 — 0으로 두면 리본 길이의
+            // 대부분이 사실상 투명이라 "지나갔다"는 인상만 남고 형태가 안 읽힌다.
+            trail.endColor = new Color(1f, 1f, 1f, titleMode ? 0.2f : 0f);
 
             float speed = Random.Range(9f, 14f);
             float wobbleAmp = Random.Range(0.35f, 0.7f);
