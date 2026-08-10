@@ -1,6 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Animations; // S-228 — 엔딩 대열 걷기 클립 재생
+using UnityEngine.Playables;
 
 namespace DontLate
 {
@@ -18,6 +20,27 @@ namespace DontLate
         [Tooltip("동행 후보 NPC 도감 — 빌더 주입 (Data/Npcs 전량). 호감도 장부와 npcId로 대조.")]
         [SerializeField] private NpcSO[] _npcs;
         [SerializeField] private EndingCreditsView _creditsView;
+
+        /// <summary>
+        /// S-228 — 엔딩 대열 1인. **모델이 있는 인물만** 여기 오른다(빌더가 채운다).
+        /// 종전 명부는 호감도 장부·도감에서 뽑았는데, 도감(8종)에 오지혜·나아라가 없어
+        /// 실모델 인물이 다 나오지 못했다 — 명부의 기준을 "모델 보유"로 바꾼다.
+        /// </summary>
+        [System.Serializable]
+        public struct EndingCastEntry
+        {
+            public string npcId;
+            public string displayName;
+            public GameObject model;
+            [Tooltip("걸어오는 동안 재생할 클립. 비면 정지 자세로 미끄러진다.")]
+            public AnimationClip walkClip;
+            public Avatar avatar;
+            [Tooltip("S-228 — FBX 임베디드 머티리얼이 텍스처를 못 찾는 모델용. 비면 원본 그대로.")]
+            public Material skin;
+        }
+
+        [Tooltip("S-228 — 엔딩 대열(모델 보유 인물 전원, 1인 1종). 빌더 주입.")]
+        [SerializeField] private EndingCastEntry[] _cast;
 
         private const int FOLLOWER_MAX = 5;
         private const float WALK_SPEED = 2.4f;
@@ -101,6 +124,28 @@ namespace DontLate
             Transform player = FindPlayer();
             if (player == null) { _sequenceRunning = false; yield break; }
 
+            // S-229 ③ — **조작을 여기서 잠근다.** 종전엔 3단(퇴장)에서야 잠갔는데, 그전까지
+            // 대열이 걸어오고 대사가 도는 동안 입력이 살아 있었다 — 플레이어가 엣지워크로
+            // 걸어 나가 Home으로 돌아가면 엔딩이 통째로 깨진다(남규님 실관찰).
+            // 이동만 막는다: 대화 진행 입력은 DialogueView가 따로 받는다.
+            PlayerManager hub = player.GetComponent<PlayerManager>();
+            if (hub != null)
+            {
+                if (hub.Input != null) hub.Input.enabled = false;
+                if (hub.Locomotion != null) hub.Locomotion.enabled = false;
+            }
+
+            // S-229 ② — 엣지워크 화살표를 끈다. 조작을 막아도 "나갈 수 있다"는 신호가 남아 있으면
+            // 마지막 장면에 안 어울린다. 게이트 자체를 꺼서 판정도 같이 죽인다.
+            int gatesOff = 0;
+            foreach (DistrictEdgeGate gate in FindObjectsByType<DistrictEdgeGate>(FindObjectsInactive.Exclude))
+            {
+                if (gate == null) continue;
+                gate.gameObject.SetActive(false);
+                gatesOff++;
+            }
+            if (gatesOff > 0) Debug.Log("[엔딩] 엣지워크 게이트 " + gatesOff + "개 소등 (S-229 ②).");
+
             yield return WaitClamped(1.2f); // 도착 한 박자
 
             // S-107 ③ 보강 — 씬의 배회 행인도 멈춰서 플레이어를 바라본다: "다같이 모여 격려"의 일부이자,
@@ -115,14 +160,13 @@ namespace DontLate
             }
 
             // 2단 — 박말순 선두 + 동행이 오른쪽에서 걸어온다.
-            List<NpcSO> party = PickParty();
-            List<Color> colors = DistinctColors(party); // 동색 워커 구분 (캡처 게이트 적발 — 팔레트 재지정)
+            List<EndingCastEntry> party = PickParty();
             var figures = new List<Transform>();
             for (int i = 0; i < party.Count; i++)
             {
                 // 대열은 카메라 앞줄(z-)에 선다 — 캠프 소품(게시판·트럭, 깊은 쪽)과의 z-겹침 방지 (캡처 게이트 적발)
                 Vector3 spawn = player.position + new Vector3(10f + i * 1.4f, 0f, -0.4f - (i % 2) * 0.7f);
-                figures.Add(MakeFigure(party[i], colors[i], spawn));
+                figures.Add(MakeFigure(party[i], spawn));
             }
             for (int i = 0; i < figures.Count; i++)
             {
@@ -146,13 +190,7 @@ namespace DontLate
                 yield return null;
             Debug.Log("[엔딩] 작별 대화 종료 t=" + Time.time.ToString("0.0"));
 
-            // 3단 — 늦지마맨 퇴장: 왼쪽으로 걸어가 사라진다 (조작 잠금).
-            PlayerManager hub = player.GetComponent<PlayerManager>();
-            if (hub != null)
-            {
-                if (hub.Input != null) hub.Input.enabled = false;
-                if (hub.Locomotion != null) hub.Locomotion.enabled = false;
-            }
+            // 3단 — 늦지마맨 퇴장: 왼쪽으로 걸어가 사라진다 (조작은 S-229 ③에서 이미 잠갔다).
             CharacterController controller = player.GetComponent<CharacterController>();
             if (controller != null) controller.enabled = false;
             yield return StartCoroutine(WalkTo(player, player.position + Vector3.left * 14f, faceLeft: true));
@@ -212,29 +250,38 @@ namespace DontLate
             return null;
         }
 
-        private List<NpcSO> PickParty()
+        /// <summary>
+        /// S-228 — **모델 보유 인물 전원을 1인 1종으로** 세운다(남규님 지시 "1마리씩 다 나오게").
+        ///
+        /// 종전엔 호감도 장부 상위 + 도감 충원으로 뽑았는데, 도감(`Data/Npcs` 8종)에 오지혜·나아라가
+        /// 없어 실모델 인물이 대열에 못 들어왔다. 이제 기준은 **모델을 가졌는가** 하나다 —
+        /// 호감도는 대열 순서(선두 다음 자리)에만 쓴다. 박말순은 서사상 언제나 선두.
+        /// 같은 모델이 두 번 서지 않게 모델 기준으로도 한 번 더 거른다.
+        /// </summary>
+        private List<EndingCastEntry> PickParty()
         {
-            var party = new List<NpcSO>();
-            NpcSO malsoon = FindNpc("parkmalsoon");
-            if (malsoon != null) party.Add(malsoon); // 선두는 언제나 박말순
+            var party = new List<EndingCastEntry>();
+            if (_cast == null || _cast.Length == 0) return party;
 
-            var ranked = new List<NpcAffinity>(_gameState.npcAffinities);
+            var usedModels = new List<GameObject>();
+            void TryAdd(EndingCastEntry entry)
+            {
+                if (entry.model == null || usedModels.Contains(entry.model)) return;
+                usedModels.Add(entry.model);
+                party.Add(entry);
+            }
+
+            foreach (EndingCastEntry entry in _cast)
+                if (entry.npcId == "parkmalsoon") TryAdd(entry); // 선두 고정
+
+            // 호감도 높은 순으로 그 다음 자리를 채운다(있는 만큼만 — 없어도 전원 등장은 아래에서 보장).
+            var ranked = new List<NpcAffinity>(_gameState != null ? _gameState.npcAffinities : new List<NpcAffinity>());
             ranked.Sort((a, b) => b.affinity.CompareTo(a.affinity));
-            foreach (NpcAffinity entry in ranked)
-            {
-                if (party.Count >= 1 + FOLLOWER_MAX) break;
-                if (entry.npcId == "parkmalsoon") continue;
-                NpcSO npc = FindNpc(entry.npcId);
-                if (npc != null && !party.Contains(npc)) party.Add(npc);
-            }
-            // S-107 ③ — 부족분은 도감에서 충원: 호감도가 없어도 이웃들이 다같이 모여
-            // 격려하는 것이 이 엔딩의 포인트 (호감도 인원은 앞줄 우선일 뿐).
-            foreach (NpcSO npc in _npcs)
-            {
-                if (party.Count >= 1 + FOLLOWER_MAX) break;
-                if (npc == null || npc.npcId == "parkmalsoon" || party.Contains(npc)) continue;
-                party.Add(npc);
-            }
+            foreach (NpcAffinity affinity in ranked)
+                foreach (EndingCastEntry entry in _cast)
+                    if (entry.npcId == affinity.npcId) TryAdd(entry);
+
+            foreach (EndingCastEntry entry in _cast) TryAdd(entry); // 나머지 전원
             return party;
         }
 
@@ -250,42 +297,84 @@ namespace DontLate
             => THANKS_LINES[Mathf.Abs(npcId.GetHashCode()) % THANKS_LINES.Length];
 
         /// <summary>도감 색 기반 + 유사색 중복 시 색상환 분산 — 6명이 육안 구분되게 (S-107 게이트 적발).</summary>
-        private static List<Color> DistinctColors(List<NpcSO> party)
+        /// <summary>
+        /// S-228 — 실모델로 세운다. 모델이 없으면 종전 캡슐로 떨어진다(빌더 주입이 비어도 엔딩은 돈다).
+        /// 전고는 1.7u로 정규화한다 — 모델마다 원 크기가 제각각이라 그대로 두면 키가 들쭉날쭉해진다.
+        /// 걷기 클립이 있으면 재생한다: 없으면 정지 자세로 미끄러져 온다(종전 증상).
+        /// </summary>
+        private static Transform MakeFigure(EndingCastEntry entry, Vector3 position)
         {
-            var colors = new List<Color>();
-            for (int i = 0; i < party.Count; i++)
-            {
-                Color color = party[i].placeholderColor;
-                bool similar = false;
-                foreach (Color used in colors)
-                    if (Mathf.Abs(color.r - used.r) + Mathf.Abs(color.g - used.g) + Mathf.Abs(color.b - used.b) < 0.35f)
-                        similar = true;
-                if (similar) color = Color.HSVToRGB((i * 0.17f) % 1f, 0.5f, 0.8f);
-                colors.Add(color);
-            }
-            return colors;
+            GameObject root = new GameObject("EndingNpc_" + entry.npcId);
+            root.transform.position = position;
+            root.transform.rotation = Quaternion.Euler(0f, -90f, 0f); // 플레이어(왼쪽)를 보고 걸어온다
+
+            if (entry.model == null) { MakeGreyboxFigure(root); return root.transform; }
+
+            GameObject visual = Instantiate(entry.model, root.transform);
+            visual.transform.localPosition = Vector3.zero;
+            visual.transform.localRotation = Quaternion.identity;
+
+            Renderer[] renderers = visual.GetComponentsInChildren<Renderer>(true);
+            if (renderers.Length == 0) { Destroy(visual); MakeGreyboxFigure(root); return root.transform; }
+
+            Bounds bounds = renderers[0].bounds;
+            for (int i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
+            if (bounds.size.y > 0.001f) visual.transform.localScale = Vector3.one * (1.7f / bounds.size.y);
+
+            // 발끝을 지면에 맞춘다 — 스케일을 바꾼 뒤 다시 재야 한다.
+            bounds = renderers[0].bounds;
+            for (int i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
+            visual.transform.position += Vector3.up * (root.transform.position.y - bounds.min.y);
+
+            // S-228 — 동반 머티리얼. FBX 임베디드는 텍스처를 못 찾아 새하얗게 선다
+            // (S-215 박말순·나아라, S-221 행인에서 겪은 것과 같은 함정 — 엔딩에서 또 밟았다).
+            if (entry.skin != null)
+                foreach (Renderer renderer in renderers) renderer.sharedMaterial = entry.skin;
+
+            PlayWalkClip(visual, entry);
+            return root.transform;
         }
 
-        // 런타임 감사 인사 피겨 — 캡슐+머리 (그레이박스 NPC 동형, 세션 한정이라 SO 에셋 불요).
-        private static Transform MakeFigure(NpcSO npc, Color bodyColor, Vector3 position)
+        /// <summary>모델이 없을 때의 대체 — 캡슐+머리(종전 그레이박스).</summary>
+        private static void MakeGreyboxFigure(GameObject root)
         {
-            GameObject root = new GameObject("EndingNpc_" + npc.npcId);
-            root.transform.position = position;
-
             GameObject body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            Object.Destroy(body.GetComponent<Collider>());
+            Destroy(body.GetComponent<Collider>());
             body.transform.SetParent(root.transform, false);
             body.transform.localPosition = new Vector3(0f, 0.9f, 0f);
             body.transform.localScale = new Vector3(0.55f, 0.9f, 0.55f);
-            body.GetComponent<Renderer>().material.color = bodyColor;
 
             GameObject head = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            Object.Destroy(head.GetComponent<Collider>());
+            Destroy(head.GetComponent<Collider>());
             head.transform.SetParent(root.transform, false);
             head.transform.localPosition = new Vector3(0f, 1.95f, 0f);
             head.transform.localScale = Vector3.one * 0.42f;
             head.GetComponent<Renderer>().material.color = new Color(0.93f, 0.82f, 0.70f);
-            return root.transform;
+        }
+
+        /// <summary>
+        /// S-228 — 걷기 클립을 물린다. `AlternatingNpcAnimation`을 쓰지 않는 이유:
+        /// 그 컴포넌트는 LateUpdate에서 루트 위치를 되돌려 놓는데(제자리 연출용),
+        /// 여기선 코루틴이 루트를 움직이므로 서로 싸운다. 그래서 최소 그래프만 직접 돌린다.
+        /// </summary>
+        private static void PlayWalkClip(GameObject visual, EndingCastEntry entry)
+        {
+            if (entry.walkClip == null) return;
+
+            Animator animator = visual.GetComponentInChildren<Animator>(true);
+            if (animator == null) animator = visual.AddComponent<Animator>();
+            if (entry.avatar != null) animator.avatar = entry.avatar;
+            if (entry.walkClip.isHumanMotion && animator.avatar == null) return; // 아바타 없이 휴머노이드 클립은 안 돈다
+            animator.applyRootMotion = false;
+            animator.runtimeAnimatorController = null;
+
+            var graph = UnityEngine.Playables.PlayableGraph.Create(visual.name + "_EndingWalk");
+            graph.SetTimeUpdateMode(UnityEngine.Playables.DirectorUpdateMode.GameTime);
+            var clip = UnityEngine.Animations.AnimationClipPlayable.Create(graph, entry.walkClip);
+            clip.SetApplyFootIK(true);
+            var output = UnityEngine.Animations.AnimationPlayableOutput.Create(graph, "Walk", animator);
+            output.SetSourcePlayable(clip);
+            graph.Play();
         }
 
         /// <summary>
