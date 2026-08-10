@@ -24,6 +24,10 @@ namespace DontLate.EditorTools
         private const float UPHILL_SCALE_Z = 5.9f;
         private const float UPHILL_POSITION_Z = 0f;
 
+        // S-281 — 남규님 손조정(2026-08-10): 전경 지면 판.
+        private static readonly Vector3 FRONT_GROUND_POSITION = new Vector3(37.6f, -0.08f, -17f);
+        private static readonly Vector3 FRONT_GROUND_SCALE = new Vector3(129.43f, 0.1f, 46f);
+
         private const float LANE_HALF_Z = 2.6f;   // 걷기 허용 폭 (능선 위)
         private const float BACK_ROW_Z = 3.3f;    // 능선 뒤편 — 판잣집·데코 줄 (레인 밖)
 
@@ -85,7 +89,15 @@ namespace DontLate.EditorTools
             // S-212(정수님) — 산 아래 평지가 z −6에서 끔겨 화면 하단 40%가 하늘이었다.
             // 세트 배치 뒤에 불러 아트판 바닥(세트의 __gb_BaseGround)의 머티리얼·바운즈를 이어 붙인다.
             // ⚠ 호출 위치를 지형 절로 올렸다(S-214에서 배경 조립이 앞으로 이동) — 원래 자리엔 이제 세트가 없다.
-            GreyboxStageBuilder.ExtendGroundForward("BaseGround", -40f);
+            // S-281 — 남규님이 씬에서 맞춘 전경 판 치수를 정본으로 승격한다.
+            // 자동 계산(원본 바운즈 기준)은 아트 세트가 오른쪽으로 더 넓어진 것을 못 따라가,
+            // 재조립하면 우측 끝이 다시 잘렸다.
+            GameObject groundFront = GreyboxStageBuilder.ExtendGroundForward("BaseGround", -40f);
+            if (groundFront != null)
+            {
+                groundFront.transform.position = FRONT_GROUND_POSITION;
+                groundFront.transform.localScale = FRONT_GROUND_SCALE;
+            }
             Physics.SyncTransforms(); // 이 아래 배치는 전부 GroundY 레이캐스트에 의존한다
 
             // ── 달동네 판잣집 — S-206에서 **빌더 생산 중단**(남규님 지시). ──
@@ -187,7 +199,10 @@ namespace DontLate.EditorTools
                 if (root.name != "__gb_BaseGround") continue;
                 Renderer renderer = root.GetComponentInChildren<Renderer>(true);
                 Material material = renderer != null ? renderer.sharedMaterial : null;
-                if (material == null || material.name.StartsWith("GB_")) return null;
+                // S-281 — 종전엔 `GB_`로 시작하면 통째로 걸렀다(그레이박스 기본값 제외 의도).
+                // 그런데 남규님이 고른 `GB_HillAsphalt`도 그 접두어라 함께 걸러져, 재조립마다
+                // 흙 머티리얼로 되돌아갔다. **빌더가 만드는 기본값 하나만** 제외한다.
+                if (material == null || material.name == "GB_HillDirt") return null;
                 return material;
             }
             return null;

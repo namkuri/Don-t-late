@@ -1737,8 +1737,9 @@ namespace DontLate.EditorTools
             innerRect.offsetMin = new Vector2(3f, 3f);
             innerRect.offsetMax = new Vector2(-3f, -3f);
 
+            // S-281 — 34은 폰 화면 밖으로 삐져나왔다(남규님 지적) → 26.
             TMP_Text title = CreateText(inner.transform, "Title", "진상 전화!", font,
-                34f, AMBER, TextAlignmentOptions.Top);
+                26f, AMBER, TextAlignmentOptions.Top);
             RectTransform titleRect = title.rectTransform;
             titleRect.anchorMin = new Vector2(0f, 1f);
             titleRect.anchorMax = new Vector2(1f, 1f);
