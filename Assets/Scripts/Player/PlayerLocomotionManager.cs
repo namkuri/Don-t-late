@@ -51,6 +51,10 @@ namespace DontLate
         // 로직은 남긴다 — 되살리려면 이 상수만 true로. 지우면 S-053 ①·S-084 ③ 설계가 통째로 사라진다.
         private const bool SLIPPERY_ENABLED = false;
 
+        // S-222 — 접지 유지 하향 계수. tan(38.7°) 상당으로, Hillside 최대 경사 27.4°에 여유를 둔다.
+        // 평지에선 지면이 막으므로 값이 커도 무해하고, 점프는 이 대입 뒤에 덮어쓰므로 영향이 없다.
+        private const float SLOPE_STICK = 0.8f;
+
         // S-119 ③ — 차 사고 부상: 이동·점프 입력 무시 (넉백 궤적·중력은 유지 — 날아가는 연출).
         //
         // S-166 ⑦ — **시한부로 바꾼다.** 종전엔 한 번 켜지면 안 껐다. 사고 = 즉시 정산 =
@@ -187,7 +191,12 @@ namespace DontLate
 
             if (_cc.isGrounded)
             {
-                _verticalVelocity = -1f; // 접지 유지용 약한 하향
+                // S-222 — 접지 유지 하향은 **수평속도에 비례**해야 한다. 종전 -1f 고정은 언덕
+                // 내리막(Hillside 최대 27.4°)에서 부족해 매 프레임 지면을 놓쳤다: 필요한 하향은
+                // tan27.4° × 4m/s = 2.1m/s. 실측 결과 7프레임 주기로 이탈→재접지가 반복되어
+                // 착지음이 초당 8.6발 울리고(:205), 같은 이유로 발소리는 보폭 누적이 리셋돼(:215)
+                // 거의 나지 않았다 — 남규님 관찰 "끼익끼익하는 전혀 안 어울리는 소리".
+                _verticalVelocity = -Mathf.Max(1f, PlanarVelocity.magnitude * SLOPE_STICK);
                 if (_hub.Input.JumpPressed && !exhausted && !_injured && !_inDialogue) // S-081 ② · S-119 ③ · S-123 ③
                 {
                     _verticalVelocity = Mathf.Sqrt(-2f * tuning.gravity * tuning.jumpHeight);

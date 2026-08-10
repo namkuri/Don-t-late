@@ -188,7 +188,7 @@
 | sfx_rhythm_hit.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) | 상업 가능·표기 불요 | 2026-07-22 |
 | sfx_rhythm_miss.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) | 상업 가능·표기 불요 | 2026-07-22 |
 | sfx_scene_whoosh.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) | 상업 가능·표기 불요 | 2026-07-22 |
-| sfx_throw.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) | 상업 가능·표기 불요 | 2026-07-22 |
+| sfx_throw.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) — AU-034 재생성으로 교체 | 상업 가능·표기 불요 | 2026-08-10 |
 | sfx_vending.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) | 상업 가능·표기 불요 | 2026-07-22 |
 | sfx_settle_ok.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) — AU-010 | 상업 가능·표기 불요 | 2026-07-23 |
 | sfx_settle_bad.wav | `Assets/Audio/SFX/` | ElevenLabs SFX (정수 Creator 유료) — AU-010 | 상업 가능·표기 불요 | 2026-07-23 |

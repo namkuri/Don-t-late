@@ -14,20 +14,20 @@
 | 종류 | SFX |
 | 트리거 | (BOM 미등재) |
 | 소리 | (BOM 미등재 — 생성은 규격만으로 진행) |
-| 요청 길이 | 0.6s |
+| 요청 길이 | 0.5s |
 | dest | `Assets/Audio/SFX/sfx_throw.wav` |
 
 ## 창작 태그 (사람이 고치는 유일한 칸)
 
 <!-- NOTE:BEGIN -->
-one quick soft airy toss swish, light
+dry cardboard box thump, one quick hit, punchy midrange, no hiss, no scratch
 <!-- NOTE:END -->
 
 ## 전송 프롬프트 (조립 결과 — 그대로 API에 투입)
 
 <!-- PROMPT:BEGIN -->
 ```
-one quick soft airy toss swish, light. Duration about 0.6 seconds. Style: cozy cute toy-like game sound, soft wooden marimba and rounded synth plucks, playful little pitch bends, gentle and warm, light and bouncy. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
+dry cardboard box thump, one quick hit, punchy midrange, no hiss, no scratch. Duration about 0.5 seconds. Single isolated sound effect, dry and close, no background music, no vocals, no long reverb tail.
 ```
 <!-- PROMPT:END -->
 
@@ -67,3 +67,4 @@ python scripts/audio/audio_pipeline.py intake --bom-id sfx_throw
 | 5 | 2026-07-22 | 재조립 |
 | 6 | 2026-07-22 | 재조립 |
 | 7 | 2026-07-22 | 재조립 |
+| 8 | 2026-08-10 | 재조립 |

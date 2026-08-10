@@ -77,7 +77,7 @@ namespace DontLate.EditorTools
             _backdrop = backdrop;
             Scene scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
             // 이 조립은 빌라촌·먹자골목·촬영용 District 1이 함께 쓴다. 빌라촌에만 걸 규칙이 몇 개 있어
-            // (S-214 ① 생성기 생략 · S-222 인물 축소) 한 곳에서 판정한다.
+            // (S-214 ① 생성기 생략 · S-233 인물 축소) 한 곳에서 판정한다.
             bool isVillage = scenePath == DISTRICT_PATH;
 
             // 멱등: 이전 조립물 정리.
@@ -129,7 +129,7 @@ namespace DontLate.EditorTools
             AttachCargoSpawner(gameState);
 
             // S-052 ③ — 심부름 할머니 (길 건너까지 짐 옮기기). 행인 3명은 신호등 생성 뒤에 (S-076 ② 주입).
-            // S-222 — **빌라촌에선 세우지 않는다**(남규님 지시). 아트가 채울 자리를 비운다.
+            // S-233 — **빌라촌에선 세우지 않는다**(남규님 지시). 아트가 채울 자리를 비운다.
             //   같은 조립을 쓰는 먹자골목·촬영용 District 1은 종전대로 — 지시는 빌라촌 한정이다.
             //   ⚠ 심부름은 빌라촌의 사이드 수입원이었다. 언덕주택가에 같은 NPC가 남아 콘텐츠 자체는 산다.
             if (!isVillage)
@@ -183,7 +183,7 @@ namespace DontLate.EditorTools
 
             // S-052 ② 행인 3 — S-076 ②: 신호를 지키고, 전방 회피·뛰는 플레이어 구경까지.
             NpcBuildKit.BuildPedestrian("Walker_A", new Vector3(-8f, 0f, 2.2f), new Color(0.45f, 0.52f, 0.62f), 6f, signal, ROAD_X, "walker_a", gameState);
-            // S-222 — 빌라촌은 A 한 명만 남긴다(남규님 지시). 상주 NPC 3인이 이미 서 있어
+            // S-233 — 빌라촌은 A 한 명만 남긴다(남규님 지시). 상주 NPC 3인이 이미 서 있어
             // 그레이박스 행인까지 셋이면 좁은 보도가 붐빈다.
             if (!isVillage)
             {
