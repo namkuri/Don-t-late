@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -41,6 +41,30 @@ namespace DontLate
             // 무대 고정물로 세운다 — 씬을 열면 바로 거기 있다.
             foreach (PlacedFurniture placed in _gameState.placedFurniture)
                 SpawnVisual(placed.furnitureId, placed.position, placed.rotationY);
+
+            AdoptSceneFurniture(); // S-273
+        }
+
+        /// <summary>
+        /// S-273 — 씬에 **미리 세워진** 가구(빌더 고정물)를 배치 대장에 등재한다.
+        /// 등재되면 클릭 판정(`FindPlacedIndex`)이 찾아내므로 이동·회전·삭제가 구매 가구와
+        /// 완전히 같은 경로를 탄다 — 종전엔 대장에 없어 클릭해도 아무 반응이 없었다(남규님 지적).
+        /// 이미 대장에 있으면 건너뛴다(재입장 멱등 — 씬을 오갈 때마다 늘면 안 된다).
+        /// </summary>
+        private void AdoptSceneFurniture()
+        {
+            if (_gameState == null) return;
+            foreach (PlacedFurnitureVisual visual in Object.FindObjectsByType<PlacedFurnitureVisual>(FindObjectsInactive.Include))
+            {
+                if (visual == null || string.IsNullOrEmpty(visual.FurnitureId)) continue;
+                if (FindPlacedIndex(visual) >= 0) continue;
+                _gameState.placedFurniture.Add(new PlacedFurniture
+                {
+                    furnitureId = visual.FurnitureId,
+                    position = visual.PlacedPosition,
+                    rotationY = visual.RotationY,
+                });
+            }
         }
 
         private void OnDisable() // 씬 이탈 시 블루프린트·힌트 잔재 방지

@@ -1,4 +1,4 @@
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -38,6 +38,8 @@ namespace DontLate.EditorTools
             HomeCat homeCat = catGo.AddComponent<HomeCat>();
             GreyboxStageBuilder.SetReference(homeCat, "_gameState", AssetDatabase.LoadAssetAtPath<GameStateSO>("Assets/Data/GameState.asset"));
 
+            BuildNightLamp(); // S-274
+
             EditorSceneManager.SaveScene(scene, HOME_PATH);
             Debug.Log("[Home] 방 무대 조립 완료 — 연출 전용(조작 없음), 진행은 하단 버튼.");
         }
@@ -71,6 +73,12 @@ namespace DontLate.EditorTools
             // 모델 노드는 프리팹 루트 밑에 한 겹 더 있다(팩토리 산출물 구조).
             if (bed.transform.childCount > 0)
                 bed.transform.GetChild(0).localPosition = BED_MODEL_OFFSET;
+
+            // S-273 — 기본 가구도 구매 가구와 **같은 조작**을 받게 한다(남규님 지시).
+            // 마커만 붙여 두면 런타임에 `HomeFurniturePlacer`가 배치 대장에 등재하고,
+            // 그 뒤로는 이동·회전·삭제가 구매 가구와 완전히 같은 경로를 탄다.
+            // 씬에 실물을 세우는 것은 그대로다(S-189 — 씬을 열면 방이 비면 아트가 배치를 못 맞춘다).
+            bed.AddComponent<PlacedFurnitureVisual>().Bind("fur_bed", BED_POSITION, BED_YAW);
 
             Debug.Log("[Home] 침대 무대 배치 — " + BED_POSITION + " · 모델 오프셋 " + BED_MODEL_OFFSET);
         }
@@ -116,6 +124,23 @@ namespace DontLate.EditorTools
 
         // 창밖 하늘 (S-015) — 별밭·달·해를 거리 무대와 같은 원경(z≈69)에 깔되,
         // 방 창(개구부)에서 보이는 대역이 낮아(y -5~3) 해·달 궤도를 낮춰 재조정한다.
+        /// <summary>
+        /// S-274 — 저녁·밤 방 조명(남규님이 씬에서 맞춘 Point Light를 빌더 정본으로 승격).
+        /// 값은 캡처 인스펙터 그대로: 위치 (−2.3, 2.7, 0) · 강도 3 · 반경 10 · 그림자 없음.
+        /// 그림자를 끄는 이유는 실내 한 점 광원에 실그림자를 켜면 픽셀 렌더에서 계단이 크게 튀어서다.
+        /// </summary>
+        private static void BuildNightLamp()
+        {
+            GameObject go = GreyboxStageBuilder.CreateEmpty("RoomLamp", new Vector3(-2.3f, 2.7f, 0f));
+            Light lamp = go.AddComponent<Light>();
+            lamp.type = LightType.Point;
+            lamp.color = Color.white;
+            lamp.intensity = 3f;
+            lamp.range = 10f;
+            lamp.shadows = LightShadows.None;
+            go.AddComponent<NightLamp>(); // 낮에는 꺼진다
+        }
+
         private static void BuildSky()
         {
             GreyboxStageBuilder.BuildStarField();

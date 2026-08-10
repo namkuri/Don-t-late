@@ -202,9 +202,21 @@ namespace DontLate
 
         // ── 이벤트 핸들러 ────────────────────────────────────
 
+        /// <summary>
+        /// S-271 — **지금 서 있는 구역**. `GameStateSO.currentDistrict`는 마지막으로 고른 목적지라
+        /// 캠프로 돌아와도 안 비워진다 — 그걸 그대로 쓰면 캠프에서 탄 화살표가 빌라촌에 붙는다
+        /// (남규님 관찰). 씬으로 판정하면 어긋날 수 없다.
+        /// </summary>
+        private string _hereDistrict;
+
+        private static bool IsDistrictScene(GameScene scene)
+            => scene == GameScene.Village || scene == GameScene.FoodStreet
+            || scene == GameScene.Hillside || scene == GameScene.Apartment;
+
         private void OnSceneChanged(GameScene scene)
         {
             _inTitle = scene == GameScene.Main;
+            _hereDistrict = IsDistrictScene(scene) && _gameState != null ? _gameState.currentDistrict : null;
             bool wasTravel = _inTravel;
             _inTravel = scene == GameScene.Travel;
 
@@ -351,7 +363,7 @@ namespace DontLate
                 PlaceOnMap((RectTransform)b.transform, pin.pos, new Vector2(116f, locked ? 62f : 46f));
             }
 
-            string district = _gameState != null ? _gameState.currentDistrict : null;
+            string district = _hereDistrict; // S-271 — 씬 기준(마지막 목적지가 아니라)
             if (_originMarker != null)
             {
                 Vector2 here = MapOriginPos; // 기본 = 물류캠프

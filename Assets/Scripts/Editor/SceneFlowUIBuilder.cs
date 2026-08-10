@@ -214,7 +214,7 @@ namespace DontLate.EditorTools
             Transform root = CreateFlowCanvas().transform;
 
             // S-036: 노드 버튼 UI 은퇴 — 목적지 선택은 폰 지도 앱(PhoneView Map)이 전담. 씬엔 안내+복귀만.
-            CreateTutorialBanner(root, "이동 — 폰 지도에서 목적지를 골라라", font);
+            CreateTutorialBanner(root, "원하는 지역을 선택 후 목적지로 출발 버튼을 누르세요", font); // S-272
 
             // S-062 ⑤ — 좌상단 ← 뒤로가기 (직전 씬 복귀 · Backspace/Delete 동일).
             GameObject backGo = new GameObject("BackButton", typeof(RectTransform));
