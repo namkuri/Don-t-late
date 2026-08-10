@@ -98,8 +98,21 @@ namespace DontLate
             Debug.Log("[엔딩] UI 소등 " + hiddenCanvases.Count + "개 (대화창·페이드 유지)");
             _keepUiHidden = true;
             StartCoroutine(KeepUiHidden(hiddenCanvases)); // 뒤늦게 켜지는 것까지 잡는다(아래 참조)
+
+            // Home → Camp 도착 시 DistrictEdgeGate가 Start에서 한 프레임 뒤 플레이어를 게이트 앞으로
+            // 옮긴다. 그 지연 스폰보다 먼저 엔딩 좌표를 적용하면 다시 덮이므로 두 프레임 양보한다.
+            yield return null;
+            yield return null;
+
             Transform player = FindPlayer();
             if (player == null) { _sequenceRunning = false; yield break; }
+
+            // 엔딩 시작 실측 월드 좌표. 카메라는 기존 추적 로직에 맡긴다.
+            CharacterController startController = player.GetComponent<CharacterController>();
+            bool controllerWasEnabled = startController != null && startController.enabled;
+            if (controllerWasEnabled) startController.enabled = false;
+            player.position = new Vector3(-30.2522926f, 3.16810144e-07f, 0.957655907f);
+            if (controllerWasEnabled) startController.enabled = true;
 
             yield return WaitClamped(1.2f); // 도착 한 박자
 
