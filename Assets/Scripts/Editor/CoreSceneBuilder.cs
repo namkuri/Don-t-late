@@ -2110,24 +2110,30 @@ namespace DontLate.EditorTools
         /// 걷기 클립이 없는 인물(오지혜)은 서 있는 클립을 준다 — 없는 것보다 낫다(정지 자세로
         /// 미끄러지는 것이 종전 증상이었다). 경로가 하나라도 비면 그 인물만 조용히 빠지고
         /// 엔딩 자체는 돈다.
+        ///
+        /// S-237 — `clean` 열이 채워진 인물은 **루트 이동 커브를 걷어낸 정리본**을 쓴다.
+        /// 대열의 위치는 `WalkTo`가 소유하는데 클립에 루트 위치 커브가 살아 있으면 그것이
+        /// 매 프레임 위치를 덮어써 땅에 박힌다. 실측상 원본에 루트 위치 커브가 있는 인물은
+        /// **김사장 하나뿐**이다(나머지 넷은 0개) — 그래서 김사장만 채운다.
+        /// 캠프가 이미 같은 이름의 정리본을 쓰므로 새로 만들지 않고 그대로 공유한다.
         /// </summary>
         private static DontLate.WorldEndingManager.EndingCastEntry[] BuildEndingCast()
         {
-            (string id, string name, string model, string clip, string skin)[] table =
+            (string id, string name, string model, string clip, string clean, string skin)[] table =
             {
                 ("parkmalsoon", "박말순", "Assets/Art/Characters/malsoon/malsoon.fbx",
-                    "Assets/Art/Characters/Animation/A_malsoon/malsoon_Angry.fbx",
+                    "Assets/Art/Characters/Animation/A_malsoon/malsoon_Angry.fbx", null,
                     "Assets/Art/Characters/Materials/malsoon.fbm.mat"),
                 ("boss", "김사장", "Assets/Art/Characters/Kimboss/kim_boss.fbx",
-                    "Assets/Art/Characters/Kimboss/kimboss_Walking (2).fbx",
+                    "Assets/Art/Characters/Kimboss/kimboss_Walking (2).fbx", "kim_boss_walk_clean.anim",
                     "Assets/Art/Characters/kimsajng.mat"),
                 ("yoo_jihye", "오지혜", "Assets/Art/Characters/jihye/jihye.fbx",
-                    "Assets/Art/Characters/Animation/A_jihye/jihye_Idle.fbx", null),
+                    "Assets/Art/Characters/Animation/A_jihye/jihye_Idle.fbx", null, null),
                 ("na_ara", "나아라", "Assets/Art/Characters/naara/gs_girl_mixamo_rig_final.fbx",
-                    "Assets/Art/Characters/naara/gs_girl_walking.fbx",
+                    "Assets/Art/Characters/naara/gs_girl_walking.fbx", null,
                     "Assets/Art/Characters/Materials/gs_girl.mat"),
                 ("walker_a", "이웃 주민", "Assets/Art/Characters/dummy/dummy_npc_walking.fbx",
-                    "Assets/Art/Characters/dummy/dummy_npc_walking.fbx",
+                    "Assets/Art/Characters/dummy/dummy_npc_walking.fbx", null,
                     "Assets/Art/Characters/Materials/dummynpc.fbm.mat"),
             };
 
@@ -2136,12 +2142,15 @@ namespace DontLate.EditorTools
             {
                 GameObject model = AssetDatabase.LoadAssetAtPath<GameObject>(row.model);
                 if (model == null) { Debug.LogWarning("[엔딩대열] 모델 없음 — " + row.model); continue; }
+                AnimationClip clip = string.IsNullOrEmpty(row.clean)
+                    ? LoadFirstClip(row.clip)
+                    : CampStageBuilder.GetOrCreateCleanAnimationClip(row.clip, row.clean);
                 cast.Add(new DontLate.WorldEndingManager.EndingCastEntry
                 {
                     npcId = row.id,
                     displayName = row.name,
                     model = model,
-                    walkClip = LoadFirstClip(row.clip),
+                    walkClip = clip,
                     avatar = LoadAvatar(row.model),
                     skin = string.IsNullOrEmpty(row.skin) ? null : AssetDatabase.LoadAssetAtPath<Material>(row.skin),
                 });

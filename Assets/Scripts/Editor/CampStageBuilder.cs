@@ -498,7 +498,13 @@ namespace DontLate.EditorTools
             return stateMachine.AddState(name);
         }
 
-        private static AnimationClip GetOrCreateCleanAnimationClip(string sourcePath, string generatedName)
+        /// <summary>
+        /// 원본 FBX 클립에서 **루트 이동 커브를 걷어낸 정리본 `.anim`** 을 만든다(있으면 재사용).
+        /// 루트 위치가 살아 있으면 그 커브가 매 프레임 오브젝트 위치를 덮어써서, 코드로 옮기는
+        /// 인물(캠프의 접근 연출·엔딩 대열)이 제자리에 박힌다.
+        /// S-237 — 엔딩 대열(CoreSceneBuilder)도 같은 정리본을 쓰도록 internal로 연다.
+        /// </summary>
+        internal static AnimationClip GetOrCreateCleanAnimationClip(string sourcePath, string generatedName)
         {
             string folder = System.IO.Path.GetDirectoryName(sourcePath).Replace('\\', '/');
             string generatedPath = folder + "/" + generatedName;
