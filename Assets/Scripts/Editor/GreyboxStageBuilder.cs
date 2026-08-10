@@ -1216,6 +1216,11 @@ namespace DontLate.EditorTools
             SetReference(hub, "_gameState", gameState);
             if (animator != null) SetReference(anim, "_animator", animator);
 
+            // S-268 — 구역 첫 진입 독백 + 밖에서 요청하는 독백(트럭 앞 망설임)의 수신처.
+            // 플레이어에 붙는다: 말풍선이 주인공 머리 위에 뜨고, 씬마다 새로 태어나 Start가 곧 도착이다.
+            PlayerArrivalRemark remark = player.AddComponent<PlayerArrivalRemark>();
+            SetReference(remark, "_gameState", gameState);
+
             // 든 상자가 붙는 자리. S-196 — 남규님이 플레이 중 직접 맞춘 값(y 1.05 → 0.528).
             // 왜 내렸나: S-195에서 팔 길이 한계로 손이 상자까지 못 올라갔다. 앵커를 내리면
             // **손 IK 목표도 같이 내려와** 팔이 닿는다(그립 오프셋이 앵커 기준이라 자동으로 따라온다).

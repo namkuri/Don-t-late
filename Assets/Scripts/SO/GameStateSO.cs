@@ -30,6 +30,10 @@ namespace DontLate
         /// 트럭으로 이동할 때는 이 목록에 있는 짐만 구역에 내린다 — 안 실은 건 캠프에 남는다.
         /// </summary>
         public List<int> truckCargoIds = new List<int>();
+        /// <summary>S-268 — 첫인상 독백을 이미 한 씬 이름. 세션 단위(첫인상은 한 번뿐이다).</summary>
+        public List<string> greetedScenes = new List<string>();
+        /// <summary>S-268 — 트럭 앞 "빌릴까?" 독백을 이미 했는가.</summary>
+        public bool truckRemarkDone;
         /// <summary>이동맵에서 고른 목적 구역 (S-015) — District 도착 시 이 구역의 짐·비콘만 스폰.</summary>
         public string currentDistrict;
 

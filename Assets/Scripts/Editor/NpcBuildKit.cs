@@ -178,7 +178,12 @@ namespace DontLate.EditorTools
             serialized.FindProperty("_walkClip").objectReferenceValue = walkClip;
             serialized.ApplyModifiedPropertiesWithoutUndo();
 
-            AttachNameLabel(go, npcId, name); // S-120 — 근접 이름표
+            // S-267 — 이름표와 **대화 화자가 같은 이름**을 쓰게 한다. 종전엔 `PedestrianNpc`가
+            // 제 폴백(오브젝트 이름)을 따로 굴려 `__gb_Walker_A`가 화면에 떴다.
+            string shownName = AttachNameLabel(go, npcId, name); // S-120 — 근접 이름표
+            SerializedObject nameSerialized = new SerializedObject(npc);
+            nameSerialized.FindProperty("_displayName").stringValue = shownName;
+            nameSerialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
         [MenuItem("Tools/DontLate/Apply Dummy Walker A Visual")]
@@ -309,7 +314,7 @@ namespace DontLate.EditorTools
 
         /// <summary>S-120 — 근접 이름표 부착: 이름은 NpcSO(Data/Npcs/npc_&lt;id&gt;)의 displayName,
         /// 프로필이 없으면 fallback. 표시·추종은 NpcNameLabel(SetHighlight 연동)이 담당.</summary>
-        internal static void AttachNameLabel(GameObject go, string npcId, string fallback)
+        internal static string AttachNameLabel(GameObject go, string npcId, string fallback)
         {
             string displayName = fallback;
             if (!string.IsNullOrEmpty(npcId))
@@ -329,6 +334,7 @@ namespace DontLate.EditorTools
             GreyboxStageBuilder.SetReference(label, "_backgroundSprite", LoadNpcInfoSprite());
             GreyboxStageBuilder.SetReference(label, "_hintFont",
                 AssetDatabase.LoadAssetAtPath<TMPro.TMP_FontAsset>("Assets/Art/UI/Fonts/Ramche SDF.asset"));
+            return displayName;
         }
 
         private static Sprite LoadNpcInfoSprite()

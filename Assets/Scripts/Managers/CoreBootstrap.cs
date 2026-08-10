@@ -103,6 +103,8 @@ namespace DontLate
             _gameState.droppedCargo.Clear();
             _gameState.cargo.Clear();
             _gameState.truckCargoIds.Clear(); // S-264
+            _gameState.greetedScenes.Clear();  // S-268
+            _gameState.truckRemarkDone = false;
             _gameState.scannedOrderIds.Clear();
             _gameState.placedDeliveries.Clear();
             _gameState.completedCount = 0;

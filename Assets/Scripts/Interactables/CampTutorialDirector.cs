@@ -196,6 +196,30 @@ namespace DontLate
                 _waitingDialogue = false;
 
             Debug.Log($"[튜토리얼] {_index + 1}/{_steps.Length} — {step.gate}");
+            ClearIfAlreadySatisfied(step.gate); // S-266
+        }
+
+        /// <summary>
+        /// S-266 — 단계에 들어선 **그 순간 이미 조건이 서 있으면** 바로 통과시킨다(남규님 지시).
+        /// 게이트들은 그 단계에 들어온 뒤 발생하는 **이벤트**만 듣는다 — 이미 빌라촌에 있거나,
+        /// 이미 상자를 들었거나, 이미 비콘에 짐을 올려 뒀으면 그 이벤트가 다시 올 일이 없어
+        /// 영원히 안 풀린다. `Clear`는 대사 중이면 보류로 넘기므로(S-157) 설명은 잘리지 않는다.
+        /// </summary>
+        private void ClearIfAlreadySatisfied(Gate gate)
+        {
+            if (_gameState == null) return;
+            switch (gate)
+            {
+                case Gate.ReachDistrict:
+                    if (!string.IsNullOrEmpty(_gameState.currentDistrict)) Clear(gate);
+                    break;
+                case Gate.BoxPickup:
+                    if (_gameState.carriedOrders.Count > 0) Clear(gate);
+                    break;
+                case Gate.PlaceDelivery:
+                    if (_gameState.placedDeliveries.Count > 0) Clear(gate);
+                    break;
+            }
         }
 
         private void Update()

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace DontLate
 {
@@ -383,6 +383,18 @@ namespace DontLate
         {
             Log("BagHoldRequested → " + item.label);
             BagHoldRequested?.Invoke(item);
+        }
+
+        /// <summary>
+        /// S-268 — 주인공이 한마디 하도록 요청한다. 말풍선은 플레이어 쪽 컴포넌트가 띄운다
+        /// (월드 오브젝트가 플레이어를 직접 찾지 않게 하는 경계 — CODE_RULES §3).
+        /// </summary>
+        public static event Action<string> PlayerRemarked;
+
+        public static void RaisePlayerRemarked(string line)
+        {
+            Log("PlayerRemarked → " + line);
+            PlayerRemarked?.Invoke(line);
         }
 
         /// <summary>

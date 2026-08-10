@@ -46,7 +46,15 @@ namespace DontLate
             WorldDialogueManager.Instance?.PlayScenario(MakeTutorialMonologue());
         }
 
-        public void SetHighlight(bool on) => _swapper?.Set(on, _highlightMaterial);
+        public void SetHighlight(bool on)
+        {
+            _swapper?.Set(on, _highlightMaterial);
+            // S-268 — 트럭에 처음 다가섰을 때 **한 번만** 망설인다(남규님 지시).
+            // 살 수 있게 된 물건 앞에서 빚을 떠올리는 것이 이 게임의 목소리다.
+            if (!on || _gameState == null || _gameState.hasTruck || _gameState.truckRemarkDone) return;
+            _gameState.truckRemarkDone = true;
+            WorldEvents.RaisePlayerRemarked("트럭을 빌릴까? 근데 아직 갚을 빚이 많은데...");
+        }
 
         /// <summary>
         /// 구매 튜토리얼 독백 (S-241). 산 직후가 "이걸로 뭘 하지?"가 제일 큰 순간이라

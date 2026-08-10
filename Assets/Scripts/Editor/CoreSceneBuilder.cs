@@ -589,7 +589,6 @@ namespace DontLate.EditorTools
 
             GameObject tutorialGo = new GameObject("__gb_CampTutorial");
             CampTutorialDirector director = tutorialGo.AddComponent<CampTutorialDirector>();
-            GreyboxStageBuilder.SetReference(director, "_gameState", gameState);
             SerializedObject dirSo = new SerializedObject(director);
             SerializedProperty stepList = dirSo.FindProperty("_steps");
             stepList.arraySize = steps.Length;
@@ -613,6 +612,12 @@ namespace DontLate.EditorTools
                 element.FindPropertyRelative("highlightId").stringValue = HighlightIdFor(steps[i].gate);
             }
             dirSo.ApplyModifiedPropertiesWithoutUndo();
+            // S-266 — **Apply 뒤에** 주입한다. `SerializedObject`는 생성 시점의 값을 들고 있어,
+            // 리플렉션으로 먼저 넣어도 Apply가 그 옛 값(null)으로 되돌린다(실측: `_gameState=NULL`).
+            // 이 누락 때문에 튜토리얼의 상태 판정이 통째로 죽어 있었다.
+            // `SetReference`는 이름과 달리 SerializedObject 경유라 씬 저장 때 `{fileID: 0}`으로
+            // 날아간다(CODE_RULES §6 실수→규칙). 리플렉션 직접 주입만 살아남는다.
+            SetField(director, "_gameState", gameState);
 
         }
 

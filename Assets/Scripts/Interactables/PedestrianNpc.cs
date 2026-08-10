@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.Animations;
 using UnityEngine.Playables;
 
@@ -18,6 +18,27 @@ namespace DontLate
         [SerializeField] private float _speed = 1.1f;
         [Tooltip("소셜앱 프로필 id (S-080 ① — 비면 인터랙션은 되지만 등재 없음).")]
         [SerializeField] private string _npcId;
+        [Tooltip("S-267 — 화면에 뜨는 이름. 빌더가 NpcSO(displayName)에서 넣는다. 비면 오브젝트 이름을 " +
+            "정리해 쓴다 — 내부 이름(__gb_)이 그대로 노출되면 안 된다.")]
+        [SerializeField] private string _displayName;
+
+        /// <summary>
+        /// S-267 — 이름표·대화 화자가 쓰는 **단일 창구**. 종전엔 세 곳이 제각각
+        /// `_randomTalkPool?.displayName ?? gameObject.name`으로 폴백해, 잡담 풀이 없는 행인은
+        /// `__gb_Walker_A`가 그대로 떴다(남규님 캡처). 게다가 `ShowNpcInfo`가 그 값으로
+        /// `Configure`를 다시 불러 **빌더가 넣어 둔 SO 이름까지 덮어썼다.**
+        /// </summary>
+        private string DisplayName
+        {
+            get
+            {
+                if (_randomTalkPool != null && !string.IsNullOrEmpty(_randomTalkPool.displayName))
+                    return _randomTalkPool.displayName;
+                if (!string.IsNullOrEmpty(_displayName)) return _displayName;
+                // 최후 폴백 — 적어도 내부 접두어·언더스코어는 걷는다.
+                return gameObject.name.Replace("__gb_", string.Empty).Replace('_', ' ');
+            }
+        }
         [SerializeField] private GameStateSO _gameState;
         [SerializeField] private Renderer _bodyRenderer;
         [SerializeField] private Material _highlightMaterial;
@@ -566,7 +587,7 @@ namespace DontLate
             if (lines == null || lines.Length == 0)
                 return new RandomTalkLineData
                 {
-                    speaker = _randomTalkPool?.displayName ?? gameObject.name,
+                    speaker = DisplayName,
                     text = Greetings[Random.Range(0, Greetings.Length)],
                 };
 
@@ -580,7 +601,7 @@ namespace DontLate
             if (line != null && !string.IsNullOrEmpty(line.text)) return line;
             return new RandomTalkLineData
             {
-                speaker = _randomTalkPool.displayName ?? gameObject.name,
+                speaker = DisplayName,
                 text = Greetings[Random.Range(0, Greetings.Length)],
             };
         }
@@ -603,7 +624,7 @@ namespace DontLate
 
             DialogueScenarioSO.Line dialogueLine = _interactionScenario.lines[0];
             dialogueLine.speaker = string.IsNullOrEmpty(line.speaker)
-                ? _randomTalkPool?.displayName ?? gameObject.name
+                ? DisplayName
                 : line.speaker;
             dialogueLine.text = line.text;
             dialogueLine.portrait = null;
@@ -622,9 +643,7 @@ namespace DontLate
                 if (_npcInfoLabel == null) _npcInfoLabel = gameObject.AddComponent<NpcNameLabel>();
             }
 
-            string displayName = _randomTalkPool?.displayName;
-            if (string.IsNullOrEmpty(displayName)) displayName = gameObject.name;
-            _npcInfoLabel.Configure(displayName, _gameState, _npcId, _npcInfoBackground);
+            _npcInfoLabel.Configure(DisplayName, _gameState, _npcId, _npcInfoBackground);
             _npcInfoLabel.ShowDialogueInfo();
         }
 
