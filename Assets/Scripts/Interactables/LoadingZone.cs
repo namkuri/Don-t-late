@@ -48,6 +48,7 @@ namespace DontLate
             if (!status.IsCarrying)
             {
                 Debug.Log("[LoadingZone] 빈손 — 박스를 먼저 들어라 (E로 픽업).");
+                WorldEvents.RaisePlayerRemarked("우선 박스를 들어서 옮겨와야겠다."); // S-270 ①
                 return;
             }
 
@@ -111,7 +112,18 @@ namespace DontLate
         // S-253 — 트럭 **전체**를 갈아끼운다. 종전엔 그레이박스 몸통 렌더러 하나만 바꿨는데,
         // S-248에서 아트 모델이 그 위를 덮으면서 화면에는 아무 변화도 안 보이게 됐다
         // (남규님 관찰: "트럭에 하이라이트 및 상호작용 안 됨" — 실은 몸통만 켜지고 가려져 있었다).
-        public void SetHighlight(bool on) => _swapper?.Set(on, _highlightMaterial);
+        public void SetHighlight(bool on)
+        {
+            _swapper?.Set(on, _highlightMaterial);
+            // S-270 ③ — 실을 만큼 실었으면 다음 행동을 알려 준다. 조건이 선 뒤 **한 번만** —
+            // 짐칸 앞을 오갈 때마다 뜨면 도배가 된다.
+            if (!on || _gameState == null || _loadedHintDone) return;
+            if (!_gameState.hasTruck || _gameState.truckCargoIds.Count == 0) return;
+            _loadedHintDone = true;
+            WorldEvents.RaisePlayerRemarked("트럭은 앞쪽에서 탑승하거나, 휴대폰으로 다른 지역으로 갈 수 있다고했어.");
+        }
+
+        private bool _loadedHintDone;
 
         private HighlightSwapper _swapper;
 

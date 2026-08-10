@@ -461,6 +461,13 @@ namespace DontLate.EditorTools
             AnchorCentered(label.rectTransform, new Vector2(useCampPanel ? 35f : 45f, 8f),
                 new Vector2(useCampPanel ? 600f : 760f, 76f));
 
+            // S-269 — 문구를 미션 진행에 맞춰 갈아 끼우고 20초면 물러나게 한다.
+            // 라벨을 명시 주입한다: 배너 안에 닫기 버튼 등 다른 텍스트가 생기면 자동 탐색이 엉킨다.
+            TutorialBannerView view = banner.AddComponent<TutorialBannerView>();
+            SerializedObject viewSo = new SerializedObject(view);
+            viewSo.FindProperty("_label").objectReferenceValue = label;
+            viewSo.ApplyModifiedPropertiesWithoutUndo();
+
             CreateTutorialCloseButton(banner.transform);
         }
 

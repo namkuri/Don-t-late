@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace DontLate
 {
@@ -109,6 +109,9 @@ namespace DontLate
             if (_requireScanned && !WorldDeliveryManager.Instance.IsScanned(_order))
             {
                 Debug.Log("[PickupBox] #" + _order.orderId + " 은 바코드 미스캔 — Tab으로 폰을 열고 박스를 클릭해 송장을 찍어라.");
+                // S-270 ② — 콘솔로만 거절하면 화면에는 아무 일도 안 일어난 것과 같다.
+                // 스캔 대상 상자는 캠프 물량뿐이라(`_requireScanned`) 이 독백도 캠프에만 뜬다.
+                WorldEvents.RaisePlayerRemarked("먼저 마우스로 클릭해서 송장을 찍어야되.");
                 return;
             }
             // S-066 ① — 캠프 상자(스캔 대상)는 픽업 상한 = 적재 상한 (등록 안 되면 정산도 안 되므로 정직하게 거부).
