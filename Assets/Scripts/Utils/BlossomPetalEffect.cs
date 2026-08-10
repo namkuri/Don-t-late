@@ -201,6 +201,12 @@ namespace DontLate
             material.SetFloat("_Surface", 1f);
             material.SetOverrideTag("RenderType", "Transparent");
             material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            // S-283 — Alpha Clipping도 켠다(남규님 지적). 꽃잎 텍스처는 알파 컷아웃이라
+            // 블렌드만으로는 빌드에서 배경이 검게 남는다(S-245·S-246에서 겪은 것과 같은 병).
+            // Cutoff는 낮게 — 수명 끝 페이드아웃이 뚝 끊기지 않게.
+            material.SetFloat("_AlphaClip", 1f);
+            material.EnableKeyword("_ALPHATEST_ON");
+            if (material.HasProperty("_Cutoff")) material.SetFloat("_Cutoff", 0.1f);
             material.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
             material.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
             material.SetInt("_ZWrite", 0);
