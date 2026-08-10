@@ -29,7 +29,10 @@ namespace DontLate.EditorTools
             // S-192 — S-186에서 District가 Village·FoodStreet로 갈렸는데 이 표만 옛 이름으로
             // 남아 있었다. 그래서 두 구역 어디서도 담기가 안 됐다(남규님 보고).
             // 빌라촌은 기존 세트를 그대로 이어받고(민지님 배치 보존), 먹자골목만 새 세트를 판다.
-            { "Village",    HAND_DIR + "/set_district_2.prefab" },
+            // S-225 — S-219에서 빌라촌 세트를 `set_district_3`으로 갈았는데 이 표가 옛 것을 가리키고
+            // 있었다. 그대로 담으면 **빌라촌에서 담은 배치가 촬영용 세트로 들어가** 정작 빌라촌엔
+            // 안 나온다. 표가 갈라지는 순간 담기는 조용히 엉뚱한 데로 간다 — 소켓과 같이 움직여야 한다.
+            { "Village",    HAND_DIR + "/set_district_3.prefab" },
             { "FoodStreet", HAND_DIR + "/set_foodstreet.prefab" },
             { "Main",      HAND_DIR + "/set_district_2.prefab" }, // Main은 빌라촌 무대를 재사용한다
             { "Home",      HAND_DIR + "/set_home.prefab" },

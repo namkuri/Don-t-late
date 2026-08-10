@@ -17,6 +17,9 @@ namespace DontLate.EditorTools
         private const string SCENE_PATH = "Assets/Scenes/Hillside.unity";
         private const string UPHILL_SET_PREFAB = "Assets/Prefabs/Hand/set_hillside_uphill.prefab";
 
+        // S-226 ① — 오르막이 쓰는 아트 흙 머티리얼. 지면도 같은 걸 써야 경계가 안 드러난다.
+        private const string ART_GROUND_MAT = "Assets/Art/Materials/dirt-road.mat";
+
         // S-214 ③ — 남규님이 준 오르막 지형 수치. `__gb_Hill`을 대신할 몸집이라 z를 늘려 깔아 준다.
         private const float UPHILL_SCALE_Z = 5.9f;
         private const float UPHILL_POSITION_Z = 0f;
@@ -41,13 +44,23 @@ namespace DontLate.EditorTools
                 scene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
                 EditorSceneManager.SaveScene(scene, SCENE_PATH);
             }
+            // S-226 ① — **지면에 손으로 입힌 머티리얼을 챙겨 둔다.** Clear가 지우기 전에.
+            // 담기 도구(`② 현재 배치 저장`)는 `__gb_ArtBackdrop` 안쪽만 담는다 — 빌더가 매 조립마다
+            // 새로 만드는 지면은 그 밖이라, 남규님이 입힌 흙 머티리얼이 재조립마다 그레이박스
+            // 기본값(`GB_HillDirt`)으로 되돌아갔다. 배치를 보존하는 S-217 ①과 같은 처방이다.
+            Material keptGroundMat = FindGroundMaterial(scene);
+
             GreyboxStageBuilder.Clear();
             StripHandPlacedHill(); // Clear는 __gb_만 지운다 — 손으로 놓은 "hill"이 남으면 지형이 겹친다
             EnsureUphillSet(scene); // S-183 — 민지님 수제 오르막 세트 (병합에서 유실된 것 복원)
 
             var (gameState, tuning, _) = GreyboxStageBuilder.GetOrCreateStageData();
 
-            _dirtMat = GreyboxStageBuilder.GetOrCreateMaterial("HillDirt", new Color(0.43f, 0.35f, 0.26f), false);
+            // S-226 ① — 손으로 입힌 게 있으면 그것이 이긴다. 없으면 아트 흙 머티리얼(오르막과 같은 것),
+            // 그것도 없으면 종전 그레이박스. 우선순위를 이 한 줄에 모아 둔다.
+            _dirtMat = keptGroundMat
+                ?? AssetDatabase.LoadAssetAtPath<Material>(ART_GROUND_MAT)
+                ?? GreyboxStageBuilder.GetOrCreateMaterial("HillDirt", new Color(0.43f, 0.35f, 0.26f), false);
             _wallMat = GreyboxStageBuilder.GetOrCreateMaterial("HillWall", new Color(0.48f, 0.42f, 0.33f), false);
 
             // ── 지형 ─────────────────────────────────────────────
@@ -94,8 +107,9 @@ namespace DontLate.EditorTools
             // S-052 ②③ — 들머리 평지 행인 2 + 심부름 할머니(평지 → 정상: 진짜 등반 심부름이 된다).
             NpcBuildKit.BuildPedestrian("Walker_A", OnGround(-12f, 2.0f), new Color(0.45f, 0.52f, 0.62f), 5f);
             NpcBuildKit.BuildPedestrian("Walker_B", OnGround(-6f, 2.4f), new Color(0.60f, 0.48f, 0.40f), 6f);
-            NpcBuildKit.BuildErrandNpc("ErrandGranny", "할머니", OnGround(-9f, 1.8f),
-                OnGround(31f, 0.6f), gameState, 2500);
+            // S-226 ② — 심부름 할머니 철거(남규님 지시). 빌라촌(S-222)에 이어 언덕도 뺀다.
+            //   ⚠ 이로써 심부름 퀘스트가 **게임에서 사라진다** — 빌라촌·언덕이 마지막 두 곳이었다.
+            //   되살릴 자리가 정해지면 좌표만 주면 된다.
 
             // S-054b 엣지 워크 — 왼쪽 끝 = 이전 동네(먹자골목).
             // S-186 ② — 언덕주택가가 3번째가 되면서 **오른쪽에 Next(아파트단지)가 생겼다**.
@@ -156,6 +170,24 @@ namespace DontLate.EditorTools
         }
 
         // ── 지형 ────────────────────────────────────────────────
+
+        /// <summary>
+        /// S-226 ① — 지금 씬의 지면이 무슨 머티리얼을 쓰고 있나. Clear 전에 불러야 한다.
+        /// 그레이박스 기본값이면 "손댄 적 없음"으로 보고 null을 돌려준다 —
+        /// 그래야 아트 머티리얼로 승격할 수 있다.
+        /// </summary>
+        private static Material FindGroundMaterial(Scene scene)
+        {
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                if (root.name != "__gb_BaseGround") continue;
+                Renderer renderer = root.GetComponentInChildren<Renderer>(true);
+                Material material = renderer != null ? renderer.sharedMaterial : null;
+                if (material == null || material.name.StartsWith("GB_")) return null;
+                return material;
+            }
+            return null;
+        }
 
         /// <summary>손으로 씬에 끌어다 놓은 hill 인스턴스 제거 — Clear()가 __gb_ 접두어만 지우기 때문.</summary>
         private static void StripHandPlacedHill()

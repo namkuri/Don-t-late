@@ -206,6 +206,8 @@ namespace DontLate.EditorTools
             SetField(ending, "_gameState", gameState);
             SetField(ending, "_npcs", GetOrCreateNpcCatalog());
             SetField(ending, "_creditsView", managers.AddComponent<EndingCreditsView>());
+            SetField(ending, "_cast", BuildEndingCast()); // S-228 — 모델 보유 인물 전원
+
 
             WorldJuiceManager juice = managers.AddComponent<WorldJuiceManager>(); // S-023
             SetField(juice, "_font", AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FONT_PATH));
@@ -2101,6 +2103,67 @@ namespace DontLate.EditorTools
                 return;
             }
             field.SetValue(target, value);
+        }
+
+        /// <summary>
+        /// S-228 — 엔딩 대열 명부. **모델이 있는 인물만** 올린다("1마리씩 다 나오게" — 남규님).
+        /// 걷기 클립이 없는 인물(오지혜)은 서 있는 클립을 준다 — 없는 것보다 낫다(정지 자세로
+        /// 미끄러지는 것이 종전 증상이었다). 경로가 하나라도 비면 그 인물만 조용히 빠지고
+        /// 엔딩 자체는 돈다.
+        /// </summary>
+        private static DontLate.WorldEndingManager.EndingCastEntry[] BuildEndingCast()
+        {
+            (string id, string name, string model, string clip, string skin)[] table =
+            {
+                ("parkmalsoon", "박말순", "Assets/Art/Characters/malsoon/malsoon.fbx",
+                    "Assets/Art/Characters/Animation/A_malsoon/malsoon_Angry.fbx",
+                    "Assets/Art/Characters/Materials/malsoon.fbm.mat"),
+                ("boss", "김사장", "Assets/Art/Characters/Kimboss/kim_boss.fbx",
+                    "Assets/Art/Characters/Kimboss/kimboss_Walking (2).fbx",
+                    "Assets/Art/Characters/kimsajng.mat"),
+                ("yoo_jihye", "오지혜", "Assets/Art/Characters/jihye/jihye.fbx",
+                    "Assets/Art/Characters/Animation/A_jihye/jihye_Idle.fbx", null),
+                ("na_ara", "나아라", "Assets/Art/Characters/naara/gs_girl_mixamo_rig_final.fbx",
+                    "Assets/Art/Characters/naara/gs_girl_walking.fbx",
+                    "Assets/Art/Characters/Materials/gs_girl.mat"),
+                ("walker_a", "이웃 주민", "Assets/Art/Characters/dummy/dummy_npc_walking.fbx",
+                    "Assets/Art/Characters/dummy/dummy_npc_walking.fbx",
+                    "Assets/Art/Characters/Materials/dummynpc.fbm.mat"),
+            };
+
+            var cast = new System.Collections.Generic.List<DontLate.WorldEndingManager.EndingCastEntry>();
+            foreach (var row in table)
+            {
+                GameObject model = AssetDatabase.LoadAssetAtPath<GameObject>(row.model);
+                if (model == null) { Debug.LogWarning("[엔딩대열] 모델 없음 — " + row.model); continue; }
+                cast.Add(new DontLate.WorldEndingManager.EndingCastEntry
+                {
+                    npcId = row.id,
+                    displayName = row.name,
+                    model = model,
+                    walkClip = LoadFirstClip(row.clip),
+                    avatar = LoadAvatar(row.model),
+                    skin = string.IsNullOrEmpty(row.skin) ? null : AssetDatabase.LoadAssetAtPath<Material>(row.skin),
+                });
+            }
+            Debug.Log("[엔딩대열] " + cast.Count + "인 배선 (S-228 — 모델 보유 전원).");
+            return cast.ToArray();
+        }
+
+        /// <summary>FBX 안의 애니메이션 클립(서브에셋). `__preview__`는 거른다.</summary>
+        private static AnimationClip LoadFirstClip(string path)
+        {
+            foreach (Object asset in AssetDatabase.LoadAllAssetRepresentationsAtPath(path))
+                if (asset is AnimationClip clip && !clip.name.StartsWith("__preview__")) return clip;
+            return null;
+        }
+
+        /// <summary>모델 FBX가 만든 Avatar. 리그가 Generic이면 없다 — 그러면 클립도 안 돈다.</summary>
+        private static Avatar LoadAvatar(string path)
+        {
+            foreach (Object asset in AssetDatabase.LoadAllAssetsAtPath(path))
+                if (asset is Avatar avatar) return avatar;
+            return null;
         }
     }
 }

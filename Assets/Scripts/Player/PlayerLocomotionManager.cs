@@ -21,6 +21,11 @@ namespace DontLate
         private float _masteryAccum; // S-063 — 주행 거리 누적
         private bool _wasGrounded = true; // AU-018 ③ — 착지 엣지 감지(공중→접지 전환에 land음)
 
+        // S-227 — 접지 판정 여유(코요테 타임). 이보다 짧게 뜬 것은 "발이 튄 것"으로 보고 접지로 친다.
+        // 0.12초는 점프 최고점까지의 시간보다 훨씬 짧아 진짜 점프·낙하 판정은 그대로 살아 있다.
+        private const float GROUNDED_COYOTE = 0.12f;
+        private float _airborneTime;
+
         /// <summary>수평 속도(월드). 애니메이션·회전이 읽는다.</summary>
         public Vector3 PlanarVelocity { get; private set; }
         public bool IsGrounded => _cc.isGrounded;
@@ -200,7 +205,15 @@ namespace DontLate
             _cc.Move(delta);
 
             // AU-018 ③ — 공중→접지 전환에 착지음 (스폰·안전망 복귀는 _wasGrounded 초기 true로 억제).
-            bool groundedNow = _cc.isGrounded;
+            //
+            // S-227 — **접지 판정에 여유를 준다.** `CharacterController.isGrounded`는 비탈을 달려
+            // 내려갈 때 프레임마다 참↔거짓을 오간다(발이 경사면에서 미세하게 떴다 닿음). 그 엣지마다
+            // 착지음을 내면 초당 수십 발이 되어 "음원이 깨진" 소리가 난다(남규님 관찰).
+            // 그래서 **떠 있는 시간이 COYOTE를 넘겼을 때만 진짜 공중으로 친다** — 짧은 깜빡임은 접지로 본다.
+            bool groundedRaw = _cc.isGrounded;
+            _airborneTime = groundedRaw ? 0f : _airborneTime + Time.deltaTime;
+            bool groundedNow = groundedRaw || _airborneTime < GROUNDED_COYOTE;
+
             if (groundedNow && !_wasGrounded) WorldAudioManager.Instance?.PlayLandSfx();
             _wasGrounded = groundedNow;
 
@@ -210,7 +223,9 @@ namespace DontLate
         /// <summary>접지 이동 거리를 누적해 보폭마다 발소리 1발 (AU-009 — 고빈도라 이벤트 금지, Instance 선례).</summary>
         private void TickFootstep()
         {
-            if (!_cc.isGrounded || PlanarVelocity.sqrMagnitude < 0.01f)
+            // S-227 — 여기도 같은 여유를 쓴다. 생짜 `isGrounded`를 보면 비탈에서 누적이 매 프레임
+            // 리셋돼 **발소리가 오히려 끊긴다**(연발과 한 원인의 두 얼굴이다).
+            if (_airborneTime >= GROUNDED_COYOTE || PlanarVelocity.sqrMagnitude < 0.01f)
             {
                 _strideAccum = 0f; // 멈추면 리셋 — 재출발은 한 보폭 걸은 뒤 첫발
                 return;

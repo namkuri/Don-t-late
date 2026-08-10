@@ -425,6 +425,11 @@ namespace DontLate.EditorTools
             TMP_Text label = CreateText(go.transform, "Label", "하루 시작 > 물류캠프", font, 30f, NAVY,
                 TextAlignmentOptions.Center, FontStyles.Bold);
             AnchorCentered(label.rectTransform, new Vector2(45f, 0f), new Vector2(380f, 72f));
+
+            // S-229 ① — 엔딩 조건이 서면 같은 버튼이 "떠나기"가 된다(남규님 지시).
+            var departure = go.AddComponent<EndingDepartureLabel>();
+            SetField(departure, "_gameState", GreyboxStageBuilder.GetOrCreateStageData().gameState);
+            SetField(departure, "_label", label);
         }
 
         // ── UI 헬퍼 ──────────────────────────────────────────

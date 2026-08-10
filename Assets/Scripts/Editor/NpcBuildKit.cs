@@ -13,8 +13,12 @@ namespace DontLate.EditorTools
     {
         private const string NPC_INFO_SPRITE_PATH = "Assets/Art/UI/npc_info.png";
         private const string DIALOGUE_DIR = "Assets/Data/Dialogue";
-        private const string DUMMY_NPC_MODEL_PATH = "Assets/Art/Characters/dummy/dummynpc.fbx";
+        // S-221 — 비주얼도 **리깅된 쪽**을 쓴다. `dummynpc.fbx`는 본이 하나도 없는 정지 메시라
+        // (실측: transform 1개 · 휴머노이드 매핑 실패 isHuman=False) — 그걸 쓰면 걷기가 안 돌아간다.
+        // 걷기 FBX가 같은 캐릭터의 리깅본이다(27본 · 아바타 isHuman=True · 클립 동반).
+        private const string DUMMY_NPC_MODEL_PATH = "Assets/Art/Characters/dummy/dummy_npc_walking.fbx";
         private const string DUMMY_NPC_WALK_PATH = "Assets/Art/Characters/dummy/dummy_npc_walking.fbx";
+        private const string DUMMY_NPC_MATERIAL_PATH = "Assets/Art/Characters/Materials/dummynpc.fbm.mat"; // S-221
         private const string DUMMY_WALKER_NAME = "__gb_Walker_A";
 
         private static readonly string[] DummyWalkerScenePaths =
@@ -143,8 +147,9 @@ namespace DontLate.EditorTools
             var (go, bodyRenderer) = BuildFigure(name, position, "NpcWalker_" + name, color, 1.7f);
             Animator walkerAnimator = null;
             AnimationClip walkClip = null;
-            if (name == DUMMY_WALKER_NAME)
-                TryApplyDummyWalkerVisual(go, out bodyRenderer, out walkerAnimator, out walkClip);
+            // S-221 — 행인은 **전원** 실모델로 선다(남규님 지시). 종전엔 `__gb_Walker_A` 한 명에게만
+            // 걸려 있어 나머지는 회색 캐프섬이었다. 실패하면 캐프섬 몸이 그대로 남는다(안전).
+            TryApplyDummyWalkerVisual(go, out bodyRenderer, out walkerAnimator, out walkClip);
 
             // S-076 ② — 차 피격 감지용 몸통 트리거 + 키네마틱 RB (플레이어는 통과 유지 — 트리거라 밀지 않음).
             BoxCollider hitBox = go.AddComponent<BoxCollider>();
@@ -272,6 +277,12 @@ namespace DontLate.EditorTools
             bounds = renderers[0].bounds;
             for (int i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
             visual.transform.position += Vector3.up * (root.transform.position.y - bounds.min.y);
+
+            // S-221 — 동반 머티리얼을 물린다. FBX 임베디드 머티리얼은 텍스처를 못 찾아 **새하얗게**
+            // 나온다(S-215에서 박말순·나아라가 겪은 것과 같다 — 실측 baseMap 없음).
+            Material skin = AssetDatabase.LoadAssetAtPath<Material>(DUMMY_NPC_MATERIAL_PATH);
+            if (skin != null)
+                foreach (Renderer renderer in renderers) renderer.sharedMaterial = skin;
 
             bodyRenderer = renderers[0];
             animator = visual.GetComponentInChildren<Animator>(true);

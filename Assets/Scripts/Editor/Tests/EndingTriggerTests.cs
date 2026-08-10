@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -18,6 +18,7 @@ namespace DontLate.Tests
         private WorldEndingManager _ending;
         private GameStateSO _gameState;
         private readonly List<NpcSO> _created = new List<NpcSO>();
+        private readonly List<GameObject> _createdModels = new List<GameObject>();
 
         [SetUp]
         public void SetUp()
@@ -39,6 +40,8 @@ namespace DontLate.Tests
             Object.DestroyImmediate(_go);
             Object.DestroyImmediate(_gameState);
             foreach (NpcSO npc in _created) Object.DestroyImmediate(npc);
+            foreach (GameObject model in _createdModels) Object.DestroyImmediate(model);
+            _createdModels.Clear();
             _created.Clear();
         }
 
@@ -53,7 +56,40 @@ namespace DontLate.Tests
 
         private void Arrive(GameScene scene) => TestSupport.Invoke(_ending, "OnSceneArrived", scene);
 
-        private List<NpcSO> PickParty() => (List<NpcSO>)TestSupport.Invoke(_ending, "PickParty");
+        private List<WorldEndingManager.EndingCastEntry> PickParty()
+            => (List<WorldEndingManager.EndingCastEntry>)TestSupport.Invoke(_ending, "PickParty");
+
+        private static string NpcIdOf(WorldEndingManager.EndingCastEntry entry) => entry.npcId;
+
+        /// <summary>명부를 깐다 — 인물마다 **다른** 더미 모델을 준다(1인 1종 판정을 통과시키기 위해).</summary>
+        private void SetCast(params (string id, string name)[] rows)
+        {
+            var cast = new WorldEndingManager.EndingCastEntry[rows.Length];
+            for (int i = 0; i < rows.Length; i++)
+            {
+                GameObject model = new GameObject("TestModel_" + rows[i].id);
+                _createdModels.Add(model);
+                cast[i] = new WorldEndingManager.EndingCastEntry
+                {
+                    npcId = rows[i].id, displayName = rows[i].name, model = model,
+                };
+            }
+            TestSupport.SetField(_ending, "_cast", cast);
+        }
+
+        /// <summary>두 인물이 **같은 모델**을 쓰는 경우 — 중복 제거를 확인하기 위한 구성.</summary>
+        private void SetCastSharingOneModel(params (string id, string name)[] rows)
+        {
+            GameObject shared = new GameObject("TestModel_Shared");
+            _createdModels.Add(shared);
+            var cast = new WorldEndingManager.EndingCastEntry[rows.Length];
+            for (int i = 0; i < rows.Length; i++)
+                cast[i] = new WorldEndingManager.EndingCastEntry
+                {
+                    npcId = rows[i].id, displayName = rows[i].name, model = shared,
+                };
+            TestSupport.SetField(_ending, "_cast", cast);
+        }
 
         // ── 발동 조건 (음성 경로) ────────────────────────────
 
@@ -109,76 +145,88 @@ namespace DontLate.Tests
             Assert.IsFalse((bool)TestSupport.GetField(_ending, "_sequenceRunning"));
         }
 
-        // ── 대열 구성 ────────────────────────────────────────
+        // ── 대열 구성 (S-228에서 계약이 바뀌었다) ────────────
+        // 종전: 호감도 장부 상위 + 도감 충원, 상한 6명.
+        // 이후: **모델을 가진 인물 전원**이 1인 1종으로 선다(남규님 "1마리씩 다 나오게").
+        //       호감도는 선두 다음 자리의 **순서**에만 쓴다. 명부의 출처가 도감(NpcSO) →
+        //       빌더가 채우는 `_cast`로 바뀌었다 — 도감에 없는 아트 NPC(오지혜·나아라)를 세우기 위해서다.
 
         [Test]
         public void 대열_선두는_언제나_박말순이다()
         {
-            TestSupport.SetField(_ending, "_npcs", new[] { MakeNpc("kimboss"), MakeNpc("parkmalsoon"), MakeNpc("naara") });
+            SetCast(("kimboss", "김사장"), ("parkmalsoon", "박말순"), ("naara", "나아라"));
             _gameState.npcAffinities.Add(new NpcAffinity { npcId = "kimboss", affinity = 90 });
 
-            List<NpcSO> party = PickParty();
+            var party = PickParty();
 
-            Assert.AreEqual("parkmalsoon", party[0].npcId);
+            Assert.AreEqual("parkmalsoon", NpcIdOf(party[0]));
         }
 
         [Test]
         public void 동행은_호감도_내림차순으로_선다()
         {
-            TestSupport.SetField(_ending, "_npcs",
-                new[] { MakeNpc("parkmalsoon"), MakeNpc("low"), MakeNpc("high"), MakeNpc("mid") });
+            SetCast(("parkmalsoon", "박말순"), ("low", "로우"), ("high", "하이"), ("mid", "미드"));
             _gameState.npcAffinities.Add(new NpcAffinity { npcId = "low", affinity = 5 });
             _gameState.npcAffinities.Add(new NpcAffinity { npcId = "high", affinity = 80 });
             _gameState.npcAffinities.Add(new NpcAffinity { npcId = "mid", affinity = 40 });
 
-            List<NpcSO> party = PickParty();
+            var party = PickParty();
 
-            Assert.AreEqual("high", party[1].npcId);
-            Assert.AreEqual("mid", party[2].npcId);
-            Assert.AreEqual("low", party[3].npcId);
+            Assert.AreEqual("high", NpcIdOf(party[1]));
+            Assert.AreEqual("mid", NpcIdOf(party[2]));
+            Assert.AreEqual("low", NpcIdOf(party[3]));
         }
 
         [Test]
-        public void 호감도_장부에_없어도_도감에서_충원한다_S107()
+        public void 호감도가_없어도_모델이_있으면_전원_선다_S228()
         {
-            TestSupport.SetField(_ending, "_npcs",
-                new[] { MakeNpc("parkmalsoon"), MakeNpc("a"), MakeNpc("b") });
+            SetCast(("parkmalsoon", "박말순"), ("a", "가"), ("b", "나"));
             // 호감도 장부는 비어 있다
 
-            List<NpcSO> party = PickParty();
+            var party = PickParty();
 
             Assert.AreEqual(3, party.Count, "이웃이 다같이 모이는 것이 이 엔딩의 포인트다");
         }
 
         [Test]
-        public void 대열은_박말순_포함_6명을_넘지_않는다()
+        public void 모델이_있는_인물은_상한_없이_전원_선다_S228()
         {
-            var npcs = new List<NpcSO> { MakeNpc("parkmalsoon") };
-            for (int i = 0; i < 10; i++) npcs.Add(MakeNpc("npc" + i));
-            TestSupport.SetField(_ending, "_npcs", npcs.ToArray());
+            var rows = new List<(string, string)> { ("parkmalsoon", "박말순") };
+            for (int i = 0; i < 10; i++) rows.Add(("npc" + i, "행인" + i));
+            SetCast(rows.ToArray());
 
-            List<NpcSO> party = PickParty();
+            var party = PickParty();
 
-            Assert.AreEqual(6, party.Count); // 1 + FOLLOWER_MAX(5)
+            Assert.AreEqual(11, party.Count, "종전 6명 상한은 S-228에서 폐기됐다");
         }
 
         [Test]
         public void 박말순은_동행_자리에_다시_들어가지_않는다()
         {
-            TestSupport.SetField(_ending, "_npcs", new[] { MakeNpc("parkmalsoon"), MakeNpc("kimboss") });
+            SetCast(("parkmalsoon", "박말순"), ("kimboss", "김사장"));
             _gameState.npcAffinities.Add(new NpcAffinity { npcId = "parkmalsoon", affinity = 100 });
             _gameState.npcAffinities.Add(new NpcAffinity { npcId = "kimboss", affinity = 50 });
 
-            List<NpcSO> party = PickParty();
+            var party = PickParty();
 
             Assert.AreEqual(2, party.Count);
-            Assert.AreEqual(1, party.FindAll(n => n.npcId == "parkmalsoon").Count);
+            Assert.AreEqual(1, party.FindAll(e => NpcIdOf(e) == "parkmalsoon").Count);
         }
 
         [Test]
-        public void 도감이_비어_있으면_대열도_빈다()
+        public void 같은_모델은_두_번_서지_않는다_S228()
         {
-            List<NpcSO> party = PickParty();
+            SetCastSharingOneModel(("parkmalsoon", "박말순"), ("twin", "쌍둥이"));
+
+            var party = PickParty();
+
+            Assert.AreEqual(1, party.Count, "1인 1종 — 같은 fbx가 두 번 서면 대열이 복제로 보인다");
+        }
+
+        [Test]
+        public void 명부가_비어_있으면_대열도_빈다()
+        {
+            var party = PickParty();
 
             Assert.AreEqual(0, party.Count);
         }

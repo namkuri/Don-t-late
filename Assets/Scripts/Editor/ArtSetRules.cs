@@ -37,7 +37,34 @@ namespace DontLate.EditorTools
             if (go.GetComponentsInChildren<MonoBehaviour>(true).Length > 0) return true;
             if (go.GetComponentsInChildren<Camera>(true).Length > 0) return true;
 
-            return false;
+            return IsFlattenedBuilderPart(n);
+        }
+
+        /// <summary>
+        /// S-219 — **납작해진 빌더 부품.** 위 판정은 "컴포넌트를 들었나"만 보는데, 씬을 통째로
+        /// 담는 캡처는 부모 구조를 잃고 자식들만 세트 최상위로 흩어 놓는다. 그러면 횡단보도 줄·
+        /// 신호등 등·슬롯 마커가 **컴포넌트 없는 맨 렌더러**로 남아 규칙을 그냥 통과했다
+        /// (`set_district_3` 실측: 슬롯 24 · 신호등/횡단보도 부품 28개가 세트 최상위에 널려 있었다).
+        ///
+        /// 문서의 "이름 목록으로 가르지 않는다"를 어기는 예외다. 근거: 이 이름들은 **빌더 코드가
+        /// 직접 짓는 것**이라 이름이 코드와 함께 움직인다 — 아트가 새로 만들 수 있는 이름이 아니다.
+        /// 목록이 낡으면 빌더를 고칠 때 같이 눈에 띈다.
+        /// </summary>
+        private static bool IsFlattenedBuilderPart(string n)
+        {
+            if (n.StartsWith("slot_building_") || n.StartsWith("slot_prop_")) return true; // 절차 배치 마커
+            if (n.StartsWith("Stripe_") || n.StartsWith("Dash_")) return true;             // 횡단보도·중앙선
+            if (n.StartsWith("Chevron")) return true;                                      // 엣지 게이트 화살표
+            switch (n)
+            {
+                case "Pole":                                   // 신호등 기둥
+                case "Shaft":                                  // 엘리베이터 축
+                case "RedLamp": case "YellowLamp": case "GreenLamp":
+                case "Zone": case "Blocker":                   // 판정 구역·차단
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         /// <summary>
