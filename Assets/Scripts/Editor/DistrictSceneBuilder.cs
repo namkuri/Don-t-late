@@ -305,6 +305,11 @@ namespace DontLate.EditorTools
             serialized.FindProperty("_tuning").objectReferenceValue =
                 AssetDatabase.LoadAssetAtPath<TuningConfigSO>("Assets/Data/Tuning.asset"); // 취급주의 HP (S-019)
             serialized.ApplyModifiedPropertiesWithoutUndo();
+
+            // S-255 — 트럭 도착 시 짐 왼쪽에 세울 플레이어. SerializedObject로 주입하면 씬 저장 때
+            // `{fileID: 0}`으로 날아가는 사례가 있어(CODE_RULES §6 실수→규칙) 리플렉션 직접 주입.
+            GameObject player = GameObject.Find("__gb_Player");
+            if (player != null) GreyboxStageBuilder.SetReference(spawner, "_player", player.transform);
         }
 
         // ── 카메라·조명 (빈 씬 보강) ─────────────────────────

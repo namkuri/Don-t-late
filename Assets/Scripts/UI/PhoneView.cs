@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -181,6 +181,9 @@ namespace DontLate
                 _panelBaseSize = _panel.sizeDelta;       // S-036 — Travel 확대 후 원복 기준
                 _panelBaseX = _panel.anchoredPosition.x;
                 _panel.anchoredPosition = new Vector2(_panel.anchoredPosition.x, _hiddenY);
+                // S-257 — 여기서 걸어야 한다. `ApplyPanelLayout`은 Travel 진입/이탈 때만 불려서
+                // 그 전까지는 원래 크기 그대로였다(실측: 폰스케일 1.00).
+                _panel.localScale = Vector3.one * PANEL_SCALE;
             }
             BuildUI();
             ShowScreen(Screen.Home);
@@ -311,6 +314,69 @@ namespace DontLate
             if (label != null) label.text = IsWalkingEra ? "트럭 없음 — 걸어서 개척" : "목적지로 출발";
         }
 
+        private Button[] _mapPinButtons;
+        private RectTransform _originMarker;
+        private Button _campButton;
+
+        /// <summary>
+        /// S-254 — 핀의 잠김 표시를 **열 때마다** 다시 쓴다. 종전엔 화면을 만들 때 한 번 정해져서,
+        /// 먹자골목을 개척하고 와도 "잠김 — 개척 필요"가 그대로 남았다(남규님 관찰 — 출발은 됐다).
+        /// S-256 — 주황 화살표를 **지금 있는 구역**으로 옮긴다. 종전엔 출발 마커 자리에 고정이라
+        /// 어디에 있든 캠프를 가리켰다.
+        /// </summary>
+        private void RefreshMapPins()
+        {
+            if (_mapPinButtons == null) return;
+
+            for (int i = 0; i < _mapPinButtons.Length && i < Pins.Length; i++)
+            {
+                Button b = _mapPinButtons[i];
+                if (b == null) continue;
+                MapPin pin = Pins[i];
+                bool locked = IsPinLocked(pin);
+
+                TMP_Text label = b.GetComponentInChildren<TMP_Text>();
+                if (label != null)
+                {
+                    label.text = locked ? pin.label + "\n<size=70%>잠김 — 개척 필요</size>" : pin.label;
+                    label.color = locked ? new Color(0.65f, 0.68f, 0.75f) : Color.white;
+                }
+                if (b.image != null)
+                    b.image.color = locked ? new Color(0.25f, 0.27f, 0.32f, 0.9f) : new Color(0.16f, 0.42f, 0.38f, 0.95f);
+                PlaceOnMap((RectTransform)b.transform, pin.pos, new Vector2(116f, locked ? 62f : 46f));
+            }
+
+            string district = _gameState != null ? _gameState.currentDistrict : null;
+            if (_originMarker != null)
+            {
+                Vector2 here = MapOriginPos; // 기본 = 물류캠프
+                if (!string.IsNullOrEmpty(district))
+                    foreach (MapPin pin in Pins)
+                        if (pin.district == district) { here = pin.pos; break; }
+                PlaceOnMap(_originMarker, here, new Vector2(48f, 40f));
+                // 핀 위로 올린다 — 핀과 같은 자리에 두면 핀 뒤에 깔려 안 보인다(실측).
+                _originMarker.SetAsLastSibling();
+            }
+
+            // 출발지도 지금 있는 곳으로. Travel 진입 때만 정하던 값이라 구역에서 지도를 열면
+            // "출발: 물류캠프"가 남아 화살표와 어긋났다. **라벨을 직접 쓰지 않고 원본 값을 고친다** —
+            // 지도 정보 갱신(`_mapOriginLabel.text = "출발: " + _travelOrigin`)이 뒤에 한 번 더 돌아
+            // 직접 쓴 문자열은 덮어써진다(실측).
+            if (!_inTravel) _travelOrigin = string.IsNullOrEmpty(district) ? "물류캠프" : district;
+
+            // 캠프에 있으면 "캠프가기"는 무의미하다.
+            if (_campButton != null)
+                _campButton.gameObject.SetActive(_gameState != null && !string.IsNullOrEmpty(_gameState.currentDistrict));
+        }
+
+        /// <summary>S-256 — 지도에서 물류캠프로 복귀. 하루 루프가 한 방향으로만 흐르지 않게.</summary>
+        private void GoToCamp()
+        {
+            if (WorldSceneFlowManager.Instance == null) return;
+            ClosePanel();
+            WorldSceneFlowManager.Instance.Request(GameScene.Camp);
+        }
+
         /// <summary>
         /// S-249 — 밖에서 폰을 열고 **지도 앱**을 띄운다(트럭 탑승 → 어디로 갈지 고르는 화면).
         /// 이미 열려 있으면 화면만 지도로 바꾼다 — 토글이면 눌러서 닫히는 사고가 난다.
@@ -357,7 +423,7 @@ namespace DontLate
             foreach (var pair in _screens) pair.Value.SetActive(pair.Key == screen);
             // S-249 — 출발 버튼 문구는 화면을 **만들 때** 한 번 정해진다. 트럭을 사도 지도 화면이
             // 이미 조립돼 있으면 "트럭 없음 — 걸어서 개척"이 그대로 남는다(실측). 열 때마다 다시 쓴다.
-            if (screen == Screen.Map) RefreshDepartLabel();
+            if (screen == Screen.Map) { RefreshDepartLabel(); RefreshMapPins(); }
             if (_titleLabel != null)
                 _titleLabel.text = screen switch
                 {
@@ -742,9 +808,14 @@ namespace DontLate
         }
 
         // S-036: Travel에선 폰이 세로 풀스크린 지도 앱 — 패널 중앙 확대, 이탈 시 원복.
+        // S-257 — 폰 화면 1.2배(남규님 지시). 크기를 키우는 대신 **스케일**을 건다 —
+        // 내부 위젯 좌표가 전부 픽셀 상수라 sizeDelta만 키우면 배치가 어긋난다.
+        private const float PANEL_SCALE = 1.2f;
+
         private void ApplyPanelLayout()
         {
             if (_panel == null) return;
+            _panel.localScale = Vector3.one * PANEL_SCALE;
             if (_inTravel)
             {
                 float canvasWidth = ((RectTransform)_panel.parent).rect.width;
@@ -1798,7 +1869,9 @@ namespace DontLate
             TMP_Text origin = MakeText(map.transform, "OriginMarker", "▲", 30f, new Color(1f, 0.62f, 0.27f), TextAlignmentOptions.Center);
             origin.raycastTarget = false;
             PlaceOnMap(origin.rectTransform, MapOriginPos, new Vector2(48f, 40f));
+            _originMarker = origin.rectTransform; // S-256 — 현재 위치로 옮겨 다닌다
 
+            _mapPinButtons = new Button[Pins.Length];
             for (int i = 0; i < Pins.Length; i++)
             {
                 int index = i;
@@ -1806,6 +1879,7 @@ namespace DontLate
                 Button b = MakeButton(map.transform, "Pin_" + pin.label,
                     IsPinLocked(pin) ? pin.label + "\n<size=70%>잠김 — 개척 필요</size>" : pin.label,
                     () => OnPinTapped(index));
+                _mapPinButtons[index] = b;
                 RectTransform rect = (RectTransform)b.transform;
                 // S-122 ⑨ — S-117 개구(298) 정합: 지도폭 266에 정규화 좌표 중앙배치라 반폭 58까지만 안 뚫린다
                 // (구 158은 최좌 0.24 핀이 좌측 15px, 최우 0.74 핀이 우측 10px 이탈).
@@ -1817,6 +1891,17 @@ namespace DontLate
                     b.GetComponentInChildren<TMP_Text>().color = new Color(0.65f, 0.68f, 0.75f);
                 }
             }
+
+            // S-256 — 지도 우측 하단 '캠프가기'(남규님 지정 위치). 지도 영역 안에 얹어야 핀들과
+            // 같은 판으로 읽힌다 — 아래 정보줄·출발 버튼 영역은 이미 꽉 차 있다.
+            _campButton = MakeButton(map.transform, "GoCamp", "캠프가기", GoToCamp);
+            RectTransform campRect = (RectTransform)_campButton.transform;
+            campRect.anchorMin = campRect.anchorMax = campRect.pivot = new Vector2(1f, 0f);
+            campRect.sizeDelta = new Vector2(92f, 34f);
+            campRect.anchoredPosition = new Vector2(-8f, 8f);
+            _campButton.GetComponentInChildren<TMP_Text>().fontSize = 17f;
+            _campButton.image.color = new Color(1f, 0.62f, 0.27f, 0.95f);
+            _campButton.GetComponentInChildren<TMP_Text>().color = new Color(0.06f, 0.08f, 0.12f);
 
             _mapInfoLabel = MakeText(screen.transform, "Info", "목적지 핀을 탭해라", 22f, Color.white, TextAlignmentOptions.BottomLeft); // S-122 ⑨ 26→22 (2줄이 62px 상자에 들어가게)
             RectTransform infoRect = _mapInfoLabel.rectTransform;

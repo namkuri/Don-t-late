@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 namespace DontLate
@@ -25,6 +25,8 @@ namespace DontLate
         [SerializeField] private Transform[] _floorBeaconAnchors;
         [Tooltip("S-129 — 비콘을 Ground 레이어 지면에 스냅한다. 경사 지형(Hillside) 전용 — 평지 씬은 끈 채로 둔다.")]
         [SerializeField] private bool _snapBeaconsToGround;
+        [Tooltip("S-255 — 트럭으로 도착했을 때 짐 왼쪽에 세울 플레이어. 빌더 주입, 비면 배치 생략.")]
+        [SerializeField] private Transform _player;
 
         // S-075 ① — 패드 기본 슬롯: 교차 도로(x -2.1~2.1)와 그 여백을 피해 건물 앞에만 (x=0 스폰 금지).
         private static readonly float[] BEACON_SLOTS_X = { -8f, 8f, 16f, -16f, 24f, -24f, 32f, -32f };
@@ -93,6 +95,7 @@ namespace DontLate
 
             // 상자: cargo(픽업 등록) 소속 건만 실물이 있다. 파손 건은 그날 재스폰 금지 (S-074 ③).
             int boxCount = 0;
+            Vector3 firstBoxPos = Vector3.zero; // S-255 — 도착 지점 기준
             foreach (DeliveryOrderSO order in matching)
             {
                 if (!_gameState.cargo.Contains(order)) continue;
@@ -121,11 +124,47 @@ namespace DontLate
                             : new Vector3(-16f + boxSlot * 1.2f, 0f, -1.2f));
                     boxSlot++;
                 }
+                if (boxCount == 0) firstBoxPos = boxPos;
                 SpawnBox(order, boxPos, frozen: placedIndex >= 0); // S-097 ① — 배치 상자는 물리 낙하 없이 고정
                 boxCount++;
             }
             Debug.Log("[CargoSpawner] 구역 '" + district + "' — 비콘 " + matching.Count + "개 · 짐 " + boxCount + "건 스폰.");
+            PlaceArrivingPlayer(firstBoxPos, boxCount);
         }
+
+        /// <summary>
+        /// S-255 — **트럭으로 도착했을 때만** 플레이어를 짐 왼쪽에 세운다(남규님 지시).
+        /// 도보(엣지 워크)로 넘어온 경우는 `DistrictEdgeGate`가 이미 진입 지점에 세워 뒀으므로
+        /// 건드리면 안 된다 — 넘어오자마자 반대편으로 순간이동하는 꼴이 된다.
+        /// 짐이 하나도 없으면(전량 배치 완료 등) 손대지 않는다.
+        /// </summary>
+        private void PlaceArrivingPlayer(Vector3 firstBoxPos, int boxCount)
+        {
+            if (boxCount <= 0 || _player == null) return;
+            if (WorldSceneFlowManager.Instance == null
+                || WorldSceneFlowManager.Instance.PreviousScene != GameScene.Travel) return;
+
+            // 짐보다 왼쪽 — 다가가면 바로 집을 수 있는 거리.
+            Vector3 spawn = new Vector3(firstBoxPos.x - ARRIVAL_LEFT_OFFSET, _player.position.y, firstBoxPos.z);
+
+            // 엣지 게이트와 붙이지 않는다(남규님 단서). 빌라촌 실측: 짐 −16 · 엣지 −19라 오프셋만
+            // 쓰면 −18.2로 게이트에 0.8까지 붙는다 — 도착하자마자 옆 구역으로 넘어간다.
+            foreach (DistrictEdgeGate gate in Object.FindObjectsByType<DistrictEdgeGate>(FindObjectsInactive.Include))
+            {
+                if (gate == null) continue;
+                float gateX = gate.transform.position.x;
+                if (gateX < firstBoxPos.x) spawn.x = Mathf.Max(spawn.x, gateX + EDGE_CLEARANCE);
+            }
+
+            CharacterController controller = _player.GetComponentInChildren<CharacterController>();
+            if (controller != null) controller.enabled = false; // CC가 켜져 있으면 위치 대입이 씹힌다
+            _player.position = spawn;
+            if (controller != null) controller.enabled = true;
+            Debug.Log("[CargoSpawner] 트럭 도착 — 플레이어를 짐 왼쪽 " + spawn.ToString("F1") + "에 세움 (S-255).");
+        }
+
+        private const float ARRIVAL_LEFT_OFFSET = 2.2f;
+        private const float EDGE_CLEARANCE = 2.0f;
 
         // 트럭에서 내린 짐 — 보도 앞줄에 일렬.
         private void SpawnBox(DeliveryOrderSO order, Vector3 groundPosition, bool frozen = false)

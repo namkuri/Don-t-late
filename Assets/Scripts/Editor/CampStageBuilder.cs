@@ -363,8 +363,11 @@ namespace DontLate.EditorTools
             GameObject purchase = GameObject.CreatePrimitive(PrimitiveType.Cube);
             purchase.name = "PurchasePoint";
             purchase.transform.SetParent(root.transform, false);
-            purchase.transform.localPosition = depart.transform.localPosition;
-            purchase.transform.localScale = depart.transform.localScale;
+            // S-258 — 구매 트리거는 **트럭 둘레 전체**를 덮는다(3회 지적). 종전엔 출발 지점과 같은
+            // 앞범퍼 한 점이라, 트럭 옆구리로 다가가면 아무것도 안 잡혔다. 트럭이 없을 때는 적재존이
+            // 포커스를 양보하므로(S-251) 이 큰 트리거와 겹칠 상대가 없다.
+            purchase.transform.localPosition = new Vector3(0.4f, 1f, -0.6f);
+            purchase.transform.localScale = new Vector3(9f, 2.4f, 3.2f);
             Object.DestroyImmediate(purchase.GetComponent<Renderer>());
             purchase.GetComponent<BoxCollider>().isTrigger = true;
             TruckPurchasePoint purchasePoint = purchase.AddComponent<TruckPurchasePoint>();
