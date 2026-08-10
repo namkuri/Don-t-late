@@ -568,6 +568,12 @@ namespace DontLate
             if (so != null && so.prefab != null)
             {
                 ghost = Instantiate(so.prefab);
+                // S-279 — **실물과 같은 배율을 건다**(남규님 힌트: Furniture_와 Ghost_를 맞추면 된다).
+                // `SpawnVisual`은 `so.prefabScale`을 곱하는데 여기만 빠져 있어, 미리보기가 실물보다
+                // 작게 떴다(침대는 배율 2.0이라 절반으로 보였다). 미리보기와 결과가 다르면
+                // 배치를 눈으로 정할 수 없다.
+                if (!Mathf.Approximately(so.prefabScale, 1f))
+                    ghost.transform.localScale *= so.prefabScale;
                 foreach (Collider collider in ghost.GetComponentsInChildren<Collider>())
                     collider.enabled = false;
             }

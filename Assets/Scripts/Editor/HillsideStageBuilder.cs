@@ -120,7 +120,10 @@ namespace DontLate.EditorTools
                 DontLate.DistrictEdgeGate.Direction.Next, gameState);
 
             // S-059 — 달동네 고양이 (정상 마당 · 데려오면 집에 정착).
-            BuildCat(gameState, OnGround(34f, -1.2f));
+            // S-279 ② — 고양이 철거(남규님 지시). 빌더에서 빼야 재조립에도 안 돌아온다.
+            //   ⚠ 집 고양이(S-059)의 유일한 입수처였다 — `HomeCat`은 데려온 뒤에만 활성이므로
+            //   이 씬에서 만나는 경로가 사라지면 그 콘텐츠도 함께 잠긴다. 되살리려면 이 줄만 복구하면 된다.
+            //   BuildCat(gameState, OnGround(34f, -1.2f));
 
             // ── 플레이어·카메라(Y 팔로우) ────────────────────
             // (배경 세트는 S-214 ③에서 지형 절로 올라갔다 — 여기서 다시 깔면 두 벌이 선다.)
