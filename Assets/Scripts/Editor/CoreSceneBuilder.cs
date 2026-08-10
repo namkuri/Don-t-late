@@ -979,14 +979,14 @@ namespace DontLate.EditorTools
                 clone.transform.SetAsFirstSibling();
             }
 
-            RectTransform holdRect = (RectTransform)hold.transform;
-            RectTransform dropRect = (RectTransform)drop.transform;
-            float gap = holdRect.anchoredPosition.y - dropRect.anchoredPosition.y; // 칸 간격(양수)
-            ((RectTransform)consume.transform).anchoredPosition = holdRect.anchoredPosition;
-            holdRect.anchoredPosition -= new Vector2(0f, gap);
-            dropRect.anchoredPosition -= new Vector2(0f, gap);
-            RectTransform contextRect = (RectTransform)context.transform;
-            contextRect.sizeDelta = new Vector2(contextRect.sizeDelta.x, contextRect.sizeDelta.y + gap);
+            // S-252 — '손에 들기' 칸을 없앤다(남규님 지시). 아트 프리팹의 그 버튼 라벨이 "사용"이라
+            // 화면에는 `[사용][사용][버리기]`로 같은 글자가 두 번 떴다. 자리를 비우는 대신 아예 끄고
+            // 참조도 끊는다 — 살아 있으면 `BagView`가 상황에 따라 도로 켠다.
+            //   ⚠ 부수 효과: '손에 들기'(S-064 들고 던지기) 진입로가 우클릭에서 사라진다.
+            //   좌클릭은 소비 리스너가 없는 씬(집 등)에서 여전히 손에 들기로 떨어진다.
+            ((RectTransform)consume.transform).anchoredPosition = ((RectTransform)hold.transform).anchoredPosition;
+            hold.gameObject.SetActive(false);
+            SetField(view, "_useButton", null);
 
             SetField(view, "_consumeButton", consume);
         }
@@ -1157,7 +1157,7 @@ namespace DontLate.EditorTools
             Image contextBg = context.AddComponent<Image>();
             contextBg.color = new Color(0.08f, 0.10f, 0.15f, 0.98f);
             RectTransform contextRect = (RectTransform)context.transform;
-            contextRect.sizeDelta = new Vector2(150f, 170f); // S-243 — '사용' 한 칸 추가
+            contextRect.sizeDelta = new Vector2(150f, 118f); // S-252 — [사용][버리기] 두 칸
 
             Button MakeContextButton(string btnName, string btnLabel, float y, Color color)
             {
@@ -1178,14 +1178,13 @@ namespace DontLate.EditorTools
             }
 
             // S-243 — '사용'을 첫 칸으로. 우클릭으로 쓰려는 손이 실재한다(남규님 지적).
+            // S-252 — '손에 들기' 칸은 만들지 않는다(남규님 지시).
             Button consumeButton = MakeContextButton("ConsumeButton", "사용", -10f, new Color(0.23f, 0.50f, 0.62f, 1f));
-            Button useButton = MakeContextButton("UseButton", "손에 들기", -62f, new Color(0.21f, 0.55f, 0.50f, 1f));
-            Button dropButton = MakeContextButton("DropButton", "버리기", -114f, new Color(0.55f, 0.30f, 0.28f, 1f));
+            Button dropButton = MakeContextButton("DropButton", "버리기", -62f, new Color(0.55f, 0.30f, 0.28f, 1f));
 
             SetField(view, "_panel", panel.gameObject);
             SetField(view, "_contextMenu", context);
             SetField(view, "_consumeButton", consumeButton);
-            SetField(view, "_useButton", useButton);
             SetField(view, "_dropButton", dropButton);
             EnsureBagHoverHint(view, panel.transform); // S-205
             EditorUtility.SetDirty(view);

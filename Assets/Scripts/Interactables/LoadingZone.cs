@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace DontLate
 {
@@ -27,8 +27,8 @@ namespace DontLate
         [Tooltip("짐칸에 쌓이는 상자 비주얼(prop_box_parcel). 비우면 큐브 폴백.")]
         [SerializeField] private GameObject _boxVisualPrefab;
         [SerializeField] private Material _boxMaterial;
-        [SerializeField] private Renderer _renderer;
-        [SerializeField] private Material _normalMaterial;
+        [Tooltip("S-253 — 하이라이트를 걸 범위(트럭 루트). 하위 렌더러 전부를 갈아끼운다.")]
+        [SerializeField] private Transform _highlightRoot;
         [SerializeField] private Material _highlightMaterial;
 
         private int _stacked;
@@ -100,11 +100,16 @@ namespace DontLate
             return initialized ? bounds.size.y : 0f;
         }
 
-        public void SetHighlight(bool on)
+        // S-253 — 트럭 **전체**를 갈아끼운다. 종전엔 그레이박스 몸통 렌더러 하나만 바꿨는데,
+        // S-248에서 아트 모델이 그 위를 덮으면서 화면에는 아무 변화도 안 보이게 됐다
+        // (남규님 관찰: "트럭에 하이라이트 및 상호작용 안 됨" — 실은 몸통만 켜지고 가려져 있었다).
+        public void SetHighlight(bool on) => _swapper?.Set(on, _highlightMaterial);
+
+        private HighlightSwapper _swapper;
+
+        private void Awake()
         {
-            if (_renderer == null) return;
-            Material material = on ? _highlightMaterial : _normalMaterial;
-            if (material != null) _renderer.sharedMaterial = material;
+            _swapper = new HighlightSwapper(_highlightRoot != null ? _highlightRoot : transform);
         }
     }
 }

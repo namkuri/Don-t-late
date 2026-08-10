@@ -378,8 +378,7 @@ namespace DontLate.EditorTools
             GreyboxStageBuilder.SetReference(zone, "_boxVisualPrefab",
                 AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Auto/prop_box_parcel.prefab"));
             GreyboxStageBuilder.SetReference(zone, "_boxMaterial", boxMaterial);
-            GreyboxStageBuilder.SetReference(zone, "_renderer", bodyRenderer);
-            GreyboxStageBuilder.SetReference(zone, "_normalMaterial", bodyNormal);
+            GreyboxStageBuilder.SetReference(zone, "_highlightRoot", root.transform); // S-253
             GreyboxStageBuilder.SetReference(zone, "_highlightMaterial", highlight);
         }
 
