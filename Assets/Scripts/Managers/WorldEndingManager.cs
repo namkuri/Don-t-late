@@ -40,6 +40,9 @@ namespace DontLate
             [Tooltip("S-244 — 클립을 1배속으로 돌릴 때 이 인물이 나아가는 초당 거리(모델 스케일 적용 전). "
                 + "0이면 제자리 걷기 클립이라 보정할 수 없다. 빌더가 apparentSpeed로 채운다.")]
             public float clipGroundSpeed;
+            [Tooltip("S-250 — 대열에 설 때의 Y 회전. 모델마다 기본 정면이 달라 한 값으로 묶을 수 없다 "
+                + "(김사장 모델은 나머지보다 90° 틀어져 있어 캠프에서도 따로 보정한다).")]
+            public float facingYaw;
         }
 
         [Tooltip("S-228 — 엔딩 대열(모델 보유 인물 전원, 1인 1종). 빌더 주입.")]
@@ -437,7 +440,9 @@ namespace DontLate
         {
             GameObject root = new GameObject("EndingNpc_" + entry.npcId);
             root.transform.position = position;
-            root.transform.rotation = Quaternion.Euler(0f, -90f, 0f); // 플레이어(왼쪽)를 보고 걸어온다
+            // 플레이어(왼쪽)를 보고 걸어온다. S-250 — 각도는 인물별이다: 김사장 모델만 기본 정면이
+            // 90° 틀어져 있어 −90°를 걸면 혼자 옆을 본다(남규님 관찰).
+            root.transform.rotation = Quaternion.Euler(0f, entry.facingYaw, 0f);
 
             if (entry.model == null) { MakeGreyboxFigure(root); return root.transform; }
 
@@ -653,6 +658,10 @@ namespace DontLate
             public void Freeze()
             {
                 if (!_bound || !_graph.IsValid()) return;
+                // S-250 — 도착 시점의 클립 진행량. 걷는 동안 그래프가 실제로 돌았는지 판정하는
+                // 유일한 흔적이다(도착 뒤에 재면 이미 0으로 되돌린 값만 보인다 — S-244에서 그 구멍을 밟았다).
+                Debug.Log("[엔딩대열] " + transform.parent?.name + " 도착 — 클립 진행 "
+                    + UnityEngine.Playables.PlayableExtensions.GetTime(_clip).ToString("F2") + "초");
                 _clip.SetTime(0d);
                 _clip.SetSpeed(0d);
             }

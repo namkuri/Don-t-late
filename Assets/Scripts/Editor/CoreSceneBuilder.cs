@@ -2174,23 +2174,26 @@ namespace DontLate.EditorTools
             // **걷는 동작이 아니라서**(실측 보속 0.00) 이동하는 내내 미끄러졌다. 전용 걷기 클립이
             // 없지만 두 모델 모두 Humanoid + 유효 Avatar라 **공용 걷기 클립이 리타깃된다** —
             // 그게 Humanoid 리그를 쓰는 이유다.
+            // S-250 — `yaw`는 대열에 설 때의 Y 회전이다. 기본 −90°(왼쪽의 플레이어를 보고 걸어온다)인데
+            // **김사장 모델만 기본 정면이 90° 틀어져 있어** 그 값을 그대로 주면 혼자 옆을 본다
+            // (캠프도 같은 이유로 시각물에 +90°를 따로 건다 — `CampStageBuilder.BOSS_VISUAL_YAW`).
             const string SHARED_WALK = "Assets/Art/Characters/dummy/dummy_npc_walking.fbx";
-            (string id, string name, string model, string clip, string clean, string skin)[] table =
+            (string id, string name, string model, string clip, string clean, string skin, float yaw)[] table =
             {
                 ("parkmalsoon", "박말순", "Assets/Art/Characters/malsoon/malsoon.fbx",
                     SHARED_WALK, null,
-                    "Assets/Art/Characters/Materials/malsoon.fbm.mat"),
+                    "Assets/Art/Characters/Materials/malsoon.fbm.mat", -90f),
                 ("boss", "김사장", "Assets/Art/Characters/Kimboss/kim_boss.fbx",
                     "Assets/Art/Characters/Kimboss/kimboss_Walking (2).fbx", "kim_boss_walk_clean.anim",
-                    "Assets/Art/Characters/kimsajng.mat"),
+                    "Assets/Art/Characters/kimsajng.mat", 0f),
                 ("yoo_jihye", "오지혜", "Assets/Art/Characters/jihye/jihye.fbx",
-                    SHARED_WALK, null, null),
+                    SHARED_WALK, null, null, -90f),
                 ("na_ara", "나아라", "Assets/Art/Characters/naara/gs_girl_mixamo_rig_final.fbx",
                     "Assets/Art/Characters/naara/gs_girl_walking.fbx", null,
-                    "Assets/Art/Characters/Materials/gs_girl.mat"),
+                    "Assets/Art/Characters/Materials/gs_girl.mat", -90f),
                 ("walker_a", "이웃 주민", "Assets/Art/Characters/dummy/dummy_npc_walking.fbx",
                     "Assets/Art/Characters/dummy/dummy_npc_walking.fbx", null,
-                    "Assets/Art/Characters/Materials/dummynpc.fbm.mat"),
+                    "Assets/Art/Characters/Materials/dummynpc.fbm.mat", -90f),
             };
 
             var cast = new System.Collections.Generic.List<DontLate.WorldEndingManager.EndingCastEntry>();
@@ -2198,9 +2201,14 @@ namespace DontLate.EditorTools
             {
                 GameObject model = AssetDatabase.LoadAssetAtPath<GameObject>(row.model);
                 if (model == null) { Debug.LogWarning("[엔딩대열] 모델 없음 — " + row.model); continue; }
+                // S-250 — 클립을 집기 **전에** 루프를 보장한다. 걷기 클립인데 Loop Time이 꺼져 있으면
+                // 1초쯤 걷다가 마지막 프레임에서 굳는다(남규님 관찰: "처음에 잠깐 걷는 애니메이션 나왔음").
+                // 실측: 나아라 클립만 loop=True였고 — 그래서 나아라만 걷는 것처럼 보였다.
+                EnsureLoopingImport(row.clip);
                 AnimationClip clip = string.IsNullOrEmpty(row.clean)
                     ? LoadFirstClip(row.clip)
                     : CampStageBuilder.GetOrCreateCleanAnimationClip(row.clip, row.clean);
+                EnsureLoopingClip(clip); // 정리본(.anim)은 임포터가 없다 — 클립 설정을 직접 켠다
                 cast.Add(new DontLate.WorldEndingManager.EndingCastEntry
                 {
                     npcId = row.id,
@@ -2213,10 +2221,51 @@ namespace DontLate.EditorTools
                     // 이동 속도에 맞춘다. Generic 클립은 0이 나온다(휴머노이드 전용 값) —
                     // 김사장이 그 경우이고, 원본조차 루트 이동이 0인 **제자리 걷기**라 보정 대상이 아니다.
                     clipGroundSpeed = clip != null ? clip.apparentSpeed : 0f,
+                    facingYaw = row.yaw, // S-250
                 });
             }
             Debug.Log("[엔딩대열] " + cast.Count + "인 배선 (S-228 — 모델 보유 전원).");
             return cast.ToArray();
+        }
+
+        /// <summary>
+        /// S-250 — FBX 서브에셋 클립의 Loop Time을 켠다. 클립 객체에 직접 쓰면 재임포트 때 사라지므로
+        /// **임포터 설정**을 고쳐야 영구히 남는다. 이미 켜져 있으면 재임포트하지 않는다(멱등·비용).
+        /// </summary>
+        private static void EnsureLoopingImport(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return;
+            if (AssetImporter.GetAtPath(path) is not ModelImporter importer) return;
+
+            ModelImporterClipAnimation[] clips = importer.clipAnimations;
+            if (clips == null || clips.Length == 0) clips = importer.defaultClipAnimations;
+            if (clips == null || clips.Length == 0) return;
+
+            bool changed = false;
+            foreach (ModelImporterClipAnimation clip in clips)
+            {
+                if (clip.loopTime) continue;
+                clip.loopTime = true;
+                changed = true;
+            }
+            if (!changed) return;
+
+            importer.clipAnimations = clips;
+            importer.SaveAndReimport();
+            Debug.Log("[엔딩대열] Loop Time 켬 — " + path);
+        }
+
+        /// <summary>`.anim` 에셋(임포터가 없는 생성물)의 Loop Time을 켠다 (S-250).</summary>
+        private static void EnsureLoopingClip(AnimationClip clip)
+        {
+            if (clip == null || clip.isLooping) return;
+            AnimationClipSettings settings = AnimationUtility.GetAnimationClipSettings(clip);
+            if (settings.loopTime) return;
+            settings.loopTime = true;
+            AnimationUtility.SetAnimationClipSettings(clip, settings);
+            EditorUtility.SetDirty(clip);
+            AssetDatabase.SaveAssets();
+            Debug.Log("[엔딩대열] Loop Time 켬 — " + clip.name);
         }
 
         /// <summary>FBX 안의 애니메이션 클립(서브에셋). `__preview__`는 거른다.</summary>
