@@ -124,6 +124,12 @@ namespace DontLate
             Debug.Log("[엔딩] UI 소등 " + hiddenCanvases.Count + "개 (대화창·페이드 유지)");
             _keepUiHidden = true;
             StartCoroutine(KeepUiHidden(hiddenCanvases)); // 뒤늦게 켜지는 것까지 잡는다(아래 참조)
+
+            // Home → Camp 도착 시 DistrictEdgeGate가 한 프레임 뒤 도착 위치를 적용한다.
+            // 엔딩 좌표가 다시 덮이지 않도록 게이트 스폰이 끝난 뒤 플레이어를 배치한다.
+            yield return null;
+            yield return null;
+
             Transform player = FindPlayer();
             if (player == null) { _sequenceRunning = false; yield break; }
 
@@ -140,7 +146,12 @@ namespace DontLate
 
             // S-230 ① — 늦지마맨을 정해진 자리에 세운다(남규님 좌표). 대열이 오른쪽에서 걸어오므로
             // 시작 위치가 어긋나면 대열 간격·카메라 잡이가 통째로 밀린다.
+            CharacterController startController = player.GetComponent<CharacterController>();
+            bool controllerWasEnabled = startController != null && startController.enabled;
+            if (controllerWasEnabled) startController.enabled = false;
             player.position = ENDING_PLAYER_START;
+            AlignPlayerFeetToGround(player);
+            if (controllerWasEnabled) startController.enabled = true;
 
             // S-230 ②④⑤ — 엔딩 무대 정리: 캠프의 상시 소품이 마지막 장면에 끼어든다.
             //   `__gb_BossNpc`  — 김사장이 대열에도 서므로 **두 명**이 된다(남규님 관찰)
@@ -214,7 +225,7 @@ namespace DontLate
             // 3단 — 늦지마맨 퇴장: 왼쪽으로 걸어가 사라진다 (조작은 S-229 ③에서 이미 잠갔다).
             CharacterController controller = player.GetComponent<CharacterController>();
             if (controller != null) controller.enabled = false;
-            yield return StartCoroutine(WalkTo(player, player.position + Vector3.left * 14f, faceLeft: true));
+            yield return StartCoroutine(WalkTo(player, FindLeftGroundEdge(player), faceLeft: true));
             player.gameObject.SetActive(false);
             _keepUiHidden = false; // S-204 — 감시 종료: 이 뒤로 크레딧 캔버스가 생긴다
             Debug.Log("[엔딩] 퇴장 완료 t=" + Time.time.ToString("0.0"));
@@ -250,6 +261,58 @@ namespace DontLate
         }
 
         // ── 부품 ─────────────────────────────────────────────
+
+        private static void AlignPlayerFeetToGround(Transform player)
+        {
+            Physics.SyncTransforms();
+            Vector3 origin = player.position + Vector3.up * 10f;
+            RaycastHit[] groundHits = Physics.RaycastAll(origin, Vector3.down, 12f, ~0,
+                QueryTriggerInteraction.Ignore);
+            bool foundGround = false;
+            float groundY = float.NegativeInfinity;
+            foreach (RaycastHit hit in groundHits)
+            {
+                if (hit.transform == null || hit.transform.IsChildOf(player) || hit.normal.y < 0.5f) continue;
+                if (hit.point.y > player.position.y + 2f || hit.point.y <= groundY) continue;
+                groundY = hit.point.y;
+                foundGround = true;
+            }
+            if (!foundGround) return;
+
+            Renderer[] renderers = player.GetComponentsInChildren<Renderer>(true);
+            if (renderers.Length == 0) return;
+            Bounds visualBounds = renderers[0].bounds;
+            for (int i = 1; i < renderers.Length; i++) visualBounds.Encapsulate(renderers[i].bounds);
+
+            player.position += Vector3.up * (groundY + 0.02f - visualBounds.min.y);
+            Physics.SyncTransforms();
+        }
+
+        private static Vector3 FindLeftGroundEdge(Transform player)
+        {
+            Vector3 target = player.position + Vector3.left * 14f;
+            Vector3 origin = player.position + Vector3.up * 10f;
+            RaycastHit[] groundHits = Physics.RaycastAll(origin, Vector3.down, 12f, ~0,
+                QueryTriggerInteraction.Ignore);
+            float widestGround = 0f;
+            foreach (RaycastHit hit in groundHits)
+            {
+                if (hit.transform == null || hit.transform.IsChildOf(player) || hit.normal.y < 0.5f) continue;
+                if (hit.point.y > player.position.y + 2f) continue;
+
+                Bounds groundBounds = hit.collider.bounds;
+                Renderer groundRenderer = hit.collider.GetComponent<Renderer>();
+                if (groundRenderer != null) groundBounds = groundRenderer.bounds;
+                if (groundBounds.min.x >= player.position.x || groundBounds.max.x <= player.position.x
+                    || groundBounds.size.x <= widestGround) continue;
+
+                widestGround = groundBounds.size.x;
+                target.x = groundBounds.min.x;
+                target.y = player.position.y;
+                target.z = player.position.z;
+            }
+            return target;
+        }
 
         /// <summary>
         /// Find 금지 규칙 — 물리 쿼리로 찾는다 (CampBossNpc 관례).

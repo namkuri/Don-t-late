@@ -17,6 +17,8 @@ namespace DontLate.EditorTools
     {
         private const string CAMP_PATH = "Assets/Scenes/Camp.unity";
         private const string CAMP_PLANES_PREFAB_PATH = "Assets/Prefabs/Hand/set_camp_planes.prefab";
+        private const string BLOSSOM_PREFAB_PATH = "Assets/Prefabs/Auto/blossom_tree.prefab";
+        private const string BLOSSOM_TEXTURE_PATH = "Assets/_intake/Art/ChatGPT/UI/one_blossom.png";
         private const string BOSS_MODEL_PATH = "Assets/Art/Characters/Kimboss/kim_boss.fbx";
         private const string BOSS_IDLE_PATH = "Assets/Art/Characters/Kimboss/kimboss_Breathing Idle.fbx";
         private const string BOSS_WALK_PATH = "Assets/Art/Characters/Kimboss/kimboss_Walking (2).fbx";
@@ -93,10 +95,106 @@ namespace DontLate.EditorTools
             // S-141 — 민지님 세트 프리팹(`set_camp_1`)으로 물류장 소품·건물을 깐다.
             // 프리팹이 정본이라 민지님이 고치면 코드 수정 없이 반영된다.
             ArtBackdropKit.Build(ArtBackdropKit.Camp);
+            BuildCampBlossoms(scene);
 
             EditorSceneManager.SaveScene(scene, CAMP_PATH);
             Debug.Log("[Camp] 무대 조립 완료 — 박스 " + LOAD_ZONE_COUNT
                     + "개를 E로 들어 트럭 짐칸 뒤에서 E로 싣는다 (S-009).");
+        }
+
+        [MenuItem("DontLate/Art/Add Camp Blossom Trees + Petals", priority = 31)]
+        private static void AddCampBlossomsOnly()
+        {
+            if (Application.isPlaying)
+            {
+                EditorUtility.DisplayDialog("Camp Blossom Petals",
+                    "Play Mode를 끈 뒤 다시 실행하세요.", "OK");
+                return;
+            }
+
+            Scene scene = SceneManager.GetSceneByName("Camp");
+            if (!scene.IsValid() || !scene.isLoaded)
+            {
+                EditorUtility.DisplayDialog("Camp Blossom Petals",
+                    "Camp 씬을 연 뒤 다시 실행하세요. Core와 함께 열려 있어도 괜찮습니다.", "OK");
+                return;
+            }
+
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                if (root.name.StartsWith("__gb_CampBlossom_")
+                    || root.name.StartsWith("__gb_BlossomPetalEffect_Camp_"))
+                    Object.DestroyImmediate(root);
+            }
+
+            int count = BuildCampBlossoms(scene);
+            EditorSceneManager.SaveScene(scene);
+            EditorUtility.DisplayDialog("Camp Blossom Petals",
+                "벚꽃나무와 꽃잎 효과 " + count + "개를 추가하고 Camp 씬을 저장했습니다.", "OK");
+        }
+
+        private static int BuildCampBlossoms(Scene scene)
+        {
+            GameObject treePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(BLOSSOM_PREFAB_PATH);
+            Texture2D petalTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(BLOSSOM_TEXTURE_PATH);
+            if (treePrefab == null || petalTexture == null)
+            {
+                Debug.LogWarning("[Camp] 벚꽃나무 또는 one_blossom 에셋을 찾지 못해 효과를 생략했다.");
+                return 0;
+            }
+
+            var trees = new System.Collections.Generic.List<GameObject>();
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                if (root.name.StartsWith("blossom_tree", System.StringComparison.OrdinalIgnoreCase))
+                    trees.Add(root);
+            }
+
+            if (trees.Count == 0)
+            {
+                Vector3[] positions =
+                {
+                    new Vector3(-52.96024f, 1.802573e-07f, 5.701714f),
+                    new Vector3(-43.71024f, 1.802573e-07f, 5.701714f),
+                    new Vector3(-34.71024f, 1.802573e-07f, 5.701714f),
+                };
+                for (int i = 0; i < positions.Length; i++)
+                {
+                    GameObject tree = PrefabUtility.InstantiatePrefab(treePrefab, scene) as GameObject;
+                    if (tree == null) continue;
+                    tree.name = "__gb_CampBlossom_" + (i + 1).ToString("00");
+                    tree.transform.position = positions[i];
+                    tree.transform.localScale = Vector3.one * 9.9096f;
+                    foreach (Collider collider in tree.GetComponentsInChildren<Collider>(true)) collider.enabled = false;
+                    trees.Add(tree);
+                }
+            }
+
+            int effectCount = 0;
+            foreach (GameObject tree in trees)
+            {
+                Renderer[] renderers = tree.GetComponentsInChildren<Renderer>(true);
+                if (renderers.Length == 0) continue;
+
+                Bounds bounds = renderers[0].bounds;
+                for (int i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
+
+                GameObject fx = new GameObject("__gb_BlossomPetalEffect_Camp_" + (++effectCount).ToString("00"));
+                SceneManager.MoveGameObjectToScene(fx, scene);
+                fx.transform.position = new Vector3(bounds.center.x, bounds.max.y + 0.2f, bounds.center.z);
+
+                BlossomPetalEffect effect = fx.AddComponent<BlossomPetalEffect>();
+                var serialized = new SerializedObject(effect);
+                serialized.FindProperty("_petalTexture").objectReferenceValue = petalTexture;
+                serialized.FindProperty("_emitBox").vector3Value = new Vector3(
+                    Mathf.Max(2f, bounds.size.x), 0.6f, Mathf.Max(2f, bounds.size.z));
+                serialized.FindProperty("_petalSizeMultiplier").floatValue = 2f;
+                serialized.FindProperty("_rate").floatValue = 36f;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+            }
+
+            Debug.Log("[Camp] 벚꽃나무 꽃잎 효과 " + effectCount + "개 배치 — 크기·방출량 2배.");
+            return effectCount;
         }
 
         private static void EnsureCampPlaneSet(Scene scene)
