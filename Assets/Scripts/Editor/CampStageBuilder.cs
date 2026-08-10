@@ -373,6 +373,7 @@ namespace DontLate.EditorTools
             GreyboxStageBuilder.SetReference(purchasePoint, "_highlightMaterial", highlight);
 
             LoadingZone zone = root.AddComponent<LoadingZone>();
+            GreyboxStageBuilder.SetReference(zone, "_gameState", gameState); // S-251 — 트럭 없으면 포커스 양보
             GreyboxStageBuilder.SetReference(zone, "_stackRoot", stack.transform);
             GreyboxStageBuilder.SetReference(zone, "_boxVisualPrefab",
                 AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Auto/prop_box_parcel.prefab"));

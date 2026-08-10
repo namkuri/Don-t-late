@@ -8,8 +8,20 @@ namespace DontLate
     /// 패드+E 무피드백 방식은 폐지 — 픽업은 PickupBox, 적재는 여기.
     /// </summary>
     [RequireComponent(typeof(Collider))]
-    public class LoadingZone : MonoBehaviour, IInteractable
+    public class LoadingZone : MonoBehaviour, IInteractable, IFocusGate, IInteractPrompt
     {
+        /// <summary>
+        /// S-251 — 트럭이 없으면 포커스를 잡지 않는다. 이 트리거는 트럭 루트에 붙어 있고 범위가
+        /// 커서, 트럭 앞에 서면 구매 지점 대신 여기가 잡혔다. 그런데 트럭이 없을 땐 아래 `Interact`가
+        /// 거절 로그만 남긴다 — **아무것도 못 하는 대상이 포커스를 점유**하던 셈이다
+        /// (남규님 관찰: 트럭 앞인데 `[E] 상호작용`만 뜨고 눌러도 소용없음).
+        /// </summary>
+        public bool AllowsFocus(Vector3 playerPosition) => _gameState == null || _gameState.hasTruck;
+
+        public string PromptText => "[E] 짐 싣기";
+
+        [Tooltip("S-251 — 트럭 보유 판정용. 비면 종전대로 항상 포커스를 잡는다.")]
+        [SerializeField] private GameStateSO _gameState;
         [Tooltip("실린 상자가 쌓이는 짐칸 내부 앵커.")]
         [SerializeField] private Transform _stackRoot;
         [Tooltip("짐칸에 쌓이는 상자 비주얼(prop_box_parcel). 비우면 큐브 폴백.")]
