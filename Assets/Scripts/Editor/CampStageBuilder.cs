@@ -147,31 +147,35 @@ namespace DontLate.EditorTools
                 return 0;
             }
 
-            var trees = new System.Collections.Generic.List<GameObject>();
+            // S-235 — **씬 전체에서** 벚나무를 찾는다(남규님 지시).
+            // 종전엔 루트만 훑었는데 캠프의 벚나무는 아트 세트(`__gb_ArtBackdrop`) **안에** 있어
+            // 하나도 못 찾고, 폴백으로 새 나무 3그루를 심어 **두 벌**이 됐다.
+            // S-235 — 지난 조립이 남긴 것들을 먼저 걷는다: 폴백으로 심었던 나무 3그루와
+            // 루트에 떠 있던 옛 효과. 멱등을 위해 나무에 붙은 효과도 지우고 새로 단다.
             foreach (GameObject root in scene.GetRootGameObjects())
             {
-                if (root.name.StartsWith("blossom_tree", System.StringComparison.OrdinalIgnoreCase))
-                    trees.Add(root);
+                if (root.name.StartsWith("__gb_CampBlossom_")
+                    || root.name.StartsWith("__gb_BlossomPetalEffect_Camp_"))
+                {
+                    Object.DestroyImmediate(root);
+                    continue;
+                }
+                foreach (BlossomPetalEffect stale in root.GetComponentsInChildren<BlossomPetalEffect>(true))
+                    if (stale != null) Object.DestroyImmediate(stale.gameObject);
             }
 
+            var trees = new System.Collections.Generic.List<GameObject>();
+            foreach (GameObject root in scene.GetRootGameObjects())
+                foreach (Transform node in root.GetComponentsInChildren<Transform>(true))
+                    if (node.name.StartsWith("blossom_tree", System.StringComparison.OrdinalIgnoreCase))
+                        trees.Add(node.gameObject);
+
+            // S-235 — 나무를 **새로 심지 않는다**(남규님 지시로 폴백 3그루 철거).
+            // 아트가 놓은 나무가 정본이다 — 없으면 꽃잎도 없는 게 맞다.
             if (trees.Count == 0)
             {
-                Vector3[] positions =
-                {
-                    new Vector3(-52.96024f, 1.802573e-07f, 5.701714f),
-                    new Vector3(-43.71024f, 1.802573e-07f, 5.701714f),
-                    new Vector3(-34.71024f, 1.802573e-07f, 5.701714f),
-                };
-                for (int i = 0; i < positions.Length; i++)
-                {
-                    GameObject tree = PrefabUtility.InstantiatePrefab(treePrefab, scene) as GameObject;
-                    if (tree == null) continue;
-                    tree.name = "__gb_CampBlossom_" + (i + 1).ToString("00");
-                    tree.transform.position = positions[i];
-                    tree.transform.localScale = Vector3.one * 9.9096f;
-                    foreach (Collider collider in tree.GetComponentsInChildren<Collider>(true)) collider.enabled = false;
-                    trees.Add(tree);
-                }
+                Debug.Log("[Camp] 씬에 blossom_tree가 없어 꽃잎 효과를 생략했다.");
+                return 0;
             }
 
             int effectCount = 0;
@@ -183,9 +187,17 @@ namespace DontLate.EditorTools
                 Bounds bounds = renderers[0].bounds;
                 for (int i = 1; i < renderers.Length; i++) bounds.Encapsulate(renderers[i].bounds);
 
-                GameObject fx = new GameObject("__gb_BlossomPetalEffect_Camp_" + (++effectCount).ToString("00"));
-                SceneManager.MoveGameObjectToScene(fx, scene);
+                // S-235 — **나무에 붙인다.** 종전엔 씬 루트에 따로 떠 있어 나무를 옮기면 꽃잎만 남았다.
+                GameObject fx = new GameObject("BlossomPetalEffect");
+                fx.transform.SetParent(tree.transform, worldPositionStays: false);
                 fx.transform.position = new Vector3(bounds.center.x, bounds.max.y + 0.2f, bounds.center.z);
+                // 나무 스케일(≈9.9배)이 방출 박스를 또 곱하지 않게 상쇄한다 — 바운즈는 이미 월드 값이다.
+                Vector3 lossy = tree.transform.lossyScale;
+                fx.transform.localScale = new Vector3(
+                    1f / Mathf.Max(0.0001f, Mathf.Abs(lossy.x)),
+                    1f / Mathf.Max(0.0001f, Mathf.Abs(lossy.y)),
+                    1f / Mathf.Max(0.0001f, Mathf.Abs(lossy.z)));
+                effectCount++;
 
                 BlossomPetalEffect effect = fx.AddComponent<BlossomPetalEffect>();
                 var serialized = new SerializedObject(effect);
