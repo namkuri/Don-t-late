@@ -18,6 +18,7 @@ namespace DontLate.EditorTools
         private const string CAMP_PATH = "Assets/Scenes/Camp.unity";
         private const string CAMP_PLANES_PREFAB_PATH = "Assets/Prefabs/Hand/set_camp_planes.prefab";
         private const string BOSS_MODEL_PATH = "Assets/Art/Characters/Kimboss/kim_boss.fbx";
+        private const string BOSS_SKIN_PATH = "Assets/Art/Characters/kimsajng.mat"; // S-231
         private const string BOSS_IDLE_PATH = "Assets/Art/Characters/Kimboss/kimboss_Breathing Idle.fbx";
         private const string BOSS_WALK_PATH = "Assets/Art/Characters/Kimboss/kimboss_Walking (2).fbx";
         private const string BOSS_TALK_PATH = "Assets/Art/Characters/Kimboss/kim_bossTalking.fbx";
@@ -271,6 +272,14 @@ namespace DontLate.EditorTools
                 NormalizeBossVisual(visual, go.transform.position, 1.8f);
                 foreach (Collider visualCollider in visual.GetComponentsInChildren<Collider>(true))
                     visualCollider.enabled = false;
+
+                // S-231 — 동반 머티리얼을 명시로 물린다. FBX 임베디드는 텍스처를 못 찾아
+                // 민무늬로 나온다(남규님 "머티리얼이 날아갔다" — 리임포트 때마다 되돌아갔다).
+                // 박말순·나아라·행인·엔딩 대열에서 이미 같은 처방을 썼다(S-215·S-221·S-228).
+                Material skin = AssetDatabase.LoadAssetAtPath<Material>(BOSS_SKIN_PATH);
+                if (skin != null)
+                    foreach (Renderer renderer in visual.GetComponentsInChildren<Renderer>(true))
+                        renderer.sharedMaterial = skin;
 
                 body = visual.GetComponentInChildren<Renderer>(true);
                 animator = visual.GetComponentInChildren<Animator>(true);

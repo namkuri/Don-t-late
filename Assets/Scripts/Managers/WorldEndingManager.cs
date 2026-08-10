@@ -51,7 +51,40 @@ namespace DontLate
         private bool _sequenceRunning;
         private readonly Collider[] _hits = new Collider[16];
 
-        // 동행 감사 멘트 풀 — npcId 해시로 결정적 선택 (중복 회피).
+        // S-232 — **인물별 작별 인사.** 종전엔 5줄짜리 공용 풀을 npcId 해시로 골라 써서
+        // 누가 말해도 같은 말투·같은 내용이 나왔다(남규님 지적: "거의 같은 대사를 뱉는다").
+        // 엔딩은 인물들이 각자였음을 확인받는 자리다 — 목소리가 하나면 그 확인이 무너진다.
+        // 두 줄씩 준 이유: 한 줄은 고마움, 한 줄은 그 사람만 할 수 있는 말. 순서대로 이어 붙인다.
+        private static readonly Dictionary<string, string[]> FAREWELL_BY_NPC = new Dictionary<string, string[]>
+        {
+            ["boss"] = new[]
+            {
+                "고생했다. 넌 늦은 날에도 안 도망갔어. 그거면 됐다.",
+                "다음 데 가서도 무리하진 마라. …전화는 가끔 해.",
+            },
+            ["yoo_jihye"] = new[]
+            {
+                "가시는 길에 드리려고 아침에 꽃 한 단 골라 뒀어요.",
+                "이건 향이 오래 가요. 힘든 날에 한 번씩 맡으세요.",
+            },
+            ["na_ara"] = new[]
+            {
+                "와, 진짜 가는구나! 골목 사람들 다 나왔어요, 봐요!",
+                "나중에 놀러 와요. 그땐 제가 사줄게요, 어묵!",
+            },
+            ["walker_a"] = new[]
+            {
+                "매일 지나가는 거 봤어요. 인사는 못 했지만.",
+                "…잘 가요. 그동안 이 길이 덜 심심했어요.",
+            },
+            ["granny"] = new[]
+            {
+                "무거운 거 대신 들어줘서 고마웠어. 늙으면 그게 제일 크다.",
+                "몸조심혀. 밥은 꼭 챙기고.",
+            },
+        };
+
+        // 표에 없는 인물용 폴백 — 담백하게 한 줄. (도감이 늘어나도 빈 대사는 안 나온다.)
         private static readonly string[] THANKS_LINES =
         {
             "덕분에 골목이 살았어요. 고마웠어요, 늦지마맨!",
@@ -203,7 +236,8 @@ namespace DontLate
                 ("박말순", "빚 다 갚았다며. 그동안 내가 좀 심하게 굴었지. …고생했어, 정말."),
             };
             for (int i = 1; i < party.Count; i++)
-                lines.Add((party[i].displayName, ThanksLine(party[i].npcId)));
+                foreach (string text in FarewellLines(party[i].npcId))
+                    lines.Add((party[i].displayName, text));
             lines.Add(("박말순", "어딜 가든 밥은 챙겨 먹고. …잊지 마, 여기 사람들."));
             lines.Add(("주인공", "고마웠습니다, 다들. …늦지 않게, 또 올게요."));
             WorldDialogueManager.Instance?.PlayScenario(MakeScenario("Ending_Farewell", lines.ToArray()));
@@ -316,6 +350,16 @@ namespace DontLate
 
         private static string ThanksLine(string npcId)
             => THANKS_LINES[Mathf.Abs(npcId.GetHashCode()) % THANKS_LINES.Length];
+
+        /// <summary>
+        /// S-232 — 그 인물의 작별 인사. 표에 있으면 제 말투로 두 줄, 없으면 공용 풀에서 한 줄.
+        /// 폴백을 남겨 두는 이유: 도감·명부가 늘어도 **빈 대사로 엔딩이 끊기지 않게** 하기 위해서다.
+        /// </summary>
+        private static string[] FarewellLines(string npcId)
+        {
+            if (!string.IsNullOrEmpty(npcId) && FAREWELL_BY_NPC.TryGetValue(npcId, out string[] lines)) return lines;
+            return new[] { ThanksLine(npcId ?? string.Empty) };
+        }
 
         /// <summary>도감 색 기반 + 유사색 중복 시 색상환 분산 — 6명이 육안 구분되게 (S-107 게이트 적발).</summary>
         /// <summary>
