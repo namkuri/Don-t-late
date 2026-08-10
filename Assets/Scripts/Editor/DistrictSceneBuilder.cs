@@ -414,36 +414,21 @@ namespace DontLate.EditorTools
             SetObjectArray(generator, "_propSlots", props);
             GreyboxStageBuilder.SetReference(generator, "_gameState", gameState);
 
-            // 건물 풀 = Prefabs/Auto 중 소스가 Art/Buildings 인 프리팹 (pull 조립 — S-011).
-            // S-116 ③ — 비건물 단품(door·old_stair)과 전고 2.5u 미만(스케일 미캘리브레이션)은 슬롯을
-            // 잡아먹고 거리를 비워 보이게 한다(실측: store_2 0.7u가 슬롯 점유) — 풀에서 배제.
-            var pool = new List<GameObject>();
-            foreach (string guid in AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/Prefabs/Auto" }))
+            // S-236 — **건물 풀을 더 이상 주입하지 않는다**(남규님 지시 "실제 씬에 배치 안 된 건물은 빌드 제외").
+            //
+            // S-143에서 건물 슬롯을 빈 리스트로 넘기기로 하면서(거리는 아트 세트가 맡는다)
+            // 이 풀은 **한 번도 소환되지 않는 상태**가 됐다. 그런데 프리팹 참조 89개가 씬에 직렬화돼
+            // 남아 빌드가 그 메시를 전부 끌고 왔다 — 실측 **건물 메시 74MB**, 화면엔 한 번도 안 나온다.
+            // 그 무게가 WebGL 데이터를 118.2MB로 밀어올려 GitHub 파일 상한(100MB)에 걸렸다(S-234).
+            //
+            // 참조를 끊는 것으로 충분하다 — **씬도 아트 세트도 건드리지 않는다.** 보이는 것은 그대로다.
+            // 슬롯 건물을 되살릴 땐 이 주입과 함께 `buildings` 인자에 실제 슬롯을 넘기면 된다
+            // (둘 중 하나만 되살리면 또 조용히 무게만 는다).
+            if (buildings.Count > 0)
             {
-                string path = AssetDatabase.GUIDToAssetPath(guid);
-                string name = System.IO.Path.GetFileNameWithoutExtension(path);
-                if (name == "door" || name == "old_stair") continue;
-                if (AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Art/Buildings/" + name + ".fbx") == null) continue;
-                // S-186 ③ — 구역 전용 풀. 화이트리스트가 있으면 그 안에 든 것만 쓴다.
-                if (_buildingWhitelist != null && System.Array.IndexOf(_buildingWhitelist, name) < 0) continue;
-                GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-                Renderer[] renderers = prefab.GetComponentsInChildren<Renderer>(true);
-                if (renderers.Length == 0) continue;
-                Bounds bounds = renderers[0].bounds;
-                foreach (Renderer r in renderers) bounds.Encapsulate(r.bounds);
-                if (bounds.size.y < 2.5f)
-                {
-                    Debug.LogWarning("[DistrictSceneBuilder] 건물 풀 제외(전고 " + bounds.size.y.ToString("0.0")
-                        + "u < 2.5u — 스케일 미캘리브레이션 의심): " + name);
-                    continue;
-                }
-                pool.Add(prefab);
+                Debug.LogWarning("[DistrictSceneBuilder] 건물 슬롯이 넘어왔는데 풀 주입은 S-236에서 제거됐다 — "
+                    + "슬롯 건물을 되살리려면 풀 주입도 함께 복원하라.");
             }
-            SerializedObject serialized = new SerializedObject(generator);
-            SerializedProperty poolProp = serialized.FindProperty("_buildingPrefabPool");
-            poolProp.arraySize = pool.Count;
-            for (int i = 0; i < pool.Count; i++)
-                poolProp.GetArrayElementAtIndex(i).objectReferenceValue = pool[i];
 
             // S-114 — 보도 프랍 풀: 거리에 어울리는 소품만 선별 (실내 가구·차량 제외).
             string[] streetProps =
@@ -457,6 +442,8 @@ namespace DontLate.EditorTools
                 var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Auto/" + propName + ".prefab");
                 if (prefab != null) propPool.Add(prefab);
             }
+            // 프랍 풀은 종전대로 — 소품·가로수는 실제로 배치된다(건물 풀만 S-236에서 빠졌다).
+            SerializedObject serialized = new SerializedObject(generator);
             SerializedProperty propPoolProp = serialized.FindProperty("_propPrefabPool");
             propPoolProp.arraySize = propPool.Count;
             for (int i = 0; i < propPool.Count; i++)
