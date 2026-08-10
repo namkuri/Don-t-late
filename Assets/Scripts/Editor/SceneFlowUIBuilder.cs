@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -267,6 +267,13 @@ namespace DontLate.EditorTools
                 Debug.LogWarning("[SceneFlowUIBuilder] " + sceneName + " 무대 없음 — 무대 빌더를 먼저 실행하라. UI만 얹는다.");
 
             Transform root = CreateFlowCanvas().transform;
+
+            // S-280 — 구역 씬에도 배너를 깐다. 종전엔 캠프·이동·아파트·언덕에만 있어서,
+            // 빌라촌·먹자골목에서는 박말순 전화 안내(S-269 ②)가 **뜰 자리 자체가 없었다**(남규님 관찰).
+            CreateTutorialBanner(root, sceneName == "FoodStreet"
+                ? "먹자골목 — 비콘 앞에 짐을 내려놓아라"
+                : "빌라촌 — 비콘 앞에 짐을 내려놓아라", font, -94f);
+
             // S-134 ⑥ — 캔버스를 켠다(종전 SetActive(false)). '집으로'가 배송지에서도 필요하다.
             // 구 내비 버튼('다른 구역으로')은 계속 끈다 — 이동은 엣지 워크·지도 체제(S-062 ⑥).
             BuildDeliveryEndCanvas(root, font, navButtons: false);

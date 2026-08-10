@@ -826,7 +826,8 @@ namespace DontLate
         // S-257 — 폰 화면을 키운다(남규님 지시). 크기를 키우는 대신 **스케일**을 건다 —
         // 내부 위젯 좌표가 전부 픽셀 상수라 sizeDelta만 키우면 배치가 어긋난다.
         // S-259 — 1.2는 너무 컸다 → **1.1**(남규님 재지시).
-        private const float PANEL_SCALE = 1.1f;
+        /// <summary>S-280 — 폰 개구부에 맞춰 얹히는 UI(미니게임 판)가 같은 배율을 써야 한다.</summary>
+        public const float PANEL_SCALE = 1.1f;
 
         private void ApplyPanelLayout()
         {

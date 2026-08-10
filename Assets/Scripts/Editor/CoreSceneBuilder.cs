@@ -1720,8 +1720,14 @@ namespace DontLate.EditorTools
             RectTransform panelRect = panel.GetComponent<RectTransform>();
             panelRect.anchorMin = panelRect.anchorMax = new Vector2(1f, 0f);
             panelRect.pivot = new Vector2(1f, 0f);
-            panelRect.anchoredPosition = hasFrame ? new Vector2(-98f, 0f) : new Vector2(-28f, 24f); // S-117: 새 프레임 개구 정합 (폰 하강 -146)
-            panelRect.sizeDelta = hasFrame ? new Vector2(298f, 532f) : new Vector2(430f, 610f);
+            // S-280 — 폰이 커지면(S-257·S-259 스케일) 개구부도 같이 커진다. 여기 좌표·크기는
+            // 폰 원본 크기 기준으로 잡혀 있어, 같은 배율을 곱하지 않으면 판이 화면 밖으로 삐져나온다
+            // (남규님 관찰). 앵커·피벗이 폰과 같은 우하단이라 배율만 맞추면 정확히 겹친다.
+            // 배율만 곱하면 폰 개구부보다 (좌 2px · 하 10px) 밀린다(실측: 크기는 정확히 일치,
+            // 위치만 어긋남). 캔버스 좌표로 환산한 보정치를 더해 개구부에 딱 붙인다.
+            panelRect.anchoredPosition = (hasFrame ? new Vector2(-98f, 0f) : new Vector2(-28f, 24f)) * PhoneView.PANEL_SCALE
+                + new Vector2(3f, 14f);
+            panelRect.sizeDelta = (hasFrame ? new Vector2(298f, 532f) : new Vector2(430f, 610f)) * PhoneView.PANEL_SCALE;
             SetField(view, "_panel", panel);
 
             Image inner = CreateImage(panel.transform, "Inner", NAVY);
