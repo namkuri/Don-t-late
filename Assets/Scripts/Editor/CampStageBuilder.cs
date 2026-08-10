@@ -56,7 +56,8 @@ namespace DontLate.EditorTools
             BuildTruck(truck, box, highlight, gameState);
             System.Collections.Generic.List<PickupBox> boxes = BuildPickupBoxes(box, highlight, tuning);
             BuildOrderBoard(gameState, boxes);
-            BuildDrink(drink, highlight);
+            // S-230 ⑤ — `__gb_Drink` 생성 중단(남규님 지시).
+            //   ⚠ 캠프의 스태미나 회복 수단이 하나 줄었다 — 가방 드링크·먹자골목 매대는 그대로다.
             BuildVendingMachine(tuning, drink, highlight);
             BuildBossNpc(gameState, highlight);                                  // S-052 ① 사장님
             EdgeGateBuildKit.BuildGate("EdgeGate_Next", new Vector3(14f, 0f, 0f),
@@ -520,21 +521,6 @@ namespace DontLate.EditorTools
             GreyboxStageBuilder.SetReference(vending, "_renderer", bodyRenderer);
         }
 
-        // 에너지드링크 — E로 회복(EnergyDrinkPickup — S-005).
-        private static void BuildDrink(Material material, Material highlight)
-        {
-            GameObject go = GreyboxStageBuilder.CreatePrimitive(
-                PrimitiveType.Capsule, "Drink", new Vector3(4f, 0.25f, -1f));
-            go.transform.localScale = new Vector3(0.22f, 0.25f, 0.22f);
-            var collider = go.GetComponent<Collider>();
-            collider.isTrigger = true;
-            go.GetComponent<Renderer>().sharedMaterial = material;
-
-            EnergyDrinkPickup pickup = go.AddComponent<EnergyDrinkPickup>();
-            GreyboxStageBuilder.SetReference(pickup, "_renderer", go.GetComponent<Renderer>());
-            GreyboxStageBuilder.SetReference(pickup, "_normalMaterial", material);
-            GreyboxStageBuilder.SetReference(pickup, "_highlightMaterial", highlight);
-        }
 
     }
 }

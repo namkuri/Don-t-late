@@ -1,4 +1,4 @@
-using TMPro;
+﻿using TMPro;
 using UnityEngine;
 
 namespace DontLate
@@ -26,8 +26,10 @@ namespace DontLate
             if (_label == null || _gameState == null) return;
             if (_normalText == null) _normalText = _label.text; // 평상시 문구는 빌더가 넣은 그대로
 
-            // 엔딩 진입 조건은 WorldEndingManager와 같다: 빚 0 + Home 독백 끝.
-            bool leaving = _gameState.debt <= 0 && _gameState.endingMonologuePlayed;
+            // S-230 ⑥ — **씬에 들어서는 순간부터** "떠나기"로 보인다(남규님 지시).
+            // 종전엔 독백까지 끝나야 바뀌었는데, 독백은 Home에 도착한 **뒤에** 재생되므로
+            // 버튼이 눈앞에서 글자를 갈아치우는 꼴이었다. 빚을 다 갚은 순간 이미 떠날 사람이다.
+            bool leaving = _gameState.debt <= 0;
             _label.text = leaving ? _endingText : _normalText;
         }
     }

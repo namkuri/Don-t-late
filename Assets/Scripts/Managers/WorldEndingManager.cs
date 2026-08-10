@@ -45,6 +45,9 @@ namespace DontLate
         private const int FOLLOWER_MAX = 5;
         private const float WALK_SPEED = 2.4f;
 
+        // S-230 ① — 엔딩에서 늦지마맨이 서는 자리(남규님 지정).
+        private static readonly Vector3 ENDING_PLAYER_START = new Vector3(-30.2522926f, 3.16810144e-07f, 0.957655907f);
+
         private bool _sequenceRunning;
         private readonly Collider[] _hits = new Collider[16];
 
@@ -134,6 +137,24 @@ namespace DontLate
                 if (hub.Input != null) hub.Input.enabled = false;
                 if (hub.Locomotion != null) hub.Locomotion.enabled = false;
             }
+
+            // S-230 ① — 늦지마맨을 정해진 자리에 세운다(남규님 좌표). 대열이 오른쪽에서 걸어오므로
+            // 시작 위치가 어긋나면 대열 간격·카메라 잡이가 통째로 밀린다.
+            player.position = ENDING_PLAYER_START;
+
+            // S-230 ②④⑤ — 엔딩 무대 정리: 캠프의 상시 소품이 마지막 장면에 끼어든다.
+            //   `__gb_BossNpc`  — 김사장이 대열에도 서므로 **두 명**이 된다(남규님 관찰)
+            //   `PickupBox`     — 박말순이 서는 자리와 겹친다
+            // 씬 수명 한정으로 끄기만 한다 — 엔딩 뒤엔 타이틀로 가므로 되돌릴 일이 없다.
+            int propsOff = 0;
+            foreach (GameObject root in UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects())
+            {
+                if (root == null || !root.activeSelf) continue;
+                if (root.name != "__gb_BossNpc" && root.GetComponentInChildren<PickupBox>(true) == null) continue;
+                root.SetActive(false);
+                propsOff++;
+            }
+            if (propsOff > 0) Debug.Log("[엔딩] 무대 정리 " + propsOff + "개 소등 — 사장님 중복·상자 겹침 (S-230 ②④).");
 
             // S-229 ② — 엣지워크 화살표를 끈다. 조작을 막아도 "나갈 수 있다"는 신호가 남아 있으면
             // 마지막 장면에 안 어울린다. 게이트 자체를 꺼서 판정도 같이 죽인다.
@@ -368,13 +389,19 @@ namespace DontLate
             animator.applyRootMotion = false;
             animator.runtimeAnimatorController = null;
 
-            var graph = UnityEngine.Playables.PlayableGraph.Create(visual.name + "_EndingWalk");
-            graph.SetTimeUpdateMode(UnityEngine.Playables.DirectorUpdateMode.GameTime);
-            var clip = UnityEngine.Animations.AnimationClipPlayable.Create(graph, entry.walkClip);
+            var graph = PlayableGraph.Create(visual.name + "_EndingWalk");
+            graph.SetTimeUpdateMode(DirectorUpdateMode.GameTime);
+            var clip = AnimationClipPlayable.Create(graph, entry.walkClip);
             clip.SetApplyFootIK(true);
-            var output = UnityEngine.Animations.AnimationPlayableOutput.Create(graph, "Walk", animator);
+            var output = AnimationPlayableOutput.Create(graph, "Walk", animator);
             output.SetSourcePlayable(clip);
             graph.Play();
+
+            // S-230 ③ — 도착하면 멈출 수 있게 그래프를 들고 있는다. 종전엔 `WalkTo`가 Animator
+            // 파라미터(`SetFloat`)로 멈추려 했는데, 이 대열은 컨트롤러 없이 그래프로 도니
+            // 그 대입이 **아무 데도 닿지 않아** 제자리걸음이 됐다(남규님 관찰: 나아라).
+            EndingClipPlayer player = visual.AddComponent<EndingClipPlayer>();
+            player.Bind(graph, clip);
         }
 
         /// <summary>
@@ -435,6 +462,10 @@ namespace DontLate
             }
 
             if (animator != null) animator.SetFloat(SpeedHash, 0f); // 도착하면 Idle로
+
+            // S-230 ③ — 그래프로 도는 대열은 위 대입이 안 먹는다. 클립을 직접 세운다.
+            EndingClipPlayer clipPlayer = mover != null ? mover.GetComponentInChildren<EndingClipPlayer>(true) : null;
+            if (clipPlayer != null) clipPlayer.Freeze();
         }
 
         /// <summary>클램프 누적 대기 — WaitForSeconds는 스톨 dt를 통째로 삼켜 연출 단계를 건너뛴다 (S-104).</summary>
@@ -469,6 +500,38 @@ namespace DontLate
             for (int i = 0; i < lines.Length; i++)
                 scenario.lines[i] = new DialogueScenarioSO.Line { speaker = lines[i].speaker, text = lines[i].text };
             return scenario;
+        }
+
+        /// <summary>
+        /// S-230 ③ — 엔딩 대열의 걷기 클립을 들고 있다가 도착하면 세운다.
+        /// 이 대열은 Animator 컨트롤러 없이 PlayableGraph로 돌기 때문에 파라미터로는 못 멈춘다.
+        /// 그래프 정리(OnDestroy)까지 여기서 책임진다 — 안 지우면 씬 전환 때 경고가 남는다.
+        /// </summary>
+        private sealed class EndingClipPlayer : MonoBehaviour
+        {
+            private PlayableGraph _graph;
+            private AnimationClipPlayable _clip;
+            private bool _bound;
+
+            public void Bind(PlayableGraph graph, AnimationClipPlayable clip)
+            {
+                _graph = graph;
+                _clip = clip;
+                _bound = true;
+            }
+
+            /// <summary>걸음을 멈춘다 — 마지막 프레임 자세로 선다(다리를 벌린 채 굳지 않게 0초로 되감는다).</summary>
+            public void Freeze()
+            {
+                if (!_bound || !_graph.IsValid()) return;
+                _clip.SetTime(0d);
+                _clip.SetSpeed(0d);
+            }
+
+            private void OnDestroy()
+            {
+                if (_bound && _graph.IsValid()) _graph.Destroy();
+            }
         }
     }
 }
