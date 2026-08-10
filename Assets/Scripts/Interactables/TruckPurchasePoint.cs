@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace DontLate
 {
@@ -12,14 +12,24 @@ namespace DontLate
     /// 짝: 구매 후에는 <see cref="TruckDepartPoint"/>가 같은 자리에서 포커스를 가져간다
     /// (이쪽은 hasTruck=false, 저쪽은 true일 때만 잡힌다 — 둘이 겹치지 않는다).
     /// </summary>
-    public class TruckPurchasePoint : MonoBehaviour, IInteractable, IFocusGate
+    public class TruckPurchasePoint : MonoBehaviour, IInteractable, IFocusGate, IInteractPrompt
     {
         public const int PRICE = 1000;
 
+        // S-249 — 값이 붙은 선택지는 화면에 값이 보여야 선택이 된다(남규님 지시 문구 그대로).
+        public string PromptText => "[E] 트럭구매  빚 " + PRICE.ToString("N0") + "원 추가";
+
         [SerializeField] private GameStateSO _gameState;
-        [SerializeField] private Renderer _renderer;
-        [SerializeField] private Material _normalMaterial;
+        [Tooltip("S-248 — 하이라이트를 걸 범위(트럭 루트). 하위 렌더러 전부를 갈아끼운다.")]
+        [SerializeField] private Transform _highlightRoot;
         [SerializeField] private Material _highlightMaterial;
+
+        private HighlightSwapper _swapper;
+
+        private void Awake()
+        {
+            _swapper = new HighlightSwapper(_highlightRoot != null ? _highlightRoot : transform);
+        }
 
         // 이미 트럭이 있으면 포커스 자체가 안 잡힌다 — 하이라이트·[E] 안내 모두 침묵.
         public bool AllowsFocus(Vector3 playerPosition) => _gameState != null && !_gameState.hasTruck;
@@ -36,11 +46,7 @@ namespace DontLate
             WorldDialogueManager.Instance?.PlayScenario(MakeTutorialMonologue());
         }
 
-        public void SetHighlight(bool on)
-        {
-            if (_renderer == null) return;
-            _renderer.sharedMaterial = on && _highlightMaterial != null ? _highlightMaterial : _normalMaterial;
-        }
+        public void SetHighlight(bool on) => _swapper?.Set(on, _highlightMaterial);
 
         /// <summary>
         /// 구매 튜토리얼 독백 (S-241). 산 직후가 "이걸로 뭘 하지?"가 제일 큰 순간이라

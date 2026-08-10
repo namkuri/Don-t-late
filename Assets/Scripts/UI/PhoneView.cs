@@ -303,6 +303,24 @@ namespace DontLate
             TogglePanel();
         }
 
+        /// <summary>출발 버튼 문구를 현재 트럭 보유 상태로 다시 쓴다 (S-249).</summary>
+        private void RefreshDepartLabel()
+        {
+            if (_departButton == null) return;
+            TMP_Text label = _departButton.GetComponentInChildren<TMP_Text>();
+            if (label != null) label.text = IsWalkingEra ? "트럭 없음 — 걸어서 개척" : "목적지로 출발";
+        }
+
+        /// <summary>
+        /// S-249 — 밖에서 폰을 열고 **지도 앱**을 띄운다(트럭 탑승 → 어디로 갈지 고르는 화면).
+        /// 이미 열려 있으면 화면만 지도로 바꾼다 — 토글이면 눌러서 닫히는 사고가 난다.
+        /// </summary>
+        public void OpenMapApp()
+        {
+            if (!_open) TogglePanel();
+            ShowScreen(Screen.Map);
+        }
+
         private void TogglePanel()
         {
             _open = !_open;
@@ -337,6 +355,9 @@ namespace DontLate
         {
             _screen = screen;
             foreach (var pair in _screens) pair.Value.SetActive(pair.Key == screen);
+            // S-249 — 출발 버튼 문구는 화면을 **만들 때** 한 번 정해진다. 트럭을 사도 지도 화면이
+            // 이미 조립돼 있으면 "트럭 없음 — 걸어서 개척"이 그대로 남는다(실측). 열 때마다 다시 쓴다.
+            if (screen == Screen.Map) RefreshDepartLabel();
             if (_titleLabel != null)
                 _titleLabel.text = screen switch
                 {

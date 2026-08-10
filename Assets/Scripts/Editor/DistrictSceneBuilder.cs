@@ -129,6 +129,15 @@ namespace DontLate.EditorTools
             // S-015: 정적 짐·비콘 제거 — 도착 시 cargo 실데이터로 스폰(DistrictCargoSpawner)한다.
             DestroyRoot("__gb_Box");
             DestroyRoot("__gb_Beacon");
+
+            // S-247 — 빌라촌(과 같은 배치를 쓰는 타이틀)에선 그레이박스 문·간판을 걷는다.
+            //   아트 세트가 그 자리를 이미 채웠고 겹쳐 보인다(남규님 지시). 다른 구역은 종전대로.
+            //   `BuildStageContent`가 공용이라 거기서 빼면 모든 구역이 함께 사라진다 — 여기서 지운다.
+            if (isVillage)
+            {
+                DestroyRoot("__gb_Door");
+                DestroyRoot("__gb_Sign");
+            }
             AttachCargoSpawner(gameState);
 
             // S-052 ③ — 심부름 할머니 (길 건너까지 짐 옮기기). 행인 3명은 신호등 생성 뒤에 (S-076 ② 주입).

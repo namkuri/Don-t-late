@@ -386,6 +386,17 @@ namespace DontLate
         }
 
         /// <summary>
+        /// 포커스 대상이 정한 [E] 안내 문구 (S-249). null이면 뷰가 기본 문구로 떨어진다.
+        /// 문장은 대상이 만든다 — 뷰는 표시만 한다(UI에 판정 로직을 넣지 않는다).
+        /// </summary>
+        public static event Action<string> FocusPromptChanged;
+
+        public static void RaiseFocusPromptChanged(string prompt)
+        {
+            FocusPromptChanged?.Invoke(prompt);
+        }
+
+        /// <summary>
         /// 가방 내용이 UI 밖에서 바뀌었다 (S-243). 열려 있는 가방 화면이 따라오게 하는 통지.
         /// 손에 들기가 거절돼 아이템을 도로 넣는 경우처럼, 데이터를 만진 쪽이 화면을 직접
         /// 부르지 않고 이 이벤트로 알린다(도메인 경계 규칙).

@@ -17,6 +17,7 @@ namespace DontLate.EditorTools
     {
         private const string CAMP_PATH = "Assets/Scenes/Camp.unity";
         private const string CAMP_PLANES_PREFAB_PATH = "Assets/Prefabs/Hand/set_camp_planes.prefab";
+        private const string TRUCK_ART_NAME = "rew (1)"; // S-248 — 아트 세트 안의 트럭 모델
         private const string BLOSSOM_PREFAB_PATH = "Assets/Prefabs/Auto/blossom_tree.prefab";
         // 반입 시 대소문자 교정 — 추적 경로는 `_intake/art`(소문자)다.
         // 윈도우 파일시스템은 봐주지만 Unity `AssetDatabase`는 경로를 가려서, 대문자면
@@ -99,6 +100,7 @@ namespace DontLate.EditorTools
             // S-141 — 민지님 세트 프리팹(`set_camp_1`)으로 물류장 소품·건물을 깐다.
             // 프리팹이 정본이라 민지님이 고치면 코드 수정 없이 반영된다.
             ArtBackdropKit.Build(ArtBackdropKit.Camp);
+            AdoptTruckArtModel(scene); // S-248 — 아트 세트가 깔린 뒤라야 찾을 수 있다
             BuildCampBlossoms(scene);
             BuildCampStreetLamps(); // S-240
 
@@ -136,6 +138,44 @@ namespace DontLate.EditorTools
             EditorSceneManager.SaveScene(scene);
             EditorUtility.DisplayDialog("Camp Blossom Petals",
                 "벚꽃나무와 꽃잎 효과 " + count + "개를 추가하고 Camp 씬을 저장했습니다.", "OK");
+        }
+
+        /// <summary>
+        /// S-248 — 아트 트럭 모델(`rew (1)`)을 `__gb_Truck` 자식으로 들인다(남규님 지시).
+        /// 자식이 되면 트럭이 움직일 때 따라오고, 하이라이트도 트럭 루트를 훑으므로 함께 걸린다.
+        /// 월드 위치는 유지한다 — 아트가 맞춰 둔 자리가 정본이다.
+        ///
+        /// 실측 주의: 캠프에는 `set_camp_planes`가 **두 벌** 깔려 있어 `rew (1)`도 2개다
+        /// (`__gb_ArtBackdrop` 경유 1 + 루트 직접 1). 하나만 옮기면 나머지가 제자리에 남아
+        /// 어긋나므로 **찾은 전부**를 들인다. 중복 자체는 별건이다.
+        /// </summary>
+        private static void AdoptTruckArtModel(Scene scene)
+        {
+            Transform truck = null;
+            foreach (GameObject root in scene.GetRootGameObjects())
+                if (root.name == "__gb_Truck") { truck = root.transform; break; }
+            if (truck == null) return;
+
+            // 멱등: 지난 조립이 붙인 복제본을 먼저 걷는다.
+            for (int i = truck.childCount - 1; i >= 0; i--)
+                if (truck.GetChild(i).name == TRUCK_ART_NAME) Object.DestroyImmediate(truck.GetChild(i).gameObject);
+
+            var originals = new System.Collections.Generic.List<Transform>();
+            foreach (Transform candidate in Object.FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                if (candidate != null && candidate.name == TRUCK_ART_NAME && !candidate.IsChildOf(truck))
+                    originals.Add(candidate);
+            if (originals.Count == 0) { Debug.LogWarning("[Camp] 트럭 아트 모델(" + TRUCK_ART_NAME + ")을 못 찾았다 — 그레이박스 몸통만 남는다."); return; }
+
+            // **재부모화가 아니라 복제**다. `rew (1)`은 아트 프리팹(`set_camp_planes`) 인스턴스의
+            // 자식이라 밖으로 옮기면 Unity가 저장 시 되돌린다(실측: SetParent 직후엔 붙어 보이지만
+            // 씬을 다시 열면 제자리). 프리팹을 언팩하면 아트 수정이 더는 안 따라오므로 그것도 아니다.
+            // 복제를 트럭 자식으로 두고 원본은 끈다 — 화면은 그대로고, 아트가 프리팹을 고치면
+            // 다음 재조립에서 새 모습으로 복제된다.
+            GameObject clone = (GameObject)Object.Instantiate((Object)originals[0].gameObject, truck, true);
+            clone.name = TRUCK_ART_NAME;
+            foreach (Transform original in originals) original.gameObject.SetActive(false);
+            Debug.Log("[Camp] 트럭 아트 모델 복제 1개를 __gb_Truck 자식으로, 원본 "
+                + originals.Count + "개 소등 (S-248).");
         }
 
         /// <summary>
@@ -311,8 +351,9 @@ namespace DontLate.EditorTools
             departCollider.isTrigger = true;
             TruckDepartPoint departPoint = depart.AddComponent<TruckDepartPoint>();
             GreyboxStageBuilder.SetReference(departPoint, "_gameState", gameState);
-            GreyboxStageBuilder.SetReference(departPoint, "_renderer", bodyRenderer);
-            GreyboxStageBuilder.SetReference(departPoint, "_normalMaterial", bodyNormal);
+            // S-248 — 하이라이트 범위 = 트럭 루트 전체(아트 모델 포함). 몸통 렌더러 하나만 걸면
+            // 아트 모델이 붙은 뒤 하이라이트가 반쪽만 든다.
+            GreyboxStageBuilder.SetReference(departPoint, "_highlightRoot", root.transform);
             GreyboxStageBuilder.SetReference(departPoint, "_highlightMaterial", highlight);
 
             // S-241 — 트럭 구매 인터랙트. 자리는 출발 지점과 **같은 곳**(플레이어 입장에선 "트럭 앞"이
@@ -328,8 +369,7 @@ namespace DontLate.EditorTools
             purchase.GetComponent<BoxCollider>().isTrigger = true;
             TruckPurchasePoint purchasePoint = purchase.AddComponent<TruckPurchasePoint>();
             GreyboxStageBuilder.SetReference(purchasePoint, "_gameState", gameState);
-            GreyboxStageBuilder.SetReference(purchasePoint, "_renderer", bodyRenderer);
-            GreyboxStageBuilder.SetReference(purchasePoint, "_normalMaterial", bodyNormal);
+            GreyboxStageBuilder.SetReference(purchasePoint, "_highlightRoot", root.transform);
             GreyboxStageBuilder.SetReference(purchasePoint, "_highlightMaterial", highlight);
 
             LoadingZone zone = root.AddComponent<LoadingZone>();

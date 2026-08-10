@@ -137,6 +137,8 @@ namespace DontLate
             WorldEvents.RaiseInteractionFocusChanged(_current != null);
             // 배송지 포커스면 주소를 HUD로 (S-021 ② — 월드 텍스트는 픽셀화에 뭉개짐).
             WorldEvents.RaiseFocusAddressChanged(_current is DeliveryPoint point ? point.Address : null);
+            // S-249 — 대상이 제 문구를 갖고 있으면 그걸 쓴다(트럭 구매/탑승 등).
+            WorldEvents.RaiseFocusPromptChanged(_current is IInteractPrompt prompt ? prompt.PromptText : null);
             RefreshHint();
         }
 

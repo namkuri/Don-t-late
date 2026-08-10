@@ -1,4 +1,4 @@
-using TMPro;
+﻿using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -95,6 +95,7 @@ namespace DontLate
             WorldEvents.StaminaPenaltyChanged += OnStaminaPenaltyChanged; // S-088 ④
             WorldEvents.InteractionFocusChanged += OnInteractionFocusChanged;
             WorldEvents.FocusAddressChanged += OnFocusAddressChanged;
+            WorldEvents.FocusPromptChanged += OnFocusPromptChanged;   // S-249
             WorldEvents.FocusHintChanged += OnFocusHintChanged; // S-169
             WorldEvents.MasteryChanged += OnMasteryChanged;     // S-174 ④
             WorldEvents.SceneTransitionCompleted += OnSceneTransitionCompleted;
@@ -116,6 +117,7 @@ namespace DontLate
             WorldEvents.StaminaPenaltyChanged -= OnStaminaPenaltyChanged;
             WorldEvents.InteractionFocusChanged -= OnInteractionFocusChanged;
             WorldEvents.FocusAddressChanged -= OnFocusAddressChanged;
+            WorldEvents.FocusPromptChanged -= OnFocusPromptChanged;
             WorldEvents.FocusHintChanged -= OnFocusHintChanged;
             WorldEvents.MasteryChanged -= OnMasteryChanged;
             WorldEvents.SceneTransitionCompleted -= OnSceneTransitionCompleted;
@@ -557,12 +559,28 @@ namespace DontLate
         // 배송지 포커스면 주소를 [E] 안내에 병기 — 풀해상 오버레이라 픽셀화에 안 뭉개진다 (S-021 ②).
         private void OnFocusAddressChanged(string address)
         {
+            _focusAddress = address;
+            RefreshEPrompt();
+        }
+
+        // S-249 — 대상이 제 문구를 준 경우(트럭 구매/탑승 등). 주소보다 우선한다.
+        private void OnFocusPromptChanged(string prompt)
+        {
+            _focusPrompt = prompt;
+            RefreshEPrompt();
+        }
+
+        private string _focusAddress;
+        private string _focusPrompt;
+
+        private void RefreshEPrompt()
+        {
             if (_ePrompt == null) return;
             TMP_Text label = _ePrompt.GetComponentInChildren<TMP_Text>(true);
             if (label == null) return;
-            label.text = string.IsNullOrEmpty(address)
-                ? "[E] 상호작용"
-                : "[E] 배송 인증  <color=#ff9f45>" + address + "</color>";
+            label.text = !string.IsNullOrEmpty(_focusPrompt) ? _focusPrompt
+                : string.IsNullOrEmpty(_focusAddress) ? "[E] 상호작용"
+                : "[E] 배송 인증  <color=#ff9f45>" + _focusAddress + "</color>";
         }
 
         // ── 씬별 가시성 ──────────────────────────────────────
