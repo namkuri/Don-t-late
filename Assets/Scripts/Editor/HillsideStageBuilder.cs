@@ -24,6 +24,9 @@ namespace DontLate.EditorTools
         private const float UPHILL_SCALE_Z = 5.9f;
         private const float UPHILL_POSITION_Z = 0f;
 
+        // S-282 — 남규님 손조정(2026-08-10): 산 아래 평지 판 크기(x만 12 → 11.8).
+        private static readonly Vector3 BASE_GROUND_SCALE = new Vector3(11.8f, 1f, 1.2f);
+
         // S-281 — 남규님 손조정(2026-08-10): 전경 지면 판.
         private static readonly Vector3 FRONT_GROUND_POSITION = new Vector3(37.6f, -0.08f, -17f);
         private static readonly Vector3 FRONT_GROUND_SCALE = new Vector3(129.43f, 0.1f, 46f);
@@ -72,7 +75,7 @@ namespace DontLate.EditorTools
             // Z파이팅을 피해 살짝 내려 깐다.
             GameObject baseGround = GreyboxStageBuilder.CreatePrimitive(PrimitiveType.Plane, "BaseGround",
                 new Vector3(32f, -0.02f, 0f));
-            baseGround.transform.localScale = new Vector3(12f, 1f, 1.2f); // x −28~92 · z −6~6
+            baseGround.transform.localScale = BASE_GROUND_SCALE; // S-282 — 남규님 손조정
             baseGround.GetComponent<Renderer>().sharedMaterial = _dirtMat;
             baseGround.layer = GreyboxStageBuilder.LAYER_GROUND;
 
