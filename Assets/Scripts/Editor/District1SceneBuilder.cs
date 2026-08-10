@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -136,6 +136,9 @@ namespace DontLate.EditorTools
             BlossomPetalEffect effect = fx.AddComponent<BlossomPetalEffect>();
             GreyboxStageBuilder.SetReference(effect, "_petalTexture",
                 AssetDatabase.LoadAssetAtPath<Texture2D>(INTAKE_UI + "one_blossom.png"));
+            // S-283 — 머티리얼 정본(에셋)을 물린다. 런타임 생성은 빌드에서 투명 배리언트가 스트립된다.
+            GreyboxStageBuilder.SetReference(effect, "_petalMaterial",
+                AssetDatabase.LoadAssetAtPath<Material>("Assets/Data/Greybox/GB_BlossomPetal.mat"));
             typeof(BlossomPetalEffect).GetField("_emitBox", BindingFlags.NonPublic | BindingFlags.Instance)
                 ?.SetValue(effect, new Vector3(Mathf.Max(2f, bounds.size.x), 0.6f, Mathf.Max(2f, bounds.size.z)));
         }

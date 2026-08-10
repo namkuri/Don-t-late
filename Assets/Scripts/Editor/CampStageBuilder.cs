@@ -267,6 +267,9 @@ namespace DontLate.EditorTools
                 BlossomPetalEffect effect = fx.AddComponent<BlossomPetalEffect>();
                 var serialized = new SerializedObject(effect);
                 serialized.FindProperty("_petalTexture").objectReferenceValue = petalTexture;
+                // S-283 — 머티리얼 정본을 물린다. 없으면 런타임 생성으로 떨어져 빌드에서 검게 나온다.
+                serialized.FindProperty("_petalMaterial").objectReferenceValue =
+                    AssetDatabase.LoadAssetAtPath<Material>("Assets/Data/Greybox/GB_BlossomPetal.mat");
                 serialized.FindProperty("_emitBox").vector3Value = new Vector3(
                     Mathf.Max(2f, bounds.size.x), 0.6f, Mathf.Max(2f, bounds.size.z));
                 serialized.FindProperty("_petalSizeMultiplier").floatValue = 2f;

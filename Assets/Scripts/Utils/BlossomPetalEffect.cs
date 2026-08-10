@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace DontLate
 {
@@ -9,6 +9,9 @@ namespace DontLate
     /// </summary>
     public class BlossomPetalEffect : MonoBehaviour
     {
+        [Tooltip("S-283 — 꽃잎 머티리얼 정본(에셋). 빌드가 투명 배리언트를 남기려면 **에셋으로 존재해야** 한다. "
+            + "비면 종전대로 런타임 생성으로 떨어진다(에디터에서만 안전).")]
+        [SerializeField] private Material _petalMaterial;
         [SerializeField] private Texture2D _petalTexture;
         [SerializeField] private Mesh _petalMesh;
         [SerializeField] private float _rate = 18f;
@@ -165,6 +168,32 @@ namespace DontLate
             colorOverLifetime.color = gradient;
 
             var renderer = GetComponent<ParticleSystemRenderer>();
+
+            // S-283 — **에셋 머티리얼을 먼저 쓴다.**
+            // 종전엔 `Shader.Find` + `new Material`로 런타임에 만들고 투명 키워드를 코드로 켰는데,
+            // 빌드는 **실제로 쓰이는 배리언트만** 남긴다. 프로젝트 어느 에셋도 그 조합(투명 파티클)을
+            // 들고 있지 않으면 스트립되어 불투명으로 떨어지고, 알파가 무시돼 꽃잎 배경이 검게 찍힌다
+            // (남규님 관찰: 에디터는 정상 · WebGL만 검정). 에셋으로 두면 배리언트가 수집된다.
+            if (_petalMaterial != null)
+            {
+                Material assetInstance = new Material(_petalMaterial); // 인스턴스 — 원본 무오염
+                if (_petalTexture != null)
+                {
+                    assetInstance.mainTexture = _petalTexture;
+                    if (assetInstance.HasProperty("_BaseMap")) assetInstance.SetTexture("_BaseMap", _petalTexture);
+                }
+                renderer.sharedMaterial = assetInstance;
+                if (_petalMesh != null)
+                {
+                    renderer.renderMode = ParticleSystemRenderMode.Mesh;
+                    renderer.mesh = _petalMesh;
+                }
+                if (_showWindStreaks) BuildWindStreaks();
+                ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                ps.Play();
+                return;
+            }
+
             Shader shader = Shader.Find(_petalMesh != null
                 ? "Universal Render Pipeline/Particles/Lit"
                 : "Universal Render Pipeline/Particles/Unlit");
