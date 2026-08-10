@@ -37,6 +37,9 @@ namespace DontLate
             public Avatar avatar;
             [Tooltip("S-228 — FBX 임베디드 머티리얼이 텍스처를 못 찾는 모델용. 비면 원본 그대로.")]
             public Material skin;
+            [Tooltip("S-244 — 클립을 1배속으로 돌릴 때 이 인물이 나아가는 초당 거리(모델 스케일 적용 전). "
+                + "0이면 제자리 걷기 클립이라 보정할 수 없다. 빌더가 apparentSpeed로 채운다.")]
+            public float clipGroundSpeed;
         }
 
         [Tooltip("S-228 — 엔딩 대열(모델 보유 인물 전원, 1인 1종). 빌더 주입.")]
@@ -459,7 +462,8 @@ namespace DontLate
             if (entry.skin != null)
                 foreach (Renderer renderer in renderers) renderer.sharedMaterial = entry.skin;
 
-            PlayWalkClip(visual, entry);
+            // 전고 정규화 배율을 함께 넘긴다 — 클립의 보속도 이 배율만큼 커진다(발이 그만큼 크게 뻗는다).
+            PlayWalkClip(visual, entry, visual.transform.localScale.x);
             return root.transform;
         }
 
@@ -485,7 +489,7 @@ namespace DontLate
         /// 그 컴포넌트는 LateUpdate에서 루트 위치를 되돌려 놓는데(제자리 연출용),
         /// 여기선 코루틴이 루트를 움직이므로 서로 싸운다. 그래서 최소 그래프만 직접 돌린다.
         /// </summary>
-        private static void PlayWalkClip(GameObject visual, EndingCastEntry entry)
+        private static void PlayWalkClip(GameObject visual, EndingCastEntry entry, float modelScale)
         {
             if (entry.walkClip == null) return;
 
@@ -500,6 +504,24 @@ namespace DontLate
             graph.SetTimeUpdateMode(DirectorUpdateMode.GameTime);
             var clip = AnimationClipPlayable.Create(graph, entry.walkClip);
             clip.SetApplyFootIK(true);
+
+            // S-244 — **걸음 주기를 이동 속도에 맞춘다.** 클립이 제 보속으로 걷는데 코루틴이 다른
+            // 속도로 옮기면 그 차이만큼 발이 지면을 문다 — 남규님이 본 "슬라이딩"이 이것이다.
+            // 실측(엔딩 대열): 이동 2.4 대 실보속 나아라 2.25(94% — 그래서 나아라만 멀쩡해 보였다) ·
+            // 이웃 주민 2.79(116%) · 나머지 0.00.
+            // 보속 0(제자리 걷기 클립)은 비율을 세울 수 없어 손대지 않는다.
+            float groundSpeed = entry.clipGroundSpeed * modelScale;
+            if (groundSpeed > 0.05f)
+            {
+                float ratio = Mathf.Clamp(WALK_SPEED / groundSpeed, 0.4f, 2.5f);
+                clip.SetSpeed(ratio);
+                Debug.Log("[엔딩대열] " + entry.npcId + " 걸음 보정 ×" + ratio.ToString("F2")
+                    + " (보속 " + groundSpeed.ToString("F2") + " → 이동 " + WALK_SPEED + ")");
+            }
+            else
+            {
+                Debug.Log("[엔딩대열] " + entry.npcId + " 제자리 걷기 클립 — 보정 불가(보속 0).");
+            }
             var output = AnimationPlayableOutput.Create(graph, "Walk", animator);
             output.SetSourcePlayable(clip);
             graph.Play();

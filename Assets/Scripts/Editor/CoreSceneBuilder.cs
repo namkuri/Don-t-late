@@ -2170,16 +2170,21 @@ namespace DontLate.EditorTools
         /// </summary>
         private static DontLate.WorldEndingManager.EndingCastEntry[] BuildEndingCast()
         {
+            // S-244 — 박말순·오지혜는 종전에 `malsoon_Angry`·`jihye_Idle`을 들고 있었다. 둘 다
+            // **걷는 동작이 아니라서**(실측 보속 0.00) 이동하는 내내 미끄러졌다. 전용 걷기 클립이
+            // 없지만 두 모델 모두 Humanoid + 유효 Avatar라 **공용 걷기 클립이 리타깃된다** —
+            // 그게 Humanoid 리그를 쓰는 이유다.
+            const string SHARED_WALK = "Assets/Art/Characters/dummy/dummy_npc_walking.fbx";
             (string id, string name, string model, string clip, string clean, string skin)[] table =
             {
                 ("parkmalsoon", "박말순", "Assets/Art/Characters/malsoon/malsoon.fbx",
-                    "Assets/Art/Characters/Animation/A_malsoon/malsoon_Angry.fbx", null,
+                    SHARED_WALK, null,
                     "Assets/Art/Characters/Materials/malsoon.fbm.mat"),
                 ("boss", "김사장", "Assets/Art/Characters/Kimboss/kim_boss.fbx",
                     "Assets/Art/Characters/Kimboss/kimboss_Walking (2).fbx", "kim_boss_walk_clean.anim",
                     "Assets/Art/Characters/kimsajng.mat"),
                 ("yoo_jihye", "오지혜", "Assets/Art/Characters/jihye/jihye.fbx",
-                    "Assets/Art/Characters/Animation/A_jihye/jihye_Idle.fbx", null, null),
+                    SHARED_WALK, null, null),
                 ("na_ara", "나아라", "Assets/Art/Characters/naara/gs_girl_mixamo_rig_final.fbx",
                     "Assets/Art/Characters/naara/gs_girl_walking.fbx", null,
                     "Assets/Art/Characters/Materials/gs_girl.mat"),
@@ -2204,6 +2209,10 @@ namespace DontLate.EditorTools
                     walkClip = clip,
                     avatar = LoadAvatar(row.model),
                     skin = string.IsNullOrEmpty(row.skin) ? null : AssetDatabase.LoadAssetAtPath<Material>(row.skin),
+                    // S-244 — 클립이 1배속으로 나아가는 초당 거리. 런타임이 이걸로 걸음 주기를
+                    // 이동 속도에 맞춘다. Generic 클립은 0이 나온다(휴머노이드 전용 값) —
+                    // 김사장이 그 경우이고, 원본조차 루트 이동이 0인 **제자리 걷기**라 보정 대상이 아니다.
+                    clipGroundSpeed = clip != null ? clip.apparentSpeed : 0f,
                 });
             }
             Debug.Log("[엔딩대열] " + cast.Count + "인 배선 (S-228 — 모델 보유 전원).");
