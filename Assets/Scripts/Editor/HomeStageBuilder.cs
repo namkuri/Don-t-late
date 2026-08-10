@@ -27,6 +27,7 @@ namespace DontLate.EditorTools
             BuildRoom(floor, wall, door);
             BuildBed(); // S-189 — 무대 고정물로 복귀 (아래 주석 참조)
             ArtBackdropKit.Build(ArtBackdropKit.Home); // S-180 ② — 아트 세트 소켓(프리팹 없으면 무시)
+            MarkArtFurnitureEditable(scene); // S-276 — 아트 세트 가구도 집어서 옮길 수 있게
             BuildSky();
             BuildFurniturePlacer();
             GreyboxStageBuilder.BuildPostVolume();
@@ -87,6 +88,27 @@ namespace DontLate.EditorTools
         private const float BED_YAW = 90f;
         // 남규님 지정값(2026-08-06) — 모델이 프레임 안에서 앉는 자리.
         private static readonly Vector3 BED_MODEL_OFFSET = new Vector3(0f, 0.00148209929f, 0.354f);
+
+        /// <summary>
+        /// S-276 — 아트 세트(`set_home`) 안의 가구에 편집 마커를 붙인다(남규님 지시: 의자·화분도 옮기게).
+        /// 이름이 가구 SO(`Assets/Data/Furniture/*.asset`)와 **정확히 일치하는 것만** 대상이다 —
+        /// 대응 SO가 없으면 런타임이 프리팹을 되찾지 못해 옮긴 뒤 복원이 안 된다.
+        /// 마커만 붙이고 씬 실물은 그대로 둔다(S-189 — 씬을 열면 방이 채워져 있어야 아트가 배치를 맞춘다).
+        /// </summary>
+        private static void MarkArtFurnitureEditable(Scene scene)
+        {
+            int marked = 0;
+            foreach (Transform node in Object.FindObjectsByType<Transform>(FindObjectsInactive.Include))
+            {
+                if (node == null || node.GetComponent<PlacedFurnitureVisual>() != null) continue;
+                var so = AssetDatabase.LoadAssetAtPath<FurnitureSO>("Assets/Data/Furniture/" + node.name + ".asset");
+                if (so == null) continue;
+                node.gameObject.AddComponent<PlacedFurnitureVisual>()
+                    .Bind(node.name, node.position, node.eulerAngles.y);
+                marked++;
+            }
+            Debug.Log("[Home] 아트 가구 " + marked + "개를 편집 가능으로 표시 (S-276).");
+        }
 
         private static void BuildRoom(Material floor, Material wall, Material door)
         {

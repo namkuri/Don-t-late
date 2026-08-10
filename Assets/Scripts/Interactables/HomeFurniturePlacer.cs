@@ -39,10 +39,30 @@ namespace DontLate
             // 에디터에서 씬을 열었을 때 방이 비어 아트가 배치를 맞출 수 없었다(민지님이 플레이
             // 중 생긴 `fur_bed(Clone)`을 세트에 담아 온 이유). 침대는 이제 HomeStageBuilder가
             // 무대 고정물로 세운다 — 씬을 열면 바로 거기 있다.
-            foreach (PlacedFurniture placed in _gameState.placedFurniture)
-                SpawnVisual(placed.furnitureId, placed.position, placed.rotationY);
+            // S-275 — 씬에 **이미 서 있는** 기본 가구는 다시 스폰하지 않고 그 실물을 옮겨 쓴다.
+            // 종전엔 대장 항목마다 새로 스폰해서, 씬 실물과 사본이 **둘 다** 남거나(중복)
+            // 빌더가 맞춰 둔 모델 오프셋·스케일이 없는 사본으로 갈려 작고 어긋나 보였다
+            // (남규님 관찰: "가구 집으면 조그만해짐").
+            var sceneFurniture = new System.Collections.Generic.Dictionary<string, PlacedFurnitureVisual>();
+            foreach (PlacedFurnitureVisual visual in Object.FindObjectsByType<PlacedFurnitureVisual>(FindObjectsInactive.Include))
+            {
+                if (visual == null || string.IsNullOrEmpty(visual.FurnitureId)) continue;
+                if (!sceneFurniture.ContainsKey(visual.FurnitureId)) sceneFurniture[visual.FurnitureId] = visual;
+            }
 
-            AdoptSceneFurniture(); // S-273
+            foreach (PlacedFurniture placed in _gameState.placedFurniture)
+            {
+                if (sceneFurniture.TryGetValue(placed.furnitureId, out PlacedFurnitureVisual existing))
+                {
+                    existing.transform.SetPositionAndRotation(placed.position, Quaternion.Euler(0f, placed.rotationY, 0f));
+                    existing.Bind(placed.furnitureId, placed.position, placed.rotationY);
+                    sceneFurniture.Remove(placed.furnitureId);
+                    continue;
+                }
+                SpawnVisual(placed.furnitureId, placed.position, placed.rotationY);
+            }
+
+            AdoptSceneFurniture(sceneFurniture); // S-273 — 대장에 없던 씬 가구를 등재
         }
 
         /// <summary>
@@ -51,13 +71,12 @@ namespace DontLate
         /// 완전히 같은 경로를 탄다 — 종전엔 대장에 없어 클릭해도 아무 반응이 없었다(남규님 지적).
         /// 이미 대장에 있으면 건너뛴다(재입장 멱등 — 씬을 오갈 때마다 늘면 안 된다).
         /// </summary>
-        private void AdoptSceneFurniture()
+        private void AdoptSceneFurniture(System.Collections.Generic.Dictionary<string, PlacedFurnitureVisual> remaining)
         {
             if (_gameState == null) return;
-            foreach (PlacedFurnitureVisual visual in Object.FindObjectsByType<PlacedFurnitureVisual>(FindObjectsInactive.Include))
+            foreach (PlacedFurnitureVisual visual in remaining.Values)
             {
                 if (visual == null || string.IsNullOrEmpty(visual.FurnitureId)) continue;
-                if (FindPlacedIndex(visual) >= 0) continue;
                 _gameState.placedFurniture.Add(new PlacedFurniture
                 {
                     furnitureId = visual.FurnitureId,

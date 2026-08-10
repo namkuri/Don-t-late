@@ -71,8 +71,6 @@ namespace DontLate
         private TMP_Text _furnitureLabel;
         private RectTransform _furnitureListContent; // S-030 ③ 인벤토리 스크롤 내용
         private TMP_Text _callLabel;                 // S-031 ⑧ 전화 수신 화면
-        private Button _wallpaperButton;             // S-031 ④ 벽지 순환
-        private Button _floorButton;                 // S-031 ④ 바닥 순환
         private string _furnitureInvSignature;       // 행 재구축 판정 (스크롤 리셋 방지)
 
         // ── S-036 다이제틱 폰 지도 (Travel 전용 앱 — 노드 버튼 UI 은퇴 대체) ──
@@ -1489,40 +1487,9 @@ namespace DontLate
                 rect.anchoredPosition = new Vector2(6f + (i % 2) * 130f, 160f - (i / 2) * 76f);
             }
 
-            // S-031 ④: 벽지·바닥 팔레트 순환 (무료 — 팔레트는 HomeDecorator와 공유).
-            _wallpaperButton = MakeButton(screen.transform, "Wallpaper", "", () =>
-            {
-                _gameState.wallpaperIndex = (_gameState.wallpaperIndex + 1) % HomeDecorator.WallPalette.Length;
-                WorldAudioManager.Instance?.PlayUiTickSfx(); // AU-010
-                RefreshDecorButtons();
-            });
-            RectTransform wallRect = (RectTransform)_wallpaperButton.transform;
-            wallRect.anchorMin = wallRect.anchorMax = wallRect.pivot = new Vector2(0f, 0f);
-            wallRect.sizeDelta = new Vector2(122f, 66f); // S-122 ⑧
-            wallRect.anchoredPosition = new Vector2(6f, 8f);
-
-            _floorButton = MakeButton(screen.transform, "Floor", "", () =>
-            {
-                _gameState.floorIndex = (_gameState.floorIndex + 1) % HomeDecorator.FloorPalette.Length;
-                WorldAudioManager.Instance?.PlayUiTickSfx(); // AU-010
-                RefreshDecorButtons();
-            });
-            RectTransform floorRect = (RectTransform)_floorButton.transform;
-            floorRect.anchorMin = floorRect.anchorMax = floorRect.pivot = new Vector2(0f, 0f);
-            floorRect.sizeDelta = new Vector2(122f, 66f); // S-122 ⑧
-            floorRect.anchoredPosition = new Vector2(138f, 8f); // 6 + 122 + 간격 10
-
-            RefreshDecorButtons();
-        }
-
-        private void RefreshDecorButtons()
-        {
-            if (_wallpaperButton != null)
-                _wallpaperButton.GetComponentInChildren<TMP_Text>().text =
-                    "벽지 ▶ " + HomeDecorator.WallPalette[_gameState.wallpaperIndex % HomeDecorator.WallPalette.Length].name;
-            if (_floorButton != null)
-                _floorButton.GetComponentInChildren<TMP_Text>().text =
-                    "바닥 ▶ " + HomeDecorator.FloorPalette[_gameState.floorIndex % HomeDecorator.FloorPalette.Length].name;
+            // S-277 — 벽지·바닥(장판) 순환 버튼 철거(남규님 지시). 가구앱은 가구만 다룬다.
+            //   팔레트 자체(`HomeDecorator.WallPalette`/`FloorPalette`)와 상태값은 남겨 둔다 —
+            //   되살리려면 이 자리에 버튼만 다시 달면 된다.
         }
 
         // ── 앱 로직 (표시 + 매니저 위임) ─────────────────────
