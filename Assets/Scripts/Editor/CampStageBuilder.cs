@@ -100,6 +100,7 @@ namespace DontLate.EditorTools
             // 프리팹이 정본이라 민지님이 고치면 코드 수정 없이 반영된다.
             ArtBackdropKit.Build(ArtBackdropKit.Camp);
             BuildCampBlossoms(scene);
+            BuildCampStreetLamps(); // S-240
 
             EditorSceneManager.SaveScene(scene, CAMP_PATH);
             Debug.Log("[Camp] 무대 조립 완료 — 박스 " + LOAD_ZONE_COUNT
@@ -135,6 +136,27 @@ namespace DontLate.EditorTools
             EditorSceneManager.SaveScene(scene);
             EditorUtility.DisplayDialog("Camp Blossom Petals",
                 "벚꽃나무와 꽃잎 효과 " + count + "개를 추가하고 Camp 씬을 저장했습니다.", "OK");
+        }
+
+        /// <summary>
+        /// S-240 — 캠프에도 가로등을 세운다(남규님 지시: "Village 외 씬에도 가로등 배치").
+        /// 보도 좌우 2열, District 무대와 같은 z(±2.4 — 걷기 영역 z±3의 가장자리).
+        /// 뒷줄은 트럭(x 9, z 1.8)을 피해 뚫고 나오지 않게 x를 비워 뒀다.
+        /// </summary>
+        private static void BuildCampStreetLamps()
+        {
+            GreyboxStageBuilder.PlaceStreetLamps(new (Vector3, float)[]
+            {
+                (new Vector3(-16f, 0f, -2.4f), 0f),
+                (new Vector3(-9f, 0f, -2.4f), 0f),
+                (new Vector3(-2f, 0f, -2.4f), 0f),
+                (new Vector3(5f, 0f, -2.4f), 0f),
+                (new Vector3(12f, 0f, -2.4f), 0f),
+                (new Vector3(18f, 0f, -2.4f), 0f),
+                (new Vector3(-13f, 0f, 2.4f), 180f),
+                (new Vector3(-5f, 0f, 2.4f), 180f),
+                (new Vector3(15f, 0f, 2.4f), 180f),
+            });
         }
 
         private static int BuildCampBlossoms(Scene scene)
@@ -292,6 +314,23 @@ namespace DontLate.EditorTools
             GreyboxStageBuilder.SetReference(departPoint, "_renderer", bodyRenderer);
             GreyboxStageBuilder.SetReference(departPoint, "_normalMaterial", bodyNormal);
             GreyboxStageBuilder.SetReference(departPoint, "_highlightMaterial", highlight);
+
+            // S-241 — 트럭 구매 인터랙트. 자리는 출발 지점과 **같은 곳**(플레이어 입장에선 "트럭 앞"이
+            // 한 군데여야 한다)이되 **오브젝트는 따로** 둔다 — InteractionSensor는 콜라이더 하나에서
+            // IInteractable을 하나만 집으므로, 한 오브젝트에 겹쳐 붙이면 게이트에 막힌 쪽이 잡혔을 때
+            // 다른 쪽도 함께 죽는다. 둘의 AllowsFocus가 배타적이라 겹쳐 놔도 후보는 항상 하나다.
+            GameObject purchase = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            purchase.name = "PurchasePoint";
+            purchase.transform.SetParent(root.transform, false);
+            purchase.transform.localPosition = depart.transform.localPosition;
+            purchase.transform.localScale = depart.transform.localScale;
+            Object.DestroyImmediate(purchase.GetComponent<Renderer>());
+            purchase.GetComponent<BoxCollider>().isTrigger = true;
+            TruckPurchasePoint purchasePoint = purchase.AddComponent<TruckPurchasePoint>();
+            GreyboxStageBuilder.SetReference(purchasePoint, "_gameState", gameState);
+            GreyboxStageBuilder.SetReference(purchasePoint, "_renderer", bodyRenderer);
+            GreyboxStageBuilder.SetReference(purchasePoint, "_normalMaterial", bodyNormal);
+            GreyboxStageBuilder.SetReference(purchasePoint, "_highlightMaterial", highlight);
 
             LoadingZone zone = root.AddComponent<LoadingZone>();
             GreyboxStageBuilder.SetReference(zone, "_stackRoot", stack.transform);

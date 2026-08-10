@@ -121,6 +121,13 @@ namespace DontLate
         public float startMinuteOfDay = 8f * 60f;
         public int startMoney;
         public int startDebt = 10000;
+
+        /// <summary>
+        /// S-242 — 하루 정산에서 빚 상환에 **끌려가지 않는** 종잣돈. 세션 시작 지급액이자
+        /// 이후에도 유지되는 하한선이다(정산은 이 금액을 넘는 잔액만 가져간다).
+        /// 이게 없으면 첫 정산에 지갑이 0이 되어 다음 날 아무것도 살 수 없다.
+        /// </summary>
+        public const int PROTECTED_CASH = 3000;
     }
 
     [System.Serializable]

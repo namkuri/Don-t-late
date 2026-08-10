@@ -18,6 +18,8 @@ namespace DontLate
         [SerializeField] private BagSlot[] _slots;
         [SerializeField] private GameObject _contextMenu;
         [SerializeField] private Button _useButton;
+        [Tooltip("S-243 — 우클릭 메뉴의 '사용'. 빌더 주입, 없으면 조용히 생략(좌클릭 사용은 그대로).")]
+        [SerializeField] private Button _consumeButton;
         [SerializeField] private Button _dropButton;
         [Tooltip("S-205 — 슬롯 호버 안내('[좌클릭] 사용'). 빌더 주입, 없으면 조용히 생략.")]
         [SerializeField] private TMP_Text _hoverHint;
@@ -30,7 +32,9 @@ namespace DontLate
         {
             Instance = this;
             if (_useButton != null) _useButton.onClick.AddListener(UseSelected);
+            if (_consumeButton != null) _consumeButton.onClick.AddListener(ConsumeSelected);
             if (_dropButton != null) _dropButton.onClick.AddListener(DropSelected);
+            CaptureContextSlots();
         }
 
         private void OnEnable()
@@ -38,6 +42,7 @@ namespace DontLate
             WorldEvents.SceneTransitionCompleted += OnSceneArrived;
             WorldEvents.DialogueStarted += OnDialogueStarted;
             WorldEvents.DialogueEnded += OnDialogueEnded;
+            WorldEvents.BagChanged += Refresh;   // S-243 — 밖에서 바뀐 가방을 화면이 따라온다
         }
 
         private void OnDisable()
@@ -45,6 +50,7 @@ namespace DontLate
             WorldEvents.SceneTransitionCompleted -= OnSceneArrived;
             WorldEvents.DialogueStarted -= OnDialogueStarted;
             WorldEvents.DialogueEnded -= OnDialogueEnded;
+            WorldEvents.BagChanged -= Refresh;
         }
 
         private void OnDialogueStarted(string _) { _inDialogue = true; Close(); }
@@ -139,9 +145,11 @@ namespace DontLate
             BagItem item = _gameState.bagItems[index];
             bool canUse = WorldEvents.HasBagConsumeListener;
             bool canHold = item.holdable && WorldEvents.HasBagHoldListener;
+            // S-243 — 우클릭은 이제 '사용'도 들어 있는 메뉴다. 특정 항목 이름을 박아 두면
+            // 메뉴 구성이 바뀔 때마다 안내가 거짓말을 한다.
             _hoverHint.text = canUse
-                ? (canHold ? "[좌클릭] 사용   ·   [우클릭] 손에 들기" : "[좌클릭] 사용")
-                : (canHold ? "[좌클릭] 손에 들기" : "[우클릭] 버리기");
+                ? "[좌클릭] 사용   ·   [우클릭] 메뉴"
+                : (canHold ? "[좌클릭] 손에 들기   ·   [우클릭] 메뉴" : "[우클릭] 메뉴");
             _hoverHint.gameObject.SetActive(true);
         }
 
@@ -150,11 +158,59 @@ namespace DontLate
             if (_gameState == null || index >= _gameState.bagItems.Count) { HideContext(); return; }
             _selected = index;
             Refresh();
+
+            // S-243 — 여기서 못 쓰는 항목은 아예 안 보여 준다. 눌렀는데 아무 일도 안 일어나는
+            // 버튼이 "아이템이 그냥 사라졌다"는 인상의 절반이었다.
+            BagItem item = _gameState.bagItems[index];
+            if (_consumeButton != null) _consumeButton.gameObject.SetActive(WorldEvents.HasBagConsumeListener);
+            if (_useButton != null) _useButton.gameObject.SetActive(item.holdable && WorldEvents.HasBagHoldListener);
+            LayoutContext();
+
             if (_contextMenu != null)
             {
                 _contextMenu.SetActive(true);
                 _contextMenu.transform.position = _slots[index].transform.position + new Vector3(70f, -40f, 0f);
             }
+        }
+
+        /// <summary>
+        /// 숨긴 항목이 빈 칸으로 남지 않게 남은 버튼을 위에서부터 다시 쌓는다 (S-243).
+        /// 칸 위치는 조립 시점의 것을 그대로 재사용한다 — 가방 UI는 아트 프리팹으로도,
+        /// 코드로도 조립되고 둘의 간격·여백이 다르다. 숫자를 박으면 한쪽이 깨진다.
+        /// </summary>
+        private void LayoutContext()
+        {
+            if (_contextSlots == null || _contextSlots.Length == 0) return;
+
+            Button[] buttons = { _consumeButton, _useButton, _dropButton };
+            int visible = 0;
+            foreach (Button button in buttons)
+            {
+                if (button == null || !button.gameObject.activeSelf) continue;
+                if (visible < _contextSlots.Length)
+                    ((RectTransform)button.transform).anchoredPosition = _contextSlots[visible];
+                visible++;
+            }
+
+            if (_contextMenu == null) return;
+            float gap = _contextSlots.Length > 1 ? _contextSlots[0].y - _contextSlots[1].y : 0f;
+            RectTransform rect = (RectTransform)_contextMenu.transform;
+            rect.sizeDelta = new Vector2(rect.sizeDelta.x,
+                _contextFullHeight - (_contextSlots.Length - visible) * gap);
+        }
+
+        // 조립 시점의 칸 위치·메뉴 높이 (S-243) — 위에서 아래 순.
+        private Vector2[] _contextSlots;
+        private float _contextFullHeight;
+
+        private void CaptureContextSlots()
+        {
+            var slots = new System.Collections.Generic.List<Vector2>();
+            foreach (Button button in new[] { _consumeButton, _useButton, _dropButton })
+                if (button != null) slots.Add(((RectTransform)button.transform).anchoredPosition);
+            slots.Sort((a, b) => b.y.CompareTo(a.y));
+            _contextSlots = slots.ToArray();
+            if (_contextMenu != null) _contextFullHeight = ((RectTransform)_contextMenu.transform).sizeDelta.y;
         }
 
         public void OnSlotDropped(int from, int to)
@@ -198,6 +254,24 @@ namespace DontLate
             }
 
             if (!WorldEvents.HasBagConsumeListener) { Debug.Log("[가방] 여기선 쓸 수 없다"); HideContext(); return; }
+            BagStorage.RemoveOne(_gameState, _selected);
+            _selected = -1;
+            HideContext();
+            WorldEvents.RaiseBagItemConsumed(item); // 사용 효과는 아이템별 — Player 도메인 몫
+            Refresh();
+        }
+
+        /// <summary>
+        /// S-243 — 우클릭 메뉴의 '사용'. 좌클릭 사용(S-205)과 같은 일을 하지만, 남규님을 포함해
+        /// 우클릭으로 쓰려는 손이 실제로 있다. 우클릭 메뉴에 '사용'이 없어서 '손에 들기'가
+        /// 눌렸고, 그게 거절되면 아이템만 사라졌다.
+        /// </summary>
+        private void ConsumeSelected()
+        {
+            if (_gameState == null || _selected < 0 || _selected >= _gameState.bagItems.Count) { HideContext(); return; }
+            if (!WorldEvents.HasBagConsumeListener) { Debug.Log("[가방] 여기선 쓸 수 없다"); HideContext(); return; }
+
+            BagItem item = _gameState.bagItems[_selected];
             BagStorage.RemoveOne(_gameState, _selected);
             _selected = -1;
             HideContext();

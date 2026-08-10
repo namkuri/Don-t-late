@@ -21,6 +21,11 @@ namespace DontLate
 
         private void Start()
         {
+            // S-238 — 배포본(웹)에는 각인을 만들지 않는다. 개발 중 어느 커밋인지 보려고 둔 것이지
+            // 플레이어가 볼 것은 아니다. 에디터·개발빌드에서는 그대로 남긴다 — 배포본 대조 수단은
+            // 여전히 필요하다. 컴포넌트는 계속 돈다(Update의 F1 폴링이 다른 오버레이를 담당한다).
+            if (!Application.isEditor && !Debug.isDebugBuild) return;
+
             TextAsset stamp = Resources.Load<TextAsset>("build_version");
             string text = stamp != null ? stamp.text : "v.unknown";
             if (Application.isEditor) text += " [editor]";

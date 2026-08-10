@@ -163,6 +163,7 @@ namespace DontLate.EditorTools
             // S-119 ① 규약) 방금 켜 둔 오르막 콜라이더도 같이 꺼진다(실측: MC=False로 되돌아감).
             // 오르막은 배경이 아니라 밟는 지형이므로 스윕 뒤에 한 번 더 세운다. 멱등이라 안전하다.
             TuneUphill(scene);
+            BuildHillsideStreetLamps(); // S-240 — 오르막 콜라이더를 세운 뒤라야 지면 스냅이 먹는다
 
             EditorSceneManager.SaveScene(scene, SCENE_PATH);
             Debug.Log("[Hillside] 유선형 산 무대 조립 완료 — 정상 y" + GroundY(31.9f).ToString("F2")
@@ -294,6 +295,22 @@ namespace DontLate.EditorTools
         }
 
         /// <summary>지형 표면 높이. Ground 레이어만 본다 — 이미 놓인 데코·플레이어에 걸리지 않는다.</summary>
+        /// <summary>
+        /// S-240 — 언덕길에도 가로등을 세운다. 걷기 영역이 x −20~76으로 District(약 40)의 두 배 넘게
+        /// 길어 같은 8m 간격을 쓰면 20개가 넘는다 — 포인트 라이트가 그만큼 늘면 WebGL이 감당하지
+        /// 못한다. 14m 간격 좌우 엇갈림으로 13개만 세운다.
+        /// y는 `PlaceStreetLamps`가 Ground 레이어에 쏴서 잡는다(경사라 평지 y를 쓰면 뜬다).
+        /// </summary>
+        private static void BuildHillsideStreetLamps()
+        {
+            float[] front = { -12f, 2f, 16f, 30f, 44f, 58f, 70f };
+            float[] back = { -5f, 9f, 23f, 37f, 51f, 65f };
+            var spots = new System.Collections.Generic.List<(Vector3, float)>();
+            foreach (float x in front) spots.Add((new Vector3(x, 0f, -2.2f), 0f));
+            foreach (float x in back) spots.Add((new Vector3(x, 0f, 2.2f), 180f));
+            GreyboxStageBuilder.PlaceStreetLamps(spots.ToArray());
+        }
+
         private static float GroundY(float x, float z = 0f)
         {
             int mask = 1 << GreyboxStageBuilder.LAYER_GROUND;

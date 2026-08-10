@@ -385,6 +385,19 @@ namespace DontLate
             BagHoldRequested?.Invoke(item);
         }
 
+        /// <summary>
+        /// 가방 내용이 UI 밖에서 바뀌었다 (S-243). 열려 있는 가방 화면이 따라오게 하는 통지.
+        /// 손에 들기가 거절돼 아이템을 도로 넣는 경우처럼, 데이터를 만진 쪽이 화면을 직접
+        /// 부르지 않고 이 이벤트로 알린다(도메인 경계 규칙).
+        /// </summary>
+        public static event Action BagChanged;
+
+        public static void RaiseBagChanged()
+        {
+            Log("BagChanged");
+            BagChanged?.Invoke();
+        }
+
         /// <summary>무언가를 획득했다 (S-133 ⑤) — 토스트 한 줄로 알린다.
         /// 페이로드는 **완성된 문장**("에너지드링크를 획득하였습니다") — View는 표시만 한다.</summary>
         public static event Action<string> ItemAcquired;

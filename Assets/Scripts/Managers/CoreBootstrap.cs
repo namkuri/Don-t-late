@@ -67,7 +67,9 @@ namespace DontLate
         {
             _gameState.day = _gameState.startDay;
             _gameState.minuteOfDay = _gameState.startMinuteOfDay;
-            _gameState.money = _gameState.startMoney;
+            // S-242 — 종잣돈 3,000원 지급. 에셋의 startMoney(0)를 고치는 대신 여기서 하한을 두는 이유는
+            // **금액의 근거가 한 곳에 있어야** 하기 때문이다 — 정산에서 보호하는 값과 지급액이 같은 상수다.
+            _gameState.money = Mathf.Max(_gameState.startMoney, GameStateSO.PROTECTED_CASH);
             _gameState.debt = _gameState.startDebt;
             _gameState.bossIntroPlayed = false; // S-052 — 사장님 튜토리얼 리셋
             // S-158 — 튜토리얼 상태도 함께 초기화한다. 특히 `tutorialExitLocked`는 남아 있으면

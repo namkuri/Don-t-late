@@ -118,7 +118,10 @@ namespace DontLate
         /// </summary>
         public DebtSettlement SettleNow()
         {
-            int repaid = Mathf.Min(_gameState.money, _gameState.debt);
+            // S-242 — 종잣돈 3,000원은 상환에 끌려가지 않는다(남규님 지시: "빚에 정산 안 되는 초기 현금").
+            // 정산이 지갑을 0으로 만들면 다음 날 살 수 있는 게 없어 선택 자체가 사라진다.
+            int spendable = Mathf.Max(0, _gameState.money - GameStateSO.PROTECTED_CASH);
+            int repaid = Mathf.Min(spendable, _gameState.debt);
             _gameState.money -= repaid;
             _gameState.debt -= repaid;
 

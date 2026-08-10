@@ -245,6 +245,33 @@ namespace DontLate.EditorTools
             foreach (float x in back) PlaceLamp(prefab, new Vector3(x, 0f, 2.4f), 180f, ref index);
         }
 
+        /// <summary>
+        /// S-240 — 같은 가로등 프리팹을 다른 씬에도 세운다(남규님 지시: "Village 외 씬에도 가로등").
+        /// 좌표의 y는 **지면에 스냅**한다 — 언덕처럼 높이가 변하는 무대에서 평지 기준 y를 그대로
+        /// 쓰면 기둥이 공중에 뜨거나 땅에 박힌다. 위에서 아래로 쏴 처음 닿는 지면을 바닥으로 삼는다.
+        /// 다시 호출하면 이전 가로등을 걷고 새로 세운다(멱등).
+        /// </summary>
+        internal static void PlaceStreetLamps((Vector3 position, float yaw)[] spots)
+        {
+            foreach (GameObject root in UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects())
+                if (root.name.StartsWith(PREFIX + "StreetLamp")) Object.DestroyImmediate(root);
+
+            GameObject prefab = GetOrCreateLampPrefab();
+            EnsureLampCone();
+            Physics.SyncTransforms(); // 방금 조립한 지면 콜라이더가 쿼리에 잡히도록
+            int index = 1;
+            foreach ((Vector3 position, float yaw) in spots)
+            {
+                Vector3 grounded = position;
+                // Ground 레이어만 본다 — 마스크를 안 걸면 아트 세트 지붕·차양에 걸려 가로등이
+                // 공중에 뜬다(Hillside가 `GroundY`에서 같은 마스크를 쓰는 이유와 같다).
+                if (Physics.Raycast(position + Vector3.up * 60f, Vector3.down, out RaycastHit hit, 120f,
+                        1 << LAYER_GROUND, QueryTriggerInteraction.Ignore))
+                    grounded.y = hit.point.y;
+                PlaceLamp(prefab, grounded, yaw, ref index);
+            }
+        }
+
         private static void PlaceLamp(GameObject prefab, Vector3 position, float yaw, ref int index)
         {
             GameObject lamp = (GameObject)PrefabUtility.InstantiatePrefab(prefab);

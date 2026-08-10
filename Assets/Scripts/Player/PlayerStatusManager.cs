@@ -115,7 +115,16 @@ namespace DontLate
         // ── 가방 연동 (S-064) — 손 들기·즉시 사용 ──
         private void OnBagHoldRequested(BagItem item)
         {
-            if (_heldDrink != null) { Debug.Log("[가방] 이미 손에 음료가 있다"); return; }
+            // S-243 — 거절할 때 **아이템을 도로 넣는다.** 가방 화면은 이벤트를 쏘기 전에 이미
+            // 칸에서 뺐기 때문에, 여기서 그냥 return 하면 아이템이 효과 없이 증발한다
+            // (남규님 지적: "아이템 안 먹어지고 사라지기만 함").
+            if (_heldDrink != null)
+            {
+                Debug.Log("[가방] 이미 손에 음료가 있다 — " + item.label + " 도로 넣음");
+                BagStorage.TryAdd(_hub.GameState, item.id, item.label, item.stackable, item.holdable);
+                WorldEvents.RaiseBagChanged();
+                return;
+            }
             TryHoldDrink(CreateDrinkVisual().transform);
             Debug.Log("[가방] " + item.label + " 손에 들었다 — 우클릭 마시기/좌클릭 던지기");
         }

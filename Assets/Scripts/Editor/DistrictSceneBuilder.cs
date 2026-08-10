@@ -15,6 +15,7 @@ namespace DontLate.EditorTools
     public static class DistrictSceneBuilder
     {
         private const string DISTRICT_PATH = "Assets/Scenes/Village.unity"; // S-186 ③ — District 은퇴, 빌라촌이 승계
+        internal const string MAIN_PATH = "Assets/Scenes/Main.unity";       // S-239 — 타이틀도 빌라촌 배치를 쓴다
         private static string[] _buildingWhitelist;
         private const string SLOTS_ROOT = "Slots";
 
@@ -78,7 +79,9 @@ namespace DontLate.EditorTools
             Scene scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
             // 이 조립은 빌라촌·먹자골목·촬영용 District 1이 함께 쓴다. 빌라촌에만 걸 규칙이 몇 개 있어
             // (S-214 ① 생성기 생략 · S-233 인물 축소) 한 곳에서 판정한다.
-            bool isVillage = scenePath == DISTRICT_PATH;
+            // S-239 — 타이틀(Main)도 빌라촌과 **같은 배치**를 쓴다(남규님 지시). 첫 화면에 보이는
+            // 거리가 실제로 걷게 될 거리와 달라 보이면 타이틀이 다른 게임의 화면처럼 읽힌다.
+            bool isVillage = scenePath == DISTRICT_PATH || scenePath == MAIN_PATH;
 
             // 멱등: 이전 조립물 정리.
             GreyboxStageBuilder.Clear();

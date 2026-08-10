@@ -59,7 +59,10 @@ namespace DontLate.EditorTools
         public static void BuildMainTitleStage()
         {
             // ① District와 **같은 조립**을 Main 경로로 돌린다(베끼기 금지 — 이중 관리의 근원).
-            DistrictSceneBuilder.BuildStage(MAIN_PATH);
+            // S-239 — 배경 세트를 빌라촌 것으로 지정한다(종전엔 인자 없이 불러 공용 District 세트가
+            // 깔렸다 — 그래서 타이틀 거리가 실제 빌라촌과 달라 보였다). 절차적 배치 생략 등
+            // 빌라촌 전용 규칙은 `BuildStage`가 경로를 보고 함께 맞춘다.
+            DistrictSceneBuilder.BuildStage(MAIN_PATH, backdrop: ArtBackdropKit.Village);
 
             Scene scene = SceneManager.GetActiveScene();
 

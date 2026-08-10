@@ -951,6 +951,53 @@ namespace DontLate.EditorTools
             SetField(view, "_hoverHint", hint);
         }
 
+        /// <summary>
+        /// S-243 — 우클릭 메뉴에 '사용' 칸을 보장한다. 가방 UI는 **아트 프리팹 경로가 실제로 쓰이는 쪽**
+        /// 이라(S-205 실측), 코드 폴백에만 버튼을 넣으면 게임에는 안 나온다.
+        /// 프리팹에는 [손에 들기][버리기] 둘뿐이므로 '손에 들기'를 복제해 스타일을 그대로 물려받고,
+        /// 세 칸이 들어가게 간격만큼 아래로 밀고 메뉴를 늘린다.
+        /// </summary>
+        private static void EnsureBagConsumeButton(BagView view)
+        {
+            if (view == null) return;
+            GameObject context = GetField<GameObject>(view, "_contextMenu");
+            Button hold = GetField<Button>(view, "_useButton");
+            Button drop = GetField<Button>(view, "_dropButton");
+            if (context == null || hold == null || drop == null) return;
+
+            Transform existing = context.transform.Find("ConsumeButton");
+            Button consume = existing != null ? existing.GetComponent<Button>() : null;
+            if (consume == null)
+            {
+                GameObject clone = Object.Instantiate(hold.gameObject, context.transform);
+                clone.name = "ConsumeButton";
+                consume = clone.GetComponent<Button>();
+                consume.onClick.RemoveAllListeners(); // 원본에 직렬화된 연결이 있으면 끊는다
+                TMP_Text label = clone.GetComponentInChildren<TMP_Text>(true);
+                if (label != null) label.text = "사용";
+                if (consume.targetGraphic is Image image) image.color = new Color(0.23f, 0.50f, 0.62f, 1f);
+                clone.transform.SetAsFirstSibling();
+            }
+
+            RectTransform holdRect = (RectTransform)hold.transform;
+            RectTransform dropRect = (RectTransform)drop.transform;
+            float gap = holdRect.anchoredPosition.y - dropRect.anchoredPosition.y; // 칸 간격(양수)
+            ((RectTransform)consume.transform).anchoredPosition = holdRect.anchoredPosition;
+            holdRect.anchoredPosition -= new Vector2(0f, gap);
+            dropRect.anchoredPosition -= new Vector2(0f, gap);
+            RectTransform contextRect = (RectTransform)context.transform;
+            contextRect.sizeDelta = new Vector2(contextRect.sizeDelta.x, contextRect.sizeDelta.y + gap);
+
+            SetField(view, "_consumeButton", consume);
+        }
+
+        private static T GetField<T>(object target, string fieldName) where T : class
+        {
+            FieldInfo field = target.GetType().GetField(fieldName,
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            return field?.GetValue(target) as T;
+        }
+
         private static BagView BuildBagCanvas(GameStateSO gameState)
         {
             GameObject inventoryPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(INVENTORY_UI_PREFAB_PATH);
@@ -960,6 +1007,7 @@ namespace DontLate.EditorTools
                 instance.name = "BagCanvas";
                 BagView prefabView = instance.GetComponent<BagView>();
                 SetField(prefabView, "_gameState", gameState);
+                EnsureBagConsumeButton(prefabView); // S-243
                 // S-205 — 아트 프리팹 경로에도 호버 안내를 얹는다. 이 분기가 **실제로 쓰이는 쪽**이라
                 // 아래 코드 폴백에만 넣었다가 안내가 안 뜬다(실측 — HoverHint 오브젝트 자체가 없었다).
                 EnsureBagHoverHint(prefabView, instance.transform);
@@ -1109,7 +1157,7 @@ namespace DontLate.EditorTools
             Image contextBg = context.AddComponent<Image>();
             contextBg.color = new Color(0.08f, 0.10f, 0.15f, 0.98f);
             RectTransform contextRect = (RectTransform)context.transform;
-            contextRect.sizeDelta = new Vector2(150f, 118f);
+            contextRect.sizeDelta = new Vector2(150f, 170f); // S-243 — '사용' 한 칸 추가
 
             Button MakeContextButton(string btnName, string btnLabel, float y, Color color)
             {
@@ -1129,11 +1177,14 @@ namespace DontLate.EditorTools
                 return b;
             }
 
-            Button useButton = MakeContextButton("UseButton", "손에 들기", -10f, new Color(0.21f, 0.55f, 0.50f, 1f));
-            Button dropButton = MakeContextButton("DropButton", "버리기", -62f, new Color(0.55f, 0.30f, 0.28f, 1f));
+            // S-243 — '사용'을 첫 칸으로. 우클릭으로 쓰려는 손이 실재한다(남규님 지적).
+            Button consumeButton = MakeContextButton("ConsumeButton", "사용", -10f, new Color(0.23f, 0.50f, 0.62f, 1f));
+            Button useButton = MakeContextButton("UseButton", "손에 들기", -62f, new Color(0.21f, 0.55f, 0.50f, 1f));
+            Button dropButton = MakeContextButton("DropButton", "버리기", -114f, new Color(0.55f, 0.30f, 0.28f, 1f));
 
             SetField(view, "_panel", panel.gameObject);
             SetField(view, "_contextMenu", context);
+            SetField(view, "_consumeButton", consumeButton);
             SetField(view, "_useButton", useButton);
             SetField(view, "_dropButton", dropButton);
             EnsureBagHoverHint(view, panel.transform); // S-205
