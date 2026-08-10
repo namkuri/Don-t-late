@@ -224,6 +224,7 @@ namespace DontLate
             }
 
             _gameState.cargo.Clear();
+            _gameState.truckCargoIds.Clear(); // S-264 — 하루 마감이면 짐칸도 비운다
             _gameState.scannedOrderIds.Clear();
             _gameState.placedDeliveries.Clear();
             AdvanceProgression(ref summary); // S-054 — 개척 판정 (성공 구역 기준·S-084 해금 기록)

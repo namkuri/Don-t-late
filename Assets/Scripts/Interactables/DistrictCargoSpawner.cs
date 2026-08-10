@@ -100,6 +100,10 @@ namespace DontLate
             {
                 if (!_gameState.cargo.Contains(order)) continue;
                 if (_gameState.destroyedOrderIds.Contains(order.orderId)) continue;
+                // S-264 — 트럭이 있으면 **짐칸에 실제로 실은 것만** 내린다. `cargo`는 손에 드는
+                // 순간 등록되므로(S-066 ①) 그것만 보면 캠프에서 들었다 놓은 짐까지 따라온다
+                // (남규님 관찰). 트럭이 없는 도보 시대는 종전대로 — 그때는 손에 든 것이 곧 적재다.
+                if (_gameState.hasTruck && !_gameState.truckCargoIds.Contains(order.orderId)) continue;
                 // S-066 ② — 도보로 손에 들고 온 짐은 상자 재스폰 없음(중복 방지).
                 if (_gameState.carriedOrders.Exists(c => c != null && c.orderId == order.orderId)) continue;
 

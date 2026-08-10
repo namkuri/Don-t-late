@@ -61,6 +61,9 @@ namespace DontLate
             DeliveryOrderSO order = status.CarriedOrder;
             status.ReleaseCarry(); // 손의 상자 비주얼 제거
             WorldDeliveryManager.Instance.AcceptOrder(order);
+            // S-264 — **여기가 "실었다"의 유일한 지점**이다. `cargo`는 손에 드는 순간 등록되므로
+            // (S-066 ①) 그것만으로는 안 실은 짐까지 구역에 따라간다(남규님 관찰).
+            if (!state.truckCargoIds.Contains(order.orderId)) state.truckCargoIds.Add(order.orderId);
             StackBoxVisual();
         }
 

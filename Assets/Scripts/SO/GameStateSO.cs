@@ -24,6 +24,12 @@ namespace DontLate
         public List<DeliveryOrderSO> cargo = new List<DeliveryOrderSO>();
         /// <summary>바코드 스캔된 주문 id (S-011 — 스캔한 짐만 픽업 가능. 스캔 순서 유지).</summary>
         public List<int> scannedOrderIds = new List<int>();
+        /// <summary>
+        /// S-264 — **트럭 짐칸에 실제로 실은** 주문 id. `cargo`는 손에 드는 순간 등록되므로
+        /// (S-066 ① — 도보 배달도 정산이 인정되게 한 조치) "실었다"를 구분하지 못한다.
+        /// 트럭으로 이동할 때는 이 목록에 있는 짐만 구역에 내린다 — 안 실은 건 캠프에 남는다.
+        /// </summary>
+        public List<int> truckCargoIds = new List<int>();
         /// <summary>이동맵에서 고른 목적 구역 (S-015) — District 도착 시 이 구역의 짐·비콘만 스폰.</summary>
         public string currentDistrict;
 

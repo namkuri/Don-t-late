@@ -139,6 +139,28 @@ namespace DontLate
             Advance();
         }
 
+        /// <summary>
+        /// S-265 — 튜토리얼을 마치며 사장님이 트럭을 알려 준다(남규님 문구 그대로).
+        /// **게이트가 아니다** — 말하고 끝난다. 트럭 구매(S-241)는 이 안내 말고는 존재를 알 길이 없다.
+        /// 대사 두 줄은 한 시나리오에 담는다: `PlayScenario`를 연달아 부르면 뒤엣것이 앞엣것을 끊는다.
+        /// </summary>
+        private void PlayTruckOutro()
+        {
+            if (WorldDialogueManager.Instance == null) return;
+
+            var scenario = ScriptableObject.CreateInstance<DialogueScenarioSO>();
+            scenario.name = "Tutorial_TruckOutro"; // 런타임 인스턴스 — 에셋 저장 없음
+            (string speaker, string text)[] lines =
+            {
+                ("사장님", "너무 먼 지역은 트럭이 편할거야! 트럭은 캠프에서 빌릴 수 있으니까 언제든 와. 대신 돈은 좀 내야한다!"),
+                ("사장님", "타고싶거든 트럭 근처로 가서 E키를 눌러보도록 해. 그럼 수고!"),
+            };
+            scenario.lines = new DialogueScenarioSO.Line[lines.Length];
+            for (int i = 0; i < lines.Length; i++)
+                scenario.lines[i] = new DialogueScenarioSO.Line { speaker = lines[i].speaker, text = lines[i].text };
+            WorldDialogueManager.Instance.PlayScenario(scenario);
+        }
+
         private void Advance()
         {
             _index++;
@@ -150,6 +172,7 @@ namespace DontLate
                     _gameState.tutorialExitLocked = false; // 안전망 — 픽업에서 이미 풀렸어야 한다
                 }
                 Debug.Log("[튜토리얼] 전 단계 완료.");
+                PlayTruckOutro(); // S-265
                 return;
             }
 

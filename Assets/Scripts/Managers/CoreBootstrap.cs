@@ -102,6 +102,7 @@ namespace DontLate
             _gameState.stamina = -1f;             // S-081 ①
             _gameState.droppedCargo.Clear();
             _gameState.cargo.Clear();
+            _gameState.truckCargoIds.Clear(); // S-264
             _gameState.scannedOrderIds.Clear();
             _gameState.placedDeliveries.Clear();
             _gameState.completedCount = 0;
