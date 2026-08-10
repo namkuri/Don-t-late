@@ -124,7 +124,12 @@ namespace DontLate
         private Vector2 _panelBaseSize;
         private float _panelBaseX;
 
-        private float HiddenY => _inTravel ? TRAVEL_HIDDEN_Y : _hiddenY;
+        // S-259 — 숨김 위치도 스케일을 타야 한다. 패널이 커진 만큼 더 내려가지 않으면
+        // **윗부분이 화면에 걸린다**(남규님 관찰: 안 열어도 폰 머리가 튀어나옴 · 타이틀에서도 보임).
+        // 앵커가 아래(pivot y=0 계열)라 −y 방향으로 패널 높이의 늘어난 몫만큼 더 밀어야 한다.
+        private float HiddenY => (_inTravel ? TRAVEL_HIDDEN_Y : _hiddenY) * PANEL_SCALE - HIDE_MARGIN;
+
+        private const float HIDE_MARGIN = 80f; // 스케일 오차·그림자 여유
 
         // ── 수명주기 ─────────────────────────────────────────
 
@@ -180,7 +185,7 @@ namespace DontLate
             {
                 _panelBaseSize = _panel.sizeDelta;       // S-036 — Travel 확대 후 원복 기준
                 _panelBaseX = _panel.anchoredPosition.x;
-                _panel.anchoredPosition = new Vector2(_panel.anchoredPosition.x, _hiddenY);
+                _panel.anchoredPosition = new Vector2(_panel.anchoredPosition.x, HiddenY);
                 // S-257 — 여기서 걸어야 한다. `ApplyPanelLayout`은 Travel 진입/이탈 때만 불려서
                 // 그 전까지는 원래 크기 그대로였다(실측: 폰스케일 1.00).
                 _panel.localScale = Vector3.one * PANEL_SCALE;
@@ -808,9 +813,10 @@ namespace DontLate
         }
 
         // S-036: Travel에선 폰이 세로 풀스크린 지도 앱 — 패널 중앙 확대, 이탈 시 원복.
-        // S-257 — 폰 화면 1.2배(남규님 지시). 크기를 키우는 대신 **스케일**을 건다 —
+        // S-257 — 폰 화면을 키운다(남규님 지시). 크기를 키우는 대신 **스케일**을 건다 —
         // 내부 위젯 좌표가 전부 픽셀 상수라 sizeDelta만 키우면 배치가 어긋난다.
-        private const float PANEL_SCALE = 1.2f;
+        // S-259 — 1.2는 너무 컸다 → **1.1**(남규님 재지시).
+        private const float PANEL_SCALE = 1.1f;
 
         private void ApplyPanelLayout()
         {

@@ -30,6 +30,9 @@ namespace DontLate.EditorTools
         private const string BOSS_TALK_PATH = "Assets/Art/Characters/Kimboss/kim_bossTalking.fbx";
         private const string BOSS_CONTROLLER_PATH = "Assets/Art/Characters/Kimboss/AC_kim_boss.controller";
         private const float BOSS_VISUAL_YAW = 90f;
+        // S-262 — 남규님 손배치를 정본으로 승격(위치·각도).
+        private static readonly Vector3 BOSS_POSITION = new Vector3(3.8f, 0.04f, 0.01f);
+        private const float BOSS_YAW = 180f;
         private const int LOAD_ZONE_COUNT = 4; // S-039 ④ — 4번째 = 아파트행 물량
 
         [MenuItem("DontLate/Build/Camp Stage", priority = 12)]
@@ -161,7 +164,7 @@ namespace DontLate.EditorTools
                 if (truck.GetChild(i).name == TRUCK_ART_NAME) Object.DestroyImmediate(truck.GetChild(i).gameObject);
 
             var originals = new System.Collections.Generic.List<Transform>();
-            foreach (Transform candidate in Object.FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            foreach (Transform candidate in Object.FindObjectsByType<Transform>(FindObjectsInactive.Include))
                 if (candidate != null && candidate.name == TRUCK_ART_NAME && !candidate.IsChildOf(truck))
                     originals.Add(candidate);
             if (originals.Count == 0) { Debug.LogWarning("[Camp] 트럭 아트 모델(" + TRUCK_ART_NAME + ")을 못 찾았다 — 그레이박스 몸통만 남는다."); return; }
@@ -382,6 +385,10 @@ namespace DontLate.EditorTools
                 AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Auto/prop_box_parcel.prefab"));
             GreyboxStageBuilder.SetReference(zone, "_boxMaterial", boxMaterial);
             GreyboxStageBuilder.SetReference(zone, "_highlightRoot", root.transform); // S-253
+            // S-263 — 캠프 한정. bool은 `SetReference`(오브젝트 참조 전용)로 못 넣는다.
+            SerializedObject zoneSerialized = new SerializedObject(zone);
+            zoneSerialized.FindProperty("_hideLoadedBoxes").boolValue = true;
+            zoneSerialized.ApplyModifiedPropertiesWithoutUndo();
             GreyboxStageBuilder.SetReference(zone, "_highlightMaterial", highlight);
         }
 
@@ -461,7 +468,8 @@ namespace DontLate.EditorTools
             GameObject bossModel = AssetDatabase.LoadAssetAtPath<GameObject>(BOSS_MODEL_PATH);
             if (bossModel != null)
             {
-                go = GreyboxStageBuilder.CreateEmpty("BossNpc", new Vector3(9.99102402f, 0.0432802439f, 0.0104106665f));
+                go = GreyboxStageBuilder.CreateEmpty("BossNpc", BOSS_POSITION);
+                go.transform.rotation = Quaternion.Euler(0f, BOSS_YAW, 0f); // S-262
                 GameObject visual = (GameObject)PrefabUtility.InstantiatePrefab(bossModel, go.transform);
                 visual.name = "Visual";
                 NormalizeBossVisual(visual, go.transform.position, 1.8f);

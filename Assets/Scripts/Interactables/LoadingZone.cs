@@ -29,6 +29,8 @@ namespace DontLate
         [SerializeField] private Material _boxMaterial;
         [Tooltip("S-253 — 하이라이트를 걸 범위(트럭 루트). 하위 렌더러 전부를 갈아끼운다.")]
         [SerializeField] private Transform _highlightRoot;
+        [Tooltip("S-263 — 실은 상자를 안 보이게 한다(캠프 전용). 아트 트럭이 붙은 뒤로 짐칸 상자가 모델을 뚫고 보인다.")]
+        [SerializeField] private bool _hideLoadedBoxes;
         [SerializeField] private Material _highlightMaterial;
 
         private int _stacked;
@@ -83,6 +85,9 @@ namespace DontLate
             }
 
             box.name = "LoadedBox_" + (_stacked + 1);
+            // S-263 — 렌더러만 끈다. 오브젝트 자체는 남겨 적재 개수·정산 흐름을 건드리지 않는다.
+            if (_hideLoadedBoxes)
+                foreach (Renderer r in box.GetComponentsInChildren<Renderer>(true)) r.enabled = false;
             box.transform.SetParent(_stackRoot, true);
             box.transform.localPosition = new Vector3((_stacked % 2) * 0.85f - 0.4f, (_stacked / 2) * 0.75f, 0f);
             _stacked++;

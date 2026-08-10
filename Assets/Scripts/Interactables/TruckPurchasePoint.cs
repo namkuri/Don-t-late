@@ -56,11 +56,13 @@ namespace DontLate
         {
             var scenario = ScriptableObject.CreateInstance<DialogueScenarioSO>();
             scenario.name = "Truck_Purchase_Tutorial"; // 런타임 인스턴스 — 에셋 저장 없음
+            // S-261 — 문구는 남규님 지시 그대로: 짐칸(뒤) 적재 → 트럭 앞 탑승 **또는** 폰 지도 앱.
+            // 두 경로를 다 말해 줘야 한다. 하나만 알려 주면 나머지가 없는 기능이 된다.
             (string speaker, string text)[] lines =
             {
                 ("주인공", "(…샀다. 빚이 " + PRICE + "원 더 늘었네.)"),
-                ("주인공", "(이제 걸어서 안 다녀도 된다. 적재존에서 짐부터 싣자.)"),
-                ("주인공", "(짐을 다 실으면 트럭 앞에서 한 번 더 눌러서 출발하면 된다.)"),
+                ("주인공", "(짐은 트럭 뒤로 가서 실으면 되고.)"),
+                ("주인공", "(다 실으면 트럭 앞으로 가서 타거나, 휴대폰 지도 앱에서 골라도 갈 수 있다고 했어.)"),
             };
             scenario.lines = new DialogueScenarioSO.Line[lines.Length];
             for (int i = 0; i < lines.Length; i++)

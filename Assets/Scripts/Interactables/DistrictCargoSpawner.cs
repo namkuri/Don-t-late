@@ -140,9 +140,15 @@ namespace DontLate
         /// </summary>
         private void PlaceArrivingPlayer(Vector3 firstBoxPos, int boxCount)
         {
-            if (boxCount <= 0 || _player == null) return;
+            if (_player == null) return;
             if (WorldSceneFlowManager.Instance == null
                 || WorldSceneFlowManager.Instance.PreviousScene != GameScene.Travel) return;
+
+            // S-260 — 짐이 하나도 없어도 **짐이 놓일 자리**를 기준으로 세운다. 종전엔 여기서
+            // 돌아서서, 짐을 안 싣고 이동하면 배치가 통째로 건너뛰어졌다(남규님 관찰: 맵 중간에 스폰).
+            // 기준 좌표는 상자 스폰과 같은 식이어야 한다 — 다르면 짐이 있을 때와 없을 때 자리가 달라진다.
+            if (boxCount <= 0)
+                firstBoxPos = _boxOrigin != null ? _boxOrigin.position : new Vector3(-16f, 0f, -1.2f);
 
             // 짐보다 왼쪽 — 다가가면 바로 집을 수 있는 거리.
             Vector3 spawn = new Vector3(firstBoxPos.x - ARRIVAL_LEFT_OFFSET, _player.position.y, firstBoxPos.z);
